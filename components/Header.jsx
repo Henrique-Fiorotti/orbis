@@ -1,7 +1,7 @@
 export default function Header(){
     return(
         <>
-        <div className="main-header flex justify-between items-center pl-[15%] pr-[15%] w-[100%] h-16 bg-[#d9d9d9]">
+        <div className="main-header flex justify-between items-center pl-[15%] pr-[15%] w-[100%] h-16 bg-[#d9d9d9] border-2 border-[#2222222a]">
             <a className="icon-header h-[100%] w-8">
                 <img src="/Orbis.svg" alt="" className="h-[100%] w-[100%] cursor-[pointer]" />
             </a>
