@@ -14,14 +14,6 @@ const openSans = Open_Sans({
   variable: '--font-open-sans',
 });
 
-export default function RootLayout({ children }) {
-  return (
-    <html lang="pt-BR" className={`${poppins.variable} ${openSans.variable}`}>
-      <body>{children}</body>
-    </html>
-  );
-}
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -39,12 +31,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+    <html lang="pt-BR" className={`${poppins.variable} ${openSans.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }
