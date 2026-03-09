@@ -1,62 +1,360 @@
 "use client";
 
-const whatsappContacts = [
-  { label: "Whatsapp", number: "+55 11 9000-0000", link: "https://wa.me/5511900000000" },
-  { label: "Whatsapp", number: "+55 11 9000-0000", link: "https://wa.me/5511900000000" },
-  { label: "Whatsapp", number: "+55 11 9000-0000", link: "https://wa.me/5511900000000" },
+import { useState, useRef } from "react";
+
+const faqs = [
+  { question: "O que é o Orbis?", answer: "O Orbis é uma plataforma completa de gestão e comunicação para empresas e equipes que buscam mais eficiência no dia a dia." },
+  { question: "Como posso criar minha conta?", answer: "Basta acessar o site, clicar em 'Criar conta' e preencher seus dados. O processo leva menos de 2 minutos." },
+  { question: "O Orbis é gratuito?", answer: "Oferecemos um plano gratuito com funcionalidades essenciais. Para recursos avançados, confira nossos planos pagos." },
+  { question: "Como entro em contato com o suporte?", answer: "Você pode entrar em contato pelo WhatsApp, telefone SAC ou pelo e-mail suporte.orbis@gmail.com listados ao lado." },
+  { question: "Posso cancelar minha assinatura a qualquer momento?", answer: "Sim, o cancelamento pode ser feito a qualquer momento diretamente pelo painel da sua conta, sem burocracia." },
 ];
 
-export default function contact() {
+const WhatsAppIcon = ({ size = 46 }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 48 48" fill="none">
+    <circle cx="24" cy="24" r="24" fill="#111" />
+    <path d="M33.5 14.5C31.3 12.2 28.3 11 25.1 11C18.4 11 13 16.4 13 23.1C13 25.3 13.6 27.5 14.7 29.4L12.9 36L19.7 34.2C21.5 35.2 23.3 35.8 25.1 35.8C31.8 35.8 37.2 30.4 37.2 23.7C37.1 20.4 35.9 17.4 33.5 14.5ZM25.1 33.7C23.5 33.7 21.8 33.2 20.4 32.3L20 32.1L16.2 33.1L17.2 29.4L16.9 29C15.9 27.4 15.3 25.5 15.3 23.4C15.3 17.7 19.9 13.1 25.6 13.1C28.3 13.1 30.8 14.2 32.7 16.1C34.6 18 35.7 20.5 35.7 23.2C35.5 28.9 30.8 33.7 25.1 33.7ZM30.6 25.9C30.3 25.7 28.8 25 28.5 24.9C28.2 24.8 28 24.7 27.8 25C27.6 25.3 27 26 26.8 26.2C26.6 26.4 26.4 26.5 26.1 26.3C25.2 25.8 24.3 25.3 23.5 24.5C22.9 23.9 22.3 23.1 21.8 22.3C21.6 22 21.7 21.8 21.9 21.6C22.1 21.4 22.3 21.1 22.4 20.9C22.5 20.7 22.6 20.5 22.5 20.3C22.4 20.1 21.8 18.6 21.6 18.1C21.4 17.7 21.1 17.7 20.9 17.7H20.3C20.1 17.7 19.8 17.8 19.5 18.1C19.2 18.4 18.5 19.1 18.5 20.6C18.5 22.1 19.6 23.5 19.7 23.7C19.8 23.9 21.7 26.7 24.3 28C24.9 28.3 25.5 28.5 26 28.7C26.6 28.9 27.3 28.9 27.7 28.8C28.2 28.7 29.5 28 29.8 27.3C30.1 26.6 30.1 26 30 25.9Z" fill="white" />
+  </svg>
+);
+
+const EmailIcon = ({ size = 46 }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 48 48" fill="none">
+    <circle cx="24" cy="24" r="24" fill="#111" />
+    <rect x="12" y="16" width="24" height="16" rx="2.5" stroke="white" strokeWidth="1.8" fill="none" />
+    <path d="M12 19l12 8.5L36 19" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const ChevronIcon = ({ open }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18" height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{
+      transform: open ? "rotate(90deg)" : "rotate(0deg)",
+      transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
+    }}
+  >
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+);
+
+function FaqItem({ faq, index, open, onToggle }) {
+  const contentRef = useRef(null);
+
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 py-20">
+    <div
+      style={{
+        borderBottom: "1px solid #f0eaff",
+        overflow: "hidden",
+      }}
+    >
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between py-3 px-1 text-left group"
+        style={{ background: "none", border: "none", cursor: "pointer" }}
+      >
+        <span
+          style={{
+            fontSize: "0.875rem",
+            fontWeight: 500,
+            color: open ? "#7c3aed" : "#374151",
+            transition: "color 0.25s ease",
+          }}
+        >
+          {index + 1}. {faq.question}
+        </span>
+        <span style={{ color: open ? "#7c3aed" : "#9ca3af", transition: "color 0.25s ease", flexShrink: 0, marginLeft: 8 }}>
+          <ChevronIcon open={open} />
+        </span>
+      </button>
 
-      {/* Icon */}
-      <div className="mb-4 w-18 h-18">
-        <img className="w-full h-full" src="/connect_icon_contact.svg" alt="" />
-      </div>
-
-      {/* Title */}
-      <div className="px-8 py-2 mb-14">
-        <h1 className="text-4xl font-semibold text-[#5e17eb] tracking-tight">
-          Entre em contato
-        </h1>
-      </div>
-
-      {/* Cards */}
-      <div className="flex flex-wrap justify-center gap-6 mb-14">
-        {whatsappContacts.map((contact, i) => (
-          <a
-            key={i}
-            href={contact.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center gap-3 w-52 px-8 py-10 border border-gray-200 rounded-2xl shadow-sm hover:shadow-md hover:border-[#5e17eb] hover:-translate-y-1 transition-all duration-200"
-          >
-            {/* WhatsApp SVG icon */}
-            <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 48 48" fill="none">
-              <circle cx="24" cy="24" r="24" fill="#1a1a1a" />
-              <path
-                d="M33.5 14.5C31.3 12.2 28.3 11 25.1 11C18.4 11 13 16.4 13 23.1C13 25.3 13.6 27.5 14.7 29.4L12.9 36L19.7 34.2C21.5 35.2 23.3 35.8 25.1 35.8C31.8 35.8 37.2 30.4 37.2 23.7C37.1 20.4 35.9 17.4 33.5 14.5ZM25.1 33.7C23.5 33.7 21.8 33.2 20.4 32.3L20 32.1L16.2 33.1L17.2 29.4L16.9 29C15.9 27.4 15.3 25.5 15.3 23.4C15.3 17.7 19.9 13.1 25.6 13.1C28.3 13.1 30.8 14.2 32.7 16.1C34.6 18 35.7 20.5 35.7 23.2C35.5 28.9 30.8 33.7 25.1 33.7ZM30.6 25.9C30.3 25.7 28.8 25 28.5 24.9C28.2 24.8 28 24.7 27.8 25C27.6 25.3 27 26 26.8 26.2C26.6 26.4 26.4 26.5 26.1 26.3C25.2 25.8 24.3 25.3 23.5 24.5C22.9 23.9 22.3 23.1 21.8 22.3C21.6 22 21.7 21.8 21.9 21.6C22.1 21.4 22.3 21.1 22.4 20.9C22.5 20.7 22.6 20.5 22.5 20.3C22.4 20.1 21.8 18.6 21.6 18.1C21.4 17.7 21.1 17.7 20.9 17.7H20.3C20.1 17.7 19.8 17.8 19.5 18.1C19.2 18.4 18.5 19.1 18.5 20.6C18.5 22.1 19.6 23.5 19.7 23.7C19.8 23.9 21.7 26.7 24.3 28C24.9 28.3 25.5 28.5 26 28.7C26.6 28.9 27.3 28.9 27.7 28.8C28.2 28.7 29.5 28 29.8 27.3C30.1 26.6 30.1 26 30 25.9C29.9 25.8 30.6 25.9 30.6 25.9Z"
-                fill="white"
-              />
-            </svg>
-
-            <p className="text-sm font-medium text-gray-800">{contact.label}</p>
-            <p className="text-sm font-medium text-[#5e17eb]">{contact.number}</p>
-          </a>
-        ))}
-      </div>
-
-      {/* SAC */}
-      <div className="flex flex-col items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.08 6.08l.91-.91a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-        </svg>
-        <p className="text-xs text-gray-400 text-center leading-relaxed">
-          Em caso de dúvidas entre em <br /> contato com nosso SAC
+      <div
+        ref={contentRef}
+        style={{
+          maxHeight: open ? `${contentRef.current?.scrollHeight || 200}px` : "0px",
+          opacity: open ? 1 : 0,
+          transition: "max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease",
+          overflow: "hidden",
+        }}
+      >
+        <p
+          style={{
+            fontSize: "0.8rem",
+            color: "#6b7280",
+            lineHeight: 1.7,
+            padding: "0 4px 14px",
+          }}
+        >
+          {faq.answer}
         </p>
       </div>
+    </div>
+  );
+}
 
+function ContactCard({ href, icon, label, value, delay = 0 }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <a
+      href={href}
+      target={href.startsWith("http") ? "_blank" : undefined}
+      rel="noopener noreferrer"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "20px",
+        border: `2px solid ${hovered ? "#7c3aed" : "#ddd6fe"}`,
+        borderRadius: "16px",
+        padding: "20px 24px",
+        height: "33%",
+        textDecoration: "none",
+        background: hovered ? "linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%)" : "#fff",
+        transform: hovered ? "translateY(-3px) scale(1.01)" : "translateY(0) scale(1)",
+        boxShadow: hovered
+          ? "0 12px 40px rgba(124,58,237,0.15)"
+          : "0 2px 12px rgba(0,0,0,0.05)",
+        transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+        animationDelay: `${delay}ms`,
+      }}
+    >
+      <div style={{ flexShrink: 0 }}>{icon}</div>
+      <div>
+        <p style={{ fontSize: "1rem", fontWeight: 600, color: "#7c3aed", margin: 0, lineHeight: 1.3 }}>
+          {value}
+        </p>
+        <p style={{ fontSize: "0.75rem", color: "#9ca3af", margin: "3px 0 0", fontWeight: 400 }}>
+          {label}
+        </p>
+      </div>
+    </a>
+  );
+}
+
+function FloatingInput({ placeholder, type = "text", className = "" }) {
+  const [focused, setFocused] = useState(false);
+  const [value, setValue] = useState("");
+  const active = focused || value.length > 0;
+
+  return (
+    <div style={{ position: "relative", width: "100%" }} className={className}>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={{
+          width: "100%",
+          border: `1.5px solid ${focused ? "#7c3aed" : "#e5e7eb"}`,
+          borderRadius: "10px",
+          padding: "14px 14px 6px",
+          fontSize: "0.875rem",
+          color: "#111",
+          background: "#fafafa",
+          outline: "none",
+          transition: "border-color 0.25s ease, box-shadow 0.25s ease",
+          boxSizing: "border-box",
+          boxShadow: focused ? "0 0 0 3px rgba(124,58,237,0.1)" : "none",
+        }}
+      />
+      <label
+        style={{
+          position: "absolute",
+          left: "14px",
+          top: active ? "5px" : "50%",
+          transform: active ? "translateY(0)" : "translateY(-50%)",
+          fontSize: active ? "0.65rem" : "0.85rem",
+          color: focused ? "#7c3aed" : "#9ca3af",
+          fontWeight: active ? 500 : 400,
+          pointerEvents: "none",
+          transition: "all 0.22s cubic-bezier(0.4,0,0.2,1)",
+          letterSpacing: active ? "0.03em" : 0,
+        }}
+      >
+        {placeholder}
+      </label>
+    </div>
+  );
+}
+
+function FloatingTextarea({ placeholder }) {
+  const [focused, setFocused] = useState(false);
+  const [value, setValue] = useState("");
+  const active = focused || value.length > 0;
+
+  return (
+    <div style={{ position: "relative", width: "100%" }}>
+      <textarea
+        rows={5}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={{
+          width: "100%",
+          border: `1.5px solid ${focused ? "#7c3aed" : "#e5e7eb"}`,
+          borderRadius: "10px",
+          padding: "22px 14px 8px",
+          fontSize: "0.875rem",
+          color: "#111",
+          background: "#fafafa",
+          outline: "none",
+          resize: "none",
+          transition: "border-color 0.25s ease, box-shadow 0.25s ease",
+          boxSizing: "border-box",
+          boxShadow: focused ? "0 0 0 3px rgba(124,58,237,0.1)" : "none",
+          fontFamily: "inherit",
+        }}
+      />
+      <label
+        style={{
+          position: "absolute",
+          left: "14px",
+          top: active ? "6px" : "14px",
+          fontSize: active ? "0.65rem" : "0.85rem",
+          color: focused ? "#7c3aed" : "#9ca3af",
+          fontWeight: active ? 500 : 400,
+          pointerEvents: "none",
+          transition: "all 0.22s cubic-bezier(0.4,0,0.2,1)",
+          letterSpacing: active ? "0.03em" : 0,
+        }}
+      >
+        {placeholder}
+      </label>
+    </div>
+  );
+}
+
+export default function ContatoPage() {
+  const [openFaq, setOpenFaq] = useState(null);
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        maxWidth: "100%",
+        background: "white",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "120px 24px",
+        fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "73%",
+          display: "flex",
+          gap: "28px",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
+        }}
+      >
+
+        {/* LEFT — scrollable panel */}
+        <div
+          style={{
+            flex: "1 1 620px",
+            border: "2px solid #ddd6fe",
+            borderRadius: "20px",
+            overflowY: "auto",
+            minHeight: "560px",
+            background: "#fff",
+            boxShadow: "0 4px 32px rgba(124,58,237,0.07)",
+            scrollbarWidth: "thin",
+            scrollbarColor: "#ddd6fe transparent",
+          }}
+        >
+          {/* Nos Contate */}
+          <div style={{ padding: "36px 32px 28px" }}>
+            <img style={{
+                width: "70px",
+                height: "70px"
+            }} src="/connect_icon_contact.svg" alt="" />
+            </div>
+            
+
+          {/* Divider */}
+          <div style={{ height: "1px", background: "linear-gradient(to right, transparent, #ddd6fe, transparent)", margin: "0 24px" }} />
+
+          {/* Dúvidas Frequentes */}
+          <div style={{ padding: "28px 32px 36px" }}>
+            <div
+              style={{
+                display: "inline-block",
+                marginBottom: "20px",
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: "2.5rem",
+                  fontWeight: 300,
+                  color: "#7c3aed",
+                  margin: 0,
+                }}
+              >
+                Dúvidas Frequentes
+              </h2>
+            </div>
+
+            <div>
+              {faqs.map((faq, i) => (
+                <FaqItem
+                  key={i}
+                  faq={faq}
+                  index={i}
+                  open={openFaq === i}
+                  onToggle={() => setOpenFaq(openFaq === i ? null : i)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT — contact cards */}
+        <div
+          style={{
+            flex: "0 1",
+            display: "flex",
+            height: "560px",
+            flexDirection: "column",
+            gap: "14px",
+          }}
+        >
+          <ContactCard
+            href="https://wa.me/5511900000000"
+            icon={<WhatsAppIcon />}
+            label="Whatsapp"
+            value="+55 11 9000-0000"
+            delay={0}
+          />
+          <ContactCard
+            href="tel:+5511900000000"
+            icon={<WhatsAppIcon />}
+            label="SAC"
+            value="+55 11 9000-0000"
+            delay={80}
+          />
+          <ContactCard
+            href="mailto:suporte.orbis@gmail.com"
+            icon={<EmailIcon />}
+            label="E-mail"
+            value="suporte.orbis@gmail.com"
+            delay={160}
+          />
+        </div>
+
+      </div>
     </div>
   );
 }
