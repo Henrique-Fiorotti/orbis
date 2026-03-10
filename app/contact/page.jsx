@@ -11,18 +11,11 @@ const faqs = [
 ];
 
 const WhatsAppIcon = ({ size = 46 }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 48 48" fill="none">
-    <circle cx="24" cy="24" r="24" fill="#111" />
-    <path d="M33.5 14.5C31.3 12.2 28.3 11 25.1 11C18.4 11 13 16.4 13 23.1C13 25.3 13.6 27.5 14.7 29.4L12.9 36L19.7 34.2C21.5 35.2 23.3 35.8 25.1 35.8C31.8 35.8 37.2 30.4 37.2 23.7C37.1 20.4 35.9 17.4 33.5 14.5ZM25.1 33.7C23.5 33.7 21.8 33.2 20.4 32.3L20 32.1L16.2 33.1L17.2 29.4L16.9 29C15.9 27.4 15.3 25.5 15.3 23.4C15.3 17.7 19.9 13.1 25.6 13.1C28.3 13.1 30.8 14.2 32.7 16.1C34.6 18 35.7 20.5 35.7 23.2C35.5 28.9 30.8 33.7 25.1 33.7ZM30.6 25.9C30.3 25.7 28.8 25 28.5 24.9C28.2 24.8 28 24.7 27.8 25C27.6 25.3 27 26 26.8 26.2C26.6 26.4 26.4 26.5 26.1 26.3C25.2 25.8 24.3 25.3 23.5 24.5C22.9 23.9 22.3 23.1 21.8 22.3C21.6 22 21.7 21.8 21.9 21.6C22.1 21.4 22.3 21.1 22.4 20.9C22.5 20.7 22.6 20.5 22.5 20.3C22.4 20.1 21.8 18.6 21.6 18.1C21.4 17.7 21.1 17.7 20.9 17.7H20.3C20.1 17.7 19.8 17.8 19.5 18.1C19.2 18.4 18.5 19.1 18.5 20.6C18.5 22.1 19.6 23.5 19.7 23.7C19.8 23.9 21.7 26.7 24.3 28C24.9 28.3 25.5 28.5 26 28.7C26.6 28.9 27.3 28.9 27.7 28.8C28.2 28.7 29.5 28 29.8 27.3C30.1 26.6 30.1 26 30 25.9Z" fill="white" />
-  </svg>
+  <img src="/whatsapp-128-svgrepo-com.svg" alt="WhatsApp" width={size} height={size} />
 );
 
-const EmailIcon = ({ size = 46 }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 48 48" fill="none">
-    <circle cx="24" cy="24" r="24" fill="#111" />
-    <rect x="12" y="16" width="24" height="16" rx="2.5" stroke="white" strokeWidth="1.8" fill="none" />
-    <path d="M12 19l12 8.5L36 19" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
+const EmailIcon = ({ size = 37 }) => (
+  <img src="/email-1572-svgrepo-com.svg" alt="Email" width={size} height={size} />
 );
 
 const ChevronIcon = ({ open }) => (
@@ -329,6 +322,7 @@ export default function ContatoPage() {
             height: "560px",
             flexDirection: "column",
             gap: "14px",
+            zIndex: 1,
           }}
         >
           <ContactCard
