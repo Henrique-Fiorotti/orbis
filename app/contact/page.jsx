@@ -239,7 +239,7 @@ export default function ContatoPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "120px 24px",
+        padding: "90px 120px 24px 24px",
         fontFamily: "'Inter', 'Segoe UI', sans-serif",
       }}
     >
