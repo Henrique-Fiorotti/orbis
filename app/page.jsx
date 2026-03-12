@@ -50,7 +50,7 @@ function FeatureCard({ icon, title, desc, delay }) {
         flex: "1 1 220px",
         background: hovered ? "white" : "white",
         border: `1.5px solid ${hovered ? "#7c3aed" : "#ede9fe"}`,
-        borderRadius: "16px",
+        borderRadius: "8px",
         padding: "28px 24px",
         transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
         transform: visible,
@@ -178,7 +178,8 @@ export default function HomePage() {
           </h1>
 
           <p style={{
-            fontSize: "1rem", color: "#6b7280", lineHeight: 1.7,
+            fontSize: "1.4rem", color: "#6b7280", lineHeight: 1.3,
+            fontFamily: "'Open-sans', 'Segoe UI', sans-serif",
             maxWidth: "420px", marginBottom: "36px",
             opacity: heroVisible ? 1 : 0,
             transform: heroVisible ? "none" : "translateY(16px)",
