@@ -62,7 +62,7 @@ function FeatureCard({ icon, title, desc, delay }) {
         cursor: "default",
       }}
     >
-      <div style={{ fontSize: "1.8rem", marginBottom: "14px" }}>{icon}</div>
+      <img src={icon} alt={title} style={{ width: "1.8rem", height: "1.8rem", marginBottom: "14px" }} />
       <p style={{ fontWeight: 700, fontSize: "0.95rem", color: "#111", margin: "0 0 8px" }}>{title}</p>
       <p style={{ fontSize: "0.82rem", color: "#6b7280", lineHeight: 1.65, margin: 0 }}>{desc}</p>
     </div>
@@ -301,10 +301,10 @@ export default function HomePage() {
             Tecnologia que trabalha enquanto você lidera.
           </h2>
           <div style={{ display: "flex", gap: "18px", flexWrap: "wrap" }}>
-            <FeatureCard icon="🔍" title="Monitoramento em tempo real" desc="Acompanhe cada operação da sua empresa com dashboards precisos e alertas instantâneos." delay={0} />
-            <FeatureCard icon="⚡" title="Previsão de falhas" desc="Algoritmos preditivos identificam riscos antes que se tornem problemas reais." delay={80} />
-            <FeatureCard icon="🔒" title="Segurança avançada" desc="Criptografia de ponta a ponta e controle de acesso granular para cada usuário." delay={160} />
-            <FeatureCard icon="📊" title="Relatórios inteligentes" desc="Relatórios automáticos com insights acionáveis para decisões mais rápidas e assertivas." delay={240} />
+            <FeatureCard icon="/visibility.svg" title="Monitoramento em tempo real" desc="Acompanhe cada operação da sua empresa com dashboards precisos e alertas instantâneos." delay={0} />
+            <FeatureCard icon="/bolt.svg" title="Previsão de falhas" desc="Algoritmos preditivos identificam riscos antes que se tornem problemas reais." delay={80} />
+            <FeatureCard icon="/shield.svg" title="Segurança avançada" desc="Criptografia de ponta a ponta e controle de acesso granular para cada usuário." delay={160} />
+            <FeatureCard icon="/analytics.svg" title="Relatórios inteligentes" desc="Relatórios automáticos com insights acionáveis para decisões mais rápidas e assertivas." delay={240} />
           </div>
         </div>
       </section>
