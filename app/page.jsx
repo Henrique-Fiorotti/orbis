@@ -275,17 +275,17 @@ export default function HomePage() {
           transition: "opacity 0.7s ease, transform 0.7s ease",
         }}>
           <p style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: "'Poppins', sans-serif",
             fontSize: "clamp(1.4rem, 3vw, 2rem)",
             fontWeight: 100, lineHeight: 1.3, letterSpacing: "-0.5px", textAlign: "center",
-            color: "#111", marginBottom: "16px",
+            color: "#3B2867", marginBottom: "16px",
           }}>
             "Prever <span style={{ color: "#7c3aed" }}>erros</span> hoje é
             evitar prejuízos <span style={{ color: "#7c3aed" }}>amanhã</span>"
           </p>
           <p style={{ fontSize: "0.82rem", color: "#6b7280", lineHeight: 1.6 }}>
             Confie no processo.<br />
-            <strong style={{ color: "#7c3aed" }}>Junte-se à Orbis</strong>
+            <strong style={{ color: "#3B2867" }}>Junte-se à Orbis</strong>
           </p>
         </div>
       </section>
@@ -316,6 +316,8 @@ export default function HomePage() {
           opacity: statsVisible ? 1 : 0,
           transform: statsVisible ? "none" : "translateY(20px)",
           transition: "opacity 0.7s ease, transform 0.7s ease",
+          fontFamily:"'Poppins', sans-serif",
+          fontWeight: 100,
         }}>
           {[
             { to: 98,   suffix: "%",  label: "Uptime garantido" },
@@ -324,7 +326,7 @@ export default function HomePage() {
             { to: 24,   suffix: "/7", label: "Suporte disponível" },
           ].map((s) => (
             <div key={s.label}>
-              <p style={{ fontFamily: "'Syne', sans-serif", fontSize: "clamp(2.2rem, 4vw, 3rem)", fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(2.2rem, 4vw, 3rem)", fontWeight: 500, color: "#fff", margin: "0 0 6px" }}>
                 <Counter to={s.to} suffix={s.suffix} />
               </p>
               <p style={{ fontSize: "0.82rem", color: "#9ca3af" }}>{s.label}</p>
