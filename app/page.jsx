@@ -48,14 +48,12 @@ function FeatureCard({ icon, title, desc, delay }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         flex: "1 1 220px",
-        background: hovered ? "#fff" : "#fafafa",
+        background: hovered ? "white" : "white",
         border: `1.5px solid ${hovered ? "#7c3aed" : "#ede9fe"}`,
         borderRadius: "16px",
         padding: "28px 24px",
         transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-        transform: visible
-          ? hovered ? "translateY(-6px)" : "translateY(0)"
-          : "translateY(28px)",
+        transform: visible,
         opacity: visible ? 1 : 0,
         transitionDelay: `${delay}ms`,
         boxShadow: hovered ? "0 16px 48px rgba(124,58,237,0.12)" : "0 2px 8px rgba(0,0,0,0.04)",
@@ -249,7 +247,7 @@ export default function HomePage() {
         }}>
           <button onClick={scrollDown} style={{
             width: "44px", height: "44px", borderRadius: "50%",
-            background: "#111", border: "none", cursor: "pointer",
+            background: "#212121", border: "none", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
             animation: "float 2.4s ease-in-out infinite",
@@ -297,7 +295,7 @@ export default function HomePage() {
           <p style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.12em", color: "#7c3aed", textTransform: "uppercase", marginBottom: "12px" }}>
             O que oferecemos
           </p>
-          <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", fontWeight: 800, letterSpacing: "-1px", marginBottom: "48px", maxWidth: "480px", lineHeight: 1.15 }}>
+          <h2 style={{ fontFamily: "'Syne', sans-serif", color: "#3B2867", fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", fontWeight: 200, letterSpacing: "-1px", marginBottom: "48px", maxWidth: "480px", lineHeight: 1.15 }}>
             Tecnologia que trabalha enquanto você lidera.
           </h2>
           <div style={{ display: "flex", gap: "18px", flexWrap: "wrap" }}>
@@ -341,10 +339,10 @@ export default function HomePage() {
             <p style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.12em", color: "#7c3aed", textTransform: "uppercase", marginBottom: "12px" }}>
               Como funciona
             </p>
-            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 800, letterSpacing: "-1px", lineHeight: 1.15, marginBottom: "8px" }}>
+            <h2 style={{ fontFamily: "'Poppins', sans-serif", color: "#3B2867", fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 200, letterSpacing: "-1px", lineHeight: 0.70, marginBottom: "8px" }}>
               Simples de começar.
             </h2>
-            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 800, letterSpacing: "-1px", lineHeight: 1.15, color: "#7c3aed" }}>
+            <h2 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 500, letterSpacing: "-1px", lineHeight: 1.15, color: "#7c3aed" }}>
               Poderoso no uso.
             </h2>
           </div>
