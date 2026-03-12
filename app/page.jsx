@@ -119,9 +119,7 @@ export default function HomePage() {
       <style>{`
         
         html { scroll-behavior: smooth; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #ddd6fe; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #7C3AED; border-radius: 1px; }
         @keyframes pulse-ring {
           0% { transform: scale(1); opacity: 0.6; }
           100% { transform: scale(1.55); opacity: 0; }
@@ -136,9 +134,9 @@ export default function HomePage() {
       <section style={{
         minHeight: "100vh",
         display: "flex",
-        flexDirection: "column",
+        flexDirection: "row-reverse",
         justifyContent: "center",
-        padding: "80px 8vw 60px",
+        padding: "180px 15% 100px 15%",
         position: "relative",
         background: "#fff",
       }}>
@@ -146,30 +144,34 @@ export default function HomePage() {
         <div style={{
           position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none",
           backgroundImage: "radial-gradient(circle, #e9d5ff 1px, transparent 1px)",
-          backgroundSize: "36px 36px",
+          backgroundSize: "53px 36px",
           opacity: 0.35,
         }} />
 
         {/* glow blob */}
         <div style={{
-          position: "absolute", right: "8vw", top: "18%",
-          width: "340px", height: "340px", borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
+          position: "relative",
+          width: "540px", height: "440px", borderRadius: "10%",
+          background: "linear-gradient(315deg,rgba(124, 58, 237, 0.37) 0%, rgba(255, 255, 255, 0) 41%)",
           pointerEvents: "none", zIndex: 0,
-        }} />
+        }}>
+
+        <img className="w-full h-full pb-15" src="/Orbis-hero-landing-page.svg" alt="" />
+        </div>
 
         <div style={{ position: "relative", zIndex: 1, maxWidth: "600px" }}>
 
           <h1 style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: "'Poppins', sans-serif",
             fontSize: "clamp(2.8rem, 6vw, 3.6rem)",
-            fontWeight: 100,
+            fontWeight: 200,
             lineHeight: 1.05,
             letterSpacing: "-2px",
             marginBottom: "28px",
             opacity: heroVisible ? 1 : 0,
             transform: heroVisible ? "none" : "translateY(20px)",
             transition: "opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s",
+            color: "#3b2867",
           }}>
             Antecipando{" "}
             <span style={{ color: "#7c3aed" }}>falhas</span>,<br />
@@ -195,16 +197,16 @@ export default function HomePage() {
             transition: "opacity 0.6s ease 0.45s, transform 0.6s ease 0.45s",
           }}>
             <a href="/login" style={{
-              background: "#111", color: "#fff",
+              background: "#3b2867", color: "#fff",
               padding: "13px 28px", borderRadius: "10px",
               fontWeight: 600, fontSize: "0.9rem",
               textDecoration: "none", letterSpacing: "0.01em",
-              transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease",
+              transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), background-color 0.2s ease",
               boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
               display: "inline-block",
             }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px) scale(1.02)"; e.currentTarget.style.boxShadow = "0 10px 28px rgba(0,0,0,0.25)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.18)"; }}
+              onMouseEnter={(e) => {e.currentTarget.style.backgroundColor = "#7c3aed"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.backgroundColor = "#3b2867"; }}
             >
               Acesse o Orbis
             </a>
@@ -276,7 +278,7 @@ export default function HomePage() {
           <p style={{
             fontFamily: "'Syne', sans-serif",
             fontSize: "clamp(1.4rem, 3vw, 2rem)",
-            fontWeight: 700, lineHeight: 1.3, letterSpacing: "-0.5px",
+            fontWeight: 100, lineHeight: 1.3, letterSpacing: "-0.5px", textAlign: "center",
             color: "#111", marginBottom: "16px",
           }}>
             "Prever <span style={{ color: "#7c3aed" }}>erros</span> hoje é
