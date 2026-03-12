@@ -48,21 +48,19 @@ function FeatureCard({ icon, title, desc, delay }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         flex: "1 1 220px",
-        background: hovered ? "#fff" : "#fafafa",
+        background: hovered ? "white" : "white",
         border: `1.5px solid ${hovered ? "#7c3aed" : "#ede9fe"}`,
-        borderRadius: "16px",
+        borderRadius: "8px",
         padding: "28px 24px",
         transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-        transform: visible
-          ? hovered ? "translateY(-6px)" : "translateY(0)"
-          : "translateY(28px)",
+        transform: visible,
         opacity: visible ? 1 : 0,
         transitionDelay: `${delay}ms`,
         boxShadow: hovered ? "0 16px 48px rgba(124,58,237,0.12)" : "0 2px 8px rgba(0,0,0,0.04)",
         cursor: "default",
       }}
     >
-      <div style={{ fontSize: "1.8rem", marginBottom: "14px" }}>{icon}</div>
+      <img src={icon} alt={title} style={{ width: "1.8rem", height: "1.8rem", marginBottom: "14px" }} />
       <p style={{ fontWeight: 700, fontSize: "0.95rem", color: "#111", margin: "0 0 8px" }}>{title}</p>
       <p style={{ fontSize: "0.82rem", color: "#6b7280", lineHeight: 1.65, margin: 0 }}>{desc}</p>
     </div>
@@ -119,9 +117,7 @@ export default function HomePage() {
       <style>{`
         
         html { scroll-behavior: smooth; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #ddd6fe; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #7C3AED; border-radius: 1px; }
         @keyframes pulse-ring {
           0% { transform: scale(1); opacity: 0.6; }
           100% { transform: scale(1.55); opacity: 0; }
@@ -136,9 +132,9 @@ export default function HomePage() {
       <section style={{
         minHeight: "100vh",
         display: "flex",
-        flexDirection: "column",
+        flexDirection: "row-reverse",
         justifyContent: "center",
-        padding: "80px 8vw 60px",
+        padding: "180px 15% 100px 15%",
         position: "relative",
         background: "#fff",
       }}>
@@ -146,30 +142,34 @@ export default function HomePage() {
         <div style={{
           position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none",
           backgroundImage: "radial-gradient(circle, #e9d5ff 1px, transparent 1px)",
-          backgroundSize: "36px 36px",
+          backgroundSize: "53px 36px",
           opacity: 0.35,
         }} />
 
         {/* glow blob */}
         <div style={{
-          position: "absolute", right: "8vw", top: "18%",
-          width: "340px", height: "340px", borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 70%)",
+          position: "relative",
+          width: "540px", height: "440px", borderRadius: "10%",
+          background: "linear-gradient(315deg,rgba(124, 58, 237, 0.37) 0%, rgba(255, 255, 255, 0) 41%)",
           pointerEvents: "none", zIndex: 0,
-        }} />
+        }}>
+
+        <img className="w-full h-full pb-15" src="/Orbis-hero-landing-page.svg" alt="" />
+        </div>
 
         <div style={{ position: "relative", zIndex: 1, maxWidth: "600px" }}>
 
           <h1 style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: "'Poppins', sans-serif",
             fontSize: "clamp(2.8rem, 6vw, 3.6rem)",
-            fontWeight: 100,
+            fontWeight: 200,
             lineHeight: 1.05,
             letterSpacing: "-2px",
             marginBottom: "28px",
             opacity: heroVisible ? 1 : 0,
             transform: heroVisible ? "none" : "translateY(20px)",
             transition: "opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s",
+            color: "#3b2867",
           }}>
             Antecipando{" "}
             <span style={{ color: "#7c3aed" }}>falhas</span>,<br />
@@ -178,7 +178,8 @@ export default function HomePage() {
           </h1>
 
           <p style={{
-            fontSize: "1rem", color: "#6b7280", lineHeight: 1.7,
+            fontSize: "1.4rem", color: "#6b7280", lineHeight: 1.3,
+            fontFamily: "'Open-sans', 'Segoe UI', sans-serif",
             maxWidth: "420px", marginBottom: "36px",
             opacity: heroVisible ? 1 : 0,
             transform: heroVisible ? "none" : "translateY(16px)",
@@ -195,16 +196,17 @@ export default function HomePage() {
             transition: "opacity 0.6s ease 0.45s, transform 0.6s ease 0.45s",
           }}>
             <a href="/login" style={{
-              background: "#111", color: "#fff",
+              background: "#3b2867", color: "#fff",
               padding: "13px 28px", borderRadius: "10px",
               fontWeight: 600, fontSize: "0.9rem",
+              fontFamily: "'Poppins', sans-serif",
               textDecoration: "none", letterSpacing: "0.01em",
-              transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease",
+              transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), background-color 0.2s ease",
               boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
               display: "inline-block",
             }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px) scale(1.02)"; e.currentTarget.style.boxShadow = "0 10px 28px rgba(0,0,0,0.25)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.18)"; }}
+              onMouseEnter={(e) => {e.currentTarget.style.backgroundColor = "#7c3aed"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.backgroundColor = "#3b2867"; }}
             >
               Acesse o Orbis
             </a>
@@ -212,6 +214,7 @@ export default function HomePage() {
               background: "transparent", color: "#111",
               padding: "13px 28px", borderRadius: "10px",
               fontWeight: 500, fontSize: "0.9rem",
+              fontFamily: "'Poppins', sans-serif",
               textDecoration: "none", letterSpacing: "0.01em",
               border: "2px solid #e5e7eb",
               transition: "border-color 0.2s ease, color 0.2s ease",
@@ -247,7 +250,7 @@ export default function HomePage() {
         }}>
           <button onClick={scrollDown} style={{
             width: "44px", height: "44px", borderRadius: "50%",
-            background: "#111", border: "none", cursor: "pointer",
+            background: "#212121", border: "none", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
             animation: "float 2.4s ease-in-out infinite",
@@ -274,17 +277,17 @@ export default function HomePage() {
           transition: "opacity 0.7s ease, transform 0.7s ease",
         }}>
           <p style={{
-            fontFamily: "'Syne', sans-serif",
+            fontFamily: "'Poppins', sans-serif",
             fontSize: "clamp(1.4rem, 3vw, 2rem)",
-            fontWeight: 700, lineHeight: 1.3, letterSpacing: "-0.5px",
-            color: "#111", marginBottom: "16px",
+            fontWeight: 100, lineHeight: 1.3, letterSpacing: "-0.5px", textAlign: "center",
+            color: "#3B2867", marginBottom: "16px",
           }}>
             "Prever <span style={{ color: "#7c3aed" }}>erros</span> hoje é
             evitar prejuízos <span style={{ color: "#7c3aed" }}>amanhã</span>"
           </p>
           <p style={{ fontSize: "0.82rem", color: "#6b7280", lineHeight: 1.6 }}>
             Confie no processo.<br />
-            <strong style={{ color: "#7c3aed" }}>Junte-se à Orbis</strong>
+            <strong style={{ color: "#3B2867" }}>Junte-se à Orbis</strong>
           </p>
         </div>
       </section>
@@ -295,14 +298,14 @@ export default function HomePage() {
           <p style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.12em", color: "#7c3aed", textTransform: "uppercase", marginBottom: "12px" }}>
             O que oferecemos
           </p>
-          <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", fontWeight: 800, letterSpacing: "-1px", marginBottom: "48px", maxWidth: "480px", lineHeight: 1.15 }}>
+          <h2 style={{ fontFamily: "'Syne', sans-serif", color: "#3B2867", fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", fontWeight: 200, letterSpacing: "-1px", marginBottom: "48px", maxWidth: "480px", lineHeight: 1.15 }}>
             Tecnologia que trabalha enquanto você lidera.
           </h2>
           <div style={{ display: "flex", gap: "18px", flexWrap: "wrap" }}>
-            <FeatureCard icon="🔍" title="Monitoramento em tempo real" desc="Acompanhe cada operação da sua empresa com dashboards precisos e alertas instantâneos." delay={0} />
-            <FeatureCard icon="⚡" title="Previsão de falhas" desc="Algoritmos preditivos identificam riscos antes que se tornem problemas reais." delay={80} />
-            <FeatureCard icon="🔒" title="Segurança avançada" desc="Criptografia de ponta a ponta e controle de acesso granular para cada usuário." delay={160} />
-            <FeatureCard icon="📊" title="Relatórios inteligentes" desc="Relatórios automáticos com insights acionáveis para decisões mais rápidas e assertivas." delay={240} />
+            <FeatureCard icon="/visibility.svg" title="Monitoramento em tempo real" desc="Acompanhe cada operação da sua empresa com dashboards precisos e alertas instantâneos." delay={0} />
+            <FeatureCard icon="/bolt.svg" title="Previsão de falhas" desc="Algoritmos preditivos identificam riscos antes que se tornem problemas reais." delay={80} />
+            <FeatureCard icon="/shield.svg" title="Segurança avançada" desc="Criptografia de ponta a ponta e controle de acesso granular para cada usuário." delay={160} />
+            <FeatureCard icon="/analytics.svg" title="Relatórios inteligentes" desc="Relatórios automáticos com insights acionáveis para decisões mais rápidas e assertivas." delay={240} />
           </div>
         </div>
       </section>
@@ -315,6 +318,8 @@ export default function HomePage() {
           opacity: statsVisible ? 1 : 0,
           transform: statsVisible ? "none" : "translateY(20px)",
           transition: "opacity 0.7s ease, transform 0.7s ease",
+          fontFamily:"'Poppins', sans-serif",
+          fontWeight: 100,
         }}>
           {[
             { to: 98,   suffix: "%",  label: "Uptime garantido" },
@@ -323,7 +328,7 @@ export default function HomePage() {
             { to: 24,   suffix: "/7", label: "Suporte disponível" },
           ].map((s) => (
             <div key={s.label}>
-              <p style={{ fontFamily: "'Syne', sans-serif", fontSize: "clamp(2.2rem, 4vw, 3rem)", fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>
+              <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(2.2rem, 4vw, 3rem)", fontWeight: 500, color: "#fff", margin: "0 0 6px" }}>
                 <Counter to={s.to} suffix={s.suffix} />
               </p>
               <p style={{ fontSize: "0.82rem", color: "#9ca3af" }}>{s.label}</p>
@@ -339,10 +344,10 @@ export default function HomePage() {
             <p style={{ fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.12em", color: "#7c3aed", textTransform: "uppercase", marginBottom: "12px" }}>
               Como funciona
             </p>
-            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 800, letterSpacing: "-1px", lineHeight: 1.15, marginBottom: "8px" }}>
+            <h2 style={{ fontFamily: "'Poppins', sans-serif", color: "#3B2867", fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 200, letterSpacing: "-1px", lineHeight: 0.70, marginBottom: "8px" }}>
               Simples de começar.
             </h2>
-            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 800, letterSpacing: "-1px", lineHeight: 1.15, color: "#7c3aed" }}>
+            <h2 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", fontWeight: 500, letterSpacing: "-1px", lineHeight: 1.15, color: "#7c3aed" }}>
               Poderoso no uso.
             </h2>
           </div>
