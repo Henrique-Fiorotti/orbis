@@ -22,3 +22,15 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-poppins), sans-serif;
 }
+
+.collapse{
+  visibility: visible !important;
+}
+
+.navbar-collapse{
+  flex-grow: 0 !important;
+}
+
+.width-auto-important {
+  width: auto !important;
+}
