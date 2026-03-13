@@ -34,3 +34,26 @@ h1, h2, h3, h4, h5, h6 {
 .width-auto-important {
   width: auto !important;
 }
+
+.offcanvas{
+  display: none !important;
+  width: 100% !important;
+}
+
+.offcanvas-body{
+  display: none !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.offcanvas-header{
+  width: 100% !important;
+  background-color: #7C3AED !important;
+}
+
+@media (max-width: 991px) {
+  .offcanvas{
+    display: block !important;
+  }
+}

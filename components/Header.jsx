@@ -16,14 +16,52 @@ export default function Header() {
           <button
             className="navbar-toggler"
             type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarNav"
-            aria-controls="navbarNav"
             aria-expanded="false"
             aria-label="Toggle navigation"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#offcanvasRight"
+            aria-controls="offcanvasRight"
           >
             <span className="navbar-toggler-icon"></span>
           </button>
+
+          <div className="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+            <div className="offcanvas-header h-16 bg-[#fffffff9]! border-1 border-[#2222222a]">
+              <img src="/Orbis.svg" alt="Orbis" className="h-full w-auto" />
+              <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div className="offcanvas-body">
+              <a
+                  href=""
+                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
+                  aria-current="page"
+                >
+                  Home
+                </a>
+
+                <a
+                  href=""
+                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
+                >
+                  Sobre
+                </a>
+
+                <a
+                  href=""
+                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
+                  aria-current="page"
+                >
+                  Contato
+                </a>
+
+                <a
+                  href=""
+                  className="nav-link border-2! border-[#5e17eb]! text-[#5e17eb]! p-1.5! w-22.5! flex! justify-center! rounded-[10px]! cursor-pointer! font-poppins! hover:bg-[#5013ca]! hover:text-[#ffffff]! hover:border-[#5013ca]! transition-all! duration-150 ease-in-out text-[25px]!"
+                >
+                  Login
+                </a>
+            </div>
+          </div>
           <div className="collapse navbar-collapse width-auto-important" id="navbarNav">
             <ul className="navbar-nav">
               <li className="nav-item">
@@ -46,17 +84,17 @@ export default function Header() {
               <li className="nav-item">
                 <a
                   href=""
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out!"
+                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! mr-5.5!"
                   aria-current="page"
                 >
                   Contato
                 </a>
               </li>
-              
+
               <li className="nav-item">
                 <a
                   href=""
-                  className="nav-link border-2 border-[#5e17eb]! text-[#5e17eb]! p-1.5! w-22.5! flex! justify-center! rounded-[10px]! cursor-pointer! font-poppins! hover:bg-[#5013ca]! hover:text-[#ffffff]! hover:border-[#5013ca]! transition-all! duration-150 ease-in-out!"
+                  className="nav-link border-2! border-[#5e17eb]! text-[#5e17eb]! p-1.5! w-22.5! flex! justify-center! rounded-[10px]! cursor-pointer! font-poppins! hover:bg-[#5013ca]! hover:text-[#ffffff]! hover:border-[#5013ca]! transition-all! duration-150 ease-in-out!"
                 >
                   Login
                 </a>
