@@ -26,11 +26,11 @@ export default function Header() {
           </button>
 
           <div className="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
-            <div className="offcanvas-header h-16 bg-[#fffffff9]! border-1 border-[#2222222a]">
+            <div className="offcanvas-header pl-[15%]! pr-[15%]! h-16 bg-[#fffffff9]! border-1 border-[#2222222a]">
               <img src="/Orbis.svg" alt="Orbis" className="h-full w-auto" />
               <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
-            <div className="offcanvas-body">
+            <div className="offcanvas-body pl-[15%]! pr-[15%]!">
               <a
                   href=""
                   className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
