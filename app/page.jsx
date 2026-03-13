@@ -87,7 +87,7 @@ function Step({ n, title, desc, delay }) {
         background: "linear-gradient(135deg,#7c3aed,#9333ea)",
         color: "#fff", fontWeight: 700, fontSize: "0.85rem",
         display: "flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0, boxShadow: "0 4px 12px rgba(124,58,237,0.3)",
+        flexShrink: 0,
       }}>{n}</div>
       <div>
         <p style={{ fontWeight: 700, fontSize: "0.95rem", color: "#111", margin: "0 0 4px" }}>{title}</p>
@@ -219,9 +219,10 @@ export default function HomePage() {
               border: "2px solid #e5e7eb",
               transition: "border-color 0.2s ease, color 0.2s ease",
               display: "inline-block",
+              color:"#3b2867",
             }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#7c3aed"; e.currentTarget.style.color = "#7c3aed"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#111"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.color = "#3b2867"; }}
             >
               Sobre
             </a>
@@ -362,29 +363,18 @@ export default function HomePage() {
 
       {/* ══ CTA FINAL ══ */}
       <section style={{ background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)", padding: "80px 8vw", textAlign: "center" }}>
-        <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", fontWeight: 800, color: "#fff", letterSpacing: "-1px", marginBottom: "16px" }}>
+        <h2 style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", fontWeight: 800, color: "#fff", letterSpacing: "-1px", marginBottom: "16px" }}>
           Pronto para operar com segurança?
         </h2>
         <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.95rem", marginBottom: "36px", lineHeight: 1.6 }}>
           Junte-se a centenas de empresas que já confiam no Orbis.
         </p>
         <div style={{ display: "flex", gap: "14px", justifyContent: "center", flexWrap: "wrap" }}>
-          <a href="/registro" style={{
-            background: "#fff", color: "#7c3aed", padding: "14px 32px", borderRadius: "10px",
-            fontWeight: 700, fontSize: "0.9rem", textDecoration: "none",
-            transition: "transform 0.2s cubic-bezier(0.34,1.56,0.64,1)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.15)", display: "inline-block",
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px) scale(1.02)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; }}
-          >
-            Registrar empresa
-          </a>
           <a href="/contato" style={{
             background: "transparent", color: "#fff", padding: "14px 32px", borderRadius: "10px",
             fontWeight: 500, fontSize: "0.9rem", textDecoration: "none",
             border: "2px solid rgba(255,255,255,0.4)",
-            transition: "border-color 0.2s ease", display: "inline-block",
+            transition: "border-color 0.2s ease", display: "inline-block", fontFamily: "'Poppins', sans-serif",
           }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.9)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.4)"; }}
