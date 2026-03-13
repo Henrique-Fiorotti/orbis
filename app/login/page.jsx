@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { User, UserCircle, UserRound } from "lucide-react"
 
 function PrivacyModal({ onClose }) {
   return (
@@ -198,300 +199,140 @@ export default function LoginPage() {
   const [focusedSenha, setFocusedSenha] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-
+  const [isLogin, setIsLogin] = useState(true)
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#ffffff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "40px 24px",
-        fontFamily: "'Inter', 'Segoe UI', sans-serif",
-      }}
-    >
-      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
 
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "960px",
-          display: "flex",
-          alignItems: "center",
-          gap: "64px",
-          flexWrap: "wrap",
-          justifyContent: "center",
-        }}
-      >
-        {/* LEFT — branding */}
-        <div style={{ flex: "1 1 auto", minWidth: "220px", height: "100%" }}>
-          <h1
-            style={{
-              fontFamily: "Poppins, sans-serif",
-              fontSize: "clamp(3.7rem, 5vw, 3.2rem)",
-              fontWeight: 100,
-              color: "#111",
-              margin: 0,
-              lineHeight: 1.15,
-              letterSpacing: "-1px",
-            }}
-          >
-            Entre no <span style={{ color: "#7c3aed" }}>Orbis</span>
-          </h1>
-          <p
-            style={{
-              marginTop: "16px",
-              fontSize: "1.95rem",
-              color: "#9ca3af",
-              fontWeight: 400,
-              lineHeight: 1.0,
-              maxWidth: "280px",
-            }}
-          >
-            Gerencie sua equipe, automatize processos e tenha tudo em um só
-            lugar.
-          </p>
-        </div>
+    <>
+      <div className="w-full h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-1/2 h-120 rounded-2xl shadow-lg flex overflow-hidden relative">
 
-        {/* RIGHT — login card */}
-        <div
-          style={{
-            flex: "0 1 420px",
-            width: "100%",
-            background: "#fff",
-            border: "2px solid #ddd6fe",
-            borderRadius: "20px",
-            padding: "44px 40px 36px",
-            boxShadow: "0 8px 40px rgba(124,58,237,0.08)",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "1.75rem",
-              fontWeight: 400,
-              color: "#7c3aed",
-              textAlign: "center",
-              margin: "0 0 32px",
-              letterSpacing: "-0.3px",
-            }}
-          >
-            Faça seu login
-          </h2>
+          {/* Form de Login */}
+          <div className={`absolute top-0 h-full w-1/2 flex flex-col transition-all duration-500
+          ${isLogin ? 'left-0 opacity-100' : '-left-1/2 opacity-0 pointer-events-none'}`}>
 
-          {/* Email */}
-          <div style={{ marginBottom: "18px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "0.8rem",
-                fontWeight: 500,
-                color: "#6b7280",
-                marginBottom: "6px",
-                letterSpacing: "0.02em",
-              }}
-            >
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="email@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onFocus={() => setFocusedEmail(true)}
-              onBlur={() => setFocusedEmail(false)}
-              style={{
-                width: "100%",
-                border: `2px solid ${focusedEmail ? "#7c3aed" : "#e5e7eb"}`,
-                borderRadius: "10px",
-                padding: "13px 16px",
-                fontSize: "0.9rem",
-                color: "#111",
-                background: "#fafafa",
-                outline: "none",
-                boxSizing: "border-box",
-                transition: "border-color 0.25s ease, box-shadow 0.25s ease",
-                boxShadow: focusedEmail
-                  ? "0 0 0 4px rgba(124,58,237,0.1)"
-                  : "none",
-              }}
-            />
-          </div>
+            <h1 className="text-left px-6 pt-6 text-black font-medium text-2xl">Login</h1>
+            <p className="text-left px-6 mb-1 text-gray-400">Que bom te ver por aqui novamente!</p>
 
-          {/* Senha */}
-          <div style={{ marginBottom: "10px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "0.8rem",
-                fontWeight: 500,
-                color: "#6b7280",
-                marginBottom: "6px",
-                letterSpacing: "0.02em",
-              }}
-            >
-              Senha
-            </label>
-            <div style={{ position: "relative" }}>
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                onFocus={() => setFocusedSenha(true)}
-                onBlur={() => setFocusedSenha(false)}
-                style={{
-                  width: "100%",
-                  border: `2px solid ${focusedSenha ? "#7c3aed" : "#e5e7eb"}`,
-                  borderRadius: "10px",
-                  padding: "13px 44px 13px 16px",
-                  fontSize: "0.9rem",
-                  color: "#111",
-                  background: "#fafafa",
-                  outline: "none",
-                  boxSizing: "border-box",
-                  transition: "border-color 0.25s ease, box-shadow 0.25s ease",
-                  boxShadow: focusedSenha
-                    ? "0 0 0 4px rgba(124,58,237,0.1)"
-                    : "none",
-                }}
-              />
+            <div className="w-full flex px-6 flex-col mt-4 gap-3">
+              <div className="flex flex-col gap-1">
+                <p className="text-gray-400 text-sm m-0">Email</p>
+                <input
+                  type="email"
+                  placeholder="email@gmail.com"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#2e2e2e] outline-none focus:border-[#8C52ff]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <p className="text-gray-400 text-sm m-0">Senha</p>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#2e2e2e] outline-none focus:border-[#8C52ff]"
+                />
+              </div>
+
+              <p className="text-[#8C52ff] text-sm cursor-pointer">Esqueceu a senha?</p>
+
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: "absolute",
-                  right: "12px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "#9ca3af",
-                  padding: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                {showPassword ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
+                style={{ borderRadius: '10px' }}
+                className="w-full bg-[#8C52ff] text-white py-2 font-medium hover:bg-[#7a3fe0] transition-colors mt-1">
+                Entrar
               </button>
+
+              <p className="text-xs text-gray-400  text-center px-6 leading-relaxed">
+                Ao continuar, você concorda com nossa{" "}
+                <button className="underline underline-offset-2 bg-transparent border-none cursor-pointer text-xs text-[#8c52ff] hover:opacity-65 transition-opacity">
+                  Política de Privacidade
+                </button>
+              </p>
             </div>
           </div>
 
-          {/* Esqueci senha */}
-          <div style={{ textAlign: "right", marginBottom: "28px" }}>
-            <a
-              href="#"
-              style={{
-                fontSize: "0.8rem",
-                color: "#7c3aed",
-                textDecoration: "underline",
-                textUnderlineOffset: "3px",
-                transition: "opacity 0.2s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.65")}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-            >
-              Esqueci minha senha
-            </a>
+          {/* Form de Cadastro */}
+          <div className={`absolute top-0 h-full w-1/2 flex flex-col transition-all duration-500
+          ${isLogin ? 'right-[-50%] opacity-0 pointer-events-none' : 'right-0 opacity-100'}`}>
+
+            <h1 className="text-left px-6 pt-6 text-black font-medium text-2xl">Cadastro</h1>
+            <p className="text-left px-6 mb-1 text-gray-400">Crie sua conta agora!</p>
+
+            <div className="w-full flex px-6 flex-col mt-4 gap-3">
+              <div className="flex flex-col gap-1">
+                <p className="text-gray-400 text-sm m-0">Nome</p>
+                <input
+                  type="text"
+                  placeholder="Seu nome"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#2e2e2e] outline-none focus:border-[#8C52ff]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <p className="text-gray-400 text-sm m-0">Email</p>
+                <input
+                  type="email"
+                  placeholder="email@gmail.com"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#2e2e2e] outline-none focus:border-[#8C52ff]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <p className="text-gray-400 text-sm m-0">Senha</p>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#2e2e2e] outline-none focus:border-[#8C52ff]"
+                />
+              </div>
+
+              <button
+                style={{ borderRadius: '10px' }}
+                className="w-full bg-[#8C52ff] text-white py-2 font-medium hover:bg-[#7a3fe0] transition-colors mt-1">
+                Criar conta
+              </button>
+
+               <p className="text-xs text-gray-400  text-center px-6 leading-relaxed">
+                Ao continuar, você concorda com nossa{" "}
+                <button className="underline underline-offset-2 bg-transparent border-none cursor-pointer text-xs text-[#8c52ff] hover:opacity-65 transition-opacity">
+                  Política de Privacidade
+                </button>
+              </p>
+            </div>
           </div>
 
-          {/* Botão Entrar */}
-          <button
-            style={{
-              width: "100%",
-              background: "linear-gradient(135deg, #7c3aed 0%, #9333ea 100%)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "10px",
-              padding: "14px",
-              fontSize: "1rem",
-              fontWeight: 600,
-              cursor: "pointer",
-              letterSpacing: "0.03em",
-              boxShadow: "0 4px 20px rgba(124,58,237,0.35)",
-              transition:
-                "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease",
-              marginBottom: "20px",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px) scale(1.01)";
-              e.currentTarget.style.boxShadow =
-                "0 10px 30px rgba(124,58,237,0.45)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0) scale(1)";
-              e.currentTarget.style.boxShadow =
-                "0 4px 20px rgba(124,58,237,0.35)";
-            }}
-          >
-            Entrar
-          </button>
+          {/* Painel roxo */}
+          <div className={`absolute top-0 h-full w-1/2 bg-[#8C52ff] flex flex-col items-center justify-center gap-4
+          transition-all duration-500 ease-in-out z-10
+          ${isLogin
+              ? 'right-0 rounded-tl-[60px] rounded-bl-[60px] rounded-tr-none rounded-br-none'
+              : 'right-120 rounded-tr-[60px] rounded-br-[60px] rounded-tl-none rounded-bl-none'}`}>
 
-          {/* Política de privacidade */}
-          <p
-            style={{
-              fontSize: "0.78rem",
-              color: "#9ca3af",
-              textAlign: "center",
-              margin: 0,
-              lineHeight: 1.6,
-            }}
-          >
-            Ao entrar, você concorda com nossa{" "}
+            <UserCircle size={64} color="white" strokeWidth={1.2} />
+
+            <div className="flex flex-col items-center gap-1">
+              <p className="text-white font-medium text-lg m-0">
+                {isLogin ? 'Bem-vindo!' : 'Já tem conta?'}
+              </p>
+              <p className="text-white/70 text-sm m-0">
+                {isLogin ? 'Não tem conta ainda?' : 'Faça login agora!'}
+              </p>
+            </div>
+
             <button
-              onClick={() => setShowPrivacy(true)}
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                color: "#7c3aed",
-                fontSize: "0.78rem",
-                cursor: "pointer",
-                textDecoration: "underline",
-                textUnderlineOffset: "3px",
-                fontFamily: "inherit",
-                transition: "opacity 0.2s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.65")}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-            >
-              Política de Privacidade
+              onClick={() => setIsLogin(!isLogin)}
+              style={{ borderRadius: '10px' }}
+              className="border border-white text-white text-sm px-6 py-2 hover:scale-[1.03] transition-all duration-200 hover:text-[#8C52ff] transition-colors">
+              {isLogin ? 'Cadastre-se' : 'Entrar'}
             </button>
-          </p>
+
+
+
+          </div>
+
         </div>
       </div>
-    </div>
+    </>
+
+
+
   );
 }

@@ -55,7 +55,7 @@ export default function Header() {
               
               <li className="nav-item">
                 <a
-                  href=""
+                  href="/login"
                   className="nav-link border-2 border-[#5e17eb]! text-[#5e17eb]! p-1.5! w-22.5! flex! justify-center! rounded-[10px]! cursor-pointer! font-poppins! hover:bg-[#5013ca]! hover:text-[#ffffff]! hover:border-[#5013ca]! transition-all! duration-150 ease-in-out!"
                 >
                   Login
