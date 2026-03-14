@@ -35,7 +35,7 @@ function PrivacyModal({ onClose }) {
           overflow: "hidden",
         }}
       >
-        {/* Header */}
+        {/* Header da politica de privacidade */}
         <div
           style={{
             padding: "24px 28px 20px",
@@ -109,7 +109,7 @@ function PrivacyModal({ onClose }) {
           ))}
         </div>
 
-        {/* Footer */}
+        {/* Botão da politica de privacidade */}
         <div style={{ padding: "16px 28px", borderTop: "1px solid #f3f4f6", flexShrink: 0 }}>
           <button
             onClick={onClose}
@@ -157,7 +157,6 @@ export default function LoginPage() {
           border-radius: 20px;
           box-shadow: 0 8px 40px rgba(0,0,0,0.12);
           overflow: hidden;
-          
           /* Mobile: altura automática, empilhado */
           display: flex;
           flex-direction: column;
@@ -295,7 +294,7 @@ export default function LoginPage() {
         }
       `}</style>
 
-      <div style={{ width: "100%", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9fafb" }}>
+      <div style={{ width: "100%", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9fafb" }}> {/* tudo isso pra garantir que o card fique centralizado no mobile */}
         <div className="login-card">
 
           {/* Form de Login */}
