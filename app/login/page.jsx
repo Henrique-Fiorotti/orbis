@@ -244,7 +244,9 @@ export default function LoginPage() {
 
               <p className="text-xs text-gray-400  text-center px-6 leading-relaxed">
                 Ao continuar, você concorda com nossa{" "}
-                <button className="underline underline-offset-2 bg-transparent border-none cursor-pointer text-xs text-[#8c52ff] hover:opacity-65 transition-opacity">
+                <button
+                  onClick={() => setShowPrivacy(true)}
+                  className="underline underline-offset-2 bg-transparent border-none cursor-pointer text-xs text-[#8c52ff] hover:opacity-65 transition-opacity">
                   Política de Privacidade
                 </button>
               </p>
@@ -292,7 +294,7 @@ export default function LoginPage() {
                 Criar conta
               </button>
 
-               <p className="text-xs text-gray-400  text-center px-6 leading-relaxed">
+              <p className="text-xs text-gray-400  text-center px-6 leading-relaxed">
                 Ao continuar, você concorda com nossa{" "}
                 <button className="underline underline-offset-2 bg-transparent border-none cursor-pointer text-xs text-[#8c52ff] hover:opacity-65 transition-opacity">
                   Política de Privacidade
@@ -325,16 +327,11 @@ export default function LoginPage() {
               className="border border-white text-white text-sm px-6 py-2 hover:scale-[1.03] transition-all duration-200 hover:text-[#8C52ff] transition-colors">
               {isLogin ? 'Cadastre-se' : 'Entrar'}
             </button>
-
-
-
           </div>
-
         </div>
       </div>
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
     </>
-
-
 
   );
 }
