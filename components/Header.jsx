@@ -6,7 +6,7 @@ export default function Header() {
     <>
       <nav className="navbar navbar-expand-lg bg-body-tertiary  z-10 fixed! main-header flex justify-between items-center pl-[15%]! pr-[15%]! w-full h-16 bg-[#fffffff9] border-1 border-[#2222222a]">
         <div className="container-fluid">
-          <a href="" className="navbar-brand icon-header h-full w-8">
+          <a href="/" className="navbar-brand icon-header h-full w-8">
             <img
               src="/Orbis.svg"
               alt=""
@@ -26,15 +26,6 @@ export default function Header() {
           </button>
           <div className="collapse navbar-collapse width-auto-important" id="navbarNav">
             <ul className="navbar-nav">
-              <li className="nav-item">
-                <a
-                  href=""
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out!"
-                  aria-current="page"
-                >
-                  Home
-                </a>
-              </li>
               <li className="nav-item">
                 <a
                   href=""
