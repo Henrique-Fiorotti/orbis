@@ -1,9 +1,7 @@
-/* ta feito */
-
 "use client";
 
 import { useState } from "react";
-import { User, UserCircle, UserRound } from "lucide-react"
+import { UserCircle } from "lucide-react";
 
 function PrivacyModal({ onClose }) {
   return (
@@ -49,23 +47,10 @@ function PrivacyModal({ onClose }) {
           }}
         >
           <div>
-            <h3
-              style={{
-                margin: 0,
-                fontSize: "1.2rem",
-                fontWeight: 600,
-                color: "#111",
-              }}
-            >
+            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#111" }}>
               Política de Privacidade
             </h3>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: "0.75rem",
-                color: "#9ca3af",
-              }}
-            >
+            <p style={{ margin: "4px 0 0", fontSize: "0.75rem", color: "#9ca3af" }}>
               Última atualização: março de 2025
             </p>
           </div>
@@ -106,48 +91,17 @@ function PrivacyModal({ onClose }) {
           }}
         >
           {[
-            {
-              title: "1. Informações que coletamos",
-              text: "Coletamos informações que você nos fornece diretamente, como nome, endereço de e-mail e dados de acesso ao criar uma conta ou entrar em contato conosco. Também podemos coletar dados de uso automaticamente, como endereço IP, tipo de navegador e páginas visitadas.",
-            },
-            {
-              title: "2. Como usamos suas informações",
-              text: "Utilizamos suas informações para fornecer, manter e melhorar nossos serviços, enviar comunicações relacionadas à conta, responder às suas solicitações e garantir a segurança da plataforma. Não vendemos nem compartilhamos seus dados com terceiros para fins de marketing.",
-            },
-            {
-              title: "3. Armazenamento e segurança",
-              text: "Seus dados são armazenados em servidores seguros com criptografia em trânsito e em repouso. Adotamos medidas técnicas e organizacionais adequadas para proteger suas informações contra acesso não autorizado, alteração ou destruição.",
-            },
-            {
-              title: "4. Cookies",
-              text: "Utilizamos cookies para manter sua sessão ativa e entender como você interage com a plataforma. Você pode desativar os cookies no seu navegador, mas isso pode afetar o funcionamento de alguns recursos do Orbis.",
-            },
-            {
-              title: "5. Seus direitos",
-              text: "Você tem o direito de acessar, corrigir ou excluir suas informações pessoais a qualquer momento. Para exercer esses direitos, entre em contato com nossa equipe pelo e-mail suporte.orbis@gmail.com. Atenderemos sua solicitação no prazo previsto pela legislação aplicável.",
-            },
-            {
-              title: "6. Retenção de dados",
-              text: "Mantemos seus dados pelo tempo necessário para a prestação dos serviços ou conforme exigido por lei. Após o encerramento da sua conta, podemos reter algumas informações para cumprir obrigações legais ou resolver disputas.",
-            },
-            {
-              title: "7. Alterações nesta política",
-              text: "Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre mudanças significativas por e-mail ou por um aviso em destaque na plataforma. O uso continuado do Orbis após tais alterações constitui sua aceitação da nova política.",
-            },
-            {
-              title: "8. Contato",
-              text: "Em caso de dúvidas sobre esta política ou sobre como tratamos seus dados, entre em contato com nosso encarregado de proteção de dados pelo e-mail suporte.orbis@gmail.com.",
-            },
+            { title: "1. Informações que coletamos", text: "Coletamos informações que você nos fornece diretamente, como nome, endereço de e-mail e dados de acesso ao criar uma conta ou entrar em contato conosco. Também podemos coletar dados de uso automaticamente, como endereço IP, tipo de navegador e páginas visitadas." },
+            { title: "2. Como usamos suas informações", text: "Utilizamos suas informações para fornecer, manter e melhorar nossos serviços, enviar comunicações relacionadas à conta, responder às suas solicitações e garantir a segurança da plataforma. Não vendemos nem compartilhamos seus dados com terceiros para fins de marketing." },
+            { title: "3. Armazenamento e segurança", text: "Seus dados são armazenados em servidores seguros com criptografia em trânsito e em repouso. Adotamos medidas técnicas e organizacionais adequadas para proteger suas informações contra acesso não autorizado, alteração ou destruição." },
+            { title: "4. Cookies", text: "Utilizamos cookies para manter sua sessão ativa e entender como você interage com a plataforma. Você pode desativar os cookies no seu navegador, mas isso pode afetar o funcionamento de alguns recursos do Orbis." },
+            { title: "5. Seus direitos", text: "Você tem o direito de acessar, corrigir ou excluir suas informações pessoais a qualquer momento. Para exercer esses direitos, entre em contato com nossa equipe pelo e-mail suporte.orbis@gmail.com." },
+            { title: "6. Retenção de dados", text: "Mantemos seus dados pelo tempo necessário para a prestação dos serviços ou conforme exigido por lei. Após o encerramento da sua conta, podemos reter algumas informações para cumprir obrigações legais ou resolver disputas." },
+            { title: "7. Alterações nesta política", text: "Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre mudanças significativas por e-mail ou por um aviso em destaque na plataforma." },
+            { title: "8. Contato", text: "Em caso de dúvidas sobre esta política ou sobre como tratamos seus dados, entre em contato com nosso encarregado de proteção de dados pelo e-mail suporte.orbis@gmail.com." },
           ].map((section, i) => (
             <div key={i} style={{ marginBottom: "20px" }}>
-              <p
-                style={{
-                  fontWeight: 600,
-                  color: "#7c3aed",
-                  margin: "0 0 6px",
-                  fontSize: "0.875rem",
-                }}
-              >
+              <p style={{ fontWeight: 600, color: "#7c3aed", margin: "0 0 6px", fontSize: "0.875rem" }}>
                 {section.title}
               </p>
               <p style={{ margin: 0 }}>{section.text}</p>
@@ -156,13 +110,7 @@ function PrivacyModal({ onClose }) {
         </div>
 
         {/* Footer */}
-        <div
-          style={{
-            padding: "16px 28px",
-            borderTop: "1px solid #f3f4f6",
-            flexShrink: 0,
-          }}
-        >
+        <div style={{ padding: "16px 28px", borderTop: "1px solid #f3f4f6", flexShrink: 0 }}>
           <button
             onClick={onClose}
             style={{
@@ -195,58 +143,180 @@ function PrivacyModal({ onClose }) {
 }
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [focusedEmail, setFocusedEmail] = useState(false);
-  const [focusedSenha, setFocusedSenha] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [isLogin, setIsLogin] = useState(true)
-  return (
+  const [isLogin, setIsLogin] = useState(true);
 
+  return (
     <>
-      <div className="w-full h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-1/2 h-120 rounded-2xl shadow-lg flex overflow-hidden relative">
+      <style>{`
+        .login-card {
+          position: relative;
+          width: 100%;
+          max-width: 880px;
+          margin: 0 16px;
+          border-radius: 20px;
+          box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+          overflow: hidden;
+          
+          /* Mobile: altura automática, empilhado */
+          display: flex;
+          flex-direction: column;
+          min-height: 640px;
+        }
+
+        /* Desktop: lado a lado */
+        @media (min-width: 640px) {
+          .login-card {
+            flex-direction: row;
+            min-height: 440px;
+            height: 440px;
+          }
+        }
+
+        /* ── Formulários ── */
+        .form-panel {
+          position: absolute;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          transition: all 0.5s ease;
+          background: #fff;
+        }
+
+        /* Mobile: ocupa metade da altura (inferior), painel roxo fica em cima */
+        @media (max-width: 639px) {
+          .form-panel {
+            bottom: 0;
+            height: 65%;
+          }
+          .form-login-active   { left: 0; opacity: 1; pointer-events: auto; }
+          .form-login-inactive { left: -100%; opacity: 0; pointer-events: none; }
+          .form-cadastro-active   { left: 0; opacity: 1; pointer-events: auto; }
+          .form-cadastro-inactive { left: 100%; opacity: 0; pointer-events: none; }
+        }
+
+        /* Desktop: ocupa metade da largura (esquerda), painel roxo vai pra direita */
+        @media (min-width: 640px) {
+          .form-panel {
+            top: 0;
+            height: 100%;
+            width: 50%;
+          }
+          .form-login-active   { left: 0; opacity: 1; pointer-events: auto; }
+          .form-login-inactive { left: -50%; opacity: 0; pointer-events: none; }
+          .form-cadastro-active   { right: 0; opacity: 1; pointer-events: auto; }
+          .form-cadastro-inactive { right: -50%; opacity: 0; pointer-events: none; }
+        }
+
+        /* ── Painel roxo ── */
+        .purple-panel {
+          position: absolute;
+          background: #8C52ff;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          transition: all 0.5s ease-in-out;
+          z-index: 10;
+        }
+
+        /* Mobile: painel roxo fica no topo (35% da altura) */
+        @media (max-width: 639px) {
+          .purple-panel {
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 35%;
+          }
+          .purple-login    { border-radius: 0 0 50px 50px; }
+          .purple-cadastro { border-radius: 0 0 50px 50px; }
+        }
+
+        /* Desktop: painel roxo fica na direita (50% da largura) */
+        @media (min-width: 640px) {
+          .purple-panel {
+            top: 0;
+            height: 100%;
+            width: 50%;
+          }
+          .purple-login {
+            right: 0;
+            border-radius: 60px 0 0 60px;
+          }
+          .purple-cadastro {
+            right: 50%;
+            border-radius: 0 60px 60px 0;
+          }
+        }
+
+        .input-field {
+          width: 100%;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          padding: 8px 16px;
+          color: #2e2e2e;
+          outline: none;
+          font-size: 0.9rem;
+          transition: border-color 0.2s;
+          box-sizing: border-box;
+        }
+        .input-field:focus { border-color: #8C52ff; }
+
+        .btn-primary {
+          width: 100%;
+          background: #8C52ff;
+          color: white;
+          border: none;
+          border-radius: 10px;
+          padding: 10px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.2s;
+          margin-top: 4px;
+        }
+        .btn-primary:hover { background: #7a3fe0; }
+
+        .btn-outline {
+          border: 1px solid white;
+          color: white;
+          background: transparent;
+          border-radius: 10px;
+          font-size: 0.85rem;
+          padding: 8px 24px;
+          cursor: pointer;
+          transition: all 0.3s ease-in-out;
+        }
+        .btn-outline:hover {
+          background: white;
+          color: #8C52ff;
+          transform: scale(1.03);
+        }
+      `}</style>
+
+      <div style={{ width: "100%", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9fafb" }}>
+        <div className="login-card">
 
           {/* Form de Login */}
-          <div className={`absolute top-0 h-full w-1/2 flex flex-col transition-all duration-500
-          ${isLogin ? 'left-0 opacity-100' : '-left-1/2 opacity-0 pointer-events-none'}`}>
+          <div className={`form-panel ${isLogin ? "form-login-active" : "form-login-inactive"}`}>
+            <h1 style={{ margin: "24px 24px 0", fontSize: "1.4rem", fontWeight: 600, color: "#111" }}>Login</h1>
+            <p style={{ margin: "4px 24px 0", color: "#9ca3af", fontSize: "0.85rem" }}>Que bom te ver por aqui novamente!</p>
 
-            <h1 className="text-left px-6 pt-6 text-black font-medium text-2xl">Login</h1>
-            <p className="text-left px-6 mb-1 text-gray-400">Que bom te ver por aqui novamente!</p>
-
-            <div className="w-full flex px-6 flex-col mt-4 gap-3">
-              <div className="flex flex-col gap-1">
-                <p className="text-gray-400 text-sm m-0">Email</p>
-                <input
-                  type="email"
-                  placeholder="email@gmail.com"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#2e2e2e] outline-none focus:border-[#8C52ff]"
-                />
+            <div style={{ padding: "16px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.8rem" }}>Email</p>
+                <input type="email" placeholder="email@gmail.com" className="input-field" />
               </div>
-
-              <div className="flex flex-col gap-1">
-                <p className="text-gray-400 text-sm m-0">Senha</p>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#2e2e2e] outline-none focus:border-[#8C52ff]"
-                />
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.8rem" }}>Senha</p>
+                <input type="password" placeholder="••••••••" className="input-field" />
               </div>
-
-              <p className="text-[#8C52ff] text-sm cursor-pointer">Esqueceu a senha?</p>
-
-              <button
-                style={{ borderRadius: '10px' }}
-                className="w-full bg-[#8C52ff] text-white py-2 font-medium hover:bg-[#7a3fe0] transition-colors mt-1">
-                Entrar
-              </button>
-
-              <p className="text-xs text-gray-400  text-center px-6 leading-relaxed">
+              <p style={{ margin: 0, color: "#8C52ff", fontSize: "0.8rem", cursor: "pointer" }}>Esqueceu a senha?</p>
+              <button className="btn-primary">Entrar</button>
+              <p style={{ margin: 0, fontSize: "0.72rem", color: "#9ca3af", textAlign: "center" }}>
                 Ao continuar, você concorda com nossa{" "}
-                <button
-                  onClick={() => setShowPrivacy(true)}
-                  className="underline underline-offset-2 bg-transparent border-none cursor-pointer text-xs text-[#8c52ff] hover:opacity-65 transition-opacity">
+                <button onClick={() => setShowPrivacy(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8C52ff", fontSize: "0.72rem", textDecoration: "underline", padding: 0 }}>
                   Política de Privacidade
                 </button>
               </p>
@@ -254,51 +324,27 @@ export default function LoginPage() {
           </div>
 
           {/* Form de Cadastro */}
-          <div className={`absolute top-0 h-full w-1/2 flex flex-col transition-all duration-500
-          ${isLogin ? 'right-[-50%] opacity-0 pointer-events-none' : 'right-0 opacity-100'}`}>
+          <div className={`form-panel ${isLogin ? "form-cadastro-inactive" : "form-cadastro-active"}`}>
+            <h1 style={{ margin: "24px 24px 0", fontSize: "1.4rem", fontWeight: 600, color: "#111" }}>Cadastro</h1>
+            <p style={{ margin: "4px 24px 0", color: "#9ca3af", fontSize: "0.85rem" }}>Crie sua conta agora!</p>
 
-            <h1 className="text-left px-6 pt-6 text-black font-medium text-2xl">Cadastro</h1>
-            <p className="text-left px-6 mb-1 text-gray-400">Crie sua conta agora!</p>
-
-            <div className="w-full flex px-6 flex-col mt-4 gap-3">
-              <div className="flex flex-col gap-1">
-                <p className="text-gray-400 text-sm m-0">Nome</p>
-                <input
-                  type="text"
-                  placeholder="Seu nome"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#2e2e2e] outline-none focus:border-[#8C52ff]"
-                />
+            <div style={{ padding: "16px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.8rem" }}>Nome</p>
+                <input type="text" placeholder="Seu nome" className="input-field" />
               </div>
-
-              <div className="flex flex-col gap-1">
-                <p className="text-gray-400 text-sm m-0">Email</p>
-                <input
-                  type="email"
-                  placeholder="email@gmail.com"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#2e2e2e] outline-none focus:border-[#8C52ff]"
-                />
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.8rem" }}>Email</p>
+                <input type="email" placeholder="email@gmail.com" className="input-field" />
               </div>
-
-              <div className="flex flex-col gap-1">
-                <p className="text-gray-400 text-sm m-0">Senha</p>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-[#2e2e2e] outline-none focus:border-[#8C52ff]"
-                />
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.8rem" }}>Senha</p>
+                <input type="password" placeholder="••••••••" className="input-field" />
               </div>
-
-              <button
-                style={{ borderRadius: '10px' }}
-                className="w-full bg-[#8C52ff] text-white py-2 font-medium hover:bg-[#7a3fe0] transition-colors mt-1">
-                Criar conta
-              </button>
-
-              <p className="text-xs text-gray-400  text-center px-6 leading-relaxed">
+              <button className="btn-primary">Criar conta</button>
+              <p style={{ margin: 0, fontSize: "0.72rem", color: "#9ca3af", textAlign: "center" }}>
                 Ao continuar, você concorda com nossa{" "}
-                <button
-                  onClick={() => setShowPrivacy(true)}
-                  className="underline underline-offset-2 bg-transparent border-none cursor-pointer text-xs text-[#8c52ff] hover:opacity-65 transition-opacity">
+                <button onClick={() => setShowPrivacy(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8C52ff", fontSize: "0.72rem", textDecoration: "underline", padding: 0 }}>
                   Política de Privacidade
                 </button>
               </p>
@@ -306,36 +352,25 @@ export default function LoginPage() {
           </div>
 
           {/* Painel roxo */}
-          <div className={`absolute top-0 h-full w-1/2 bg-[#8C52ff] flex flex-col items-center justify-center gap-4
-          transition-all duration-500 ease-in-out z-10
-          ${isLogin
-              ? 'right-0 rounded-tl-[60px] rounded-bl-[60px] rounded-tr-none rounded-br-none'
-              : 'right-120 rounded-tr-[60px] rounded-br-[60px] rounded-tl-none rounded-bl-none'}`}>
-
-            <UserCircle size={64} color="white" strokeWidth={1.2} />
-
-            <div className="flex flex-col items-center gap-1">
-              <p className="text-white font-medium text-lg m-0">
-                {isLogin ? 'Bem-vindo!' : 'Já tem conta?'}
+          <div className={`purple-panel ${isLogin ? "purple-login" : "purple-cadastro"}`}>
+            <UserCircle size={52} color="white" strokeWidth={1.2} />
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+              <p style={{ margin: 0, color: "white", fontWeight: 600, fontSize: "1rem" }}>
+                {isLogin ? "Bem-vindo!" : "Já tem conta?"}
               </p>
-              <p className="text-white/70 text-sm m-0">
-              {isLogin ? 'Ainda não tem uma conta por aqui?' : 'Já tem uma conta? Entre agora mesmo!'}
+              <p style={{ margin: 0, color: "rgba(255,255,255,0.7)", fontSize: "0.8rem", textAlign: "center", padding: "0 16px" }}>
+                {isLogin ? "Ainda não tem uma conta por aqui?" : "Já tem uma conta? Entre agora mesmo!"}
               </p>
             </div>
-
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              style={{ borderRadius: '10px' }}
-              className="border border-white text-white text-sm px-6 py-2 
-             hover:scale-[1.03] hover:text-[#8C52ff] 
-             transition-all duration-300 ease-in-out">
-              {isLogin ? 'Cadastre-se' : 'Entrar'}
+            <button className="btn-outline" onClick={() => setIsLogin(!isLogin)}>
+              {isLogin ? "Cadastre-se" : "Entrar"}
             </button>
           </div>
+
         </div>
       </div>
+
       {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
     </>
-
   );
 }
