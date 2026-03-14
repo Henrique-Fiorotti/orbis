@@ -326,7 +326,9 @@ export default function LoginPage() {
             <button
               onClick={() => setIsLogin(!isLogin)}
               style={{ borderRadius: '10px' }}
-              className="border border-white text-white text-sm px-6 py-2 hover:scale-[1.03] transition-all duration-200 hover:text-[#8C52ff] transition-colors">
+              className="border border-white text-white text-sm px-6 py-2 
+             hover:scale-[1.03] hover:text-[#8C52ff] 
+             transition-all duration-300 ease-in-out">
               {isLogin ? 'Cadastre-se' : 'Entrar'}
             </button>
           </div>
