@@ -319,7 +319,7 @@ export default function LoginPage() {
                 {isLogin ? 'Bem-vindo!' : 'Já tem conta?'}
               </p>
               <p className="text-white/70 text-sm m-0">
-                {isLogin ? 'Não tem conta ainda?' : 'Faça login agora!'}
+              {isLogin ? 'Ainda não tem uma conta por aqui?' : 'Já tem uma conta? Entre agora mesmo!'}
               </p>
             </div>
 
