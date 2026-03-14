@@ -296,7 +296,9 @@ export default function LoginPage() {
 
               <p className="text-xs text-gray-400  text-center px-6 leading-relaxed">
                 Ao continuar, você concorda com nossa{" "}
-                <button className="underline underline-offset-2 bg-transparent border-none cursor-pointer text-xs text-[#8c52ff] hover:opacity-65 transition-opacity">
+                <button
+                  onClick={() => setShowPrivacy(true)}
+                  className="underline underline-offset-2 bg-transparent border-none cursor-pointer text-xs text-[#8c52ff] hover:opacity-65 transition-opacity">
                   Política de Privacidade
                 </button>
               </p>
