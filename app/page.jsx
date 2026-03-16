@@ -137,6 +137,7 @@ export default function HomePage() {
         padding: "180px 15% 100px 15%",
         position: "relative",
         background: "#fff",
+        objectFit: "cover",
       }}>
         {/* subtle dot grid */}
         <div style={{
@@ -154,7 +155,7 @@ export default function HomePage() {
           pointerEvents: "none", zIndex: 0,
         }}>
 
-        <img className="w-full h-full pb-15" src="/Orbis-hero-landing-page.svg" alt="" />
+        <hana-viewer className="w-full h-full relative bottom-35 bg-cover" url="https://prod.spline.design/546BZEVRIGeEeiz4-yIC/scene.hanacode"></hana-viewer>
         </div>
 
         <div style={{ position: "relative", zIndex: 1, maxWidth: "600px" }}>
@@ -370,7 +371,7 @@ export default function HomePage() {
           Junte-se a centenas de empresas que já confiam no Orbis.
         </p>
         <div style={{ display: "flex", gap: "14px", justifyContent: "center", flexWrap: "wrap" }}>
-          <a href="/contato" style={{
+          <a href="/contact" style={{
             background: "transparent", color: "#fff", padding: "14px 32px", borderRadius: "10px",
             fontWeight: 500, fontSize: "0.9rem", textDecoration: "none",
             border: "2px solid rgba(255,255,255,0.4)",
@@ -397,6 +398,9 @@ export default function HomePage() {
           ))}
         </div>
       </footer>
+      <script type="module" src="https://cdn.spline.design/@splinetool/hana-viewer@1.2.51/hana-viewer.js"></script>
+      
     </div>
   );
 }
+

@@ -32,7 +32,7 @@ export default function Header() {
             </div>
             <div className="offcanvas-body pl-[15%]! pr-[15%]!">
               <a
-                  href=""
+                  href="/"
                   className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
                   aria-current="page"
                 >
@@ -40,14 +40,14 @@ export default function Header() {
                 </a>
 
                 <a
-                  href=""
+                  href="/#sobre"
                   className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
                 >
                   Sobre
                 </a>
 
                 <a
-                  href=""
+                  href="/contact"
                   className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
                   aria-current="page"
                 >
@@ -66,7 +66,7 @@ export default function Header() {
             <ul className="navbar-nav">
               <li className="nav-item">
                 <a
-                  href=""
+                  href="/"
                   className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out!"
                   aria-current="page"
                 >
@@ -75,7 +75,7 @@ export default function Header() {
               </li>
               <li className="nav-item">
                 <a
-                  href=""
+                  href="/#sobre"
                   className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out!"
                 >
                   Sobre
@@ -83,7 +83,7 @@ export default function Header() {
               </li>
               <li className="nav-item">
                 <a
-                  href=""
+                  href="/contact"
                   className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! mr-5.5!"
                   aria-current="page"
                 >
