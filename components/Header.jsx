@@ -4,7 +4,7 @@ import Bootstrap from "bootstrap/dist/css/bootstrap.min.css";
 export default function Header() {
   return (
     <>
-      <nav className="navbar navbar-expand-lg bg-body-tertiary  z-10 fixed! main-header flex justify-between items-center pl-[15%]! pr-[15%]! w-full h-16 bg-[#fffffff9] border-1 border-[#2222222a]">
+      <nav className="navbar navbar-expand-lg bg-body-tertiary  z-10 fixed! main-header flex justify-between items-center pl-[15%]! pr-[15%]! w-full h-16 bg-[#fffffff9]/98! border-1 border-[#2222222a]">
         <div className="container-fluid">
           <a href="" className="navbar-brand icon-header h-full w-8">
             <img
