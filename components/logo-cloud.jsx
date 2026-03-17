@@ -14,7 +14,7 @@ const LogoCloud = () => {
     <div className="flex h-auto py-30 items-center justify-center px-6">
       <div>
         <p className="text-center text-xl text-[#5e17eb] font-[poppins]">
-          Mais de 100 empresas confiam na Orbis <br /> para impulsionar seus negócios.
+          +100 empresas confiam na Orbis <br /> para prever seus resultados.
         </p>
 
         <div
