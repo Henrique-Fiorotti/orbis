@@ -1,5 +1,6 @@
 "use client";
 
+import LogoCloud from "@/components/logo-cloud";
 import { useEffect, useRef, useState } from "react";
 
 /* ── tiny hook: fade-in on scroll ── */
@@ -350,6 +351,7 @@ export default function HomePage() {
           </div>
 
           {/* Register link */}
+          
           <div
             style={{
               opacity: heroVisible ? 1 : 0,
@@ -449,6 +451,7 @@ export default function HomePage() {
       </section>
 
       {/* ══ QUOTE ══ */}
+      <LogoCloud />
       <section
         style={{
           height: "30dvh",
