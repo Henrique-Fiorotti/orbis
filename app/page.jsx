@@ -241,10 +241,7 @@ export default function HomePage() {
             type="module"
             src="https://cdn.spline.design/@splinetool/hana-viewer@1.2.51/hana-viewer.js"
           ></script>
-          <hana-viewer
-            className="h-full relative bottom-15"
-            url="https://prod.spline.design/546BZEVRIGeEeiz4-yIC/scene.hanacode"
-          ></hana-viewer>
+          <hana-viewer height="100%" width="100%" className="h-full relative bottom-41" url="https://prod.spline.design/546BZEVRIGeEeiz4-yIC/scene.hanacode"></hana-viewer>
         </div>
 
         <div style={{ position: "relative", zIndex: 1, maxWidth: "600px" }}>
