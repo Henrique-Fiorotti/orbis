@@ -50,7 +50,7 @@ const Pricing = () => {
           variant={plan.isPopular ? "default" : "outline"}
           key={plan.name}>
             <h3 className="font-medium text-lg">{plan.name}</h3>
-            <p className="mt-2 font-semibold text-4xl">${plan.price}</p>
+            <p className="mt-2 font-semibold text-4xl">{plan.price}</p>
             <p className="mt-4 font-medium text-muted-foreground">
               {plan.description}
             </p>
