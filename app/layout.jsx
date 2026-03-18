@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Poppins, Open_Sans } from 'next/font/google';
 import Header from "@/components/Header";
 import "./globals.css";
+import Footer from "@/components/Footer";
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -34,8 +35,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR" className={`${poppins.variable} ${openSans.variable}`}>
       <body>
-        <Header />
-        {children}
+          <Header />
+          {children}
+          <Footer />
       </body>
     </html>
   );

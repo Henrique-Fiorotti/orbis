@@ -4,13 +4,13 @@ import Bootstrap from "bootstrap/dist/css/bootstrap.min.css";
 export default function Header() {
   return (
     <>
-      <nav className="navbar navbar-expand-lg bg-body-tertiary  z-10 fixed! main-header flex justify-between items-center pl-[15%]! pr-[15%]! w-full h-16 bg-[#fffffff9]/98! border-1 border-[#2222222a]">
+      <nav className="navbar navbar-expand-lg bg-body-tertiary  z-10 fixed! main-header flex justify-between items-center pl-[15%]! pr-[15%]! w-full h-16 bg-[#fffffff9]/98! border border-[#2222222a]">
         <div className="container-fluid">
           <a href="" className="navbar-brand icon-header h-full w-8">
             <img
               src="/Orbis.svg"
               alt=""
-              className="h-[100%] w-[100%] cursor-[pointer]"
+              className="h-full w-full cursor-pointer"
             />
           </a>
           <button
@@ -26,7 +26,7 @@ export default function Header() {
           </button>
 
           <div className="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
-            <div className="offcanvas-header pl-[15%]! pr-[15%]! h-16 bg-[#fffffff9]! border-1 border-[#2222222a]">
+            <div className="offcanvas-header pl-[15%]! pr-[15%]! h-16 bg-[#fffffff9]! border border-[#2222222a]">
               <img src="/Orbis.svg" alt="Orbis" className="h-full w-auto" />
               <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
