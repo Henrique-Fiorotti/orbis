@@ -2,6 +2,7 @@
 
 import LogoCloud from "@/components/logo-cloud";
 import Pricing from "@/components/pricing";
+import { Separator } from "@/components/ui/separator";
 import { useEffect, useRef, useState } from "react";
 
 /* ── tiny hook: fade-in on scroll ── */
@@ -243,7 +244,8 @@ export default function HomePage() {
             type="module"
             src="https://cdn.spline.design/@splinetool/hana-viewer@1.2.51/hana-viewer.js"
           ></script>
-          <hana-viewer height="100%" width="100%" className="h-full relative bottom-41" url="https://prod.spline.design/546BZEVRIGeEeiz4-yIC/scene.hanacode"></hana-viewer>
+         <iframe src="https://my.spline.design/pixeltextsetcopycopy-FVOpkQ2LEECtjtmYxOWm4Dq9-V1Z/" frameborder="0" width="100%" height="100%"></iframe>
+         <div className="absolute! bg-white! h-15 w-45 right-0! bottom-0!"></div>
         </div>
 
         <div style={{ position: "relative", zIndex: 1, maxWidth: "600px" }}>
@@ -699,13 +701,15 @@ export default function HomePage() {
         </div>
       </section>
 
+      <Separator orientation="horizontal" />
+
       <Pricing />
 
       {/* ══ CTA FINAL ══ */}
       <section
         style={{
           background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
-          padding: "80px 8vw",
+          padding: "40px 8vw",
           textAlign: "center",
         }}
       >
@@ -766,50 +770,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ══ FOOTER ══ */}
-      <footer
-        style={{
-          background: "#0a0a0a",
-          padding: "32px 8vw",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "12px",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "'Syne', sans-serif",
-            fontWeight: 700,
-            fontSize: "1.1rem",
-            color: "#fff",
-          }}
-        >
-          Orbis
-        </p>
-        <p style={{ fontSize: "0.78rem", color: "#6b7280" }}>
-          © {new Date().getFullYear()} Orbis. Todos os direitos reservados.
-        </p>
-        <div style={{ display: "flex", gap: "20px" }}>
-          {["Privacidade", "Termos", "Contato"].map((l) => (
-            <a
-              key={l}
-              href="#"
-              style={{
-                fontSize: "0.78rem",
-                color: "#6b7280",
-                textDecoration: "none",
-                transition: "color 0.2s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#a78bfa")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#6b7280")}
-            >
-              {l}
-            </a>
-          ))}
-        </div>
-      </footer>
+      
     </div>
   );
 }
