@@ -26,44 +26,7 @@ export default function Header() {
           >
             <span className="navbar-toggler-icon"></span>
           </button>
-
-          <div className="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
-            <div className="offcanvas-header pl-[15%]! pr-[15%]! h-16 bg-[#fffffff9]! border border-[#2222222a]">
-              <img src="/Orbis.svg" alt="Orbis" className="h-full w-auto" />
-              <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-            </div>
-            <div className="offcanvas-body pl-[15%]! pr-[15%]!">
-              <a
-                  href="/"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
-                  aria-current="page"
-                >
-                  Home
-                </a>
-
-                <a
-                  href="/#sobre"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
-                >
-                  Sobre
-                </a>
-
-                <a
-                  href="/contact"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
-                  aria-current="page"
-                >
-                  Contato
-                </a>
-
-                <a
-                  href=""
-                  className="nav-link border-2! border-[#5e17eb]! text-[#5e17eb]! p-1.5! w-22.5! flex! justify-center! rounded-[10px]! cursor-pointer! font-poppins! hover:bg-[#5013ca]! hover:text-[#ffffff]! hover:border-[#5013ca]! transition-all! duration-150 ease-in-out text-[25px]!"
-                >
-                  Login
-                </a>
-            </div>
-          </div>
+          
           <div className="collapse navbar-collapse width-auto-important" id="navbarNav">
             <ul className="navbar-nav bg-gray-100! rounded-[10px]! border-3! border-gray-100!">
               <li className="nav-item">
@@ -107,6 +70,44 @@ export default function Header() {
               </li>
         </div>
       </nav>
+
+      <div className="offcanvas offcanvas-end" tabIndex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+            <div className="offcanvas-header pl-[15%]! pr-[15%]! h-16 bg-[#fffffff9]! border border-[#2222222a]">
+              <img src="/Orbis.svg" alt="Orbis" className="h-full w-auto" />
+              <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div className="offcanvas-body pl-[15%]! pr-[15%]!">
+              <a
+                  href="/"
+                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
+                  aria-current="page"
+                >
+                  Home
+                </a>
+
+                <a
+                  href="/#sobre"
+                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
+                >
+                  Sobre
+                </a>
+
+                <a
+                  href="/contact"
+                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]!"
+                  aria-current="page"
+                >
+                  Contato
+                </a>
+
+                <a
+                  href=""
+                  className="nav-link border-2! border-[#5e17eb]! text-[#5e17eb]! p-1.5! w-22.5! flex! justify-center! rounded-[10px]! cursor-pointer! font-poppins! hover:bg-[#5013ca]! hover:text-[#ffffff]! hover:border-[#5013ca]! transition-all! duration-150 ease-in-out text-[25px]!"
+                >
+                  Login
+                </a>
+            </div>
+          </div>
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     </>
   );
