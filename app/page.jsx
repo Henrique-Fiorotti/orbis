@@ -1,6 +1,7 @@
 "use client";
 
 import LogoCloud from "@/components/logo-cloud";
+import Pricing from "@/components/pricing";
 import { useEffect, useRef, useState } from "react";
 
 /* ── tiny hook: fade-in on scroll ── */
@@ -763,6 +764,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      <Pricing />
       {/* ══ FOOTER ══ */}
       <footer
         style={{
