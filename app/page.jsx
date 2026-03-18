@@ -699,6 +699,8 @@ export default function HomePage() {
         </div>
       </section>
 
+      <Pricing />
+
       {/* ══ CTA FINAL ══ */}
       <section
         style={{
@@ -711,7 +713,7 @@ export default function HomePage() {
           style={{
             fontFamily: "'Poppins', sans-serif",
             fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
-            fontWeight: 800,
+            fontWeight: 200,
             color: "#fff",
             letterSpacing: "-1px",
             marginBottom: "16px",
@@ -764,7 +766,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <Pricing />
       {/* ══ FOOTER ══ */}
       <footer
         style={{
