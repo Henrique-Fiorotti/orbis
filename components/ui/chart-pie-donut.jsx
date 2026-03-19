@@ -47,8 +47,8 @@ const chartConfig = {
 
 export function ChartPieDonut() {
   return (
-    <div className="px-6">
-    <Card className="flex flex-col">
+    
+    <Card className="flex w-2/6 flex-col mr-6">
       <CardHeader className="items-center pb-0">
         <CardTitle>Alertas - Dia</CardTitle>
         <CardDescription>Diário</CardDescription> {/* Fazer ele pegar Dia atual */}
@@ -73,6 +73,6 @@ export function ChartPieDonut() {
         </ChartContainer>
       </CardContent>
     </Card>
-    </div>
+    
   )
 }
