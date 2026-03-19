@@ -2,6 +2,7 @@
 
 import LogoCloud from "@/components/logo-cloud";
 import Pricing from "@/components/pricing";
+import { ChartPieDonut } from "@/components/ui/chart-pie-donut";
 import { Separator } from "@/components/ui/separator";
 import { useEffect, useRef, useState } from "react";
 
