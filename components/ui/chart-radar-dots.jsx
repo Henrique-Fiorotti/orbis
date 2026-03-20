@@ -37,7 +37,7 @@ const chartConfig = {
 
 export function ChartRadarDots() {
   return (
-    <Card className="w-3/6">
+    <Card className="w-3/6 mr-6">
       <CardHeader className="items-center">
         <CardTitle>Radar Chart - Dots</CardTitle>
         <CardDescription>
