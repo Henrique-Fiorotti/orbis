@@ -261,7 +261,7 @@ export default function HomePage() {
               opacity: heroVisible ? 1 : 0,
               transform: heroVisible ? "none" : "translateY(20px)",
               transition: "opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s",
-              color: "#3b2867",
+              color: "#212121",
             }}
           >
             Antecipando <span style={{ color: "#7c3aed" }}>falhas</span>,<br />
@@ -300,7 +300,7 @@ export default function HomePage() {
             <a
               href="/login"
               style={{
-                background: "#3b2867",
+                background: "#7b39ed",
                 color: "#fff",
                 padding: "13px 28px",
                 borderRadius: "10px",
@@ -315,11 +315,15 @@ export default function HomePage() {
                 display: "inline-block",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#7c3aed";
+                e.currentTarget.style.backgroundColor = "white";
+                e.currentTarget.style.color = "#7b39ed";
+                e.currentTarget.style.border = " 2px solid #7b39ed";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "none";
-                e.currentTarget.style.backgroundColor = "#3b2867";
+                e.currentTarget.style.color = "#fff";
+                e.currentTarget.style.backgroundColor = "#7b39ed";
+                e.currentTarget.style.border = " 2px solid transparent";
               }}
             >
               Acesse o Orbis
@@ -339,7 +343,7 @@ export default function HomePage() {
                 border: "2px solid #e5e7eb",
                 transition: "border-color 0.2s ease, color 0.2s ease",
                 display: "inline-block",
-                color: "#3b2867",
+                color: "#212121",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = "#7c3aed";
@@ -347,7 +351,7 @@ export default function HomePage() {
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = "#e5e7eb";
-                e.currentTarget.style.color = "#3b2867";
+                e.currentTarget.style.color = "#212121";
               }}
             >
               Sobre
@@ -490,7 +494,7 @@ export default function HomePage() {
                 lineHeight: 1.3,
                 letterSpacing: "-0.5px",
                 textAlign: "start",
-                color: "#3B2867",
+                color: "#212121",
                 marginBottom: "16px",
               }}
             >
@@ -507,7 +511,7 @@ export default function HomePage() {
             >
               Confie no processo.
               <br />
-              <strong style={{ color: "#3B2867" }}>Junte-se à Orbis</strong>
+              <strong style={{ color: "#212121" }}>Junte-se à Orbis</strong>
             </p>
           </div>
           <img className="h-full" src="/banner_hero.svg" alt="" />
@@ -532,7 +536,7 @@ export default function HomePage() {
           <h2
             style={{
               fontFamily: "'Syne', sans-serif",
-              color: "#3B2867",
+              color: "#212121",
               fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
               fontWeight: 200,
               letterSpacing: "-1px",
@@ -643,7 +647,7 @@ export default function HomePage() {
             <h2
               style={{
                 fontFamily: "'Poppins', sans-serif",
-                color: "#3B2867",
+                color: "#212121",
                 fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
                 fontWeight: 200,
                 letterSpacing: "-1px",
