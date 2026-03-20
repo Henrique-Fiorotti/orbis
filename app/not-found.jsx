@@ -1,6 +1,10 @@
+import Header from "@/components/Header";
+import Footer from "@/components/shadcn-space/blocks/footer-01/footer";
+
 export default function notfound(){
     return(
         <>
+        <Header />
             <div className="w-full h-svh bg-white flex justify-center items-center pt-20">
                 <div className="flex flex-col justify-center items-center gap-y-5">
                     <img src="/hero_404.svg" alt="" className="mr-16" />
@@ -11,6 +15,7 @@ export default function notfound(){
                     </div>
                 </div>
             </div>
+        <Footer />
         </>
     )
 }

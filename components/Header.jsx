@@ -7,7 +7,7 @@ export default function Header() {
       <nav className="navbar navbar-expand-lg bg-body-tertiary  z-10 fixed! main-header flex justify-between items-center pl-[15%]! pr-[15%]! w-full h-16 bg-[#fffffff9]! border border-[#2222222a]">
         <div className="container-fluid">
           <div className="w-22.5! h-8!">
-            <a href="" className="navbar-brand icon-header h-full w-5!">
+            <a href="/" className="navbar-brand icon-header h-full w-5!">
               <img
                 src="/Orbis.svg"
                 alt=""
