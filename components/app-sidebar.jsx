@@ -170,12 +170,8 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!">
-              <a className="no-underline!" href="#">
-                <img src="/Orbis.svg" alt="Orbis" className="size-5!" />
-                <span className="text-base font-semibold no-underline! font-poppins! text-black">Orbis</span>
-              </a>
-            </SidebarMenuButton>
+                <img src="/Orbis.svg" alt="Orbis" className="size-9!" />
+                <span className="text-base font-semibold no-underline! font-poppins! text-black"></span>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
