@@ -153,7 +153,7 @@ const columns = [
   },
   {
     accessorKey: "type",
-    header: "Setor",
+    header: "Tipo",
     cell: ({ row }) => (
       <div className="w-32">
         <Badge variant="outline" className="px-1.5 text-muted-foreground">
@@ -180,25 +180,10 @@ const columns = [
     accessorKey: "target",
     header: () => <div className="w-full text-right">Temp</div>,
     cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            loading: `Saving ${row.original.header}`,
-            success: "Done",
-            error: "Error",
-          })
-        }}>
-        <Label htmlFor={`${row.original.id}-target`} className="sr-only">
-          Target
-        </Label>
-        <Input
-          className="h-8 w-16 border-transparent bg-transparent text-right shadow-none hover:bg-input/30 focus-visible:border focus-visible:bg-background dark:bg-transparent dark:hover:bg-input/30 dark:focus-visible:bg-input/30"
-          defaultValue={row.original.target}
-          id={`${row.original.id}-target`} />
-      </form>
+      (<span>{row.original.target}</span>)
     ),
   },
+  
   {
     accessorKey: "limit",
     header: () => <div className="w-full text-right">Vibração</div>,
