@@ -7,6 +7,8 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 import data from "./data.json"
 import { ChartPieDonut } from "@/components/ui/chart-pie-donut"
+import { ChartBarStacked } from "@/components/ui/chart-bar-stacked"
+import { ChartRadarDots } from "@/components/ui/chart-radar-dots"
 
 export default function Page() {
   return (
@@ -30,6 +32,11 @@ export default function Page() {
                   <ChartAreaInteractive />
                 </div>
                 <ChartPieDonut />
+                
+              </div>
+              <div className="flex w-full px-4 lg:px-6">
+                <ChartRadarDots />
+                <ChartBarStacked />
               </div>
               <DataTable data={data} />
             </div>
