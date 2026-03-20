@@ -145,7 +145,7 @@ const columns = [
   },
   {
     accessorKey: "header",
-    header: "Header",
+    header: "Máquina",
     cell: ({ row }) => {
       return <TableCellViewer item={row.original} />;
     },
@@ -153,7 +153,7 @@ const columns = [
   },
   {
     accessorKey: "type",
-    header: "Section Type",
+    header: "Setor",
     cell: ({ row }) => (
       <div className="w-32">
         <Badge variant="outline" className="px-1.5 text-muted-foreground">
@@ -178,7 +178,7 @@ const columns = [
   },
   {
     accessorKey: "target",
-    header: () => <div className="w-full text-right">Target</div>,
+    header: () => <div className="w-full text-right">Temp</div>,
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
@@ -201,7 +201,7 @@ const columns = [
   },
   {
     accessorKey: "limit",
-    header: () => <div className="w-full text-right">Limit</div>,
+    header: () => <div className="w-full text-right">Vibração</div>,
     cell: ({ row }) => (
       <form
         onSubmit={(e) => {
@@ -224,7 +224,7 @@ const columns = [
   },
   {
     accessorKey: "reviewer",
-    header: "Reviewer",
+    header: "Sensor",
     cell: ({ row }) => {
       const isAssigned = row.original.reviewer !== "Assign reviewer"
 
@@ -563,12 +563,12 @@ export function DataTable({
 }
 
 const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
+  { month: "Janeiro", desktop: 186, mobile: 80 },
+  { month: "Fevereiro", desktop: 305, mobile: 200 },
+  { month: "Março", desktop: 237, mobile: 120 },
+  { month: "Abril", desktop: 73, mobile: 190 },
+  { month: "Maio", desktop: 209, mobile: 130 },
+  { month: "Junho", desktop: 214, mobile: 140 },
 ]
 
 const chartConfig = {
@@ -655,7 +655,7 @@ function TableCellViewer({
           )}
           <form className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
-              <Label htmlFor="header">Header</Label>
+              <Label htmlFor="header">Máquina</Label>
               <Input id="header" defaultValue={item.header} />
             </div>
             <div className="grid grid-cols-2 gap-4">
