@@ -188,8 +188,8 @@ export default function LoginPage() {
             bottom: 0;
             height: 65%;
           }
-          .form-login-active   { left: 0; opacity: 1; pointer-events: auto; }
-          .form-login-inactive { left: -100%; opacity: 0; pointer-events: none; }
+          .form-login-active   {justify-content:center; left: 0; opacity: 1; pointer-events: auto; }
+          .form-login-inactive {justify-content:center; left: -100%; opacity: 0; pointer-events: none; }
           .form-cadastro-active   { left: 0; opacity: 1; pointer-events: auto; }
           .form-cadastro-inactive { left: 100%; opacity: 0; pointer-events: none; }
         }
@@ -201,8 +201,8 @@ export default function LoginPage() {
             height: 100%;
             width: 50%;
           }
-          .form-login-active   { left: 0; opacity: 1; pointer-events: auto; }
-          .form-login-inactive { left: -50%; opacity: 0; pointer-events: none; }
+          .form-login-active   {justify-content:center; left: 0; opacity: 1; pointer-events: auto; }
+          .form-login-inactive {justify-content:center; left: -50%; opacity: 0; pointer-events: none; }
           .form-cadastro-active   { right: 0; opacity: 1; pointer-events: auto; }
           .form-cadastro-inactive { right: -50%; opacity: 0; pointer-events: none; }
         }
