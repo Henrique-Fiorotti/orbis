@@ -21,8 +21,8 @@ export const description = "A donut chart"
 
 const chartData = [
   { Alerta: "Estavel", quantidade: 275, fill: "var(--chart-1)" },
-  { Alerta: "Alerta", quantidade: 200, fill: "var(--chart-2)" },
-  { Alerta: "Critico", quantidade: 187, fill: "var(--chart-3)" },
+  { Alerta: "Alerta", quantidade: 200, fill: "yellow" },
+  { Alerta: "Critico", quantidade: 187, fill: "red" },
   { Alerta: "Inativo", quantidade: 173, fill: "lightgray" },
 ]
 
@@ -33,11 +33,11 @@ const chartConfig = {
   },
   Alerta: {
     label: "Alerta",
-    color: "var(--chart-2)",
+    color: "yellow",
   },
   Critico: {
     label: "Critico",
-    color: "var(--chart-3)",
+    color: "red",
   },
   Inativo: {
     label: "Inativo",
