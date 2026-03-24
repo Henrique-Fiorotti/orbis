@@ -22,6 +22,16 @@
 //   scoreEstabilidade, status, ultimaLeituraEm, sensores }
 // =============================================================
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+
 import * as React from "react"
 import {
   closestCenter,
@@ -153,6 +163,17 @@ function CriticidadeBadge({ value }) {
   )
 }
 
+// Schema para criação (omitindo campos automáticos como ID e data)
+const formSchema = z.object({
+  nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  setor: z.string().min(1, "Setor é obrigatório"),
+  tipo: z.string().min(1, "Tipo da máquina é obrigatório"),
+  criticidade: z.enum(["BAIXA", "MEDIA", "ALTA"]),
+  status: z.enum(["OK", "ALERTA"]),
+  integridade: z.coerce.number().min(0).max(100),
+  sensores: z.coerce.number().min(0),
+})
+
 // Badge de status OK / ALERTA
 function StatusBadge({ value }) {
   return (
@@ -239,10 +260,9 @@ const columns = [
     accessorKey: "integridade",
     header: () => <div className="w-full text-right">Integridade</div>,
     cell: ({ row }) => (
-      <span className={`block text-right font-medium ${
-        row.original.integridade < 50 ? "text-red-500" :
+      <span className={`block text-right font-medium ${row.original.integridade < 50 ? "text-red-500" :
         row.original.integridade < 75 ? "text-yellow-500" : "text-green-600"
-      }`}>
+        }`}>
         {row.original.integridade}%
       </span>
     ),
@@ -337,7 +357,7 @@ export function DataTable({ data: initialData }) {
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-  })
+  });
 
   function handleDragEnd(event) {
     const { active, over } = event
@@ -385,10 +405,34 @@ export function DataTable({ data: initialData }) {
                 ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="sm">
-            <PlusIcon />
-            <span className="hidden lg:inline">Nova Máquina</span>
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <PlusIcon className="mr-2 h-4 w-4" />
+                Nova Máquina
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Adicionar Nova Máquina</DialogTitle>
+                <DialogDescription>
+                  Preencha os dados abaixo para cadastrar uma nova máquina no sistema.
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* Conteúdo do seu formulário aqui */}
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">Nome</Label>
+                  <Input id="name" className="col-span-3" />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="submit">Salvar alterações</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -581,5 +625,6 @@ function TableCellViewer({ item }) {
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
+
   )
 }
