@@ -71,7 +71,10 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsRightIcon,
+  WashingMachineIcon,
 } from "lucide-react"
+
+import data from "../data.json"
 
 // =============================================================
 // INTEGRAÇÃO COM A API — quando a API estiver pronta:
@@ -84,16 +87,7 @@ import {
 // Todas as rotas exigem: Authorization: Bearer <token>
 // =============================================================
 
-const mockMaquinas = [
-  { id: 1, nome: "Motor Esteira A1", setor: "Linha de Produção A", tipo: "Motor Elétrico", criticidade: "ALTA", integridade: 42, scoreEstabilidade: 31, status: "ALERTA", ultimaLeituraEm: "2026-03-24T10:12:00Z", sensores: 2 },
-  { id: 2, nome: "Compressor B2", setor: "Linha de Produção B", tipo: "Compressor", criticidade: "ALTA", integridade: 88, scoreEstabilidade: 75, status: "OK", ultimaLeituraEm: "2026-03-24T10:14:00Z", sensores: 1 },
-  { id: 3, nome: "Rolamento C3", setor: "Esteira Principal", tipo: "Rolamento", criticidade: "MEDIA", integridade: 67, scoreEstabilidade: 58, status: "OK", ultimaLeituraEm: "2026-03-24T10:13:00Z", sensores: 1 },
-  { id: 4, nome: "Motor Esteira B3", setor: "Linha de Produção B", tipo: "Motor Elétrico", criticidade: "MEDIA", integridade: 95, scoreEstabilidade: 91, status: "OK", ultimaLeituraEm: "2026-03-24T10:11:00Z", sensores: 2 },
-  { id: 5, nome: "Bomba Hidráulica D1", setor: "Setor Hidráulico", tipo: "Bomba", criticidade: "ALTA", integridade: 0, scoreEstabilidade: 12, status: "ALERTA", ultimaLeituraEm: "2026-03-24T09:58:00Z", sensores: 1 },
-  { id: 6, nome: "Ventilador E2", setor: "Resfriamento", tipo: "Ventilador", criticidade: "BAIXA", integridade: 100, scoreEstabilidade: 98, status: "OK", ultimaLeituraEm: "2026-03-24T10:14:00Z", sensores: 1 },
-  { id: 7, nome: "Torno CNC F1", setor: "Usinagem", tipo: "Torno CNC", criticidade: "ALTA", integridade: 73, scoreEstabilidade: 64, status: "OK", ultimaLeituraEm: "2026-03-24T10:10:00Z", sensores: 2 },
-  { id: 8, nome: "Prensa G4", setor: "Conformação", tipo: "Prensa", criticidade: "MEDIA", integridade: 55, scoreEstabilidade: 48, status: "OK", ultimaLeituraEm: "2026-03-24T10:09:00Z", sensores: 1 },
-]
+const mockMaquinas = data.map((m, i) => ({ ...m, id: i + 1 })) // adicionar id para simular banco de dados
 
 const formVazio = { nome: "", setor: "", tipo: "", criticidade: "MEDIA" }
 
@@ -190,6 +184,8 @@ export default function MaquinasPage() {
       setMaquinas(prev => [nova, ...prev])
       // TODO: POST /maquinas
       toast.success("Máquina cadastrada com sucesso!")
+
+      mockMaquinas.push(nova) // para simular que a máquina foi adicionada no "banco de dados" e aparece na listagem
     } else {
       setMaquinas(prev => prev.map(m => m.id === maquinaSelecionada.id ? { ...m, ...form } : m))
       // TODO: PUT /maquinas/:id
@@ -299,7 +295,10 @@ export default function MaquinasPage() {
             <ArrowLeftIcon className="size-4" />
           </Button>
           <div>
-            <h1 className="text-lg font-medium text-[#3B2867]">Máquinas</h1>
+            <div className="flex items-center justify-center gap-2">
+                <WashingMachineIcon size={"33"} /> {/* ícone representando máquinas */}
+                <h1 className="mb-0 text-lg font-medium text-[#3B2867]">Máquinas</h1>
+            </div>
             <p className="text-sm text-muted-foreground">{maquinas.length} máquinas cadastradas</p>
           </div>
         </div>
