@@ -15,7 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon } from "lucide-react"
+import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon, WashingMachineIcon } from "lucide-react"
 
 const data = {
   user: {
@@ -53,10 +53,10 @@ const data = {
       ),
     },
     {
-      title: "Equipe",
-      url: "#",
+      title: "Máquinas",
+      url: "/dashboard/maquinas",
       icon: (
-        <UsersIcon />
+        <WashingMachineIcon />
       ),
     },
   ],
