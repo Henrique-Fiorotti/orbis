@@ -8,8 +8,8 @@ import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } 
 import { CSS } from "@dnd-kit/utilities"
 import { flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
-import { z } from "zod"
 
+import { useMaquinas } from "./context/maquinas-context"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -23,19 +23,6 @@ import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GripVerticalIcon, CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, PlusIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, TrendingUpIcon, ArrowRightIcon } from "lucide-react"
-
-export const schema = z.object({
-  id: z.number(),
-  nome: z.string(),
-  setor: z.string(),
-  tipo: z.string(),
-  criticidade: z.enum(["BAIXA", "MEDIA", "ALTA"]),
-  integridade: z.number(),
-  scoreEstabilidade: z.number(),
-  status: z.enum(["OK", "ALERTA"]),
-  ultimaLeituraEm: z.string(),
-  sensores: z.number(),
-})
 
 function tempoRelativo(isoString) {
   const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000)
@@ -52,13 +39,12 @@ function CriticidadeBadge({ value }) {
 function StatusBadge({ value }) {
   return (
     <Badge variant="outline" className="px-1.5 text-muted-foreground">
-      {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]! dark:fill-[#5E17EB]!" /> : <AlertTriangleIcon className="text-red-500" />}
+      {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]!" /> : <AlertTriangleIcon className="text-red-500" />}
       {value}
     </Badge>
   )
 }
 
-// Barra de integridade com cor semântica
 function IntegridadeBar({ value }) {
   const cor = value < 50 ? "bg-red-500" : value < 75 ? "bg-yellow-400" : "bg-green-500"
   const textCor = value < 50 ? "text-red-500" : value < 75 ? "text-yellow-500" : "text-green-600"
@@ -76,24 +62,23 @@ function DragHandle({ id }) {
   const { attributes, listeners } = useSortable({ id })
   return (
     <Button {...attributes} {...listeners} variant="ghost" size="icon" className="size-7 text-muted-foreground hover:bg-transparent">
-      <GripVerticalIcon className="size-3 text-muted-foreground" />
-      <span className="sr-only">Reordenar</span>
+      <GripVerticalIcon className="size-3" /><span className="sr-only">Reordenar</span>
     </Button>
   )
 }
 
-const columns = [
+const TABLE_COLUMNS = [
   { id: "drag", header: () => null, cell: ({ row }) => <DragHandle id={row.original.id} /> },
   {
     id: "select",
     header: ({ table }) => (
       <div className="flex items-center justify-center">
-        <Checkbox checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")} onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)} aria-label="Selecionar todos" />
+        <Checkbox checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")} onCheckedChange={v => table.toggleAllPageRowsSelected(!!v)} aria-label="Selecionar todos" />
       </div>
     ),
     cell: ({ row }) => (
       <div className="flex items-center justify-center">
-        <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Selecionar linha" />
+        <Checkbox checked={row.getIsSelected()} onCheckedChange={v => row.toggleSelected(!!v)} aria-label="Selecionar linha" />
       </div>
     ),
     enableSorting: false, enableHiding: false,
@@ -102,11 +87,7 @@ const columns = [
   { accessorKey: "setor", header: "Setor", cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.setor}</span> },
   { accessorKey: "criticidade", header: "Criticidade", cell: ({ row }) => <CriticidadeBadge value={row.original.criticidade} /> },
   { accessorKey: "status", header: "Status", cell: ({ row }) => <StatusBadge value={row.original.status} /> },
-  {
-    accessorKey: "integridade",
-    header: () => <div className="w-full">Integridade</div>,
-    cell: ({ row }) => <IntegridadeBar value={row.original.integridade} />,
-  },
+  { accessorKey: "integridade", header: () => <div>Integridade</div>, cell: ({ row }) => <IntegridadeBar value={row.original.integridade} /> },
   { accessorKey: "ultimaLeituraEm", header: "Último sinal", cell: ({ row }) => <span className="text-muted-foreground text-sm">{tempoRelativo(row.original.ultimaLeituraEm)}</span> },
   {
     id: "actions",
@@ -128,18 +109,9 @@ const columns = [
   },
 ]
 
-function DraggableRow({ row }) {
-  const { transform, transition, setNodeRef, isDragging } = useSortable({ id: row.original.id })
-  return (
-    <TableRow data-state={row.getIsSelected() && "selected"} data-dragging={isDragging} ref={setNodeRef} className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80" style={{ transform: CSS.Transform.toString(transform), transition }}>
-      {row.getVisibleCells().map((cell) => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}
-    </TableRow>
-  )
-}
-
-export function DataTable({ data: initialData }) {
-  const router = useRouter()
-  const [data, setData] = React.useState(() => initialData)
+// Tabela interna reutilizável (recebe data por prop)
+function MaquinasTable({ data }) {
+  const [orderedData, setOrderedData] = React.useState(data)
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState({})
   const [columnFilters, setColumnFilters] = React.useState([])
@@ -147,12 +119,15 @@ export function DataTable({ data: initialData }) {
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const sortableId = React.useId()
   const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}))
-  const dataIds = React.useMemo(() => data?.map(({ id }) => id) || [], [data])
+
+  React.useEffect(() => { setOrderedData(data) }, [data])
+
+  const dataIds = React.useMemo(() => orderedData?.map(({ id }) => id) || [], [orderedData])
 
   const table = useReactTable({
-    data, columns,
+    data: orderedData, columns: TABLE_COLUMNS,
     state: { sorting, columnVisibility, rowSelection, columnFilters, pagination },
-    getRowId: (row) => row.id.toString(),
+    getRowId: row => row.id.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection, onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters, onColumnVisibilityChange: setColumnVisibility,
@@ -162,12 +137,69 @@ export function DataTable({ data: initialData }) {
     getFacetedRowModel: getFacetedRowModel(), getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
-  function handleDragEnd(event) {
-    const { active, over } = event
-    if (active && over && active.id !== over.id) {
-      setData((data) => arrayMove(data, dataIds.indexOf(active.id), dataIds.indexOf(over.id)))
-    }
-  }
+  return (
+    <>
+      <div className="overflow-hidden rounded-lg border">
+        <DndContext collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]}
+          onDragEnd={({ active, over }) => {
+            if (active && over && active.id !== over.id)
+              setOrderedData(d => arrayMove(d, dataIds.indexOf(active.id), dataIds.indexOf(over.id)))
+          }}
+          sensors={sensors} id={sortableId}>
+          <Table>
+            <TableHeader className="sticky top-0 z-10 bg-muted">
+              {table.getHeaderGroups().map(hg => (
+                <TableRow key={hg.id}>
+                  {hg.headers.map(h => <TableHead key={h.id} colSpan={h.colSpan}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody className="**:data-[slot=table-cell]:first:w-8">
+              {table.getRowModel().rows?.length ? (
+                <SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
+                  {table.getRowModel().rows.map(row => (
+                    <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className="relative z-0">
+                      {row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}
+                    </TableRow>
+                  ))}
+                </SortableContext>
+              ) : (
+                <TableRow><TableCell colSpan={TABLE_COLUMNS.length} className="h-24 text-center text-muted-foreground">Nenhuma máquina encontrada.</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </DndContext>
+      </div>
+      <div className="flex items-center justify-between px-4">
+        <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
+          {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} máquina(s) selecionada(s).
+        </div>
+        <div className="flex w-full items-center gap-8 lg:w-fit">
+          <div className="hidden items-center gap-2 lg:flex">
+            <Label htmlFor="rows-pp" className="text-sm font-medium">Por página</Label>
+            <Select value={`${table.getState().pagination.pageSize}`} onValueChange={v => table.setPageSize(Number(v))}>
+              <SelectTrigger size="sm" className="w-20" id="rows-pp"><SelectValue /></SelectTrigger>
+              <SelectContent side="top"><SelectGroup>{[10, 20, 30, 40, 50].map(ps => <SelectItem key={ps} value={`${ps}`}>{ps}</SelectItem>)}</SelectGroup></SelectContent>
+            </Select>
+          </div>
+          <div className="flex w-fit items-center justify-center text-sm font-medium">Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</div>
+          <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            <Button variant="outline" className="hidden h-8 w-8 p-0 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}><ChevronsLeftIcon /></Button>
+            <Button variant="outline" className="size-8" size="icon" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}><ChevronLeftIcon /></Button>
+            <Button variant="outline" className="size-8" size="icon" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}><ChevronRightIcon /></Button>
+            <Button variant="outline" className="hidden size-8 lg:flex" size="icon" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}><ChevronsRightIcon /></Button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// Componente principal — não recebe mais "data" como prop, usa o contexto diretamente
+export function DataTable() {
+  const router = useRouter()
+  const { maquinas } = useMaquinas()
+  const emAlerta = React.useMemo(() => maquinas.filter(m => m.status === "ALERTA"), [maquinas])
 
   return (
     <Tabs defaultValue="outline" className="w-full flex-col justify-start gap-6">
@@ -175,7 +207,10 @@ export function DataTable({ data: initialData }) {
         <TabsList className="hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
           <TabsTrigger value="outline">Máquinas</TabsTrigger>
           <TabsTrigger value="alertas">
-            Em Alerta <Badge variant="secondary">{data.filter(m => m.status === "ALERTA").length}</Badge>
+            Em Alerta
+            {emAlerta.length > 0 && (
+              <Badge variant="secondary" className="ml-1 bg-red-100! text-red-700! border-red-200!">{emAlerta.length}</Badge>
+            )}
           </TabsTrigger>
         </TabsList>
         <div className="flex items-center gap-2">
@@ -183,12 +218,8 @@ export function DataTable({ data: initialData }) {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm"><Columns3Icon data-icon="inline-start" />Colunas<ChevronDownIcon data-icon="inline-end" /></Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-32">
-              {table.getAllColumns().filter(c => typeof c.accessorFn !== "undefined" && c.getCanHide()).map(column => (
-                <DropdownMenuCheckboxItem key={column.id} className="capitalize" checked={column.getIsVisible()} onCheckedChange={(value) => column.toggleVisibility(!!value)}>
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem className="text-xs text-muted-foreground" onClick={() => router.push("/dashboard/maquinas")}>Gerenciar colunas</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -203,60 +234,22 @@ export function DataTable({ data: initialData }) {
         </div>
       </div>
 
+      {/* Aba: todas as máquinas — vem do contexto em tempo real */}
       <TabsContent value="outline" className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
-        <div className="overflow-hidden rounded-lg border">
-          <DndContext collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]} onDragEnd={handleDragEnd} sensors={sensors} id={sortableId}>
-            <Table>
-              <TableHeader className="sticky top-0 z-10 bg-muted">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id} colSpan={header.colSpan}>
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody className="**:data-[slot=table-cell]:first:w-8">
-                {table.getRowModel().rows?.length ? (
-                  <SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
-                    {table.getRowModel().rows.map((row) => <DraggableRow key={row.id} row={row} />)}
-                  </SortableContext>
-                ) : (
-                  <TableRow><TableCell colSpan={columns.length} className="h-24 text-center">Nenhuma máquina encontrada.</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </DndContext>
-        </div>
-        <div className="flex items-center justify-between px-4">
-          <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-            {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} máquina(s) selecionada(s).
-          </div>
-          <div className="flex w-full items-center gap-8 lg:w-fit">
-            <div className="hidden items-center gap-2 lg:flex">
-              <Label htmlFor="rows-per-page" className="text-sm font-medium">Por página</Label>
-              <Select value={`${table.getState().pagination.pageSize}`} onValueChange={(value) => table.setPageSize(Number(value))}>
-                <SelectTrigger size="sm" className="w-20" id="rows-per-page"><SelectValue placeholder={table.getState().pagination.pageSize} /></SelectTrigger>
-                <SelectContent side="top"><SelectGroup>{[10, 20, 30, 40, 50].map((ps) => <SelectItem key={ps} value={`${ps}`}>{ps}</SelectItem>)}</SelectGroup></SelectContent>
-              </Select>
-            </div>
-            <div className="flex w-fit items-center justify-center text-sm font-medium">Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}</div>
-            <div className="ml-auto flex items-center gap-2 lg:ml-0">
-              <Button variant="outline" className="hidden h-8 w-8 p-0 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}><ChevronsLeftIcon /></Button>
-              <Button variant="outline" className="size-8" size="icon" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}><ChevronLeftIcon /></Button>
-              <Button variant="outline" className="size-8" size="icon" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}><ChevronRightIcon /></Button>
-              <Button variant="outline" className="hidden size-8 lg:flex" size="icon" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}><ChevronsRightIcon /></Button>
-            </div>
-          </div>
-        </div>
+        <MaquinasTable data={maquinas} />
       </TabsContent>
 
-      <TabsContent value="alertas" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed flex items-center justify-center text-muted-foreground text-sm">
-          Listagem de máquinas em alerta — em desenvolvimento
-        </div>
+      {/* Aba: somente máquinas com status ALERTA */}
+      <TabsContent value="alertas" className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
+        {emAlerta.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-40 gap-3 rounded-lg border border-dashed text-muted-foreground">
+            <CircleCheckIcon className="size-8 text-green-500" />
+            <p className="text-sm font-medium">Nenhuma máquina em alerta no momento.</p>
+            <p className="text-xs">Todas as máquinas estão operando normalmente.</p>
+          </div>
+        ) : (
+          <MaquinasTable data={emAlerta} />
+        )}
       </TabsContent>
     </Tabs>
   )
@@ -270,7 +263,6 @@ const leiturasMock = [
   { month: "23h", temperatura: 69, vibracao: 0.5 },
   { month: "00h", temperatura: 73, vibracao: 0.8 },
 ]
-
 const chartConfig = {
   temperatura: { label: "Temperatura (°C)", color: "var(--primary)" },
   vibracao: { label: "Vibração", color: "var(--chart-3)" },
@@ -301,11 +293,9 @@ function TableCellViewer({ item }) {
                 </AreaChart>
               </ChartContainer>
               <Separator />
-              <div className="grid gap-2">
-                <div className="flex gap-2 leading-none font-medium">
-                  Integridade: {item.integridade}% · Estabilidade: {item.scoreEstabilidade}%
-                  <TrendingUpIcon className="size-4" />
-                </div>
+              <div className="flex gap-2 leading-none font-medium">
+                Integridade: {item.integridade}% · Estabilidade: {item.scoreEstabilidade}%
+                <TrendingUpIcon className="size-4" />
               </div>
               <Separator />
             </>
@@ -313,10 +303,7 @@ function TableCellViewer({ item }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1"><Label>Criticidade</Label><CriticidadeBadge value={item.criticidade} /></div>
             <div className="flex flex-col gap-1"><Label>Status</Label><StatusBadge value={item.status} /></div>
-            <div className="flex flex-col gap-2 col-span-2">
-              <Label>Integridade</Label>
-              <IntegridadeBar value={item.integridade} />
-            </div>
+            <div className="flex flex-col gap-2 col-span-2"><Label>Integridade</Label><IntegridadeBar value={item.integridade} /></div>
             <div className="flex flex-col gap-1"><Label>Sensores vinculados</Label><span className="font-medium">{item.sensores}</span></div>
           </div>
         </div>
