@@ -32,31 +32,24 @@ const data = {
       ),
     },
     {
-      title: "Tabelas",
-      url: "#",
+      title: "Máquinas",
+      url: "/dashboard/maquinas",
       icon: (
-        <ListIcon />
+        <WashingMachineIcon />
       ),
     },
     {
-      title: "Analiticas",
-      url: "#",
-      icon: (
-        <ChartBarIcon />
-      ),
-    },
-    {
-      title: "Projetos",
+      title: "Sensores",
       url: "#",
       icon: (
         <FolderIcon />
       ),
     },
     {
-      title: "Máquinas",
-      url: "/dashboard/maquinas",
+      title: "Técnicos",
+      url: "#",
       icon: (
-        <WashingMachineIcon />
+        <UsersIcon />
       ),
     },
   ],
