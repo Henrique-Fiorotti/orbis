@@ -139,7 +139,7 @@ function MaquinasTable({ data }) {
 
   return (
     <>
-      <div className="overflow-hidden rounded-lg border">
+      <div className="min-h-[500px] overflow-hidden rounded-lg border">
         <DndContext collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]}
           onDragEnd={({ active, over }) => {
             if (active && over && active.id !== over.id)
@@ -248,7 +248,7 @@ export function DataTable() {
             <p className="text-xs">Todas as máquinas estão operando normalmente.</p>
           </div>
         ) : (
-          <MaquinasTable data={emAlerta} />
+          <MaquinasTable className="min-h-[500px]" data={emAlerta} />
         )}
       </TabsContent>
     </Tabs>
