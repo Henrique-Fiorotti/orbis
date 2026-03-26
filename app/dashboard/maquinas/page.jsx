@@ -2,92 +2,31 @@
 
 import * as React from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { z } from "zod"
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
 import { toast } from "sonner"
+
+import { useMaquinas } from "@/components/context/maquinas-context"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { SiteHeader } from "@/components/site-header"
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  CircleCheckIcon,
-  AlertTriangleIcon,
-  EllipsisVerticalIcon,
-  PlusIcon,
-  ArrowLeftIcon,
-  PencilIcon,
-  Trash2Icon,
-  EyeIcon,
-  SearchIcon,
-  ChevronsLeftIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsRightIcon,
+  CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, PlusIcon,
+  ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
+  ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon,
   WashingMachineIcon,
 } from "lucide-react"
-
-import data from "../data.json"
-
-// =============================================================
-// INTEGRAÇÃO COM A API — quando a API estiver pronta:
-//
-// GET    /maquinas          → listar
-// POST   /maquinas          → criar
-// PUT    /maquinas/:id      → atualizar
-// DELETE /maquinas/:id      → deletar
-//
-// Todas as rotas exigem: Authorization: Bearer <token>
-// =============================================================
-
-const mockMaquinas = data.map((m, i) => ({ ...m, id: i + 1 })) // adicionar id para simular banco de dados
+import {
+  flexRender, getCoreRowModel, getFilteredRowModel,
+  getPaginationRowModel, getSortedRowModel, useReactTable,
+} from "@tanstack/react-table"
 
 const formVazio = { nome: "", setor: "", tipo: "", criticidade: "MEDIA" }
 
@@ -106,7 +45,7 @@ function CriticidadeBadge({ value }) {
 function StatusBadge({ value }) {
   return (
     <Badge variant="outline" className="px-1.5 text-muted-foreground">
-      {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]! dark:fill-[#5E17EB]!" /> : <AlertTriangleIcon className="text-red-500" />}
+      {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]!" /> : <AlertTriangleIcon className="text-red-500" />}
       {value}
     </Badge>
   )
@@ -116,11 +55,11 @@ function IntegridadeBar({ value }) {
   const cor = value < 50 ? "bg-red-500" : value < 75 ? "bg-yellow-400" : "bg-green-500"
   const textCor = value < 50 ? "text-red-500" : value < 75 ? "text-yellow-500" : "text-green-600"
   return (
-    <div className="flex items-center gap-2 min-w-[100px]">
+    <div className="flex items-center gap-2 min-w-[110px]">
       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${cor} transition-all`} style={{ width: `${value}%` }} />
+        <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${value}%` }} />
       </div>
-      <span className={`text-sm font-medium w-9 text-right ${textCor}`}>{value}%</span>
+      <span className={`text-sm font-medium w-9 text-right tabular-nums ${textCor}`}>{value}%</span>
     </div>
   )
 }
@@ -128,21 +67,20 @@ function IntegridadeBar({ value }) {
 export default function MaquinasPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { maquinas, adicionarMaquina, editarMaquina, excluirMaquina } = useMaquinas()
 
-  const [maquinas, setMaquinas] = React.useState(mockMaquinas)
   const [busca, setBusca] = React.useState("")
   const [sheetAberto, setSheetAberto] = React.useState(false)
-  const [modoSheet, setModoSheet] = React.useState("criar") // "criar" | "editar" | "ver"
+  const [modoSheet, setModoSheet] = React.useState("criar")
   const [maquinaSelecionada, setMaquinaSelecionada] = React.useState(null)
   const [form, setForm] = React.useState(formVazio)
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [maquinaExcluir, setMaquinaExcluir] = React.useState(null)
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
 
+  // Abre Sheet de criação automaticamente se vier com ?action=new
   React.useEffect(() => {
-    if (searchParams.get("action") === "new") {
-      abrirCriar()
-    }
+    if (searchParams.get("action") === "new") abrirCriar()
   }, [])
 
   function abrirCriar() {
@@ -166,29 +104,15 @@ export default function MaquinasPage() {
   }
 
   function salvar() {
-    if (!form.nome || !form.setor || !form.tipo) {
+    if (!form.nome.trim() || !form.setor.trim() || !form.tipo.trim()) {
       toast.error("Preencha todos os campos obrigatórios.")
       return
     }
-
     if (modoSheet === "criar") {
-      const nova = {
-        ...form,
-        id: Math.max(...maquinas.map(m => m.id)) + 1,
-        integridade: 100,
-        scoreEstabilidade: 100,
-        status: "OK",
-        ultimaLeituraEm: new Date().toISOString(),
-        sensores: 0,
-      }
-      setMaquinas(prev => [nova, ...prev])
-      // TODO: POST /maquinas
+      adicionarMaquina(form)          // ← usa o contexto, reflete no dashboard
       toast.success("Máquina cadastrada com sucesso!")
-
-      mockMaquinas.push(nova) // para simular que a máquina foi adicionada no "banco de dados" e aparece na listagem
     } else {
-      setMaquinas(prev => prev.map(m => m.id === maquinaSelecionada.id ? { ...m, ...form } : m))
-      // TODO: PUT /maquinas/:id
+      editarMaquina(maquinaSelecionada.id, form)  // ← usa o contexto
       toast.success("Máquina atualizada com sucesso!")
     }
     setSheetAberto(false)
@@ -200,10 +124,10 @@ export default function MaquinasPage() {
   }
 
   function excluir() {
-    setMaquinas(prev => prev.filter(m => m.id !== maquinaExcluir.id))
-    // TODO: DELETE /maquinas/:id
+    excluirMaquina(maquinaExcluir.id)   // ← usa o contexto
     toast.success("Máquina removida.")
     setDialogExcluir(false)
+    setSheetAberto(false)
   }
 
   const dadosFiltrados = React.useMemo(() =>
@@ -223,31 +147,11 @@ export default function MaquinasPage() {
         </button>
       ),
     },
-    {
-      accessorKey: "setor",
-      header: "Setor",
-      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.setor}</span>,
-    },
-    {
-      accessorKey: "criticidade",
-      header: "Criticidade",
-      cell: ({ row }) => <CriticidadeBadge value={row.original.criticidade} />,
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => <StatusBadge value={row.original.status} />,
-    },
-    {
-      accessorKey: "integridade",
-      header: "Integridade",
-      cell: ({ row }) => <IntegridadeBar value={row.original.integridade} />,
-    },
-    {
-      accessorKey: "ultimaLeituraEm",
-      header: "Último sinal",
-      cell: ({ row }) => <span className="text-muted-foreground text-sm">{tempoRelativo(row.original.ultimaLeituraEm)}</span>,
-    },
+    { accessorKey: "setor", header: "Setor", cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.setor}</span> },
+    { accessorKey: "criticidade", header: "Criticidade", cell: ({ row }) => <CriticidadeBadge value={row.original.criticidade} /> },
+    { accessorKey: "status", header: "Status", cell: ({ row }) => <StatusBadge value={row.original.status} /> },
+    { accessorKey: "integridade", header: "Integridade", cell: ({ row }) => <IntegridadeBar value={row.original.integridade} /> },
+    { accessorKey: "ultimaLeituraEm", header: "Último sinal", cell: ({ row }) => <span className="text-muted-foreground text-sm">{tempoRelativo(row.original.ultimaLeituraEm)}</span> },
     {
       id: "actions",
       cell: ({ row }) => (
@@ -258,16 +162,10 @@ export default function MaquinasPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem onClick={() => abrirVer(row.original)}>
-              <EyeIcon className="size-4 mr-1" /> Ver detalhes
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => abrirEditar(row.original)}>
-              <PencilIcon className="size-4 mr-1" /> Editar
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}>
-              <Trash2Icon className="size-4 mr-1" /> Excluir
-            </DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -275,8 +173,7 @@ export default function MaquinasPage() {
   ]
 
   const table = useReactTable({
-    data: dadosFiltrados,
-    columns,
+    data: dadosFiltrados, columns,
     state: { pagination },
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
@@ -286,223 +183,176 @@ export default function MaquinasPage() {
   })
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <>
+      <SiteHeader />
+      <div className="flex flex-col gap-6 p-6">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
-            <ArrowLeftIcon className="size-4" />
-          </Button>
-          <div>
-            <div className="flex items-center justify-center gap-2">
-                <WashingMachineIcon size={"33"} /> {/* ícone representando máquinas */}
-                <h1 className="mb-0 text-lg font-medium text-[#3B2867]">Máquinas</h1>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
+              <ArrowLeftIcon className="size-4" />
+            </Button>
+            <div>
+              <div className="flex items-center gap-2">
+                <WashingMachineIcon size={22} className="text-[#3B2867]" />
+                <h1 className="text-lg font-medium text-[#3B2867]">Máquinas</h1>
+              </div>
+              <p className="text-sm text-muted-foreground">{maquinas.length} máquinas cadastradas</p>
             </div>
-            <p className="text-sm text-muted-foreground">{maquinas.length} máquinas cadastradas</p>
           </div>
+          <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <PlusIcon className="size-4 mr-1" />Nova máquina
+          </Button>
         </div>
-        <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
-          <PlusIcon className="size-4 mr-1" />
-          Nova máquina
-        </Button>
-      </div>
 
-      <Separator />
+        <Separator />
 
-      {/* Busca */}
-      <div className="relative w-full max-w-sm">
-        <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nome, setor ou tipo..."
-          value={busca}
-          onChange={e => setBusca(e.target.value)}
-          className="pl-8"
-        />
-      </div>
+        {/* Busca */}
+        <div className="relative w-full max-w-sm">
+          <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
+          <Input placeholder="Buscar por nome, setor ou tipo..." value={busca} onChange={e => setBusca(e.target.value)} className="pl-8" />
+        </div>
 
-      {/* Tabela */}
-      <div className="overflow-hidden rounded-lg border">
-        <Table>
-          <TableHeader className="bg-muted">
-            {table.getHeaderGroups().map(hg => (
-              <TableRow key={hg.id}>
-                {hg.headers.map(h => (
-                  <TableHead key={h.id}>
-                    {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map(row => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map(cell => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+        {/* Tabela */}
+        <div className="overflow-hidden rounded-lg border">
+          <Table>
+            <TableHeader className="bg-muted">
+              {table.getHeaderGroups().map(hg => (
+                <TableRow key={hg.id}>
+                  {hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  Nenhuma máquina encontrada.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Paginação */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">
-          {dadosFiltrados.length} resultado(s)
-        </span>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
-            <ChevronsLeftIcon className="size-4" />
-          </Button>
-          <Button variant="outline" size="icon" className="size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-            <ChevronLeftIcon className="size-4" />
-          </Button>
-          <span className="text-sm">Pág. {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}</span>
-          <Button variant="outline" size="icon" className="size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-            <ChevronRightIcon className="size-4" />
-          </Button>
-          <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
-            <ChevronsRightIcon className="size-4" />
-          </Button>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map(row => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">Nenhuma máquina encontrada.</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
-      </div>
 
-      {/* Sheet criar / editar / ver */}
-      <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-        <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
-          <SheetHeader>
-            <SheetTitle>
-              {modoSheet === "criar" ? "Nova máquina" : modoSheet === "editar" ? "Editar máquina" : "Detalhes da máquina"}
-            </SheetTitle>
-            <SheetDescription>
-              {modoSheet === "criar" ? "Preencha os dados para cadastrar uma nova máquina." :
-               modoSheet === "editar" ? "Altere os dados e clique em salvar." :
-               "Informações completas da máquina."}
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="flex flex-col gap-4 px-4 py-4 overflow-y-auto flex-1">
-
-            {modoSheet === "ver" && maquinaSelecionada ? (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    ["Nome", maquinaSelecionada.nome],
-                    ["Setor", maquinaSelecionada.setor],
-                    ["Tipo", maquinaSelecionada.tipo],
-                    ["Sensores vinculados", maquinaSelecionada.sensores],
-                  ].map(([label, value]) => (
-                    <div key={label} className="flex flex-col gap-1">
-                      <Label className="text-muted-foreground text-xs">{label}</Label>
-                      <span className="text-sm font-medium">{value}</span>
-                    </div>
-                  ))}
-                </div>
-                <Separator />
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-muted-foreground text-xs">Criticidade</Label>
-                    <CriticidadeBadge value={maquinaSelecionada.criticidade} />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-muted-foreground text-xs">Status</Label>
-                    <StatusBadge value={maquinaSelecionada.status} />
-                  </div>
-                </div>
-                <Separator />
-                <div className="flex flex-col gap-2">
-                  <Label className="text-muted-foreground text-xs">Integridade</Label>
-                  <IntegridadeBar value={maquinaSelecionada.integridade} />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label className="text-muted-foreground text-xs">Score de estabilidade</Label>
-                  <IntegridadeBar value={maquinaSelecionada.scoreEstabilidade} />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Label className="text-muted-foreground text-xs">Último sinal</Label>
-                  <span className="text-sm">{tempoRelativo(maquinaSelecionada.ultimaLeituraEm)}</span>
-                </div>
-                <Separator />
-                <div className="flex gap-2">
-                  <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(maquinaSelecionada), 100) }}>
-                    <PencilIcon className="size-4 mr-1" /> Editar
-                  </Button>
-                  <Button variant="destructive" onClick={() => { setSheetAberto(false); setTimeout(() => confirmarExcluir(maquinaSelecionada), 100) }}>
-                    <Trash2Icon className="size-4 mr-1" /> Excluir
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="nome">Nome <span className="text-red-500">*</span></Label>
-                  <Input id="nome" placeholder="Ex: Motor Esteira A1" value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="setor">Setor <span className="text-red-500">*</span></Label>
-                  <Input id="setor" placeholder="Ex: Linha de Produção A" value={form.setor} onChange={e => setForm(p => ({ ...p, setor: e.target.value }))} />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="tipo">Tipo de máquina <span className="text-red-500">*</span></Label>
-                  <Input id="tipo" placeholder="Ex: Motor Elétrico, Compressor..." value={form.tipo} onChange={e => setForm(p => ({ ...p, tipo: e.target.value }))} />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="criticidade">Criticidade</Label>
-                  <Select value={form.criticidade} onValueChange={v => setForm(p => ({ ...p, criticidade: v }))}>
-                    <SelectTrigger id="criticidade" className="w-full">
-                      <SelectValue placeholder="Selecionar criticidade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="BAIXA">Baixa</SelectItem>
-                        <SelectItem value="MEDIA">Média</SelectItem>
-                        <SelectItem value="ALTA">Alta</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
-            )}
+        {/* Paginação */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">{dadosFiltrados.length} resultado(s)</span>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}><ChevronsLeftIcon className="size-4" /></Button>
+            <Button variant="outline" size="icon" className="size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}><ChevronLeftIcon className="size-4" /></Button>
+            <span className="text-sm">Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
+            <Button variant="outline" size="icon" className="size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}><ChevronRightIcon className="size-4" /></Button>
+            <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}><ChevronsRightIcon className="size-4" /></Button>
           </div>
+        </div>
 
-          {modoSheet !== "ver" && (
-            <SheetFooter className="px-4 pb-4">
-              <Button variant="outline" onClick={() => setSheetAberto(false)}>Cancelar</Button>
-              <Button onClick={salvar}>
-                {modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}
-              </Button>
-            </SheetFooter>
-          )}
-        </SheetContent>
-      </Sheet>
+        {/* Sheet criar / editar / ver */}
+        <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
+          <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
+            <SheetHeader>
+              <SheetTitle>
+                {modoSheet === "criar" ? "Nova máquina" : modoSheet === "editar" ? "Editar máquina" : "Detalhes da máquina"}
+              </SheetTitle>
+              <SheetDescription>
+                {modoSheet === "criar" ? "Preencha os dados para cadastrar uma nova máquina." :
+                 modoSheet === "editar" ? "Altere os dados e clique em salvar." :
+                 "Informações completas da máquina."}
+              </SheetDescription>
+            </SheetHeader>
 
-      {/* Dialog confirmar exclusão */}
-      <Dialog open={dialogExcluir} onOpenChange={setDialogExcluir}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir <strong>{maquinaExcluir?.nome}</strong>? Esta ação não pode ser desfeita e removerá todos os sensores e alertas vinculados.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogExcluir(false)}>Cancelar</Button>
-            <Button variant="destructive" onClick={excluir}>Excluir</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            <div className="flex flex-col gap-4 px-4 py-4 overflow-y-auto flex-1">
+              {modoSheet === "ver" && maquinaSelecionada ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[["Nome", maquinaSelecionada.nome], ["Setor", maquinaSelecionada.setor], ["Tipo", maquinaSelecionada.tipo], ["Sensores", maquinaSelecionada.sensores]].map(([label, value]) => (
+                      <div key={label} className="flex flex-col gap-1">
+                        <Label className="text-muted-foreground text-xs">{label}</Label>
+                        <span className="text-sm font-medium">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Separator />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Criticidade</Label><CriticidadeBadge value={maquinaSelecionada.criticidade} /></div>
+                    <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Status</Label><StatusBadge value={maquinaSelecionada.status} /></div>
+                  </div>
+                  <Separator />
+                  <div className="flex flex-col gap-2"><Label className="text-muted-foreground text-xs">Integridade</Label><IntegridadeBar value={maquinaSelecionada.integridade} /></div>
+                  <div className="flex flex-col gap-2"><Label className="text-muted-foreground text-xs">Score de estabilidade</Label><IntegridadeBar value={maquinaSelecionada.scoreEstabilidade} /></div>
+                  <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Último sinal</Label><span className="text-sm">{tempoRelativo(maquinaSelecionada.ultimaLeituraEm)}</span></div>
+                  <Separator />
+                  <div className="flex gap-2">
+                    <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(maquinaSelecionada), 100) }}>
+                      <PencilIcon className="size-4 mr-1" /> Editar
+                    </Button>
+                    <Button variant="destructive" onClick={() => confirmarExcluir(maquinaSelecionada)}>
+                      <Trash2Icon className="size-4 mr-1" /> Excluir
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="nome">Nome <span className="text-red-500">*</span></Label>
+                    <Input id="nome" placeholder="Ex: Motor Esteira A1" value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="setor">Setor <span className="text-red-500">*</span></Label>
+                    <Input id="setor" placeholder="Ex: Linha de Produção A" value={form.setor} onChange={e => setForm(p => ({ ...p, setor: e.target.value }))} />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="tipo">Tipo de máquina <span className="text-red-500">*</span></Label>
+                    <Input id="tipo" placeholder="Ex: Motor Elétrico, Compressor..." value={form.tipo} onChange={e => setForm(p => ({ ...p, tipo: e.target.value }))} />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="criticidade">Criticidade</Label>
+                    <Select value={form.criticidade} onValueChange={v => setForm(p => ({ ...p, criticidade: v }))}>
+                      <SelectTrigger id="criticidade" className="w-full"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="BAIXA">Baixa</SelectItem>
+                          <SelectItem value="MEDIA">Média</SelectItem>
+                          <SelectItem value="ALTA">Alta</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {modoSheet !== "ver" && (
+              <SheetFooter className="px-4 pb-4">
+                <Button variant="outline" onClick={() => setSheetAberto(false)}>Cancelar</Button>
+                <Button onClick={salvar}>{modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}</Button>
+              </SheetFooter>
+            )}
+          </SheetContent>
+        </Sheet>
+
+        {/* Dialog confirmar exclusão */}
+        <Dialog open={dialogExcluir} onOpenChange={setDialogExcluir}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirmar exclusão</DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja excluir <strong>{maquinaExcluir?.nome}</strong>? Esta ação não pode ser desfeita e removerá todos os sensores e alertas vinculados.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDialogExcluir(false)}>Cancelar</Button>
+              <Button variant="destructive" onClick={excluir}>Excluir</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+      </div>
+    </>
   )
 }
