@@ -1,7 +1,7 @@
 "use client"
 
 import { TrendingUp } from "lucide-react"
-import { Pie, PieChart } from "recharts"
+import { Pie, PieChart, Bar, BarChart, } from "recharts"
 
 import {
   Card,
@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/card"
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
@@ -20,10 +22,10 @@ import {
 export const description = "A donut chart"
 
 const chartData = [
-  { Alerta: "Estavel", quantidade: 275, fill: "var(--chart-1)" },
-  { Alerta: "Alerta", quantidade: 200, fill: "yellow" },
-  { Alerta: "Critico", quantidade: 187, fill: "red" },
-  { Alerta: "Inativo", quantidade: 173, fill: "lightgray" },
+  { Alerta: "Estavel", quantidade: 7, fill: "var(--chart-1)" },
+  { Alerta: "Alerta", quantidade: 2, fill: "yellow" },
+  { Alerta: "Critico", quantidade: 0, fill: "red" },
+  { Alerta: "Inativo", quantidade: 0, fill: "lightgray" },
 ]
 
 const chartConfig = {
@@ -68,6 +70,20 @@ export function ChartPieDonut() {
               dataKey="quantidade"
               nameKey="Alerta"
               innerRadius={60}
+            />
+            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+            <ChartLegend content={<ChartLegendContent />} />
+            <Bar
+              dataKey="desktop"
+              stackId="a"
+              fill="var(--color-desktop)"
+              radius={[0, 0, 4, 4]}
+            />
+            <Bar
+              dataKey="mobile"
+              stackId="a"
+              fill="var(--color-mobile)"
+              radius={[4, 4, 0, 0]}
             />
           </PieChart>
         </ChartContainer>

@@ -4,6 +4,52 @@
 @custom-variant dark (&:is(.dark *));
 @import "shadcn/tailwind.css";
 
+/* Modern browsers — Chrome 121+, Edge 121+, Firefox, Safari 18.2+ */
+* {
+  scrollbar-width: 3px;
+  scrollbar-color: #6d39d5 #f7f7f8;
+}
+
+/* Legacy WebKit — older Chrome/Edge/Safari, radius, borders & shadows */
+*::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+*::-webkit-scrollbar-track {
+  background-color: #f7f7f8;
+  border-radius: 20px;
+}
+
+*::-webkit-scrollbar-track:hover {
+  background-color: #f7f7f8;
+}
+
+*::-webkit-scrollbar-track:active {
+  background-color: #f7f7f8;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #6d39d5;
+  border-radius: 20px;
+  min-height: 20px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #926ae2;
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background-color: #895fdd;
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+
 body {
   font-family: var(--font-poppins), sans-serif;
 }
