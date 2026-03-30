@@ -118,44 +118,13 @@ const Footer = () => {
               </div>
             ))}
 
-            {/* Contact column */}
-            <div className="col-span-2">
-              <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-100 ease-in-out fill-mode-both">
-                <p className="text-base font-semibold text-foreground">
-                  Fale conosco
-                </p>
-                <ul className="flex flex-col gap-3">
-                  <li>
-                    <a
-                      href="mailto:suporte.orbis@gmail.com"
-                      className="text-[#6b7280]! hover:text-[#5e17eb]! no-underline! text-sm font-normal transition-colors duration-150">
-                      suporte.orbis@gmail.com
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="https://wa.me/5511900000000"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#6b7280]! hover:text-[#5e17eb]! no-underline! text-sm font-normal transition-colors duration-150">
-                      +55 11 9000-0000
-                    </a>
-                  </li>
-                  <li>
-                    <p className="text-[#6b7280]! text-sm font-normal">
-                      São Paulo, SP — Brasil
-                    </p>
-                  </li>
-                </ul>
-              </div>
-            </div>
 
           </div>
 
           <Separator orientation="horizontal" />
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-2">
-            <p className="text-sm font-normal text-muted-foreground animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-100 ease-in-out fill-mode-both">
+            <p className="text-sm w-full! text-center font-normal text-muted-foreground animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-100 ease-in-out fill-mode-both">
               © 2026 Orbis. Todos os direitos reservados.
             </p>
           </div>
