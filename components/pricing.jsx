@@ -44,9 +44,9 @@ const Pricing = () => {
         Escolha o plano que se adeque às suas necessidades <br /> e comece hoje a prever seu problemas.
       </p>
       <div
-        className="mx-auto mt-8! grid max-w-(--breakpoint-lg) grid-cols-1 gap-8 sm:mt-16 lg:grid-cols-2">
+        className="mx-auto mt-8! h-auto! grid max-w-(--breakpoint-lg) grid-cols-1 gap-8 sm:mt-16 lg:grid-cols-2">
         {plans.map((plan) => (
-          <div className="rounded-lg border p-6"
+          <div className="rounded-lg border  p-12"
           variant={plan.isPopular ? "default" : "outline"}
           key={plan.name}>
             <h3 className="font-medium text-lg">{plan.name}</h3>
