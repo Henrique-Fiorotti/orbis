@@ -459,12 +459,12 @@ export default function HomePage() {
       </section>
 
       {/* ══ QUOTE ══ */}
-      <LogoCloud />
       <section
         style={{
           height: "30dvh",
           background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)",
           padding: "28px 8vw",
+          marginTop: "70px",
         }}
       >
         <div
