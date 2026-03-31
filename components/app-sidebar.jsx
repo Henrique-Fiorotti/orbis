@@ -15,7 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon, WashingMachineIcon } from "lucide-react"
+import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon, WashingMachineIcon, AlertTriangleIcon, NfcIcon } from "lucide-react"
 
 const data = {
   user: {
@@ -42,7 +42,14 @@ const data = {
       title: "Sensores",
       url: "#",
       icon: (
-        <FolderIcon />
+        <NfcIcon />
+      ),
+    },
+    {
+      title: "Alertas",
+      url: "#",
+      icon: (
+        <AlertTriangleIcon />
       ),
     },
     {
