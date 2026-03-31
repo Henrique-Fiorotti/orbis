@@ -49,7 +49,7 @@ function IntegridadeBar({ value }) {
   const cor = value < 50 ? "bg-red-500" : value < 75 ? "bg-yellow-400" : "bg-green-500"
   const textCor = value < 50 ? "text-red-500" : value < 75 ? "text-yellow-500" : "text-green-600"
   return (
-    <div className="flex items-center gap-2 min-w-[110px]">
+    <div className="flex flex-row-reverse items-center gap-2 min-w-[110px]">
       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${value}%` }} />
       </div>

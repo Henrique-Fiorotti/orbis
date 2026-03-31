@@ -24,42 +24,32 @@ const data = {
     avatar: "/Orbis.svg",
   },
   navMain: [
-    {
-      title: "Dashboard",
-      url: "#",
-      icon: (
-        <LayoutDashboardIcon />
-      ),
-    },
-    {
-      title: "Máquinas",
-      url: "/dashboard/maquinas",
-      icon: (
-        <WashingMachineIcon />
-      ),
-    },
-    {
-      title: "Sensores",
-      url: "#",
-      icon: (
-        <NfcIcon />
-      ),
-    },
-    {
-      title: "Alertas",
-      url: "#",
-      icon: (
-        <AlertTriangleIcon />
-      ),
-    },
-    {
-      title: "Técnicos",
-      url: "#",
-      icon: (
-        <UsersIcon />
-      ),
-    },
-  ],
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: <LayoutDashboardIcon />,
+  },
+  {
+    title: "Máquinas",
+    url: "/dashboard/maquinas",
+    icon: <WashingMachineIcon />,
+  },
+  {
+    title: "Sensores",
+    url: "/dashboard/sensores",
+    icon: <NfcIcon />,
+  },
+  {
+    title: "Alertas",
+    url: "/dashboard/alertas",
+    icon: <AlertTriangleIcon />,
+  },
+  {
+    title: "Técnicos",
+    url: "/dashboard/tecnicos",
+    icon: <UsersIcon />,
+  },
+],
   navClouds: [
     {
       title: "Capturar Imagem",
@@ -138,27 +128,6 @@ const data = {
     },
   ],
   documents: [
-    {
-      name: "Biblioteca de Dados",
-      url: "#",
-      icon: (
-        <DatabaseIcon />
-      ),
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: (
-        <FileChartColumnIcon />
-      ),
-    },
-    {
-      name: "Assistente de Prompt",
-      url: "#",
-      icon: (
-        <FileIcon />
-      ),
-    },
   ],
 }
 
