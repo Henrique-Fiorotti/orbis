@@ -2,7 +2,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Poppins, Open_Sans } from "next/font/google";
 import Header from "@/components/Header";
 import "./globals.css";
-import Footer from "@/components/Footer";
 import FooterPage from "./footer-01/page";
 import { TooltipProvider } from "@/components/ui/tooltip";
 

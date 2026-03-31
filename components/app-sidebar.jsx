@@ -15,7 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon, WashingMachineIcon } from "lucide-react"
+import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon, WashingMachineIcon, AlertTriangleIcon, NfcIcon } from "lucide-react"
 
 const data = {
   user: {
@@ -24,42 +24,32 @@ const data = {
     avatar: "/Orbis.svg",
   },
   navMain: [
-    {
-      title: "Dashboard",
-      url: "#",
-      icon: (
-        <LayoutDashboardIcon />
-      ),
-    },
-    {
-      title: "Tabelas",
-      url: "#",
-      icon: (
-        <ListIcon />
-      ),
-    },
-    {
-      title: "Analiticas",
-      url: "#",
-      icon: (
-        <ChartBarIcon />
-      ),
-    },
-    {
-      title: "Projetos",
-      url: "#",
-      icon: (
-        <FolderIcon />
-      ),
-    },
-    {
-      title: "Máquinas",
-      url: "/dashboard/maquinas",
-      icon: (
-        <WashingMachineIcon />
-      ),
-    },
-  ],
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: <LayoutDashboardIcon />,
+  },
+  {
+    title: "Máquinas",
+    url: "/dashboard/maquinas",
+    icon: <WashingMachineIcon />,
+  },
+  {
+    title: "Sensores",
+    url: "/dashboard/sensores",
+    icon: <NfcIcon />,
+  },
+  {
+    title: "Alertas",
+    url: "/dashboard/alertas",
+    icon: <AlertTriangleIcon />,
+  },
+  {
+    title: "Técnicos",
+    url: "/dashboard/tecnicos",
+    icon: <UsersIcon />,
+  },
+],
   navClouds: [
     {
       title: "Capturar Imagem",
@@ -138,27 +128,6 @@ const data = {
     },
   ],
   documents: [
-    {
-      name: "Biblioteca de Dados",
-      url: "#",
-      icon: (
-        <DatabaseIcon />
-      ),
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: (
-        <FileChartColumnIcon />
-      ),
-    },
-    {
-      name: "Assistente de Prompt",
-      url: "#",
-      icon: (
-        <FileIcon />
-      ),
-    },
   ],
 }
 

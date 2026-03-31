@@ -58,10 +58,10 @@ export function SectionCards() {
       className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
 
       {/* Card 1 — Total de máquinas e quantas estão em alerta */}
-      <Card className="@container/card hover:border-purple-600! hover:ring-purple-600/50 focus-within:border-purple-600! focus-within:ring-purple-600/10">
+      <Card className="@container/card border-[#5E17EB]! border-2 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
         <CardHeader>
-          <CardDescription>Máquinas ativas</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          <CardDescription className="text-black!">Máquinas ativas</CardDescription>
+          <CardTitle className="text-[#5E17EB]! text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {resumo.totalMaquinas}
           </CardTitle>
           <CardAction>
@@ -83,9 +83,9 @@ export function SectionCards() {
       </Card>
 
       {/* Card 2 — Alertas gerados hoje e quantos ainda estão ativos */}
-      <Card className="@container/card hover:border-purple-600! hover:ring-purple-600/50 focus-within:border-purple-600! focus-within:ring-purple-600/10">
+      <Card className="@container/card hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
         <CardHeader>
-          <CardDescription>Alertas hoje</CardDescription>
+          <CardDescription className="text-black!">Alertas hoje</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {resumo.alertasHoje}
           </CardTitle>
@@ -108,9 +108,9 @@ export function SectionCards() {
       </Card>
 
       {/* Card 3 — Sensores online (totalMaquinas × média de sensores por máquina) */}
-      <Card className="@container/card hover:border-purple-600! hover:ring-purple-600/50 focus-within:border-purple-600! focus-within:ring-purple-600/10">
+      <Card className="@container/card hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
         <CardHeader>
-          <CardDescription>Sensores online</CardDescription>
+          <CardDescription className="text-black!">Sensores online</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {/* TODO: buscar de GET /sensores e contar status ONLINE */}
             12
@@ -134,9 +134,9 @@ export function SectionCards() {
       </Card>
 
       {/* Card 4 — Integridade média das máquinas */}
-      <Card className="@container/card hover:border-purple-600! hover:ring-purple-600/50 focus-within:border-purple-600! focus-within:ring-purple-600/10">
+      <Card className="@container/card hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
         <CardHeader>
-          <CardDescription>Integridade média</CardDescription>
+          <CardDescription className="text-black!">Integridade média</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {integridadeFormatada}%
           </CardTitle>
