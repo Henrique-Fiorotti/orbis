@@ -25,7 +25,6 @@ const chartData = [
   { Alerta: "Estavel", quantidade: 7, fill: "var(--chart-1)" },
   { Alerta: "Alerta", quantidade: 2, fill: "yellow" },
   { Alerta: "Critico", quantidade: 0, fill: "red" },
-  { Alerta: "Inativo", quantidade: 0, fill: "lightgray" },
 ]
 
 const chartConfig = {
@@ -40,10 +39,6 @@ const chartConfig = {
   Critico: {
     label: "Critico",
     color: "red",
-  },
-  Inativo: {
-    label: "Inativo",
-    color: "lightgray",
   },
 }
 
