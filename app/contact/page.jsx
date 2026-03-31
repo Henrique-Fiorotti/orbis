@@ -108,10 +108,10 @@ function ContactCard({ href, icon, label, value, delay = 0 }) {
         border: `2px solid ${hovered ? "#7c3aed" : "#ddd6fe"}`,
         borderRadius: "16px",
         padding: "20px 24px",
+        width: "390px",
         height: "33%",
         textDecoration: "none",
         background: hovered ? "linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%)" : "#fff",
-        transform: hovered ? "translateY(-3px) scale(1.01)" : "translateY(0) scale(1)",
         boxShadow: hovered
           ? "0 12px 40px rgba(124,58,237,0.15)"
           : "0 2px 12px rgba(0,0,0,0.05)",
@@ -239,7 +239,7 @@ export default function ContatoPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "90px 120px 24px 24px",
+        padding: "115px 24px 120px 24px !important",
         fontFamily: "'Inter', 'Segoe UI', sans-serif",
       }}
     >
@@ -257,11 +257,11 @@ export default function ContatoPage() {
         {/* LEFT — scrollable panel */}
         <div
           style={{
-            flex: "1 1 620px",
             border: "2px solid #ddd6fe",
             borderRadius: "20px",
             overflowY: "auto",
             minHeight: "560px",
+            width: "650px",
             background: "#fff",
             boxShadow: "0 4px 32px rgba(124,58,237,0.07)",
             scrollbarWidth: "thin",

@@ -96,6 +96,11 @@ h6 {
   .offcanvas {
     display: block !important;
   }
+
+  .loginbutton{
+    display: none !important;
+    position: absolute !important;
+  }
 }
 
 hana-viewer::part(badge) {
