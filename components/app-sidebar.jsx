@@ -128,27 +128,6 @@ const data = {
     },
   ],
   documents: [
-    {
-      name: "Biblioteca de Dados",
-      url: "#",
-      icon: (
-        <DatabaseIcon />
-      ),
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: (
-        <FileChartColumnIcon />
-      ),
-    },
-    {
-      name: "Assistente de Prompt",
-      url: "#",
-      icon: (
-        <FileIcon />
-      ),
-    },
   ],
 }
 
