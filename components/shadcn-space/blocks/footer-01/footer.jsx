@@ -124,7 +124,7 @@ const Footer = () => {
           <Separator orientation="horizontal" />
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-2">
-            <p className="text-sm w-full! text-center font-normal text-muted-foreground animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-100 ease-in-out fill-mode-both">
+            <p className="text-sm w-full! text-center font-normal text-muted-foreground animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-100 ease-in-out fill-mode-both mb-0">
               © 2026 Orbis. Todos os direitos reservados.
             </p>
           </div>
