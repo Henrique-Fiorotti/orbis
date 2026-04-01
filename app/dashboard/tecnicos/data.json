@@ -1,6 +1,46 @@
 [
-  { "id": 1, "nome": "Carlos Eduardo Silva", "email": "carlos.silva@orbis.com", "telefone": "(11) 99901-0001", "especialidade": "Elétrica Industrial", "status": "ATIVO", "alertasAtendidos": 34, "criadoEm": "2025-01-15T08:00:00Z" },
-  { "id": 2, "nome": "Fernanda Rocha", "email": "fernanda.rocha@orbis.com", "telefone": "(11) 99901-0002", "especialidade": "Mecânica de Precisão", "status": "ATIVO", "alertasAtendidos": 28, "criadoEm": "2025-02-03T08:00:00Z" },
-  { "id": 3, "nome": "Ricardo Alves", "email": "ricardo.alves@orbis.com", "telefone": "(11) 99901-0003", "especialidade": "Hidráulica e Pneumática", "status": "ATIVO", "alertasAtendidos": 19, "criadoEm": "2025-03-10T08:00:00Z" },
-  { "id": 4, "nome": "Juliana Martins", "email": "juliana.martins@orbis.com", "telefone": "(11) 99901-0004", "especialidade": "Automação Industrial", "status": "INATIVO", "alertasAtendidos": 7, "criadoEm": "2025-04-20T08:00:00Z" }
+  {
+    "id": 1,
+    "nome": "Carlos Eduardo Silva",
+    "email": "carlos.silva@orbis.com",
+    "telefone": "(11) 99901-0001",
+    "especialidade": "Elétrica Industrial",
+    "status": "ATIVO",
+    "alertasAtendidos": 34,
+    "criadoEm": "2025-01-15T08:00:00Z",
+    "foto": "https://api.dicebear.com/9.x/initials/svg?seed=Carlos+Eduardo&backgroundColor=5e17eb&fontFamily=Arial&fontSize=38&fontWeight=600&textColor=ffffff"
+  },
+  {
+    "id": 2,
+    "nome": "Fernanda Rocha",
+    "email": "fernanda.rocha@orbis.com",
+    "telefone": "(11) 99901-0002",
+    "especialidade": "Mecânica de Precisão",
+    "status": "ATIVO",
+    "alertasAtendidos": 28,
+    "criadoEm": "2025-02-03T08:00:00Z",
+    "foto": "https://api.dicebear.com/9.x/initials/svg?seed=Fernanda+Rocha&backgroundColor=9333ea&fontFamily=Arial&fontSize=38&fontWeight=600&textColor=ffffff"
+  },
+  {
+    "id": 3,
+    "nome": "Ricardo Alves",
+    "email": "ricardo.alves@orbis.com",
+    "telefone": "(11) 99901-0003",
+    "especialidade": "Hidráulica e Pneumática",
+    "status": "ATIVO",
+    "alertasAtendidos": 19,
+    "criadoEm": "2025-03-10T08:00:00Z",
+    "foto": "https://api.dicebear.com/9.x/initials/svg?seed=Ricardo+Alves&backgroundColor=7c3aed&fontFamily=Arial&fontSize=38&fontWeight=600&textColor=ffffff"
+  },
+  {
+    "id": 4,
+    "nome": "Juliana Martins",
+    "email": "juliana.martins@orbis.com",
+    "telefone": "(11) 99901-0004",
+    "especialidade": "Automação Industrial",
+    "status": "INATIVO",
+    "alertasAtendidos": 7,
+    "criadoEm": "2025-04-20T08:00:00Z",
+    "foto": "https://api.dicebear.com/9.x/initials/svg?seed=Juliana+Martins&backgroundColor=6d28d9&fontFamily=Arial&fontSize=38&fontWeight=600&textColor=ffffff"
+  }
 ]
