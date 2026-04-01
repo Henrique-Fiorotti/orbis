@@ -203,10 +203,10 @@ export function DataTable() {
 
   return (
     <Tabs defaultValue="outline" className="w-full flex-col justify-start gap-6">
-      <div className="flex items-center justify-between px-4 lg:px-6">
-        <TabsList className="hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="outline">Máquinas</TabsTrigger>
-          <TabsTrigger value="alertas">
+      <div className=" rounded-[8px]! flex items-center justify-between px-4 lg:px-6">
+        <TabsList className="rounded-[8px]! hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full! **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
+          <TabsTrigger className="rounded-[8px]!" value="outline">Máquinas</TabsTrigger>
+          <TabsTrigger className="rounded-[8px]!" value="alertas">
             Em Alerta
             {emAlerta.length > 0 && (
               <Badge variant="secondary" className="ml-1 bg-red-100! text-red-700! border-red-200!">{emAlerta.length}</Badge>
