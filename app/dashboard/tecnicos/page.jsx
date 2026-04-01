@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { useTecnicos } from "@/components/context/tecnicos-context"
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,7 +22,7 @@ import {
   UsersIcon, EllipsisVerticalIcon, PlusIcon,
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
   ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon,
-  CircleCheckIcon, CircleMinusIcon,
+  CircleCheckIcon, CircleMinusIcon, ImageIcon,
 } from "lucide-react"
 import {
   flexRender, getCoreRowModel, getFilteredRowModel,
@@ -39,7 +40,33 @@ const ESPECIALIDADES = [
 
 const formVazio = {
   nome: "", email: "", telefone: "",
-  especialidade: "Elétrica Industrial", status: "ATIVO",
+  especialidade: "Elétrica Industrial", status: "ATIVO", foto: "",
+}
+
+function getInitials(nome) {
+  return nome
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(n => n[0].toUpperCase())
+    .join("")
+}
+
+function TecnicoAvatar({ tecnico, size = "default" }) {
+  const sizeClass = size === "lg"
+    ? "h-16 w-16 text-xl"
+    : size === "sm"
+    ? "h-7 w-7 text-xs"
+    : "h-8 w-8 text-xs"
+
+  return (
+    <Avatar className={sizeClass}>
+      <AvatarImage src={tecnico.foto || undefined} alt={tecnico.nome} />
+      <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold">
+        {getInitials(tecnico.nome)}
+      </AvatarFallback>
+    </Avatar>
+  )
 }
 
 function StatusTecnicoBadge({ value }) {
@@ -82,7 +109,7 @@ export default function TecnicosPage() {
     setForm({
       nome: tecnico.nome, email: tecnico.email,
       telefone: tecnico.telefone, especialidade: tecnico.especialidade,
-      status: tecnico.status,
+      status: tecnico.status, foto: tecnico.foto || "",
     })
     setTecnicoSelecionado(tecnico)
     setSheetAberto(true)
@@ -99,11 +126,12 @@ export default function TecnicosPage() {
       toast.error("Preencha todos os campos obrigatórios.")
       return
     }
+    const payload = { ...form, foto: form.foto.trim() || null }
     if (modoSheet === "criar") {
-      adicionarTecnico(form)
+      adicionarTecnico(payload)
       toast.success("Técnico cadastrado com sucesso!")
     } else {
-      editarTecnico(tecnicoSelecionado.id, form)
+      editarTecnico(tecnicoSelecionado.id, payload)
       toast.success("Técnico atualizado com sucesso!")
     }
     setSheetAberto(false)
@@ -133,15 +161,37 @@ export default function TecnicosPage() {
       accessorKey: "nome",
       header: "Técnico",
       cell: ({ row }) => (
-        <button onClick={() => abrirVer(row.original)} className="text-left font-medium text-sm hover:underline hover:text-primary transition-colors">
-          {row.original.nome}
-        </button>
+        <div className="flex items-center gap-2.5">
+          <TecnicoAvatar tecnico={row.original} size="sm" />
+          <button
+            onClick={() => abrirVer(row.original)}
+            className="text-left font-medium text-sm hover:underline hover:text-primary transition-colors"
+          >
+            {row.original.nome}
+          </button>
+        </div>
       ),
     },
-    { accessorKey: "especialidade", header: "Especialidade", cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.especialidade}</span> },
-    { accessorKey: "email", header: "E-mail", cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.email}</span> },
-    { accessorKey: "telefone", header: "Telefone", cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.telefone}</span> },
-    { accessorKey: "status", header: "Status", cell: ({ row }) => <StatusTecnicoBadge value={row.original.status} /> },
+    {
+      accessorKey: "especialidade",
+      header: "Especialidade",
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.especialidade}</span>,
+    },
+    {
+      accessorKey: "email",
+      header: "E-mail",
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.email}</span>,
+    },
+    {
+      accessorKey: "telefone",
+      header: "Telefone",
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.telefone}</span>,
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => <StatusTecnicoBadge value={row.original.status} />,
+    },
     {
       accessorKey: "alertasAtendidos",
       header: "Alertas atendidos",
@@ -266,12 +316,24 @@ export default function TecnicosPage() {
             </SheetHeader>
 
             <div className="flex flex-col gap-4 px-4 py-4 overflow-y-auto flex-1">
+
+              {/* ── MODO VER ── */}
               {modoSheet === "ver" && tecnicoSelecionado ? (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Avatar + nome em destaque */}
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100">
+                    <TecnicoAvatar tecnico={tecnicoSelecionado} size="lg" />
+                    <div className="flex flex-col gap-1">
+                      <span className="font-semibold text-base text-[#3B2867]">{tecnicoSelecionado.nome}</span>
+                      <span className="text-sm text-muted-foreground">{tecnicoSelecionado.especialidade}</span>
+                      <StatusTecnicoBadge value={tecnicoSelecionado.status} />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid grid-cols-1 gap-3">
                     {[
-                      ["Nome", tecnicoSelecionado.nome],
-                      ["Especialidade", tecnicoSelecionado.especialidade],
                       ["E-mail", tecnicoSelecionado.email],
                       ["Telefone", tecnicoSelecionado.telefone],
                     ].map(([label, value]) => (
@@ -281,15 +343,16 @@ export default function TecnicosPage() {
                       </div>
                     ))}
                   </div>
+
                   <Separator />
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Status</Label><StatusTecnicoBadge value={tecnicoSelecionado.status} /></div>
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-muted-foreground text-xs">Alertas atendidos</Label>
-                      <span className="text-sm font-medium text-[#3B2867]">{tecnicoSelecionado.alertasAtendidos}</span>
-                    </div>
+
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-muted-foreground text-xs">Alertas atendidos</Label>
+                    <span className="text-2xl font-bold text-[#3B2867]">{tecnicoSelecionado.alertasAtendidos}</span>
                   </div>
+
                   <Separator />
+
                   <div className="flex gap-2">
                     <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }}>
                       <PencilIcon className="size-4 mr-1" /> Editar
@@ -299,20 +362,40 @@ export default function TecnicosPage() {
                     </Button>
                   </div>
                 </>
+
               ) : (
+
+              /* ── MODO CRIAR / EDITAR ── */
                 <>
+                  {/* Preview do avatar no formulário */}
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={form.foto || undefined} />
+                      <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold text-sm">
+                        {form.nome ? getInitials(form.nome) : <ImageIcon className="size-4 text-muted-foreground" />}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-medium">{form.nome || "Nome do técnico"}</span>
+                      <span className="text-xs text-muted-foreground">{form.especialidade}</span>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="nome">Nome completo <span className="text-red-500">*</span></Label>
                     <Input id="nome" placeholder="Ex: Carlos Eduardo Silva" value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} />
                   </div>
+
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="email">E-mail <span className="text-red-500">*</span></Label>
                     <Input id="email" type="email" placeholder="carlos@orbis.com" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
                   </div>
+
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="telefone">Telefone <span className="text-red-500">*</span></Label>
                     <Input id="telefone" placeholder="(11) 99900-0000" value={form.telefone} onChange={e => setForm(p => ({ ...p, telefone: e.target.value }))} />
                   </div>
+
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="especialidade">Especialidade</Label>
                     <Select value={form.especialidade} onValueChange={v => setForm(p => ({ ...p, especialidade: v }))}>
@@ -324,6 +407,7 @@ export default function TecnicosPage() {
                       </SelectContent>
                     </Select>
                   </div>
+
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="status">Status</Label>
                     <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
@@ -335,6 +419,17 @@ export default function TecnicosPage() {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="foto">URL da foto <span className="text-muted-foreground text-xs font-normal">(opcional)</span></Label>
+                    <Input
+                      id="foto"
+                      placeholder="https://exemplo.com/foto.jpg"
+                      value={form.foto}
+                      onChange={e => setForm(p => ({ ...p, foto: e.target.value }))}
+                    />
+                    <p className="text-xs text-muted-foreground">Deixe em branco para usar as iniciais do nome.</p>
                   </div>
                 </>
               )}
