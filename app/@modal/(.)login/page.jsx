@@ -31,7 +31,8 @@ export default function LoginModal() {
       }}
     >
       <div
-        onClick={(e) => e.stopPropagation()}>
+        onClick={(e) => e.stopPropagation()}
+        style={{boxShadow: "0 8px 40px rgba(0,0,0,0.12)", borderRadius: "25px" }}>
         <LoginCard />
       </div>
     </div>
