@@ -33,11 +33,12 @@ export const metadata = {
     "A Orbis é uma empresa de tecnologia especializada em soluções preventivas para o futuro. Com foco em inovação e sustentabilidade, oferecemos serviços e produtos que ajudam nossos clientes a antecipar desafios e aproveitar oportunidades em um mundo em constante evolução.",
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children, modal }) {
   return (
     <html lang="pt-BR" className={`${poppins.variable} ${openSans.variable}`}>
       <body>
           {children}
+          {modal}
       </body>
     </html>
   );
