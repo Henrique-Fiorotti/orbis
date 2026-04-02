@@ -231,7 +231,7 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon-sm"
-      className={cn(className)}
+      className={cn(className, "bg-transparent! hover:bg-[#5F18EA]/10! rounded-[8px]! p-5!")}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -448,7 +448,7 @@ const sidebarMenuButtonVariants = cva(
   {
     variants: {
       variant: {
-        default: "hover:text-sidebar-accent-foreground hover:bg-white! border-2 border-gray-100  rounded-[8px]! hover:border hover:border-gray-200!",
+        default: "hover:text-sidebar-accent-foreground hover:bg-white! border-1 border-gray-100  rounded-[8px]! hover:border hover:border-gray-200!",
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))] rounded-[8px]!",
       },
