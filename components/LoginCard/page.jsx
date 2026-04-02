@@ -225,7 +225,7 @@ export default function LoginCard() {
 
       <div className="orbis-card">
         <div className="orbis-top">
-          <p className="orbis-logo-tag">Orbis</p>
+         <img style={{height: "55px"}} src="LogoBrancaGrande.svg" alt="" />
           <h2 className="orbis-greeting">Bem-vindo de volta</h2>
           <p className="orbis-sub">Acesse sua conta para continuar</p>
         </div>

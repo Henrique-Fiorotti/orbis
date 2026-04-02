@@ -207,7 +207,7 @@ export default function HomePage() {
       {/* ══ HERO ══ */}
       <section
         style={{
-          minHeight: "100vh",
+          minHeight: "85vh",
           display: "flex",
           flexDirection: "row-reverse",
           justifyContent: "center",
@@ -215,6 +215,7 @@ export default function HomePage() {
           position: "relative",
           background: "#fff",
           objectFit: "cover",
+          marginTop: "70px",
         }}
       >
         {/* subtle dot grid */}
