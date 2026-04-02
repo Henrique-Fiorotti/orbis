@@ -4,6 +4,7 @@ import LogoCloud from "@/components/logo-cloud";
 import Pricing from "@/components/pricing";
 import { ChartPieDonut } from "@/components/ui/chart-pie-donut";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 /* ── tiny hook: fade-in on scroll ── */
@@ -206,7 +207,7 @@ export default function HomePage() {
       {/* ══ HERO ══ */}
       <section
         style={{
-          minHeight: "100vh",
+          minHeight: "85vh",
           display: "flex",
           flexDirection: "row-reverse",
           justifyContent: "center",
@@ -214,6 +215,7 @@ export default function HomePage() {
           position: "relative",
           background: "#fff",
           objectFit: "cover",
+          marginTop: "70px",
         }}
       >
         {/* subtle dot grid */}
@@ -297,7 +299,7 @@ export default function HomePage() {
               transition: "opacity 0.6s ease 0.45s, transform 0.6s ease 0.45s",
             }}
           >
-            <a
+            <Link
               href="/login"
               style={{
                 background: "#7b39ed",
@@ -327,8 +329,8 @@ export default function HomePage() {
               }}
             >
               Acesse o Orbis
-            </a>
-            <a
+            </Link>
+            <Link
               href="#sobre"
               style={{
                 background: "transparent",
@@ -355,7 +357,7 @@ export default function HomePage() {
               }}
             >
               Sobre
-            </a>
+            </Link>
           </div>
 
           {/* Register link */}

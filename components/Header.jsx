@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import Image from "next/image";
 import Bootstrap from "bootstrap/dist/css/bootstrap.min.css";
 export default function Header() {
@@ -61,12 +62,12 @@ export default function Header() {
           
           </div>
           <li className="nav-item list-none! loginbutton">
-                <a
-                  href=""
+                <Link
+                  href="/login"
                   className="nav-link border! border-[#5e17eb]! text-[#5e17eb]! p-1.5! w-22.5! flex! justify-center! rounded-[10px]! cursor-pointer! font-poppins! hover:bg-[#5e17eb]! hover:text-[#ffffff]! hover:border-[#5e17eb]! transition-all! duration-150 ease-in-out!"
                 >
                   Login
-                </a>
+                </Link>
               </li>
         </div>
       </nav>
@@ -100,12 +101,12 @@ export default function Header() {
                   Contato
                 </a>
 
-                <a
-                  href=""
+                <Link
+                  href="/login"
                   className="nav-link border-2! border-[#5e17eb]! text-[#5e17eb]! p-1.5! w-22.5! flex! justify-center! rounded-[10px]! cursor-pointer! font-poppins! hover:bg-[#5013ca]! hover:text-[#ffffff]! hover:border-[#5013ca]! transition-all! duration-150 ease-in-out text-[25px]!"
                 >
                   Login
-                </a>
+                </Link>
             </div>
           </div>
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
