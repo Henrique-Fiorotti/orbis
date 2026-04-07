@@ -343,11 +343,13 @@ export default function MaquinasPage() {
               <DialogTitle>Confirmar exclusão</DialogTitle>
               <DialogDescription>
                 Tem certeza que deseja excluir <strong>{maquinaExcluir?.nome}</strong>? Esta ação não pode ser desfeita e removerá todos os sensores e alertas vinculados.
+                <DialogDescription className="mt-2 text-sm text-muted-foreground">Digite o nome da máquina para confirmar:</DialogDescription>
+                <Input placeholder={maquinaExcluir?.nome} value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} /> {/* campo de confirmação para evitar exclusões acidentais */}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogExcluir(false)}>Cancelar</Button>
-              <Button variant="destructive" onClick={excluir}>Excluir</Button>
+              <Button variant="destructive" disabled={form.nome !== maquinaExcluir?.nome} onClick={excluir}>Excluir</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
