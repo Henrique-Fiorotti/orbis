@@ -136,10 +136,10 @@ export function ChartAreaInteractive() {
           </ToggleGroup>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger
-              className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
+              className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden rounded-xl!"
               size="sm"
               aria-label="Selecionar período">
-              <SelectValue placeholder="Últimos 3 meses" />
+              <SelectValue placeholder="Filtrar" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="90d" className="rounded-lg">Últimos 3 meses</SelectItem>

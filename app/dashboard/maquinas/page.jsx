@@ -27,6 +27,11 @@ import {
   flexRender, getCoreRowModel, getFilteredRowModel,
   getPaginationRowModel, getSortedRowModel, useReactTable,
 } from "@tanstack/react-table"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const formVazio = { nome: "", setor: "", tipo: "", criticidade: "MEDIA" }
 
@@ -190,15 +195,22 @@ export default function MaquinasPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
-              <ArrowLeftIcon className="size-4" />
-            </Button>
+            <Tooltip>
+              <TooltipContent>
+                <p className="mb-0!">Voltar ao dashboard</p>
+              </TooltipContent>
+              <TooltipTrigger>
+                <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
+                  <ArrowLeftIcon className="size-4" />
+                </Button>
+              </TooltipTrigger>
+            </Tooltip>
             <div>
               <div className="flex items-center gap-2">
-                <WashingMachineIcon size={22} className="text-[#3B2867]" />
-                <h1 className="text-lg font-medium text-[#3B2867]">Máquinas</h1>
+                <WashingMachineIcon size={22} />
+                <h1 className="text-[18pt]! mb-0! font-medium text-[#3B2867]">Máquinas</h1>
               </div>
-              <p className="text-sm text-muted-foreground">{maquinas.length} máquinas cadastradas</p>
+              <p className="text-sm text-muted-foreground mb-0!">{maquinas.length} máquinas cadastradas</p>
             </div>
           </div>
           <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -343,11 +355,13 @@ export default function MaquinasPage() {
               <DialogTitle>Confirmar exclusão</DialogTitle>
               <DialogDescription>
                 Tem certeza que deseja excluir <strong>{maquinaExcluir?.nome}</strong>? Esta ação não pode ser desfeita e removerá todos os sensores e alertas vinculados.
+                <DialogDescription className="mt-2 text-sm text-muted-foreground">Digite o nome da máquina para confirmar:</DialogDescription>
+                <Input placeholder={maquinaExcluir?.nome} value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} /> {/* campo de confirmação para evitar exclusões acidentais */}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialogExcluir(false)}>Cancelar</Button>
-              <Button variant="destructive" onClick={excluir}>Excluir</Button>
+              <Button variant="destructive" disabled={form.nome !== maquinaExcluir?.nome} onClick={excluir}>Excluir</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

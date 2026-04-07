@@ -28,7 +28,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Orbis - Soluções Preventivas",
+  title: "Orbis - Soluções Preventivas para o Futuro",
   description:
     "A Orbis é uma empresa de tecnologia especializada em soluções preventivas para o futuro. Com foco em inovação e sustentabilidade, oferecemos serviços e produtos que ajudam nossos clientes a antecipar desafios e aproveitar oportunidades em um mundo em constante evolução.",
 };

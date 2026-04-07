@@ -6,6 +6,7 @@ import { MaquinasProvider } from "@/components/context/maquinas-context"
 import { SensoresProvider } from "@/components/context/sensores-context"
 import { AlertasProvider } from "@/components/context/alertas-context"
 import { TecnicosProvider } from "@/components/context/tecnicos-context"
+import { Toaster } from "sonner"
 
 export default function DashboardLayout({ children }) {
   return (
@@ -22,6 +23,7 @@ export default function DashboardLayout({ children }) {
                 <AppSidebar variant="inset" />
                 <SidebarInset>
                   <TooltipProvider>{children}</TooltipProvider>
+                  <Toaster position="top-left" />
                 </SidebarInset>
               </SidebarProvider>
             </TooltipProvider>
