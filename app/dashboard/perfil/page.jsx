@@ -140,59 +140,63 @@ export default function PerfilPage() {
 
   return (
     <>
-      <SiteHeader />
+    <SiteHeader />
 
-      <div className="flex flex-col gap-6 p-6 max-w-3xl">
+    <div className="flex flex-col gap-6 p-4 sm:p-6 w-full">
 
-        {/* Cabeçalho da página */}
-        <div>
-          <h1 className="text-xl font-semibold">Meu Perfil</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie suas informações pessoais e preferências de conta.
+      {/* Cabeçalho da página */}
+      <div>
+        <h1 className="text-xl font-semibold">Meu Perfil</h1>
+        <p className="text-sm text-muted-foreground">
+          Gerencie suas informações pessoais e preferências de conta.
+        </p>
+      </div>
+
+      <Separator />
+
+      {/* ── Card de identificação ── */}
+      <div className="flex flex-col sm:flex-row items-center sm:items-center gap-10 sm:gap-10 rounded-xl border bg-card p-5">
+        {/* Avatar */}
+        <div className="relative shrink-0 w-20 h-20 sm:w-24 sm:h-24 lg:w-30 lg:h-30">
+          <Avatar className="size-full! text-lg font-bold">
+            <AvatarImage src={undefined} />
+            <AvatarFallback className="bg-[#5E17EB] text-white text-xl sm:text-2xl lg:text-3xl font-bold">
+              {getIniciais(form.nome)}
+            </AvatarFallback>
+          </Avatar>
+          <button
+            onClick={() => toast.info("Upload de foto em breve.")}
+            className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-[#5E17EB] text-white border-2 border-background hover:bg-[#4c11cc] transition-colors"
+          >
+            <CameraIcon className="size-3" />
+          </button>
+        </div>
+
+        {/* Info */}
+        <div className="flex flex-col gap-1 text-start sm:text-left">
+          <p className="font-semibold text-xl sm:text-2xl lg:text-3xl leading-tight">
+            {form.nome}
           </p>
-        </div>
-
-        <Separator />
-
-        {/* ── Card de identificação ── */}
-        <div className="flex items-center gap-4 rounded-xl border bg-card p-5">
-          <div className="relative">
-            <Avatar className="size-16 text-lg font-bold">
-              <AvatarImage src={undefined} />
-              <AvatarFallback className="bg-[#5E17EB] text-white text-xl font-bold">
-                {getIniciais(form.nome)}
-              </AvatarFallback>
-            </Avatar>
-            <button
-              onClick={() => toast.info("Upload de foto em breve.")}
-              className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-[#5E17EB] text-white border-2 border-background hover:bg-[#4c11cc] transition-colors"
-            >
-              <CameraIcon className="size-3" />
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <p className="font-semibold text-base leading-tight">{form.nome}</p>
-            <p className="text-sm text-muted-foreground">{form.email}</p>
-            <div className="flex flex-wrap items-center gap-1.5 mt-1">
-              <Badge variant="outline" className="px-1.5 bg-purple-100 text-purple-700 border-purple-200 text-xs">
-                <span className="mr-1 size-1.5 rounded-full bg-purple-500 inline-block" />
-                {USUARIO_MOCK.perfil}
-              </Badge>
-              <Badge variant="outline" className="px-1.5 bg-green-100 text-green-700 border-green-200 text-xs">
-                <span className="mr-1 size-1.5 rounded-full bg-green-500 inline-block" />
-                Ativo
-              </Badge>
-              <Badge variant="outline" className="px-1.5 text-muted-foreground text-xs">
-                {USUARIO_MOCK.setor}
-              </Badge>
-            </div>
+          <p className="text-sm sm:text-base text-muted-foreground">{form.email}</p>
+          <div className="flex flex-wrap justify-center sm:justify-start items-center gap-1.5 mt-1">
+            <Badge variant="outline" className="px-1.5 bg-purple-100 text-purple-700 border-purple-200 text-xs">
+              <span className="mr-1 size-1.5 rounded-full bg-purple-500 inline-block" />
+              {USUARIO_MOCK.perfil}
+            </Badge>
+            <Badge variant="outline" className="px-1.5 bg-green-100 text-green-700 border-green-200 text-xs">
+              <span className="mr-1 size-1.5 rounded-full bg-green-500 inline-block" />
+              Ativo
+            </Badge>
+            <Badge variant="outline" className="px-1.5 text-muted-foreground text-xs">
+              {USUARIO_MOCK.setor}
+            </Badge>
           </div>
         </div>
+      </div>
 
         {/* ── Abas ── */}
         <Tabs defaultValue="dados">
-          <TabsList className="w-full justify-start">
+          <TabsList className="w-50 justify-start">
             <TabsTrigger value="dados" className="gap-1.5">
               <UserIcon className="size-3.5" /> Dados Pessoais
             </TabsTrigger>
@@ -208,273 +212,286 @@ export default function PerfilPage() {
               ABA 1 — DADOS PESSOAIS
           ────────────────────────────────────────── */}
           <TabsContent value="dados" className="flex flex-col gap-4 mt-4">
+ 
+ {/* Informações pessoais */}
+ <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-4">
+   <div className="flex items-center gap-2 font-semibold text-sm">
+     <UserIcon className="size-4 text-[#5E17EB]" />
+     Informações pessoais
+   </div>
 
-            {/* Informações pessoais */}
-            <div className="rounded-xl border bg-card p-5 flex flex-col gap-4">
-              <div className="flex items-center gap-2 font-semibold text-sm">
-                <UserIcon className="size-4 text-[#5E17EB]" />
-                Informações pessoais
-              </div>
+   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+     <div className="flex flex-col gap-1.5">
+       <Label htmlFor="nome" className="text-xs text-muted-foreground uppercase tracking-wide">
+         Nome completo
+       </Label>
+       <Input
+         id="nome"
+         value={form.nome}
+         onChange={(e) => setForm((p) => ({ ...p, nome: e.target.value }))}
+       />
+     </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="nome" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Nome completo
-                  </Label>
-                  <Input
-                    id="nome"
-                    value={form.nome}
-                    onChange={(e) => setForm((p) => ({ ...p, nome: e.target.value }))}
-                  />
-                </div>
+     <div className="flex flex-col gap-1.5">
+       <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wide">
+         E-mail
+       </Label>
+       <Input
+         id="email"
+         type="email"
+         value={form.email}
+         onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+       />
+     </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    E-mail
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                  />
-                </div>
+     <div className="flex flex-col gap-1.5">
+       <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+         Cargo / Perfil
+       </Label>
+       <Input value={USUARIO_MOCK.perfil} disabled />
+       <p className="text-xs text-muted-foreground">Alterado apenas pelo administrador.</p>
+     </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Cargo / Perfil
-                  </Label>
-                  <Input value={USUARIO_MOCK.perfil} disabled />
-                  <p className="text-xs text-muted-foreground">Alterado apenas pelo administrador.</p>
-                </div>
+     <div className="flex flex-col gap-1.5">
+       <Label htmlFor="telefone" className="text-xs text-muted-foreground uppercase tracking-wide">
+         Número de contato
+       </Label>
+       <Input
+         id="telefone"
+         value={form.telefone}
+         onChange={(e) => setForm((p) => ({ ...p, telefone: e.target.value }))}
+       />
+     </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="telefone" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Número de contato
-                  </Label>
-                  <Input
-                    id="telefone"
-                    value={form.telefone}
-                    onChange={(e) => setForm((p) => ({ ...p, telefone: e.target.value }))}
-                  />
-                </div>
+     <div className="flex flex-col gap-1.5">
+       <Label htmlFor="especialidade" className="text-xs text-muted-foreground uppercase tracking-wide">
+         Especialidade
+       </Label>
+       <Input
+         id="especialidade"
+         value={form.especialidade}
+         onChange={(e) => setForm((p) => ({ ...p, especialidade: e.target.value }))}
+       />
+     </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="especialidade" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Especialidade
-                  </Label>
-                  <Input
-                    id="especialidade"
-                    value={form.especialidade}
-                    onChange={(e) => setForm((p) => ({ ...p, especialidade: e.target.value }))}
-                  />
-                </div>
+     <div className="flex flex-col gap-1.5">
+       <Label htmlFor="setor" className="text-xs text-muted-foreground uppercase tracking-wide">
+         Setor / Departamento
+       </Label>
+       <Input
+         id="setor"
+         value={form.setor}
+         onChange={(e) => setForm((p) => ({ ...p, setor: e.target.value }))}
+       />
+     </div>
+   </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="setor" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Setor / Departamento
-                  </Label>
-                  <Input
-                    id="setor"
-                    value={form.setor}
-                    onChange={(e) => setForm((p) => ({ ...p, setor: e.target.value }))}
-                  />
-                </div>
-              </div>
+   {/* Botões: empilhados no mobile, lado a lado no desktop */}
+   <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1">
+     <Button
+       variant="outline"
+       className="w-full sm:w-auto"
+       onClick={() => setForm({
+         nome:          USUARIO_MOCK.nome,
+         email:         USUARIO_MOCK.email,
+         telefone:      USUARIO_MOCK.telefone,
+         especialidade: USUARIO_MOCK.especialidade,
+         setor:         USUARIO_MOCK.setor,
+       })}
+     >
+       Cancelar
+     </Button>
+     <Button className="w-full sm:w-auto" onClick={salvarDados}>
+       Salvar alterações
+     </Button>
+   </div>
+ </div>
 
-              <div className="flex justify-end gap-2 pt-1">
-                <Button
-                  variant="outline"
-                  onClick={() => setForm({
-                    nome: USUARIO_MOCK.nome,
-                    email: USUARIO_MOCK.email,
-                    telefone: USUARIO_MOCK.telefone,
-                    especialidade: USUARIO_MOCK.especialidade,
-                    setor: USUARIO_MOCK.setor,
-                  })}
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={salvarDados}>Salvar alterações</Button>
-              </div>
-            </div>
+ {/* Informações da conta */}
+ <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-4">
+   <div className="flex items-center gap-2 font-semibold text-sm">
+     <ShieldCheckIcon className="size-4 text-[#5E17EB]" />
+     Informações da conta
+   </div>
 
-            {/* Informações da conta */}
-            <div className="rounded-xl border bg-card p-5 flex flex-col gap-4">
-              <div className="flex items-center gap-2 font-semibold text-sm">
-                <ShieldCheckIcon className="size-4 text-[#5E17EB]" />
-                Informações da conta
-              </div>
+   {/* Grid: 1 col mobile → 3 colunas sm+ */}
+   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+     <div className="flex flex-col gap-0.5">
+       <span className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+         <CalendarIcon className="size-3" /> Data de cadastro
+       </span>
+       <span className="text-sm font-medium">{USUARIO_MOCK.dataCadastro}</span>
+     </div>
+     <div className="flex flex-col gap-0.5">
+       <span className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+         <ClockIcon className="size-3" /> Último login
+       </span>
+       <span className="text-sm font-medium">{USUARIO_MOCK.ultimoLogin}</span>
+     </div>
+     <div className="flex flex-col gap-0.5">
+       <span className="text-xs text-muted-foreground uppercase tracking-wide">Status</span>
+       <Badge variant="outline" className="px-1.5 bg-green-100 text-green-700 border-green-200 w-fit mt-0.5">
+         <span className="mr-1 size-1.5 rounded-full bg-green-500 inline-block" />
+         Ativo
+       </Badge>
+     </div>
+   </div>
+ </div>
 
-              <div className="flex flex-wrap gap-8">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                    <CalendarIcon className="size-3" /> Data de cadastro
-                  </span>
-                  <span className="text-sm font-medium">{USUARIO_MOCK.dataCadastro}</span>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                    <ClockIcon className="size-3" /> Último login
-                  </span>
-                  <span className="text-sm font-medium">{USUARIO_MOCK.ultimoLogin}</span>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Status</span>
-                  <Badge variant="outline" className="px-1.5 bg-green-100 text-green-700 border-green-200 w-fit mt-0.5">
-                    <span className="mr-1 size-1.5 rounded-full bg-green-500 inline-block" />
-                    Ativo
-                  </Badge>
-                </div>
-              </div>
-            </div>
+</TabsContent>
 
-          </TabsContent>
+{/* ──────────────────────────────────────────
+   ABA 2 — SEGURANÇA
+────────────────────────────────────────── */}
+<TabsContent value="seguranca" className="mt-4">
+ <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-4 w-full max-w-md">
+   <div className="flex items-center gap-2 font-semibold text-sm">
+     <LockIcon className="size-4 text-[#5E17EB]" />
+     Alterar senha
+   </div>
 
-          {/* ──────────────────────────────────────────
-              ABA 2 — SEGURANÇA
-          ────────────────────────────────────────── */}
-          <TabsContent value="seguranca" className="mt-4">
-            <div className="rounded-xl border bg-card p-5 flex flex-col gap-4 max-w-md">
-              <div className="flex items-center gap-2 font-semibold text-sm">
-                <LockIcon className="size-4 text-[#5E17EB]" />
-                Alterar senha
-              </div>
+   <div className="flex flex-col gap-3">
+     <div className="flex flex-col gap-1.5">
+       <Label htmlFor="senha-atual" className="text-xs text-muted-foreground uppercase tracking-wide">
+         Senha atual
+       </Label>
+       <Input
+         id="senha-atual"
+         type="password"
+         placeholder="••••••••"
+         value={senhas.atual}
+         onChange={(e) => setSenhas((p) => ({ ...p, atual: e.target.value }))}
+       />
+     </div>
 
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="senha-atual" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Senha atual
-                  </Label>
-                  <Input
-                    id="senha-atual"
-                    type="password"
-                    placeholder="••••••••"
-                    value={senhas.atual}
-                    onChange={(e) => setSenhas((p) => ({ ...p, atual: e.target.value }))}
-                  />
-                </div>
+     <div className="flex flex-col gap-1.5">
+       <Label htmlFor="senha-nova" className="text-xs text-muted-foreground uppercase tracking-wide">
+         Nova senha
+       </Label>
+       <Input
+         id="senha-nova"
+         type="password"
+         placeholder="Mínimo 8 caracteres"
+         value={senhas.nova}
+         onChange={(e) => setSenhas((p) => ({ ...p, nova: e.target.value }))}
+       />
+     </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="senha-nova" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Nova senha
-                  </Label>
-                  <Input
-                    id="senha-nova"
-                    type="password"
-                    placeholder="Mínimo 8 caracteres"
-                    value={senhas.nova}
-                    onChange={(e) => setSenhas((p) => ({ ...p, nova: e.target.value }))}
-                  />
-                </div>
+     <div className="flex flex-col gap-1.5">
+       <Label htmlFor="senha-confirmar" className="text-xs text-muted-foreground uppercase tracking-wide">
+         Confirmar nova senha
+       </Label>
+       <Input
+         id="senha-confirmar"
+         type="password"
+         placeholder="Repita a nova senha"
+         value={senhas.confirmar}
+         onChange={(e) => setSenhas((p) => ({ ...p, confirmar: e.target.value }))}
+       />
+     </div>
+   </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="senha-confirmar" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Confirmar nova senha
-                  </Label>
-                  <Input
-                    id="senha-confirmar"
-                    type="password"
-                    placeholder="Repita a nova senha"
-                    value={senhas.confirmar}
-                    onChange={(e) => setSenhas((p) => ({ ...p, confirmar: e.target.value }))}
-                  />
-                </div>
-              </div>
+   <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1">
+     <Button
+       variant="outline"
+       className="w-full sm:w-auto"
+       onClick={() => setSenhas({ atual: "", nova: "", confirmar: "" })}
+     >
+       Cancelar
+     </Button>
+     <Button className="w-full sm:w-auto" onClick={salvarSenha}>
+       Alterar senha
+     </Button>
+   </div>
+ </div>
+</TabsContent>
 
-              <div className="flex justify-end gap-2 pt-1">
-                <Button
-                  variant="outline"
-                  onClick={() => setSenhas({ atual: "", nova: "", confirmar: "" })}
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={salvarSenha}>Alterar senha</Button>
-              </div>
-            </div>
-          </TabsContent>
+{/* ──────────────────────────────────────────
+   ABA 3 — ATIVIDADE
+────────────────────────────────────────── */}
+<TabsContent value="atividade" className="flex flex-col gap-4 mt-4">
 
-          {/* ──────────────────────────────────────────
-              ABA 3 — ATIVIDADE
-          ────────────────────────────────────────── */}
-          <TabsContent value="atividade" className="flex flex-col gap-4 mt-4">
+ {/* Estatísticas: 1 col mobile → 3 colunas sm+ */}
+ <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+   {[
+     { label: "Alertas resolvidos este mês",   value: alertasResolvidos   },
+     { label: "Máquinas sob responsabilidade", value: MAQUINAS_MOCK.length },
+     { label: "Alertas em andamento",          value: alertasEmAndamento  },
+   ].map((stat) => (
+     <div key={stat.label} className="rounded-xl border bg-card p-4">
+       <p className="text-2xl font-bold text-[#5E17EB]">{stat.value}</p>
+       <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+     </div>
+   ))}
+ </div>
 
-            {/* Estatísticas */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "Alertas resolvidos este mês", value: alertasResolvidos },
-                { label: "Máquinas sob responsabilidade", value: MAQUINAS_MOCK.length },
-                { label: "Alertas em andamento", value: alertasEmAndamento },
-              ].map((stat) => (
-                <div key={stat.label} className="rounded-xl border bg-card p-4">
-                  <p className="text-2xl font-bold text-[#5E17EB]">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
-                </div>
-              ))}
-            </div>
+ {/* Máquinas responsáveis */}
+ <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
+   <div className="flex items-center gap-2 font-semibold text-sm">
+     <WrenchIcon className="size-4 text-[#5E17EB]" />
+     Máquinas sob responsabilidade
+   </div>
 
-            {/* Máquinas responsáveis */}
-            <div className="rounded-xl border bg-card p-5 flex flex-col gap-3">
-              <div className="flex items-center gap-2 font-semibold text-sm">
-                <WrenchIcon className="size-4 text-[#5E17EB]" />
-                Máquinas sob responsabilidade
-              </div>
+   <div className="flex flex-col gap-2">
+     {MAQUINAS_MOCK.map((m) => (
+       <div
+         key={m.id}
+         className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border px-4 py-3 hover:border-[#5E17EB]/40 transition-colors"
+       >
+         <div className="flex items-center gap-3">
+           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-[#5E17EB]">
+             <WrenchIcon className="size-4" />
+           </div>
+           <div>
+             <p className="text-sm font-medium">{m.nome}</p>
+             <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1">
+               {m.setor} · <CriticidadeBadge value={m.criticidade} />
+             </p>
+           </div>
+         </div>
+         {/* Badge alinhado à esquerda no mobile (recuado sob o ícone) */}
+         <div className="pl-12 sm:pl-0">
+           <StatusMaquinaBadge value={m.status} />
+         </div>
+       </div>
+     ))}
+   </div>
+ </div>
 
-              <div className="flex flex-col gap-2">
-                {MAQUINAS_MOCK.map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center justify-between rounded-lg border px-4 py-3 hover:border-[#5E17EB]/40 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-9 items-center justify-center rounded-lg bg-purple-50 text-[#5E17EB]">
-                        <WrenchIcon className="size-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{m.nome}</p>
-                        <p className="text-xs text-muted-foreground">{m.setor} · <CriticidadeBadge value={m.criticidade} /></p>
-                      </div>
-                    </div>
-                    <StatusMaquinaBadge value={m.status} />
-                  </div>
-                ))}
-              </div>
-            </div>
+ {/* Histórico de alertas — scroll horizontal em telas pequenas */}
+ <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
+   <div className="flex items-center gap-2 font-semibold text-sm">
+     <ActivityIcon className="size-4 text-[#5E17EB]" />
+     Histórico de alertas atendidos
+   </div>
 
-            {/* Histórico de alertas */}
-            <div className="rounded-xl border bg-card p-5 flex flex-col gap-3">
-              <div className="flex items-center gap-2 font-semibold text-sm">
-                <ActivityIcon className="size-4 text-[#5E17EB]" />
-                Histórico de alertas atendidos
-              </div>
+   <div className="overflow-x-auto rounded-lg border">
+     <Table>
+       <TableHeader className="bg-muted">
+         <TableRow>
+           <TableHead className="whitespace-nowrap">Máquina</TableHead>
+           <TableHead className="whitespace-nowrap">Tipo</TableHead>
+           <TableHead className="whitespace-nowrap">Data</TableHead>
+           <TableHead className="whitespace-nowrap">Status</TableHead>
+         </TableRow>
+       </TableHeader>
+       <TableBody>
+         {ALERTAS_MOCK.map((a) => (
+           <TableRow key={a.id}>
+             <TableCell className="font-medium text-sm whitespace-nowrap">{a.maquina}</TableCell>
+             <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{a.tipo}</TableCell>
+             <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{a.data}</TableCell>
+             <TableCell><StatusAlertaBadge value={a.status} /></TableCell>
+           </TableRow>
+         ))}
+       </TableBody>
+     </Table>
+   </div>
+ </div>
 
-              <div className="overflow-hidden rounded-lg border">
-                <Table>
-                  <TableHeader className="bg-muted">
-                    <TableRow>
-                      <TableHead>Máquina</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ALERTAS_MOCK.map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell className="font-medium text-sm">{a.maquina}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">{a.tipo}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">{a.data}</TableCell>
-                        <TableCell><StatusAlertaBadge value={a.status} /></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-
-          </TabsContent>
-        </Tabs>
-      </div>
-    </>
-  )
+</TabsContent>
+</Tabs>
+</div>
+</>
+)
 }
