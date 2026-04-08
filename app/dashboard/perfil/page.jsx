@@ -174,7 +174,7 @@ export default function PerfilPage() {
 
         {/* Info */}
         <div className="flex flex-col gap-1 text-start sm:text-left">
-          <p className="font-semibold text-xl sm:text-2xl lg:text-3xl leading-tight">
+          <p className="font-semibold m-0 text-xl sm:text-2xl lg:text-3xl leading-tight">
             {form.nome}
           </p>
           <p className="text-sm sm:text-base text-muted-foreground">{form.email}</p>
