@@ -69,10 +69,13 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <CircleUserRoundIcon />
-                Perfil
-              </DropdownMenuItem>
+              
+                <DropdownMenuItem>
+                  <CircleUserRoundIcon />
+                
+                  Perfil
+                </DropdownMenuItem>
+              
               <DropdownMenuItem>
                 <CreditCardIcon />
                 Contas
