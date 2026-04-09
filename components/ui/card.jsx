@@ -34,18 +34,16 @@ function CardHeader({
   );
 }
 
-function CardTitle({
-  className,
-  ...props
-}) {
+function CardTitle({ className, ...props }) {
   return (
     <div
       data-slot="card-title"
       className={cn(
-        "text-[#3B2867]! text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",
+        "text-[#3B2867] dark:text-white text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",
         className
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 

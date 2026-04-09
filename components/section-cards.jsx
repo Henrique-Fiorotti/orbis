@@ -60,7 +60,7 @@ export function SectionCards() {
       {/* Card 1 — Total de máquinas e quantas estão em alerta */}
       <Card className="@container/card border-[#5E17EB]! border-2 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
         <CardHeader>
-          <CardDescription className="text-black!">Máquinas ativas</CardDescription>
+          <CardDescription>Máquinas ativas</CardDescription>
           <CardTitle className="text-[#5E17EB]! text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {resumo.totalMaquinas}
           </CardTitle>
@@ -85,7 +85,7 @@ export function SectionCards() {
       {/* Card 2 — Alertas gerados hoje e quantos ainda estão ativos */}
       <Card className="@container/card hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
         <CardHeader>
-          <CardDescription className="text-black!">Alertas hoje</CardDescription>
+          <CardDescription className="text-black! dark:text-white!">Alertas hoje</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {resumo.alertasHoje}
           </CardTitle>
@@ -110,7 +110,7 @@ export function SectionCards() {
       {/* Card 3 — Sensores online (totalMaquinas × média de sensores por máquina) */}
       <Card className="@container/card hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
         <CardHeader>
-          <CardDescription className="text-black!">Sensores online</CardDescription>
+          <CardDescription className="text-black! dark:text-white!">Sensores online</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {/* TODO: buscar de GET /sensores e contar status ONLINE */}
             12
@@ -136,7 +136,7 @@ export function SectionCards() {
       {/* Card 4 — Integridade média das máquinas */}
       <Card className="@container/card hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
         <CardHeader>
-          <CardDescription className="text-black!">Integridade média</CardDescription>
+          <CardDescription className="text-black! dark:text-white!">Integridade média</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {integridadeFormatada}%
           </CardTitle>

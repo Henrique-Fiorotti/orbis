@@ -151,8 +151,8 @@ export function SiteHeader() {
 
         <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-auto" />
         <div className="">
-          <h1 className="text-gray-500! text-[10pt]! m-0!">Dashboard Orbis</h1>
-          <h2 className="text-sm text-muted-foreground font-normal m-0!">Bom dia, Administrador!</h2>
+          <h1 className="text-gray-500! text-[10pt]! m-0! dark:text-gray-300!">Dashboard Orbis</h1>
+          <h2 className="text-sm text-muted-foreground font-normal m-0! dark:text-white!">Bom dia, Administrador!</h2>
         </div>
 
         {/* Espaçador */}
