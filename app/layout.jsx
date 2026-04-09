@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import "./globals.css";
 import FooterPage from "./footer-01/page";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "next-themes"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -35,10 +36,12 @@ export const metadata = {
 
 export default function RootLayout({ children, modal }) {
   return (
-    <html lang="pt-BR" className={`${poppins.variable} ${openSans.variable}`}>
+    <html lang="pt-BR" className={`${poppins.variable} ${openSans.variable}`} suppressHydrationWarning>
       <body>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
           {modal}
+        </ThemeProvider>
       </body>
     </html>
   );
