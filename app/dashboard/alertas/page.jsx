@@ -273,12 +273,12 @@ export default function AlertasPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
-              <ArrowLeftIcon className="size-4" />
+              <ArrowLeftIcon className="size-4 dark:text-white!" />
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <AlertTriangleIcon size={22} className="text-[#3B2867]" />
-                <h1 className="text-lg font-medium text-[#3B2867]">Alertas</h1>
+                <AlertTriangleIcon size={22} className="text-[#3B2867] dark:text-white!" />
+                <h1 className="text-lg font-medium text-[#3B2867] dark:text-white">Alertas</h1>
               </div>
               <p className="text-sm text-muted-foreground">
                 {alertas.length} alertas · <span className="text-red-600 font-medium">{alertas.filter(a => a.status === "ABERTO").length} em aberto</span>
@@ -286,7 +286,7 @@ export default function AlertasPage() {
             </div>
           </div>
           <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <PlusIcon className="size-4 mr-1" />Novo alerta
+            <PlusIcon className="size-4 mr-1 dark:text-white!" />Novo alerta
           </Button>
         </div>
 

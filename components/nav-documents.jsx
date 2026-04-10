@@ -30,7 +30,7 @@ export function NavDocuments({
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
-              <a className="no-underline! text-black" href={item.url}>
+              <a className="no-underline! text-black dark:text-white" href={item.url}>
                 {item.icon}
                 <span>{item.name}</span>
               </a>
