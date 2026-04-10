@@ -244,69 +244,70 @@ export default function LoginCard() {
         }
       `}</style>
 
-      <div className="orbis-card">
-  <div className="orbis-top">
-    <img style={{ height: "55px" }} src="LogoBrancaGrande.svg" alt="" />
-    <h2 className="orbis-greeting">Bem-vindo de volta</h2>
-    <p className="orbis-sub">Acesse sua conta para continuar</p>
-  </div>
-
-  <form action={handleSubmit}>
-    <div className="orbis-body">
-      <div style={{ marginBottom: "16px" }}>
-        <p className="orbis-label">Email</p>
-        <input type="email" className="orbis-input" placeholder="email@gmail.com"
-          id="email"
-          name="email"
-          required
-        />
-      </div>
-
-      <div style={{ marginBottom: "4px" }}>
-        <p className="orbis-label">Senha</p>
-        <div style={{ position: "relative" }}>
-          <input
-            type={showPassword ? "text" : "password"}
-            className="orbis-input"
-            placeholder="••••••••"
-            id="password"
-            name="password"
-            required
-            style={{ paddingRight: "40px" }}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            style={{
-              position: "absolute",
-              right: "10px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "#8C52ff",
-              padding: 0,
-            }}
-          >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
+      <div className="orbis-card  justify-center flex-col flex ">
+        <div className="orbis-top">
+          <img style={{ height: "55px" }} src="LogoBrancaGrande.svg" alt="" />
+          <h2 className="orbis-greeting">Bem-vindo de volta</h2>
+          <p className="orbis-sub">Acesse sua conta para continuar</p>
         </div>
+
+        <form action={handleSubmit}>
+          <div className="orbis-body">
+            <div style={{ marginBottom: "16px" }}>
+              <p className="orbis-label">Email</p>
+              <input type="email" className="orbis-input" placeholder="email@gmail.com"
+                id="email"
+                name="email"
+                required
+              />
+            </div>
+
+            <div style={{ marginBottom: "4px" }}>
+              <p className="orbis-label">Senha</p>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="orbis-input"
+                  placeholder="••••••••"
+                  id="password"
+                  name="password"
+                  required
+                  style={{ paddingRight: "40px" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute",
+                    right: "10px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#8C52ff",
+                    padding: 0,
+                  }}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <p style={{ fontSize: "12px", color: "#8C52ff", cursor: "pointer", textAlign: "right", marginTop: "6px", fontWeight: 500 }}>
+              Esqueceu a senha?
+            </p>
+
+            <button type="submit" className="orbis-btn" style={{ marginTop: "20px" }}>Entrar</button>
+            </div>
+        </form>
+        <p className="orbis-footer w-85 m-auto mb-4 text-center justify-center items-center "  >
+          Ao continuar, você concorda com nossa{" "}
+          <button onClick={() => setShowPrivacy(true)}>Política de Privacidade</button>
+        </p>
       </div>
 
-      <p style={{ fontSize: "12px", color: "#8C52ff", cursor: "pointer", textAlign: "right", marginTop: "6px", fontWeight: 500 }}>
-        Esqueceu a senha?
-      </p>
 
-      <button type="submit" className="orbis-btn" style={{ marginTop: "20px" }}>Entrar</button>
-
-      <p className="orbis-footer">
-        Ao continuar, você concorda com nossa{" "}
-        <button onClick={() => setShowPrivacy(true)}>Política de Privacidade</button>
-      </p>
-    </div>
-  </form>
-</div>
 
 
       {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />
