@@ -231,7 +231,7 @@ export default function SensoresPage() {
       id: "temperatura",
       header: () => (
         <div className="flex items-center gap-1">
-          <ThermometerIcon className="size-3.5 text-orange-500" />
+          <ThermometerIcon color="#5E17EB" className="size-3.5 text-orange-500" />
           Temperatura
         </div>
       ),
@@ -252,7 +252,7 @@ export default function SensoresPage() {
       id: "vibracao",
       header: () => (
         <div className="flex items-center gap-1">
-          <ActivityIcon className="size-3.5 text-blue-500" />
+          <ActivityIcon color="#5E17EB" className="size-3.5 text-blue-500" />
           Vibração
         </div>
       ),

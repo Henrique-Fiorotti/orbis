@@ -8,8 +8,7 @@ import { MaquinasProvider } from "@/components/context/maquinas-context"
 import { SensoresProvider } from "@/components/context/sensores-context"
 import { AlertasProvider } from "@/components/context/alertas-context"
 import { TecnicosProvider } from "@/components/context/tecnicos-context"
-import PageLoader from "@/components/Loader/PageLoader"
-import { usePathname } from 'next/navigation' // ← adiciona as chaves
+import { Toaster } from "sonner"
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname()
@@ -26,8 +25,8 @@ export default function DashboardLayout({ children }) {
                 }}>
                 <AppSidebar variant="inset" />
                 <SidebarInset>
-                  {children}
-                  {pathname === '/dashboard' && <PageLoader />}
+                  <TooltipProvider>{children}</TooltipProvider>
+                  <Toaster position="top-left" />
                 </SidebarInset>
               </SidebarProvider>
             </TooltipProvider>

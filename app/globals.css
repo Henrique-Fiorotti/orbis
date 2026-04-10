@@ -92,6 +92,15 @@ h6 {
   background-color: #7C3AED !important;
 }
 
+@media(max-width: 990px) {
+  .responsivo {
+    width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+  }
+}
+
 @media (max-width: 991px) {
   .offcanvas {
     display: block !important;

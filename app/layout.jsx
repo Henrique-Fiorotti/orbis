@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import "./globals.css";
 import FooterPage from "./footer-01/page";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import PageLoader from '@/components/Loader/PageLoader'
+import { ThemeProvider } from "next-themes"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -29,18 +29,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Orbis - Soluções Preventivas",
+  title: "Orbis - Soluções Preventivas para o Futuro",
   description:
     "A Orbis é uma empresa de tecnologia especializada em soluções preventivas para o futuro. Com foco em inovação e sustentabilidade, oferecemos serviços e produtos que ajudam nossos clientes a antecipar desafios e aproveitar oportunidades em um mundo em constante evolução.",
 };
 
 export default function RootLayout({ children, modal }) {
   return (
-    <html lang="pt-BR" className={`${poppins.variable} ${openSans.variable}`}>
+    <html lang="pt-BR" className={`${poppins.variable} ${openSans.variable}`} suppressHydrationWarning>
       <body>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
            <PageLoader />
           {modal}
+        </ThemeProvider>
       </body>
     </html>
   );

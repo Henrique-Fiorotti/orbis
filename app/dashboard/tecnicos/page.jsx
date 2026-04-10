@@ -268,7 +268,7 @@ export default function TecnicosPage() {
           <Table>
             <TableHeader className="bg-muted">
               {table.getHeaderGroups().map(hg => (
-                <TableRow key={hg.id}>
+                <TableRow  key={hg.id}>
                   {hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}
                 </TableRow>
               ))}
@@ -276,7 +276,7 @@ export default function TecnicosPage() {
             <TableBody>
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map(row => (
-                  <TableRow key={row.id}>
+                  <TableRow className="h-[100px]!" key={row.id}>
                     {row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}
                   </TableRow>
                 ))
@@ -315,7 +315,7 @@ export default function TecnicosPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <div className="flex flex-col gap-4 px-4 py-4 overflow-y-auto flex-1">
+            <div className="flex flex-col gap-4  px-4 py-4 overflow-y-auto flex-1">
 
               {/* ── MODO VER ── */}
               {modoSheet === "ver" && tecnicoSelecionado ? (
