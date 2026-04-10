@@ -107,23 +107,24 @@ const data = {
   navSecondary: [
     {
       title: "Configurações",
+      style: "text-muted-foreground dark:text-white!",
       url: "#",
       icon: (
-        <Settings2Icon />
+        <Settings2Icon className="dark:text-white" />
       ),
     },
     {
       title: "Ajuda",
       url: "#",
       icon: (
-        <CircleHelpIcon />
+        <CircleHelpIcon className="dark:text-white" />
       ),
     },
     {
       title: "Pesquisar",
       url: "#",
       icon: (
-        <SearchIcon />
+        <SearchIcon className="dark:text-white" />
       ),
     },
   ],
@@ -140,14 +141,14 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
                 <img src="/Orbis.svg" alt="Orbis" className="size-9! dark:invert" />
-                <span className="text-base font-semibold no-underline! font-poppins! text-black"></span>
+                <span className="text-base font-semibold no-underline! font-poppins! text-black dark:text-white"></span>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavSecondary items={data.navSecondary} className="mt-auto dark:text-white" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

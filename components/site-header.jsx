@@ -143,7 +143,7 @@ export function SiteHeader() {
 
         {/* Esquerda */}
         <Tooltip>
-          <TooltipTrigger><SidebarTrigger /></TooltipTrigger>
+          <TooltipTrigger><SidebarTrigger className="dark:text-white dark:hover:bg-gray-200/10!" /></TooltipTrigger>
           <TooltipContent>
             <span>Expandir/Contrair Sidebar</span>
           </TooltipContent>
@@ -171,7 +171,7 @@ export function SiteHeader() {
                 className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
               >
                 {isDark
-                  ? <SunIcon className="size-4 text-yellow-400" />
+                  ? <SunIcon className="size-4 text-white" />
                   : <MoonIcon className="size-4" />
                 }
               </Button>

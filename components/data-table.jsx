@@ -32,13 +32,13 @@ function tempoRelativo(isoString) {
 }
 
 function CriticidadeBadge({ value }) {
-  const styles = { ALTA: "bg-red-100 text-red-700 border-red-200", MEDIA: "bg-yellow-100 text-yellow-700 border-yellow-200", BAIXA: "bg-green-100 text-green-700 border-green-200" }
+  const styles = { ALTA: "w-[55px] bg-red-100 text-red-700 dark:bg-transparent! dark:text-white", MEDIA: "w-[55px] bg-yellow-100 text-yellow-700 dark:text-white dark:bg-transparent!", BAIXA: "w-[55px] bg-green-100 text-green-700 dark:bg-transparent! dark:text-white" }
   return <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>{value.charAt(0) + value.slice(1).toLowerCase()}</Badge>
 }
 
 function StatusBadge({ value }) {
   return (
-    <Badge variant="outline" className="px-1.5 text-muted-foreground">
+    <Badge variant="outline" className="w-[55px] px-1.5 text-muted-foreground">
       {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]!" /> : <AlertTriangleIcon className="text-red-500" />}
       {value}
     </Badge>
@@ -85,7 +85,7 @@ const TABLE_COLUMNS = [
   },
   { accessorKey: "nome", header: "Máquina", cell: ({ row }) => <TableCellViewer item={row.original} />, enableHiding: false },
   { accessorKey: "setor", header: "Setor", cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.setor}</span> },
-  { accessorKey: "criticidade", header: "Criticidade", cell: ({ row }) => <CriticidadeBadge value={row.original.criticidade} /> },
+  { accessorKey: "criticidade", header: "Importância", cell: ({ row }) => <CriticidadeBadge value={row.original.criticidade} /> },
   { accessorKey: "status", header: "Status", cell: ({ row }) => <StatusBadge value={row.original.status} /> },
   { accessorKey: "integridade", header: () => <div>Integridade</div>, cell: ({ row }) => <IntegridadeBar value={row.original.integridade} /> },
   { accessorKey: "ultimaLeituraEm", header: "Último sinal", cell: ({ row }) => <span className="text-muted-foreground text-sm">{tempoRelativo(row.original.ultimaLeituraEm)}</span> },
@@ -139,7 +139,7 @@ function MaquinasTable({ data }) {
 
   return (
     <>
-      <div className="min-h-[500px] overflow-hidden rounded-lg border">
+      <div className="min-h-[500px] overflow-hidden rounded-lg border dark:bg-[#0F172A] dark:border-gray-700!">
         <DndContext collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis]}
           onDragEnd={({ active, over }) => {
             if (active && over && active.id !== over.id)
@@ -205,8 +205,8 @@ export function DataTable() {
     <Tabs defaultValue="outline" className="w-full flex-col justify-start gap-6">
       <div className=" rounded-[8px]! flex items-center justify-between px-4 lg:px-6">
         <TabsList className="rounded-[8px]! hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full! **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger className="rounded-[8px]!" value="outline">Máquinas</TabsTrigger>
-          <TabsTrigger className="rounded-[8px]!" value="alertas">
+          <TabsTrigger className="rounded-[8px]! dark:border-gray-600!" value="outline">Máquinas</TabsTrigger>
+          <TabsTrigger className="rounded-[8px]! dark:border-gray-600!" value="alertas">
             Em Alerta
             {emAlerta.length > 0 && (
               <Badge variant="secondary" className="ml-1 bg-red-100! text-red-700! border-red-200!">{emAlerta.length}</Badge>
