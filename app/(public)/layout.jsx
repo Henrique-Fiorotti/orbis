@@ -3,6 +3,7 @@ import { Poppins, Open_Sans } from 'next/font/google'
 import Head from 'next/head'
 import FooterPage from '../footer-01/page'
 import Footer from '@/components/shadcn-space/blocks/footer-01/footer'
+import Loader from '@/components/Loader/page'
 
 const poppins = Poppins({
   subsets: ['latin'],

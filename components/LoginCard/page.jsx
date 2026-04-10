@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import {loginAction} from "@/app/actions/auth.actions";
 
 function PrivacyModal({ onClose }) {
   return (
@@ -85,6 +86,23 @@ function PrivacyModal({ onClose }) {
 
 export default function LoginCard() {
   const [showPrivacy, setShowPrivacy] = useState(false);
+
+  async function handleSubmit(formData) {
+  
+    // Chama o Server Action — roda no servidor, nunca expõe a API_URL
+    const result = await loginAction(formData)
+
+    if (result.error) {
+      alert(result.error)
+      return
+    }
+
+    if(result){
+      alert("Login bem-sucedido!");
+      window.location.href = "/dashboard";
+    }
+  }
+
 
   return (
     <>
@@ -225,36 +243,49 @@ export default function LoginCard() {
 
       <div className="orbis-card">
         <div className="orbis-top">
-         <img style={{height: "55px"}} src="LogoBrancaGrande.svg" alt="" />
+          <img style={{ height: "55px" }} src="LogoBrancaGrande.svg" alt="" />
           <h2 className="orbis-greeting">Bem-vindo de volta</h2>
           <p className="orbis-sub">Acesse sua conta para continuar</p>
         </div>
 
-        <div className="orbis-body">
-          <div style={{ marginBottom: "16px" }}>
-            <p className="orbis-label">Email</p>
-            <input type="email" className="orbis-input" placeholder="email@gmail.com" />
+        <form action={handleSubmit}>
+          <div className="orbis-body">
+            <div style={{ marginBottom: "16px" }}>
+              <p className="orbis-label">Email</p>
+              <input type="email" className="orbis-input" placeholder="email@gmail.com"
+                id="email"
+                name="email"
+                required
+              />
+            </div>
+
+            <div style={{ marginBottom: "4px" }}>
+              <p className="orbis-label">Senha</p>
+              <input type="password" className="orbis-input" placeholder="••••••••"
+                id="password"
+                name="password"
+                required
+              />
+            </div>
+
+
+            <p style={{ fontSize: "12px", color: "#8C52ff", cursor: "pointer", textAlign: "right", marginTop: "6px", fontWeight: 500 }}>
+              Esqueceu a senha?
+            </p>
+
+            <button type="submit" className="orbis-btn" style={{ marginTop: "20px" }}>Entrar</button>
+
+            <p className="orbis-footer">
+              Ao continuar, você concorda com nossa{" "}
+              <button onClick={() => setShowPrivacy(true)}>Política de Privacidade</button>
+            </p>
           </div>
+        </form>
+      </div >
 
-          <div style={{ marginBottom: "4px" }}>
-            <p className="orbis-label">Senha</p>
-            <input type="password" className="orbis-input" placeholder="••••••••" />
-          </div>
 
-          <p style={{ fontSize: "12px", color: "#8C52ff", cursor: "pointer", textAlign: "right", marginTop: "6px", fontWeight: 500 }}>
-            Esqueceu a senha?
-          </p>
-
-          <button className="orbis-btn" style={{ marginTop: "20px" }}>Entrar</button>
-
-          <p className="orbis-footer">
-            Ao continuar, você concorda com nossa{" "}
-            <button onClick={() => setShowPrivacy(true)}>Política de Privacidade</button>
-          </p>
-        </div>
-      </div>
-
-      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />
+      }
     </>
   );
 }
