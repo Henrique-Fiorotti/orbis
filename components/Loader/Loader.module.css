@@ -9,12 +9,10 @@
   border-radius: 30px;
   width: 50%;
   height: 150%;
-  /* A cor inicial agora será controlada pela animação */
   transform: rotate(calc(var(--rotation) * 1deg)) translate(0, calc(var(--translation) * 1%));
   animation: spinner-fzua35 1s calc(var(--delay) * 1s) infinite ease;
 }
 
-/* Removi o background fixo dos nth-child para não dar conflito com a animação */
 .spinner div:nth-child(1) { --delay: 0.1; --rotation: 36; --translation: 150; }
 .spinner div:nth-child(2) { --delay: 0.2; --rotation: 72; --translation: 150; }
 .spinner div:nth-child(3) { --delay: 0.3; --rotation: 108; --translation: 150; }
@@ -27,15 +25,12 @@
 .spinner div:nth-child(10) { --delay: 1; --rotation: 360; --translation: 150; }
 
 @keyframes spinner-fzua35 {
-  /* Removi o 50% desta lista para ele não tentar ser preto e roxo ao mesmo tempo */
   0%, 10%, 20%, 30%, 60%, 70%, 80%, 90%, 100% {
     transform: rotate(calc(var(--rotation) * 1deg)) translate(0, calc(var(--translation) * 1%));
-    background: #000000; /* Volta para o preto */
+    background: #000000;
   }
-
-  /* O pulinho roxo */
   50% {
     transform: rotate(calc(var(--rotation) * 1deg)) translate(0, calc(var(--translation) * 1.5%));
-    background: #7c3aed; /* Fica roxo no ápice do movimento */
+    background: #7c3aed;
   }
 }

@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import "./globals.css";
 import FooterPage from "./footer-01/page";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import PageLoader from '@/components/Loader/PageLoader'
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({ children, modal }) {
     <html lang="pt-BR" className={`${poppins.variable} ${openSans.variable}`}>
       <body>
           {children}
+           <PageLoader />
           {modal}
       </body>
     </html>
