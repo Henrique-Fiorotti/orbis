@@ -1,3 +1,5 @@
+'use client' // ← adiciona isso no topo
+
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -9,6 +11,7 @@ import { TecnicosProvider } from "@/components/context/tecnicos-context"
 import { Toaster } from "sonner"
 
 export default function DashboardLayout({ children }) {
+  const pathname = usePathname()
   return (
     <MaquinasProvider>
       <SensoresProvider>
