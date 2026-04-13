@@ -2,7 +2,6 @@ import { Geist, Geist_Mono, Poppins, Open_Sans } from "next/font/google"
 import "./globals.css"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ThemeProvider } from "next-themes"
-import PageLoader from "@/components/Loader/PageLoader"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -32,7 +31,6 @@ export default function RootLayout({ children, modal }) {
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
-          <PageLoader />
           {modal}
         </ThemeProvider>
       </body>

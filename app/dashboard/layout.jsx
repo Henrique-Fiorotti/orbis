@@ -1,4 +1,4 @@
-'use client' // ← adiciona isso no topo
+'use client'
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
@@ -10,8 +10,10 @@ import { AlertasProvider } from "@/components/context/alertas-context"
 import { TecnicosProvider } from "@/components/context/tecnicos-context"
 import { Toaster } from "sonner"
 
+
+
 export default function DashboardLayout({ children }) {
-  
+
   return (
     <MaquinasProvider>
       <SensoresProvider>

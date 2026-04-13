@@ -190,6 +190,7 @@ export default function HomePage() {
         overflowX: "hidden",
       }}
     >
+         
       <style>{`
         
         html { scroll-behavior: smooth; }

@@ -3,19 +3,11 @@
 import { useEffect, useState } from 'react'
 import Loader from './page'
 
-export default function PageLoader() {
-    const [visible, setVisible] = useState(false)
+export default function HomeLoader() {
+    const [visible, setVisible] = useState(true)
     const [fadingOut, setFadingOut] = useState(false)
 
     useEffect(() => {
-        const jaExibiu = sessionStorage.getItem('loader-dashboard')
-
-        if (jaExibiu) return
-
-        // Marca imediatamente, antes de qualquer timer
-        sessionStorage.setItem('loader-dashboard', 'true')
-        setVisible(true)
-
         const fadeTimer = setTimeout(() => setFadingOut(true), 1000)
         const hideTimer = setTimeout(() => setVisible(false), 1500)
 
