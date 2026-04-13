@@ -181,7 +181,7 @@ export default function MaquinasPage() {
                 <WashingMachineIcon size={22} />
                 <h1 className="text-[18pt]! mb-0! font-medium text-[#3B2867]">Máquinas</h1>
               </div>
-              <p className="text-sm text-muted-foreground mb-0!">{maquinas.length} máquinas cadastradas</p>
+           
             </div>
           </div>
           <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
