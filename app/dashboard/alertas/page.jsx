@@ -223,7 +223,7 @@ export default function AlertasPage() {
             <span className="text-3xl font-bold text-[#3B2867]">{alertas.length}</span>
             <div className="flex flex-col gap-0.5 text-sm ">
               <div className="flex ">
-                <span className="text-yellow-600 flex items-center gap-1">
+                <span className={` flex items-center gap-1 ${taxaResolucao >= 75 ? "text-green-700" : taxaResolucao >= 40 ? "text-yellow-700" : "text-red-700"}`}>
                   {totalAtendidos} / {alertas.length} atendidos.
 
                 </span>
@@ -231,7 +231,7 @@ export default function AlertasPage() {
               </div>
 
               <div>
-                <span className={`text-md  rounded-full font-medium ${taxaResolucao >= 75 ? "text-green-700" :
+                <span className={`text-md   font-medium ${taxaResolucao >= 75 ? "text-green-700" :
                   taxaResolucao >= 40 ? "text-yellow-700" :
                     "text-red-700"
                   }`}>
@@ -277,8 +277,8 @@ export default function AlertasPage() {
             </div>
             <span className="text-3xl font-bold text-[#3B2867]">{totalAtendidos}</span>
             <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-green-700 flex items-center gap-1">
-                <CircleCheckIcon className="size-3.5 fill-green-600" />
+              <span className={` flex items-center gap-1 ${taxaResolucao >= 10 ? "text-green-700" : "text-gray-400"}`}>
+                  <CircleCheckIcon className={`size-3.5  ${taxaResolucao >= 10 ? "fill-green-600" : "fill-gray-200"}`} />
                 {totalAtendidos} resolvidos
               </span>
               <span className="text-muted-foreground text-xs">De um total de {alertas.length} alertas</span>
