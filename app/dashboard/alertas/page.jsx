@@ -30,37 +30,17 @@ import {
 } from "@tanstack/react-table"
 import { cn, tempoRelativo } from "@/lib/utils"
 
-const TIPOS_ALERTA = [
-  "LIMITE_ULTRAPASSADO", "TENDENCIA_CURTA", "TENDENCIA_LONGA",
-  "DEGRADACAO_ACELERADA", "INSTABILIDADE",
-]
+const TIPOS_ALERTA = ["LIMITE_ULTRAPASSADO", "TENDENCIA_CURTA", "TENDENCIA_LONGA", "DEGRADACAO_ACELERADA", "INSTABILIDADE"]
 const TIPOS_ALERTA_LABEL = {
-  LIMITE_ULTRAPASSADO: "Limite Ultrapassado",
-  TENDENCIA_CURTA: "Tendência Curta",
-  TENDENCIA_LONGA: "Tendência Longa",
-  DEGRADACAO_ACELERADA: "Degradação Acelerada",
-  INSTABILIDADE: "Instabilidade",
+  LIMITE_ULTRAPASSADO: "Limite Ultrapassado", TENDENCIA_CURTA: "Tendência Curta",
+  TENDENCIA_LONGA: "Tendência Longa", DEGRADACAO_ACELERADA: "Degradação Acelerada", INSTABILIDADE: "Instabilidade",
 }
 
-const formVazio = {
-  tipo: "LIMITE_ULTRAPASSADO",
-  maquinaId: "", maquinaNome: "",
-  sensorId: "", sensorNome: "",
-  severidade: "MEDIA",
-  descricao: "",
-}
+const formVazio = { tipo: "LIMITE_ULTRAPASSADO", maquinaId: "", maquinaNome: "", sensorId: "", sensorNome: "", severidade: "MEDIA", descricao: "" }
 
 function SeveridadeBadge({ value }) {
-  const styles = {
-    ALTA: "bg-red-100 text-red-700 border-red-200",
-    MEDIA: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    BAIXA: "bg-green-100 text-green-700 border-green-200",
-  }
-  return (
-    <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>
-      {value.charAt(0) + value.slice(1).toLowerCase()}
-    </Badge>
-  )
+  const styles = { ALTA: "bg-red-100 text-red-700 border-red-200", MEDIA: "bg-yellow-100 text-yellow-700 border-yellow-200", BAIXA: "bg-green-100 text-green-700 border-green-200" }
+  return <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>{value.charAt(0) + value.slice(1).toLowerCase()}</Badge>
 }
 
 function StatusAlertaBadge({ value }) {
@@ -70,34 +50,19 @@ function StatusAlertaBadge({ value }) {
     IGNORADO: { cls: "bg-gray-100 text-gray-500 border-gray-200", Icon: CircleXIcon },
   }
   const { cls, Icon } = cfg[value] ?? cfg.ABERTO
-  return (
-    <Badge variant="outline" className={`px-1.5 ${cls}`}>
-      <Icon className="size-3 mr-1" />
-      {value.charAt(0) + value.slice(1).toLowerCase()}
-    </Badge>
-  )
+  return <Badge variant="outline" className={`px-1.5 ${cls}`}><Icon className="size-3 mr-1" />{value.charAt(0) + value.slice(1).toLowerCase()}</Badge>
 }
 
 function TipoAlertaBadge({ value }) {
-  return (
-    <Badge variant="outline" className="px-1.5 text-[#3B2867] border-purple-200 bg-purple-50 text-xs font-normal">
-      {TIPOS_ALERTA_LABEL[value] ?? value}
-    </Badge>
-  )
+  return <Badge variant="outline" className="px-1.5 text-[#3B2867] border-purple-200 bg-purple-50 text-xs font-normal">{TIPOS_ALERTA_LABEL[value] ?? value}</Badge>
 }
 
 function AlertasTable({ data, onVer, onExcluir, onStatus }) {
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
-
   const columns = React.useMemo(() => [
     {
-      accessorKey: "maquinaNome",
-      header: "Máquina",
-      cell: ({ row }) => (
-        <button onClick={() => onVer(row.original)} className="text-left font-medium text-sm hover:underline hover:text-primary transition-colors">
-          {row.original.maquinaNome}
-        </button>
-      ),
+      accessorKey: "maquinaNome", header: "Máquina",
+      cell: ({ row }) => <button onClick={() => onVer(row.original)} className="text-left font-medium text-sm hover:underline hover:text-primary transition-colors">{row.original.maquinaNome}</button>,
     },
     { accessorKey: "tipo", header: "Tipo", cell: ({ row }) => <TipoAlertaBadge value={row.original.tipo} /> },
     { accessorKey: "severidade", header: "Severidade", cell: ({ row }) => <SeveridadeBadge value={row.original.severidade} /> },
@@ -108,33 +73,15 @@ function AlertasTable({ data, onVer, onExcluir, onStatus }) {
       id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
-              <EllipsisVerticalIcon />
-            </Button>
-          </DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild><Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon"><EllipsisVerticalIcon /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem onClick={() => onVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
             <DropdownMenuSeparator />
-            {row.original.status !== "ATENDIDO" && (
-              <DropdownMenuItem onClick={() => onStatus(row.original.id, "ATENDIDO")}>
-                <CircleCheckIcon className="size-4 mr-1 text-green-600" /> Marcar atendido
-              </DropdownMenuItem>
-            )}
-            {row.original.status !== "IGNORADO" && (
-              <DropdownMenuItem onClick={() => onStatus(row.original.id, "IGNORADO")}>
-                <CircleXIcon className="size-4 mr-1 text-gray-400" /> Ignorar alerta
-              </DropdownMenuItem>
-            )}
-            {row.original.status !== "ABERTO" && (
-              <DropdownMenuItem onClick={() => onStatus(row.original.id, "ABERTO")}>
-                <ShieldAlertIcon className="size-4 mr-1 text-red-500" /> Reabrir
-              </DropdownMenuItem>
-            )}
+            {row.original.status !== "ATENDIDO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "ATENDIDO")}><CircleCheckIcon className="size-4 mr-1 text-green-600" /> Marcar atendido</DropdownMenuItem>}
+            {row.original.status !== "IGNORADO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "IGNORADO")}><CircleXIcon className="size-4 mr-1 text-gray-400" /> Ignorar alerta</DropdownMenuItem>}
+            {row.original.status !== "ABERTO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "ABERTO")}><ShieldAlertIcon className="size-4 mr-1 text-red-500" /> Reabrir</DropdownMenuItem>}
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={() => onExcluir(row.original)}>
-              <Trash2Icon className="size-4 mr-1" /> Excluir
-            </DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" onClick={() => onExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -142,13 +89,9 @@ function AlertasTable({ data, onVer, onExcluir, onStatus }) {
   ], [onVer, onExcluir, onStatus])
 
   const table = useReactTable({
-    data, columns,
-    state: { pagination },
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    data, columns, state: { pagination }, onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(), getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(), getSortedRowModel: getSortedRowModel(),
   })
 
   return (
@@ -156,26 +99,12 @@ function AlertasTable({ data, onVer, onExcluir, onStatus }) {
       <div className="overflow-hidden rounded-lg border">
         <Table>
           <TableHeader className="bg-muted">
-            {table.getHeaderGroups().map(hg => (
-              <TableRow key={hg.id}>
-                {hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}
-              </TableRow>
-            ))}
+            {table.getHeaderGroups().map(hg => <TableRow key={hg.id}>{hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}</TableRow>)}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map(row => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  Nenhum alerta encontrado.
-                </TableCell>
-              </TableRow>
-            )}
+            {table.getRowModel().rows.length
+              ? table.getRowModel().rows.map(row => <TableRow key={row.id}>{row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}</TableRow>)
+              : <TableRow><TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">Nenhum alerta encontrado.</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>
@@ -205,45 +134,24 @@ export default function AlertasPage() {
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [alertaExcluir, setAlertaExcluir] = React.useState(null)
 
-  function abrirCriar() {
-    setModoSheet("criar")
-    setForm(formVazio)
-    setAlertaSelecionado(null)
-    setSheetAberto(true)
-  }
+  // --- Cards computed values ---
+  const totalAbertos = alertas.filter(a => a.status === "ABERTO").length
+  const totalAtendidos = alertas.filter(a => a.status === "ATENDIDO").length
+  const altaSeveridadeAbertos = alertas.filter(a => a.status === "ABERTO" && a.severidade === "ALTA").length
+  const taxaResolucao = alertas.length ? Math.round((totalAtendidos / alertas.length) * 100) : 0
 
-  function abrirVer(alerta) {
-    setModoSheet("ver")
-    setAlertaSelecionado(alerta)
-    setSheetAberto(true)
-  }
-
-  function confirmarExcluir(alerta) {
-    setAlertaExcluir(alerta)
-    setDialogExcluir(true)
-  }
-
-  function excluir() {
-    excluirAlerta(alertaExcluir.id)
-    toast.success("Alerta removido.")
-    setDialogExcluir(false)
-    setSheetAberto(false)
-  }
-
+  function abrirCriar() { setModoSheet("criar"); setForm(formVazio); setAlertaSelecionado(null); setSheetAberto(true) }
+  function abrirVer(alerta) { setModoSheet("ver"); setAlertaSelecionado(alerta); setSheetAberto(true) }
+  function confirmarExcluir(alerta) { setAlertaExcluir(alerta); setDialogExcluir(true) }
+  function excluir() { excluirAlerta(alertaExcluir.id); toast.success("Alerta removido."); setDialogExcluir(false); setSheetAberto(false) }
   function handleStatus(id, status) {
     atualizarStatus(id, status)
     const labels = { ATENDIDO: "marcado como atendido", IGNORADO: "ignorado", ABERTO: "reaberto" }
     toast.success(`Alerta ${labels[status] ?? "atualizado"}.`)
   }
-
   function salvar() {
-    if (!form.maquinaNome.trim() || !form.sensorNome.trim() || !form.descricao.trim()) {
-      toast.error("Preencha todos os campos obrigatórios.")
-      return
-    }
-    adicionarAlerta(form)
-    toast.success("Alerta registrado com sucesso!")
-    setSheetAberto(false)
+    if (!form.maquinaNome.trim() || !form.sensorNome.trim() || !form.descricao.trim()) { toast.error("Preencha todos os campos obrigatórios."); return }
+    adicionarAlerta(form); toast.success("Alerta registrado com sucesso!"); setSheetAberto(false)
   }
 
   const dadosFiltrados = React.useMemo(() =>
@@ -265,25 +173,120 @@ export default function AlertasPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
-              <ArrowLeftIcon className="size-4 dark:text-white!" />
-            </Button>
+            <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}><ArrowLeftIcon className="size-4 dark:text-white!" /></Button>
             <div>
               <div className="flex items-center gap-2">
                 <AlertTriangleIcon size={22} className="text-[#3B2867] dark:text-white!" />
                 <h1 className="text-lg font-medium text-[#3B2867] dark:text-white">Alertas</h1>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {alertas.length} alertas · <span className="text-red-600 font-medium">{alertas.filter(a => a.status === "ABERTO").length} em aberto</span>
-              </p>
+             
             </div>
           </div>
           <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <PlusIcon className="size-4 mr-1 dark:text-white!" />Novo alerta
+            <PlusIcon className="size-4 mr-1" />Novo alerta
           </Button>
         </div>
 
         <Separator />
+
+        {/* Cards de resumo */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground font-medium">Taxa de resolução</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${taxaResolucao >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
+                  taxaResolucao >= 40 ? "text-yellow-700 bg-yellow-50 border border-yellow-200" :
+                    "text-red-700 bg-red-50 border border-red-200"
+                }`}>
+                {taxaResolucao >= 75 ? "Boa" : taxaResolucao >= 40 ? "Regular" : "Baixa"}
+              </span>
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867]">{totalAtendidos} / {alertas.length}</span>
+            <div className="flex flex-col gap-1.5">
+              <div className="h-2 w-50 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${taxaResolucao >= 75 ? "bg-green-500" : taxaResolucao >= 40 ? "bg-yellow-400" : "bg-red-500"}`}
+                  style={{ width: `${taxaResolucao}%` }}
+                />
+              </div>
+              <span className="text-muted-foreground text-xs">Alertas atendidos sobre o total gerado</span>
+            </div>
+          </div> */}
+          <div className="rounded-xl  border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground font-medium">Total</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Todos os sensores</span>
+
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867]">{alertas.length}</span>
+            <div className="flex flex-col gap-0.5 text-sm ">
+              <div className="flex ">
+                <span className={` flex items-center gap-1 ${taxaResolucao >= 75 ? "text-green-700" : taxaResolucao >= 40 ? "text-yellow-700" : "text-red-700"}`}>
+                  {totalAtendidos} / {alertas.length} atendidos.
+
+                </span>
+
+              </div>
+
+              <div>
+                <span className={`text-md   font-medium ${taxaResolucao >= 75 ? "text-green-700" :
+                  taxaResolucao >= 40 ? "text-yellow-700" :
+                    "text-red-700"
+                  }`}>
+                  Taxa de resolução
+                </span>
+                <span className={`text-xs ms-1 px-2 py-0.5 rounded-full font-medium ${taxaResolucao >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
+                  taxaResolucao >= 40 ? "text-yellow-700 bg-yellow-50 border border-yellow-200" :
+                    "text-red-700 bg-red-50 border border-red-200"
+                  }`}>
+                  {taxaResolucao >= 75 ? "Boa" : taxaResolucao >= 40 ? "Regular" : "Baixa"}
+                </span>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Em aberto */}
+          <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground font-medium">Alertas em aberto</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${totalAbertos > 0 ? "text-red-700 bg-red-50 border border-red-200" : "text-green-700 bg-green-50 border border-green-200"}`}>
+                {totalAbertos > 0 ? "⚠ Pendente" : "✓ Zerado"}
+              </span>
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867]">{totalAbertos}</span>
+            <div className="flex flex-col gap-0.5 text-sm">
+              <span className="text-red-600 flex items-center gap-1">
+                <ShieldAlertIcon className="size-3.5" />
+                {altaSeveridadeAbertos} de alta severidade
+              </span>
+              <span className="text-muted-foreground flex items-center gap-1">
+                <CircleXIcon className="size-3.5 text-gray-400" />
+                {alertas.filter(a => a.status === "IGNORADO").length} ignorados
+              </span>
+            </div>
+          </div>
+
+          {/* Atendidos */}
+          <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground font-medium">Alertas atendidos</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Total</span>
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867]">{totalAtendidos}</span>
+            <div className="flex flex-col gap-0.5 text-sm">
+              <span className={` flex items-center gap-1 ${taxaResolucao >= 10 ? "text-green-700" : "text-gray-400"}`}>
+                  <CircleCheckIcon className={`size-3.5  ${taxaResolucao >= 10 ? "fill-green-600" : "fill-gray-200"}`} />
+                {totalAtendidos} resolvidos
+              </span>
+              <span className="text-muted-foreground text-xs">De um total de {alertas.length} alertas</span>
+            </div>
+          </div>
+
+          {/* Taxa de resolução */}
+
+
+        </div>
 
         {/* Busca */}
         <div className="relative w-full max-w-sm">
@@ -291,30 +294,20 @@ export default function AlertasPage() {
           <Input placeholder="Buscar por máquina, sensor ou tipo..." value={busca} onChange={e => setBusca(e.target.value)} className="pl-8" />
         </div>
 
-        {/* Tabs por status */}
+        {/* Tabs */}
         <Tabs defaultValue="abertos" className="w-full flex-col gap-4">
           <TabsList>
             <TabsTrigger value="abertos">
-              Em aberto
-              {abertos.length > 0 && (
-                <Badge variant="secondary" className="ml-1.5 bg-red-100! text-red-700! border-red-200!">{abertos.length}</Badge>
-              )}
+              Em aberto{abertos.length > 0 && <Badge variant="secondary" className="ml-1.5 bg-red-100! text-red-700! border-red-200!">{abertos.length}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="atendidos">
-              Atendidos
-              {atendidos.length > 0 && (
-                <Badge variant="secondary" className="ml-1.5">{atendidos.length}</Badge>
-              )}
+              Atendidos{atendidos.length > 0 && <Badge variant="secondary" className="ml-1.5">{atendidos.length}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="ignorados">
-              Ignorados
-              {ignorados.length > 0 && (
-                <Badge variant="secondary" className="ml-1.5">{ignorados.length}</Badge>
-              )}
+              Ignorados{ignorados.length > 0 && <Badge variant="secondary" className="ml-1.5">{ignorados.length}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="todos">Todos ({dadosFiltrados.length})</TabsTrigger>
           </TabsList>
-
           {[
             { value: "abertos", data: abertos },
             { value: "atendidos", data: atendidos },
@@ -322,28 +315,18 @@ export default function AlertasPage() {
             { value: "todos", data: dadosFiltrados },
           ].map(({ value, data }) => (
             <TabsContent key={value} value={value} className="flex flex-col gap-4">
-              <AlertasTable
-                data={data}
-                onVer={abrirVer}
-                onExcluir={confirmarExcluir}
-                onStatus={handleStatus}
-              />
+              <AlertasTable data={data} onVer={abrirVer} onExcluir={confirmarExcluir} onStatus={handleStatus} />
             </TabsContent>
           ))}
         </Tabs>
 
-        {/* Sheet ver / criar */}
+        {/* Sheet */}
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
           <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
             <SheetHeader>
               <SheetTitle>{modoSheet === "criar" ? "Registrar alerta manual" : "Detalhes do alerta"}</SheetTitle>
-              <SheetDescription>
-                {modoSheet === "criar"
-                  ? "Registre um alerta manualmente para acompanhamento."
-                  : "Informações completas do alerta."}
-              </SheetDescription>
+              <SheetDescription>{modoSheet === "criar" ? "Registre um alerta manualmente para acompanhamento." : "Informações completas do alerta."}</SheetDescription>
             </SheetHeader>
-
             <div className="flex flex-col gap-4 px-4 py-4 overflow-y-auto flex-1">
               {modoSheet === "ver" && alertaSelecionado ? (
                 <>
@@ -361,30 +344,13 @@ export default function AlertasPage() {
                     <Label className="text-muted-foreground text-xs">Descrição</Label>
                     <p className="text-sm leading-relaxed text-foreground rounded-md border bg-muted/40 px-3 py-2">{alertaSelecionado.descricao}</p>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-muted-foreground text-xs">Criado em</Label>
-                    <span className="text-sm">{tempoRelativo(alertaSelecionado.criadoEm)}</span>
-                  </div>
+                  <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Criado em</Label><span className="text-sm">{tempoRelativo(alertaSelecionado.criadoEm)}</span></div>
                   <Separator />
                   <div className="flex flex-col gap-2">
-                    {alertaSelecionado.status !== "ATENDIDO" && (
-                      <Button className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "ATENDIDO"); setSheetAberto(false) }}>
-                        <CircleCheckIcon className="size-4 mr-1" /> Marcar como atendido
-                      </Button>
-                    )}
-                    {alertaSelecionado.status !== "IGNORADO" && (
-                      <Button variant="outline" className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "IGNORADO"); setSheetAberto(false) }}>
-                        <CircleXIcon className="size-4 mr-1" /> Ignorar alerta
-                      </Button>
-                    )}
-                    {alertaSelecionado.status !== "ABERTO" && (
-                      <Button variant="outline" className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "ABERTO"); setSheetAberto(false) }}>
-                        <ShieldAlertIcon className="size-4 mr-1" /> Reabrir alerta
-                      </Button>
-                    )}
-                    <Button variant="destructive" className="w-full" onClick={() => confirmarExcluir(alertaSelecionado)}>
-                      <Trash2Icon className="size-4 mr-1" /> Excluir
-                    </Button>
+                    {alertaSelecionado.status !== "ATENDIDO" && <Button className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "ATENDIDO"); setSheetAberto(false) }}><CircleCheckIcon className="size-4 mr-1" /> Marcar como atendido</Button>}
+                    {alertaSelecionado.status !== "IGNORADO" && <Button variant="outline" className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "IGNORADO"); setSheetAberto(false) }}><CircleXIcon className="size-4 mr-1" /> Ignorar alerta</Button>}
+                    {alertaSelecionado.status !== "ABERTO" && <Button variant="outline" className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "ABERTO"); setSheetAberto(false) }}><ShieldAlertIcon className="size-4 mr-1" /> Reabrir alerta</Button>}
+                    <Button variant="destructive" className="w-full" onClick={() => confirmarExcluir(alertaSelecionado)}><Trash2Icon className="size-4 mr-1" /> Excluir</Button>
                   </div>
                 </>
               ) : (
@@ -393,24 +359,14 @@ export default function AlertasPage() {
                     <Label htmlFor="tipo">Tipo de alerta</Label>
                     <Select value={form.tipo} onValueChange={v => setForm(p => ({ ...p, tipo: v }))}>
                       <SelectTrigger id="tipo" className="w-full"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {TIPOS_ALERTA.map(t => <SelectItem key={t} value={t}>{TIPOS_ALERTA_LABEL[t]}</SelectItem>)}
-                        </SelectGroup>
-                      </SelectContent>
+                      <SelectContent><SelectGroup>{TIPOS_ALERTA.map(t => <SelectItem key={t} value={t}>{TIPOS_ALERTA_LABEL[t]}</SelectItem>)}</SelectGroup></SelectContent>
                     </Select>
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="severidade">Severidade</Label>
                     <Select value={form.severidade} onValueChange={v => setForm(p => ({ ...p, severidade: v }))}>
                       <SelectTrigger id="severidade" className="w-full"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="BAIXA">Baixa</SelectItem>
-                          <SelectItem value="MEDIA">Média</SelectItem>
-                          <SelectItem value="ALTA">Alta</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
+                      <SelectContent><SelectGroup><SelectItem value="BAIXA">Baixa</SelectItem><SelectItem value="MEDIA">Média</SelectItem><SelectItem value="ALTA">Alta</SelectItem></SelectGroup></SelectContent>
                     </Select>
                   </div>
                   <div className="flex flex-col gap-2">
@@ -428,7 +384,6 @@ export default function AlertasPage() {
                 </>
               )}
             </div>
-
             {modoSheet !== "ver" && (
               <SheetFooter className="px-4 pb-4">
                 <Button variant="outline" onClick={() => setSheetAberto(false)}>Cancelar</Button>
@@ -438,7 +393,7 @@ export default function AlertasPage() {
           </SheetContent>
         </Sheet>
 
-        {/* Dialog confirmar exclusão */}
+        {/* Dialog exclusão */}
         <Dialog open={dialogExcluir} onOpenChange={setDialogExcluir}>
           <DialogContent>
             <DialogHeader>

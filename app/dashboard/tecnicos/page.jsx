@@ -56,8 +56,8 @@ function TecnicoAvatar({ tecnico, size = "default" }) {
   const sizeClass = size === "lg"
     ? "h-16 w-16 text-xl"
     : size === "sm"
-    ? "h-7 w-7 text-xs"
-    : "h-8 w-8 text-xs"
+      ? "h-7 w-7 text-xs"
+      : "h-8 w-8 text-xs"
 
   return (
     <Avatar className={sizeClass}>
@@ -79,6 +79,8 @@ function StatusTecnicoBadge({ value }) {
   )
 }
 
+
+
 export default function TecnicosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -92,6 +94,15 @@ export default function TecnicosPage() {
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [tecnicoExcluir, setTecnicoExcluir] = React.useState(null)
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
+
+  // Adicione essa função dentro do TecnicosPage, antes do return:
+
+  const totalAlertas = tecnicos.reduce((acc, t) => acc + (t.alertasAtendidos || 0), 0)
+  const topTecnico = [...tecnicos].sort((a, b) => b.alertasAtendidos - a.alertasAtendidos)[0]
+  const tecnicosComAlertas = tecnicos.filter(t => t.status === "ATIVO" && t.alertasAtendidos > 0).length
+  const especialidadesCobertas = new Set(
+  tecnicos.filter(t => t.status === "ATIVO").map(t => t.especialidade)
+).size
 
   React.useEffect(() => {
     if (searchParams.get("action") === "new") abrirCriar()
@@ -245,9 +256,7 @@ export default function TecnicosPage() {
                 <UsersIcon size={22} className="text-[#3B2867]" />
                 <h1 className="text-lg font-medium text-[#3B2867]">Técnicos</h1>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {tecnicos.length} técnicos · {tecnicos.filter(t => t.status === "ATIVO").length} ativos
-              </p>
+            
             </div>
           </div>
           <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -256,6 +265,62 @@ export default function TecnicosPage() {
         </div>
 
         <Separator />
+
+        {/* Cards de resumo */}
+<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+  {/* Total de técnicos */}
+  <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50">
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-muted-foreground font-medium">Total de técnicos</span>
+      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+        {tecnicos.filter(t => t.status === "ATIVO").length} ativos
+      </span>
+    </div>
+    <span className="text-3xl font-bold text-[#3B2867]">{tecnicos.length}</span>
+    <div className="flex flex-col gap-0.5 text-sm">
+      <span className="text-green-700 flex items-center gap-1">
+        <CircleCheckIcon className="size-3.5 fill-green-600" />
+        {tecnicos.filter(t => t.status === "ATIVO").length} operando normalmente
+      </span>
+      <span className="text-muted-foreground flex items-center gap-1">
+        <CircleMinusIcon className="size-3.5 text-gray-400" />
+        {tecnicos.filter(t => t.status === "INATIVO").length} inativos
+      </span>
+    </div>
+  </div>
+
+  {/* Com alertas ativos */}
+  <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50">
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-muted-foreground font-medium">Com alertas ativos</span>
+      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">hoje</span>
+    </div>
+    <span className="text-3xl font-bold text-[#3B2867]">{tecnicosComAlertas}</span>
+    <div className="flex flex-col gap-0.5 text-sm">
+      <span className="text-muted-foreground">
+        {tecnicos.filter(t => t.status === "ATIVO").length - tecnicosComAlertas} disponíveis
+      </span>
+      <span className="text-muted-foreground text-xs">Técnicos ativos com atendimentos</span>
+    </div>
+  </div>
+
+  {/* Alertas atendidos */}
+  <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50">
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-muted-foreground font-medium">Alertas atendidos</span>
+      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">total</span>
+    </div>
+    <span className="text-3xl font-bold text-[#3B2867]">{totalAlertas}</span>
+    <div className="flex flex-col gap-0.5 text-sm">
+      <span className="text-muted-foreground">
+        Média de {tecnicos.length ? (totalAlertas / tecnicos.length).toFixed(1) : 0} por técnico
+      </span>
+      <span className="text-muted-foreground text-xs">Todos os atendimentos registrados</span>
+    </div>
+  </div>
+
+</div>
 
         {/* Busca */}
         <div className="relative w-full max-w-sm">
@@ -268,7 +333,7 @@ export default function TecnicosPage() {
           <Table>
             <TableHeader className="bg-muted">
               {table.getHeaderGroups().map(hg => (
-                <TableRow  key={hg.id}>
+                <TableRow key={hg.id}>
                   {hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}
                 </TableRow>
               ))}
@@ -310,8 +375,8 @@ export default function TecnicosPage() {
               </SheetTitle>
               <SheetDescription>
                 {modoSheet === "criar" ? "Preencha os dados para cadastrar um novo técnico." :
-                 modoSheet === "editar" ? "Altere os dados e clique em salvar." :
-                 "Informações completas do técnico."}
+                  modoSheet === "editar" ? "Altere os dados e clique em salvar." :
+                    "Informações completas do técnico."}
               </SheetDescription>
             </SheetHeader>
 
@@ -365,7 +430,7 @@ export default function TecnicosPage() {
 
               ) : (
 
-              /* ── MODO CRIAR / EDITAR ── */
+                /* ── MODO CRIAR / EDITAR ── */
                 <>
                   {/* Preview do avatar no formulário */}
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border">
