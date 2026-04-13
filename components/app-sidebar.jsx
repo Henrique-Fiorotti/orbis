@@ -136,7 +136,7 @@ export function AppSidebar({
   ...props
 }) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar tourId="tour-sidebar" collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
