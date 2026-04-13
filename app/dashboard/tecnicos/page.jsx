@@ -256,9 +256,7 @@ export default function TecnicosPage() {
                 <UsersIcon size={22} className="text-[#3B2867]" />
                 <h1 className="text-lg font-medium text-[#3B2867]">Técnicos</h1>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {tecnicos.length} técnicos · {tecnicos.filter(t => t.status === "ATIVO").length} ativos
-              </p>
+            
             </div>
           </div>
           <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">

@@ -21,17 +21,13 @@ import {
   CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, PlusIcon,
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
   ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon,
-  WashingMachineIcon,
+  WashingMachineIcon, ShieldAlertIcon,
 } from "lucide-react"
 import {
   flexRender, getCoreRowModel, getFilteredRowModel,
   getPaginationRowModel, getSortedRowModel, useReactTable,
 } from "@tanstack/react-table"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn, tempoRelativo } from "@/lib/utils"
 
 const formVazio = { nome: "", setor: "", tipo: "", criticidade: "MEDIA" }
@@ -77,56 +73,42 @@ export default function MaquinasPage() {
   const [maquinaExcluir, setMaquinaExcluir] = React.useState(null)
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
 
-  // Abre Sheet de criação automaticamente se vier com ?action=new
+  // --- Cards computed values ---
+  const totalOk = maquinas.filter(m => m.status === "OK").length
+  const totalAlerta = maquinas.filter(m => m.status !== "OK").length
+  const criticasAlta = maquinas.filter(m => m.criticidade === "ALTA").length
+  const criticasAltaAlerta = maquinas.filter(m => m.criticidade === "ALTA" && m.status !== "OK").length
+  const integridadeMedia = maquinas.length
+    ? Math.round(maquinas.reduce((acc, m) => acc + (m.integridade ?? 0), 0) / maquinas.length)
+    : 0
+
   React.useEffect(() => {
     if (searchParams.get("action") === "new") abrirCriar()
   }, [])
 
   function abrirCriar() {
-    setModoSheet("criar")
-    setForm(formVazio)
-    setMaquinaSelecionada(null)
-    setSheetAberto(true)
+    setModoSheet("criar"); setForm(formVazio); setMaquinaSelecionada(null); setSheetAberto(true)
   }
-
   function abrirEditar(maquina) {
     setModoSheet("editar")
     setForm({ nome: maquina.nome, setor: maquina.setor, tipo: maquina.tipo, criticidade: maquina.criticidade })
-    setMaquinaSelecionada(maquina)
-    setSheetAberto(true)
+    setMaquinaSelecionada(maquina); setSheetAberto(true)
   }
-
   function abrirVer(maquina) {
-    setModoSheet("ver")
-    setMaquinaSelecionada(maquina)
-    setSheetAberto(true)
+    setModoSheet("ver"); setMaquinaSelecionada(maquina); setSheetAberto(true)
   }
-
   function salvar() {
     if (!form.nome.trim() || !form.setor.trim() || !form.tipo.trim()) {
-      toast.error("Preencha todos os campos obrigatórios.")
-      return
+      toast.error("Preencha todos os campos obrigatórios."); return
     }
-    if (modoSheet === "criar") {
-      adicionarMaquina(form)          // ← usa o contexto, reflete no dashboard
-      toast.success("Máquina cadastrada com sucesso!")
-    } else {
-      editarMaquina(maquinaSelecionada.id, form)  // ← usa o contexto
-      toast.success("Máquina atualizada com sucesso!")
-    }
+    if (modoSheet === "criar") { adicionarMaquina(form); toast.success("Máquina cadastrada com sucesso!") }
+    else { editarMaquina(maquinaSelecionada.id, form); toast.success("Máquina atualizada com sucesso!") }
     setSheetAberto(false)
   }
-
-  function confirmarExcluir(maquina) {
-    setMaquinaExcluir(maquina)
-    setDialogExcluir(true)
-  }
-
+  function confirmarExcluir(maquina) { setMaquinaExcluir(maquina); setDialogExcluir(true) }
   function excluir() {
-    excluirMaquina(maquinaExcluir.id)   // ← usa o contexto
-    toast.success("Máquina removida.")
-    setDialogExcluir(false)
-    setSheetAberto(false)
+    excluirMaquina(maquinaExcluir.id); toast.success("Máquina removida.")
+    setDialogExcluir(false); setSheetAberto(false)
   }
 
   const dadosFiltrados = React.useMemo(() =>
@@ -138,8 +120,7 @@ export default function MaquinasPage() {
 
   const columns = [
     {
-      accessorKey: "nome",
-      header: "Máquina",
+      accessorKey: "nome", header: "Máquina",
       cell: ({ row }) => (
         <button onClick={() => abrirVer(row.original)} className="text-left font-medium text-sm hover:underline hover:text-primary transition-colors">
           {row.original.nome}
@@ -156,9 +137,7 @@ export default function MaquinasPage() {
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
-              <EllipsisVerticalIcon />
-            </Button>
+            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon"><EllipsisVerticalIcon /></Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
             <DropdownMenuItem onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
@@ -190,9 +169,7 @@ export default function MaquinasPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Tooltip>
-              <TooltipContent>
-                <p className="mb-0!">Voltar ao dashboard</p>
-              </TooltipContent>
+              <TooltipContent><p className="mb-0!">Voltar ao dashboard</p></TooltipContent>
               <TooltipTrigger>
                 <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
                   <ArrowLeftIcon className="size-4" />
@@ -213,6 +190,76 @@ export default function MaquinasPage() {
         </div>
 
         <Separator />
+
+        {/* Cards de resumo */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+          {/* Total de máquinas */}
+          <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground font-medium">Total de máquinas</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{maquinas.length} cadastradas</span>
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867]">{maquinas.length}</span>
+            <div className="flex flex-col gap-0.5 text-sm">
+              <span className="text-green-700 flex items-center gap-1">
+                <CircleCheckIcon className="size-3.5 fill-green-600" />
+                {totalOk} operando normalmente
+              </span>
+              <span className="text-red-600 flex items-center gap-1">
+                <AlertTriangleIcon className="size-3.5" />
+                {totalAlerta} requerem atenção
+              </span>
+            </div>
+          </div>
+
+          {/* Criticidade alta */}
+          <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground font-medium">Criticidade alta</span>
+              <span className="text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full font-medium">
+                ⚠ atenção
+              </span>
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867]">{criticasAlta}</span>
+            <div className="flex flex-col gap-0.5 text-sm">
+              <span className="text-red-600 flex items-center gap-1">
+                <ShieldAlertIcon className="size-3.5" />
+                {criticasAltaAlerta} em alerta agora
+              </span>
+              <span className="text-muted-foreground text-xs">
+                {criticasAlta - criticasAltaAlerta} operando normalmente
+              </span>
+            </div>
+          </div>
+
+          {/* Integridade média */}
+          <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground font-medium">Integridade média</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                integridadeMedia >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
+                integridadeMedia >= 50 ? "text-yellow-700 bg-yellow-50 border border-yellow-200" :
+                "text-red-700 bg-red-50 border border-red-200"
+              }`}>
+                {integridadeMedia >= 75 ? "Estável" : integridadeMedia >= 50 ? "Atenção" : "Crítico"}
+              </span>
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867]">{integridadeMedia}%</span>
+            <div className="flex flex-col gap-1.5">
+              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    integridadeMedia >= 75 ? "bg-green-500" : integridadeMedia >= 50 ? "bg-yellow-400" : "bg-red-500"
+                  }`}
+                  style={{ width: `${integridadeMedia}%` }}
+                />
+              </div>
+              <span className="text-muted-foreground text-xs">Média de integridade da frota</span>
+            </div>
+          </div>
+
+        </div>
 
         {/* Busca */}
         <div className="relative w-full max-w-sm">
@@ -238,9 +285,7 @@ export default function MaquinasPage() {
                   </TableRow>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">Nenhuma máquina encontrada.</TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">Nenhuma máquina encontrada.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
@@ -258,7 +303,7 @@ export default function MaquinasPage() {
           </div>
         </div>
 
-        {/* Sheet criar / editar / ver */}
+        {/* Sheet */}
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
           <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
             <SheetHeader>
@@ -271,7 +316,6 @@ export default function MaquinasPage() {
                  "Informações completas da máquina."}
               </SheetDescription>
             </SheetHeader>
-
             <div className="flex flex-col gap-4 px-4 py-4 overflow-y-auto flex-1">
               {modoSheet === "ver" && maquinaSelecionada ? (
                 <>
@@ -332,7 +376,6 @@ export default function MaquinasPage() {
                 </>
               )}
             </div>
-
             {modoSheet !== "ver" && (
               <SheetFooter className="px-4 pb-4">
                 <Button variant="outline" onClick={() => setSheetAberto(false)}>Cancelar</Button>
@@ -342,7 +385,7 @@ export default function MaquinasPage() {
           </SheetContent>
         </Sheet>
 
-        {/* Dialog confirmar exclusão */}
+        {/* Dialog exclusão */}
         <Dialog open={dialogExcluir} onOpenChange={setDialogExcluir}>
           <DialogContent>
             <DialogHeader>
@@ -350,7 +393,7 @@ export default function MaquinasPage() {
               <DialogDescription>
                 Tem certeza que deseja excluir <strong>{maquinaExcluir?.nome}</strong>? Esta ação não pode ser desfeita e removerá todos os sensores e alertas vinculados.
                 <DialogDescription className="mt-2 text-sm text-muted-foreground">Digite o nome da máquina para confirmar:</DialogDescription>
-                <Input placeholder={maquinaExcluir?.nome} value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} /> {/* campo de confirmação para evitar exclusões acidentais */}
+                <Input placeholder={maquinaExcluir?.nome} value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} />
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
