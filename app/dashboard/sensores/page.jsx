@@ -30,19 +30,14 @@ import {
   getPaginationRowModel, getSortedRowModel, useReactTable,
 } from "@tanstack/react-table"
 
+import { cn, tempoRelativo } from "@/lib/utils"
+
 const formVazio = {
   nome: "",
   maquinaId: "",
   maquinaNome: "",
   temperatura: { habilitado: true, limiteMin: "", limiteMax: "" },
   vibracao: { habilitado: true, limiteMin: "", limiteMax: "" },
-}
-
-function tempoRelativo(isoString) {
-  const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000)
-  if (diff < 60) return `${diff}s atrás`
-  if (diff < 3600) return `${Math.floor(diff / 60)}min atrás`
-  return `${Math.floor(diff / 3600)}h atrás`
 }
 
 function StatusBadge({ value }) {
