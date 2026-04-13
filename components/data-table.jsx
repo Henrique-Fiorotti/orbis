@@ -23,13 +23,7 @@ import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GripVerticalIcon, CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, PlusIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, TrendingUpIcon, ArrowRightIcon } from "lucide-react"
-
-function tempoRelativo(isoString) {
-  const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000)
-  if (diff < 60) return `${diff}s atrás`
-  if (diff < 3600) return `${Math.floor(diff / 60)}min atrás`
-  return `${Math.floor(diff / 3600)}h atrás`
-}
+import { cn, tempoRelativo } from "@/lib/utils"
 
 function CriticidadeBadge({ value }) {
   const styles = { ALTA: "w-[55px] bg-red-100 text-red-700 dark:bg-transparent! dark:text-white", MEDIA: "w-[55px] bg-yellow-100 text-yellow-700 dark:text-white dark:bg-transparent!", BAIXA: "w-[55px] bg-green-100 text-green-700 dark:bg-transparent! dark:text-white" }

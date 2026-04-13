@@ -28,6 +28,7 @@ import {
   flexRender, getCoreRowModel, getFilteredRowModel,
   getPaginationRowModel, getSortedRowModel, useReactTable,
 } from "@tanstack/react-table"
+import { cn, tempoRelativo } from "@/lib/utils"
 
 const TIPOS_ALERTA = [
   "LIMITE_ULTRAPASSADO", "TENDENCIA_CURTA", "TENDENCIA_LONGA",
@@ -47,14 +48,6 @@ const formVazio = {
   sensorId: "", sensorNome: "",
   severidade: "MEDIA",
   descricao: "",
-}
-
-function tempoRelativo(isoString) {
-  const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000)
-  if (diff < 60) return `${diff}s atrás`
-  if (diff < 3600) return `${Math.floor(diff / 60)}min atrás`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h atrás`
-  return `${Math.floor(diff / 86400)}d atrás`
 }
 
 function SeveridadeBadge({ value }) {

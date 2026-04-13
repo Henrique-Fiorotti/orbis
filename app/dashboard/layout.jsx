@@ -11,7 +11,7 @@ import { TecnicosProvider } from "@/components/context/tecnicos-context"
 import { Toaster } from "sonner"
 
 export default function DashboardLayout({ children }) {
-  const pathname = usePathname()
+  
   return (
     <MaquinasProvider>
       <SensoresProvider>

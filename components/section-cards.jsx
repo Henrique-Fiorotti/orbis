@@ -1,5 +1,3 @@
-"use client"
-
 // =============================================================
 // INTEGRAÇÃO COM A API — quando a API estiver pronta:
 //
@@ -26,16 +24,15 @@
 // }
 // =============================================================
 
+"use client"
+
 import { Badge } from "@/components/ui/badge"
-import {
-  Card,
-  CardAction,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUpIcon, TrendingDownIcon } from "lucide-react"
+import { useMaquinas } from "@/components/context/maquinas-context"
+import { useAlertas } from "@/components/context/alertas-context"
+import { useSensores } from "@/components/context/sensores-context"
+import { useTecnicos } from "@/components/context/tecnicos-context"
 
 // Mock — substituir pelo fetch acima quando a API estiver pronta
 const mockResumo = {
@@ -52,6 +49,28 @@ export function SectionCards() {
 
   const maquinasOk = resumo.totalMaquinas - resumo.maquinasEmAlerta
   const integridadeFormatada = resumo.integridadeMedia.toFixed(1)
+
+  /* Mudar em vez de mockResumo para calcular dinamicamente a partir dos contextos:
+
+  const { maquinas } = useMaquinas()
+  const { alertas } = useAlertas()
+  const { sensores } = useSensores()
+  const { tecnicos } = useTecnicos()
+
+  const maquinasEmAlerta = maquinas.filter(m => m.status === "ALERTA").length
+  const alertasAbertos = alertas.filter(a => a.status === "ABERTO").length
+  const alertasHoje = alertas.filter(a => {
+    const hoje = new Date()
+    const criado = new Date(a.criadoEm)
+    return criado.toDateString() === hoje.toDateString()
+  }).length
+  const sensoresOnline = sensores.filter(s => s.status === "ONLINE").length
+  const tecnicosAtivos = tecnicos.filter(t => t.status === "ATIVO").length
+  const integridadeMedia = maquinas.length > 0
+    ? (maquinas.reduce((acc, m) => acc + m.integridade, 0) / maquinas.length).toFixed(1)
+    : "0.0"
+
+    */
 
   return (
     <div

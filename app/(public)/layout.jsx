@@ -19,12 +19,10 @@ const openSans = Open_Sans({
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="pt-BR" className={`${poppins.variable} ${openSans.variable}`}>
-      <body>
-        <Header />
-        {children}
-        <Footer />
-      </body>
-    </html>
+    <div className={`${poppins.variable} ${openSans.variable}`}>
+      <Header />
+      {children}
+      <Footer />
+    </div>
   )
 }
