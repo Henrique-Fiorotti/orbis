@@ -193,7 +193,7 @@ export default function AlertasPage() {
 
         {/* Cards de resumo */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {/* <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
+          {/* <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Taxa de resolução</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${taxaResolucao >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
@@ -214,29 +214,37 @@ export default function AlertasPage() {
               <span className="text-muted-foreground text-xs">Alertas atendidos sobre o total gerado</span>
             </div>
           </div> */}
-           <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
+          <div className="rounded-xl  border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Total</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${taxaResolucao >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
-                  taxaResolucao >= 40 ? "text-yellow-700 bg-yellow-50 border border-yellow-200" :
-                    "text-red-700 bg-red-50 border border-red-200"
-                }`}>
-                {taxaResolucao >= 75 ? "Boa" : taxaResolucao >= 40 ? "Regular" : "Baixa"}
-              </span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Todos os sensores</span>
+
             </div>
             <span className="text-3xl font-bold text-[#3B2867]">{alertas.length}</span>
-            <div className="flex flex-col gap-1.5">
-               <div className="h-2 w-50 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${taxaResolucao >= 75 ? "bg-green-500" : taxaResolucao >= 40 ? "bg-yellow-400" : "bg-red-500"}`}
-                  style={{ width: `${taxaResolucao}%` }}
-                />
+            <div className="flex flex-col gap-0.5 text-sm ">
+              <div className="flex ">
+                <span className="text-yellow-600 flex items-center gap-1">
+                  {totalAtendidos} / {alertas.length} atendidos.
+
+                </span>
+
               </div>
-              <span className="text-muted-foreground text-xs">{totalAtendidos} / {alertas.length} atendidos</span>
-                <span className="text-muted-foreground flex items-center gap-1">
-                <CircleXIcon className="size-3.5 text-gray-400" />
-                {alertas.filter(a => a.status === "IGNORADO").length} ignorados
-              </span>
+
+              <div>
+                <span className={`text-md  rounded-full font-medium ${taxaResolucao >= 75 ? "text-green-700" :
+                  taxaResolucao >= 40 ? "text-yellow-700" :
+                    "text-red-700"
+                  }`}>
+                  Taxa de resolução
+                </span>
+                <span className={`text-xs ms-1 px-2 py-0.5 rounded-full font-medium ${taxaResolucao >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
+                  taxaResolucao >= 40 ? "text-yellow-700 bg-yellow-50 border border-yellow-200" :
+                    "text-red-700 bg-red-50 border border-red-200"
+                  }`}>
+                  {taxaResolucao >= 75 ? "Boa" : taxaResolucao >= 40 ? "Regular" : "Baixa"}
+                </span>
+              </div>
+
             </div>
           </div>
 
@@ -245,7 +253,7 @@ export default function AlertasPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Alertas em aberto</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${totalAbertos > 0 ? "text-red-700 bg-red-50 border border-red-200" : "text-green-700 bg-green-50 border border-green-200"}`}>
-                {totalAbertos > 0 ? "⚠ pendente" : "✓ zerado"}
+                {totalAbertos > 0 ? "⚠ Pendente" : "✓ Zerado"}
               </span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867]">{totalAbertos}</span>
@@ -265,7 +273,7 @@ export default function AlertasPage() {
           <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Alertas atendidos</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">total</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Total</span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867]">{totalAtendidos}</span>
             <div className="flex flex-col gap-0.5 text-sm">
@@ -278,7 +286,7 @@ export default function AlertasPage() {
           </div>
 
           {/* Taxa de resolução */}
-        
+
 
         </div>
 

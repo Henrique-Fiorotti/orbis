@@ -263,7 +263,7 @@ export default function SensoresPage() {
           </div>
 
           {/* Cobertura dupla */}
-          <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
+          {/* <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Cobertura dupla</span>
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">temp + vibração</span>
@@ -277,7 +277,7 @@ export default function SensoresPage() {
                 {sensores.length ? Math.round((comAmbos / sensores.length) * 100) : 0}% com ambos os sensores ativos
               </span>
             </div>
-          </div>
+          </div> */}
 
         </div>
 

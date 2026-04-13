@@ -247,7 +247,7 @@ export default function MaquinasPage() {
             </div>
             <span className="text-3xl font-bold text-[#3B2867]">{integridadeMedia}%</span>
             <div className="flex flex-col gap-1.5">
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+              <div className="h-2 w-50 bg-gray-200 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${
                     integridadeMedia >= 75 ? "bg-green-500" : integridadeMedia >= 50 ? "bg-yellow-400" : "bg-red-500"
