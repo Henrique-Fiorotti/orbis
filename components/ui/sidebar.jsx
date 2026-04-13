@@ -130,6 +130,7 @@ function Sidebar({
   side = "left",
   variant = "sidebar",
   collapsible = "offcanvas",
+  tourId,
   className,
   children,
   dir,
@@ -140,6 +141,7 @@ function Sidebar({
   if (collapsible === "none") {
     return (
       <div
+        id={tourId}
         data-slot="sidebar"
         className={cn(
           "flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground dark:bg-gray-800!",
@@ -155,6 +157,7 @@ function Sidebar({
     return (
       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
         <SheetContent
+          id={tourId}
           dir={dir}
           data-sidebar="sidebar"
           data-slot="sidebar"
@@ -196,6 +199,7 @@ function Sidebar({
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
         )} />
       <div
+        id={tourId}
         data-slot="sidebar-container"
         data-side={side}
         className={cn(
