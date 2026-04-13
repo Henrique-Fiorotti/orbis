@@ -1023,7 +1023,7 @@ function TourStep(props) {
         onFocusCapture={onFocusCapture}
         onBlurCapture={onBlurCapture}
         className={cn(
-          "fixed z-50 flex w-80 flex-col gap-4 rounded-lg border bg-popover p-4 text-popover-foreground shadow-md outline-none",
+          "fixed z-50 flex w-[580px] flex-col gap-4 rounded-lg border bg-popover p-8 text-popover-foreground shadow-md outline-none",
           className
         )}
         style={{
@@ -1289,7 +1289,7 @@ function TourPrev(props) {
       {children ?? (
         <>
           <ChevronLeft />
-          Previous
+          Voltar
         </>
       )}
     </Button>
@@ -1320,7 +1320,7 @@ function TourNext(props) {
       onClick={onClick}>
       {children ?? (
         <>
-          {isLastStep ? "Finish" : "Next"}
+          {isLastStep ? "Finalizar" : "Próximo"}
           {!isLastStep && <ChevronRight />}
         </>
       )}
@@ -1348,7 +1348,7 @@ function TourSkip(props) {
       variant="outline"
       {...skipButtonProps}
       onClick={onClick}>
-      {children ?? "Skip"}
+      {children ?? "Pular"}
     </Button>
   );
 }

@@ -126,7 +126,10 @@ hana-viewer>* {
 /* app/globals.css */
 
 /* Spotlight escurece o fundo corretamente em dark mode */
-
+[data-tour-overlay] {
+  background-color: hsl(var(--background) / 0.7);
+  backdrop-filter: blur(2px);
+}
 
 /* Card do passo herda as variáveis do shadcn/ui */
 [data-tour-step] {
