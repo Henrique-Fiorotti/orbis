@@ -1,5 +1,6 @@
 "use client";
 
+import HeroDashboard from "@/components/hero-dashboard";
 import LogoCloud from "@/components/logo-cloud";
 import Pricing from "@/components/pricing";
 import { ChartPieDonut } from "@/components/ui/chart-pie-donut";
@@ -579,46 +580,8 @@ export default function HomePage() {
       </section>
 
       {/* ══ STATS ══ */}
-      <section style={{ background: "#111", padding: "80px 8vw" }}>
-        <div
-          ref={statsRef}
-          style={{
-            maxWidth: "900px",
-            margin: "0 auto",
-            display: "flex",
-            justifyContent: "space-around",
-            flexWrap: "wrap",
-            gap: "40px",
-            textAlign: "center",
-            opacity: statsVisible ? 1 : 0,
-            transform: statsVisible ? "none" : "translateY(20px)",
-            transition: "opacity 0.7s ease, transform 0.7s ease",
-            fontFamily: "'Poppins', sans-serif",
-            fontWeight: 100,
-          }}
-        >
-          {[
-            { to: 98, suffix: "%", label: "Uptime garantido" },
-            { to: 1200, suffix: "+", label: "Empresas ativas" },
-            { to: 4700, suffix: "+", label: "Falhas prevenidas" },
-            { to: 24, suffix: "/7", label: "Suporte disponível" },
-          ].map((s) => (
-            <div key={s.label}>
-              <p
-                style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: "clamp(2.2rem, 4vw, 3rem)",
-                  fontWeight: 500,
-                  color: "#fff",
-                  margin: "0 0 6px",
-                }}
-              >
-                <Counter to={s.to} suffix={s.suffix} />
-              </p>
-              <p style={{ fontSize: "0.82rem", color: "#9ca3af" }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
+      <section style={{ background: "#fafafa" }}>
+        <HeroDashboard />
       </section>
 
       {/* ══ HOW IT WORKS ══ */}
