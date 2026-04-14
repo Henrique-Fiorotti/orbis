@@ -1,13 +1,15 @@
+// @ts-check
+
 "use client"
 
-import { TrendingUp } from "lucide-react"
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
+import * as React from "react"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
+import { useMaquinas } from "@/components/context/maquinas-context"
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -18,59 +20,67 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { getMaquinasPorCriticidade } from "@/lib/orbis-dashboard"
 
-export const description = "A stacked bar chart with a legend"
+/** @typedef {import("@/lib/orbis-types").ChartConfig} ChartConfig */
 
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-]
+export const description = "Distribuicao de maquinas por criticidade e status"
 
+/** @type {ChartConfig} */
 const chartConfig = {
-  desktop: {
-    label: "Desktop",
+  operando: {
+    label: "Operando",
     color: "var(--chart-1)",
   },
-  mobile: {
-    label: "Mobile",
+  emAlerta: {
+    label: "Em alerta",
     color: "var(--chart-2)",
   },
 }
 
 export function ChartBarStacked() {
+  const { maquinas } = useMaquinas()
+
+  const chartData = React.useMemo(() => getMaquinasPorCriticidade(maquinas), [maquinas])
+  const totalEmAlerta = React.useMemo(
+    () => chartData.reduce((total, item) => total + item.emAlerta, 0),
+    [chartData]
+  )
+
   return (
-    <Card className="flex w-3/6">
+    <Card className="flex w-full xl:w-1/2">
       <CardHeader>
-        <CardTitle>Bar Chart - Stacked + Legend</CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
+        <CardTitle>Máquinas por criticidade</CardTitle>
+        <CardDescription>
+          {totalEmAlerta > 0
+            ? `${totalEmAlerta} ativos exigem atenção imediata`
+            : "Nenhum ativo em alerta no momento"}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>
           <BarChart accessibilityLayer data={chartData}>
             <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="month"
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
+            <XAxis dataKey="label" tickLine={false} tickMargin={10} axisLine={false} />
+            <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={28} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  labelFormatter={(_, payload) => payload?.[0]?.payload?.label ?? ""}
+                />
+              }
             />
-            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
             <ChartLegend content={<ChartLegendContent />} />
             <Bar
-              dataKey="desktop"
-              stackId="a"
-              fill="var(--color-desktop)"
+              dataKey="operando"
+              stackId="criticidade"
+              fill="var(--color-operando)"
               radius={[0, 0, 4, 4]}
             />
             <Bar
-              dataKey="mobile"
-              stackId="a"
-              fill="var(--color-mobile)"
+              dataKey="emAlerta"
+              stackId="criticidade"
+              fill="var(--color-emAlerta)"
               radius={[4, 4, 0, 0]}
             />
           </BarChart>

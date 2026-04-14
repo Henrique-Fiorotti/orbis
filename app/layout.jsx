@@ -1,8 +1,10 @@
-import { Geist, Geist_Mono, Poppins, Open_Sans } from "next/font/google"
-import "./globals.css"
-import { TooltipProvider } from "@/components/ui/tooltip"
+import { Open_Sans, Poppins } from "next/font/google"
 import { ThemeProvider } from "next-themes"
+
 import PageLoader from "@/components/Loader/PageLoader"
+import "./globals.css"
+
+/** @typedef {import("@/lib/orbis-types").RootLayoutProps} RootLayoutProps */
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -16,12 +18,16 @@ const openSans = Open_Sans({
   variable: "--font-open-sans",
 })
 
+/** @type {import("next").Metadata} */
 export const metadata = {
   title: "Orbis - Soluções Preventivas",
   description:
     "A Orbis é uma empresa de tecnologia especializada em soluções preventivas para o futuro.",
 }
 
+/**
+ * @param {RootLayoutProps} props
+ */
 export default function RootLayout({ children, modal }) {
   return (
     <html
@@ -30,19 +36,10 @@ export default function RootLayout({ children, modal }) {
       suppressHydrationWarning
     >
       <body>
-        {/*<ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          storageKey="orbis-theme"
-          disableTransitionOnChange
-        ></ThemeProvider> */}
-
-        {/* O theme provider é necessário para o dark mode funcionar, mesmo que a aplicação não use o dark mode */}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children} {/* Children é o conteúdo da página, ou seja, o que está dentro do layout*/}
-          <PageLoader /> {/* PageLoader é um componente que exibe um loader enquanto a página está carregando */}
-          {modal} {/* Conteudo do modal */}
+          {children}
+          <PageLoader />
+          {modal}
         </ThemeProvider>
       </body>
     </html>

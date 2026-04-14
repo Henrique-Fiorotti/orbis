@@ -151,7 +151,11 @@ export default function AlertasPage() {
   }
   function salvar() {
     if (!form.maquinaNome.trim() || !form.sensorNome.trim() || !form.descricao.trim()) { toast.error("Preencha todos os campos obrigatórios."); return }
-    adicionarAlerta(form); toast.success("Alerta registrado com sucesso!"); setSheetAberto(false)
+    adicionarAlerta({
+      ...form,
+      maquinaId: form.maquinaId ? Number(form.maquinaId) : null,
+      sensorId: form.sensorId ? Number(form.sensorId) : null,
+    }); toast.success("Alerta registrado com sucesso!"); setSheetAberto(false)
   }
 
   const dadosFiltrados = React.useMemo(() =>

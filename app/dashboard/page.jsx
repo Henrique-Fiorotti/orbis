@@ -34,7 +34,10 @@ export default function Page() {
             </div>
 
             {/* ↓ ID adicionado */}
-            <div id="tour-charts-secondary" className="flex w-full px-4 lg:px-6">
+            <div
+              id="tour-charts-secondary"
+              className="flex w-full flex-col gap-4 px-4 lg:gap-6 lg:px-6 xl:flex-row"
+            >
               <ChartRadarDots />
               <ChartBarStacked />
             </div>
