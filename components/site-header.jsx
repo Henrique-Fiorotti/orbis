@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTheme } from "next-themes"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
@@ -15,14 +16,12 @@ import {
   MoonIcon,
   BellIcon,
   AlertTriangleIcon,
-  CheckCircleIcon,
   InfoIcon,
   XIcon,
   CircleCheckIcon,
   RouteIcon,
 } from "lucide-react"
 
-// ── Mock de notificações ──────────────────────────────────────────
 const MOCK_NOTIFICACOES = [
   {
     id: 1,
@@ -78,96 +77,81 @@ function corFundo(tipo) {
   return "bg-blue-50 border-blue-100"
 }
 
-// ── Tema ──────────────────────────────────────────────────────────
-function useTheme() {
-  const [isDark, setIsDark] = React.useState(false)
-
-  React.useEffect(() => {
-    // Lê preferência salva ou usa preferência do sistema
-    const salvo = localStorage.getItem("orbis-theme")
-    const prefereDark = salvo
-      ? salvo === "dark"
-      : window.matchMedia("(prefers-color-scheme: dark)").matches
-    setIsDark(prefereDark)
-    document.documentElement.classList.toggle("dark", prefereDark)
-  }, [])
-
-  function toggle() {
-    const novoTema = !isDark
-    setIsDark(novoTema)
-    document.documentElement.classList.toggle("dark", novoTema)
-    localStorage.setItem("orbis-theme", novoTema ? "dark" : "light")
-  }
-
-  return { isDark, toggle }
-}
-
-// ── Componente principal ──────────────────────────────────────────
 export function SiteHeader() {
-  const { toggle } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
   const [painelAberto, setPainelAberto] = React.useState(false)
   const [notificacoes, setNotificacoes] = React.useState(MOCK_NOTIFICACOES)
   const panelRef = React.useRef(null)
-  const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
-  React.useEffect(() => { setMounted(true) }, [])
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
-  const isDark = theme === "dark"
-
-  const naoLidas = notificacoes.filter(n => !n.lida).length
+  const isDark = resolvedTheme === "dark"
+  const naoLidas = notificacoes.filter((n) => !n.lida).length
 
   React.useEffect(() => {
     document.title = `${naoLidas > 0 ? `(${naoLidas}) ` : ""}Orbis`
   }, [naoLidas])
 
-  // Fecha painel ao clicar fora
   React.useEffect(() => {
     function handleClickFora(e) {
       if (panelRef.current && !panelRef.current.contains(e.target)) {
         setPainelAberto(false)
       }
     }
+
     if (painelAberto) document.addEventListener("mousedown", handleClickFora)
     return () => document.removeEventListener("mousedown", handleClickFora)
   }, [painelAberto])
 
+  function toggleTheme() {
+    setTheme(isDark ? "light" : "dark")
+  }
+
   function marcarTodasLidas() {
-    setNotificacoes(prev => prev.map(n => ({ ...n, lida: true })))
+    setNotificacoes((prev) => prev.map((n) => ({ ...n, lida: true })))
   }
 
   function marcarLida(id) {
-    setNotificacoes(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n))
+    setNotificacoes((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, lida: true } : n))
+    )
   }
 
   function removerNotificacao(id) {
-    setNotificacoes(prev => prev.filter(n => n.id !== id))
+    setNotificacoes((prev) => prev.filter((n) => n.id !== id))
   }
 
   return (
     <header className="flex h-[90px] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-
-        {/* Esquerda */}
         <Tooltip>
-          <TooltipTrigger><SidebarTrigger className="dark:text-white dark:hover:bg-gray-200/10!" /></TooltipTrigger>
+          <TooltipTrigger>
+            <SidebarTrigger className="dark:text-white dark:hover:bg-gray-200/10!" />
+          </TooltipTrigger>
           <TooltipContent>
             <span>Expandir/Contrair Sidebar</span>
           </TooltipContent>
         </Tooltip>
 
-        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-auto" />
-        <div className="">
-          <h1 className="text-gray-500! text-[10pt]! m-0! dark:text-gray-300!">Dashboard Orbis</h1>
-          <h2 className="text-sm text-muted-foreground font-normal m-0! dark:text-white!">Bom dia, Administrador!</h2>
+        <Separator
+          orientation="vertical"
+          className="mx-2 data-[orientation=vertical]:h-auto"
+        />
+        <div>
+          <h1 className="text-gray-500! text-[10pt]! m-0! dark:text-gray-300!">
+            Dashboard Orbis
+          </h1>
+          <h2 className="text-sm text-muted-foreground font-normal m-0! dark:text-white!">
+            Bom dia, Administrador!
+          </h2>
         </div>
 
-        {/* Espaçador */}
         <div className="flex-1" />
 
-        {/* Ações — direita */}
         <div className="flex items-center gap-1">
-
           <Tooltip>
             <TooltipTrigger>
               <Button
@@ -185,34 +169,37 @@ export function SiteHeader() {
             </TooltipContent>
           </Tooltip>
 
-          {/* Toggle de tema */}
           <Tooltip>
             <TooltipTrigger>
-              <Button variant="ghost" size="icon-sm" onClick={toggle} className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-                {mounted
-                  ? isDark
-                    ? <SunIcon className="size-4 text-white" />
-                    : <MoonIcon className="size-4" />
-                  : <MoonIcon className="size-4 opacity-0" />
-                }
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={toggleTheme}
+                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {mounted ? (
+                  isDark ? (
+                    <SunIcon className="size-4 text-white" />
+                  ) : (
+                    <MoonIcon className="size-4" />
+                  )
+                ) : (
+                  <MoonIcon className="size-4 opacity-0" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {isDark
-                ? <span>Light mode</span>
-                : <span>Dark mode</span>
-              }
+              {isDark ? <span>Light mode</span> : <span>Dark mode</span>}
             </TooltipContent>
           </Tooltip>
 
-          {/* Sino de notificações */}
           <div className="relative" ref={panelRef}>
             <Tooltip>
               <TooltipTrigger>
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  onClick={() => setPainelAberto(prev => !prev)}
+                  onClick={() => setPainelAberto((prev) => !prev)}
                   className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground transition-colors relative"
                 >
                   <BellIcon className="size-4" />
@@ -228,17 +215,18 @@ export function SiteHeader() {
               </TooltipContent>
             </Tooltip>
 
-
-            {/* Painel de notificações */}
             {painelAberto && (
               <div className="absolute right-0 top-10 z-50 w-[360px] rounded-xl border bg-popover shadow-xl ring-1 ring-foreground/10 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150">
-
-                {/* Header do painel */}
                 <div className="flex items-center justify-between px-4 py-3 border-b">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground">Notificações</span>
+                    <span className="text-sm font-semibold text-foreground">
+                      Notificações
+                    </span>
                     {naoLidas > 0 && (
-                      <Badge variant="outline" className="h-5 px-1.5 text-xs bg-red-50 text-red-700 border-red-200">
+                      <Badge
+                        variant="outline"
+                        className="h-5 px-1.5 text-xs bg-red-50 text-red-700 border-red-200"
+                      >
                         {naoLidas} nova{naoLidas > 1 ? "s" : ""}
                       </Badge>
                     )}
@@ -253,7 +241,6 @@ export function SiteHeader() {
                   )}
                 </div>
 
-                {/* Lista */}
                 <div className="max-h-[380px] overflow-y-auto">
                   {notificacoes.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground">
@@ -264,21 +251,26 @@ export function SiteHeader() {
                     notificacoes.map((n) => (
                       <div
                         key={n.id}
-                        className={`group relative flex gap-3 px-4 py-3 border-b last:border-0 transition-colors ${n.lida ? "bg-background" : "bg-muted/30"
-                          } hover:bg-muted/50`}
+                        className={`group relative flex gap-3 px-4 py-3 border-b last:border-0 transition-colors ${
+                          n.lida ? "bg-background" : "bg-muted/30"
+                        } hover:bg-muted/50`}
                       >
-                        {/* Ícone do tipo */}
-                        <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${corFundo(n.tipo)}`}>
+                        <div
+                          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${corFundo(n.tipo)}`}
+                        >
                           {iconeNotificacao(n.tipo)}
                         </div>
 
-                        {/* Conteúdo */}
                         <div
                           className="flex-1 min-w-0 cursor-pointer"
                           onClick={() => marcarLida(n.id)}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <p className={`text-xs font-semibold leading-snug ${n.lida ? "text-muted-foreground" : "text-foreground"}`}>
+                            <p
+                              className={`text-xs font-semibold leading-snug ${
+                                n.lida ? "text-muted-foreground" : "text-foreground"
+                              }`}
+                            >
                               {n.titulo}
                             </p>
                             {!n.lida && (
@@ -288,10 +280,11 @@ export function SiteHeader() {
                           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
                             {n.descricao}
                           </p>
-                          <p className="text-[10px] text-muted-foreground/70 mt-1">{n.tempo}</p>
+                          <p className="text-[10px] text-muted-foreground/70 mt-1">
+                            {n.tempo}
+                          </p>
                         </div>
 
-                        {/* Botão remover */}
                         <button
                           onClick={() => removerNotificacao(n.id)}
                           className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -303,7 +296,6 @@ export function SiteHeader() {
                   )}
                 </div>
 
-                {/* Footer */}
                 {notificacoes.length > 0 && (
                   <div className="px-4 py-2.5 border-t bg-muted/20">
                     <button
@@ -318,8 +310,7 @@ export function SiteHeader() {
             )}
           </div>
         </div>
-
       </div>
-    </header >
+    </header>
   )
 }
