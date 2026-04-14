@@ -30,10 +30,19 @@ export default function RootLayout({ children, modal }) {
       suppressHydrationWarning
     >
       <body>
+        {/*<ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          storageKey="orbis-theme"
+          disableTransitionOnChange
+        ></ThemeProvider> */}
+
+        {/* O theme provider é necessário para o dark mode funcionar, mesmo que a aplicação não use o dark mode */}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-          <PageLoader />
-          {modal}
+          {children} // Children é o conteúdo da página, ou seja, o que está dentro do layout
+          <PageLoader /> // PageLoader é um componente que exibe um loader enquanto a página está carregando
+          {modal} // Conteudo do modal
         </ThemeProvider>
       </body>
     </html>
