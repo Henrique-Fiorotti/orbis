@@ -17,7 +17,7 @@ const openSans = Open_Sans({
 })
 
 export const metadata = {
-  title: "Orbis - Soluções Preventivas para o Futuro",
+  title: "Orbis - Soluções Preventivas",
   description:
     "A Orbis é uma empresa de tecnologia especializada em soluções preventivas para o futuro.",
 }
@@ -40,9 +40,9 @@ export default function RootLayout({ children, modal }) {
 
         {/* O theme provider é necessário para o dark mode funcionar, mesmo que a aplicação não use o dark mode */}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children} // Children é o conteúdo da página, ou seja, o que está dentro do layout
-          <PageLoader /> // PageLoader é um componente que exibe um loader enquanto a página está carregando
-          {modal} // Conteudo do modal
+          {children} {/* Children é o conteúdo da página, ou seja, o que está dentro do layout*/}
+          <PageLoader /> {/* PageLoader é um componente que exibe um loader enquanto a página está carregando */}
+          {modal} {/* Conteudo do modal */}
         </ThemeProvider>
       </body>
     </html>
