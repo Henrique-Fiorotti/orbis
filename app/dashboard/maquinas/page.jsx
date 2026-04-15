@@ -287,7 +287,7 @@ export default function MaquinasPage() {
                 <TableRow key={hg.id}>
                   {hg.headers.map((h) => {
                     // Verifica se o texto do header é "Ultimo Sinal"
-                    const isUltimoSinal = h.column.columnDef.header === "Último Sinal";
+                    const isUltimoSinal = h.column.columnDef.header === "Último sinal";
 
                     return (
                       <TableHead
