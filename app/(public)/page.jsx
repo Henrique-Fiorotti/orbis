@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
+import Loader from "@/components/Loader/page";
 
 /* ── tiny hook: fade-in on scroll ── */
 function useFadeIn() {
