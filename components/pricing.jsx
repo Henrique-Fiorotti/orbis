@@ -46,7 +46,7 @@ const Pricing = () => {
       <div className="mx-auto mt-8! grid h-auto! max-w-(--breakpoint-lg) grid-cols-1 gap-8 sm:mt-16 lg:grid-cols-2">
         {plans.map((plan) => (
           <div
-            className={`rounded-lg border bg-white p-12 transition-colors dark:bg-[#111114] dark:border-white/10 ${plan.isPopular ? "border-1! border-[#5E17EB]! shadow-[0px_0px_38px_0px_rgba(94,23,235,0.3)]" : ""}`}
+            className={`flex flex-col justify-between rounded-lg border bg-white dark:bg-gray-900/70! p-12 transition-colors dark:bg-[#111114] dark:border-white/10 ${plan.isPopular ? "border-1! border-[#5E17EB]! shadow-[0px_0px_38px_0px_rgba(94,23,235,0.3)]" : ""}`}
             variant={plan.isPopular ? "default" : "outline"}
             key={plan.name}
           >
@@ -59,7 +59,7 @@ const Pricing = () => {
             <p className="mt-4 font-medium text-muted-foreground dark:text-zinc-400">
               {plan.description}
             </p>
-            <Separator className="my-4" />
+            <Separator className="my-1" />
             <ul className="space-y-1 py-3 pl-1!">
               {plan.features.map((feature) => (
                 <li className="flex items-start gap-2" key={feature}>
@@ -68,13 +68,15 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            <Button
-              className="mt-6 h-12 w-full rounded-[10px]! bg-[#5E17EB] text-[#ffffff]! hover:bg-[#5013ca]!"
-              size="lg"
-              variant={plan.isPopular ? "default" : "outline"}
-            >
-              {plan.buttonText}
-            </Button>
+            <div>
+              <Button
+                className="mt-6 h-12 w-full rounded-[10px]! bg-[#5E17EB] text-[#ffffff]! hover:bg-[#5013ca]!"
+                size="lg"
+                variant={plan.isPopular ? "default" : "outline"}
+              >
+                {plan.buttonText}
+              </Button>
+            </div>
           </div>
         ))}
       </div>

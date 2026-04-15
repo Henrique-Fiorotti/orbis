@@ -28,7 +28,7 @@ export default function Header() {
               <img
                 src="/Orbis.svg"
                 alt=""
-                className="h-full! w-full! cursor-pointer"
+                className="h-full! w-full! cursor-pointer dark:invert!"
               />
             </a>
           </div>
@@ -49,7 +49,7 @@ export default function Header() {
               <li className="nav-item">
                 <a
                   href="/"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]/70! font-poppins! hover:bg-white! border! border-gray-100! hover:border! hover:border-gray-300! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! dark:text-white/70! dark:border-white/5! dark:hover:bg-white/8! dark:hover:border-white/15!"
+                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]/70! font-poppins! hover:bg-white! border! border-gray-100! hover:border! hover:border-gray-300! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! dark:text-white/70! dark:border-white/5! dark:hover:bg-white/8! dark:hover:border-white/15! dark:hover:text-[#5e17eb]!"
                   aria-current="page"
                 >
                   Home
@@ -58,7 +58,7 @@ export default function Header() {
               <li className="nav-item">
                 <a
                   href="/#sobre"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]/70! font-poppins! hover:bg-white! border! border-gray-100! hover:border! hover:border-gray-300! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! dark:text-white/70! dark:border-white/5! dark:hover:bg-white/8! dark:hover:border-white/15!"
+                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]/70! font-poppins! hover:bg-white! border! border-gray-100! hover:border! hover:border-gray-300! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! dark:text-white/70! dark:border-white/5! dark:hover:bg-white/8! dark:hover:border-white/15! dark:hover:text-[#5e17eb]!"
                 >
                   Sobre
                 </a>
@@ -66,7 +66,7 @@ export default function Header() {
               <li className="nav-item">
                 <a
                   href="/contact"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]/70! font-poppins! hover:bg-white! border! border-gray-100! hover:border! hover:border-gray-300! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! dark:text-white/70! dark:border-white/5! dark:hover:bg-white/8! dark:hover:border-white/15!"
+                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]/70! font-poppins! hover:bg-white! border! border-gray-100! hover:border! hover:border-gray-300! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! dark:text-white/70! dark:border-white/5! dark:hover:bg-white/8! dark:hover:border-white/15! dark:hover:text-[#5e17eb]!"
                   aria-current="page"
                 >
                   Contato
