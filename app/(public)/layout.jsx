@@ -22,7 +22,7 @@ export default function RootLayout({ children }) {
   return (
     <div className={`${poppins.variable} ${openSans.variable}`}>
       <Header />
-      <PageLoader />
+      <HomeLoader />
       {children}
       <HomeLoader />
       <Footer />
