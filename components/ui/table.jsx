@@ -73,6 +73,7 @@ function TableHead({
   className,
   ...props
 }) {
+  
   return (
     <th
       data-slot="table-head"
