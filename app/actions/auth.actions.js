@@ -1,6 +1,6 @@
 "use server"
 
-const API_URL = process.env.API_URL || "http://localhost:3001"
+const API_URL = process.env.API_URL || "http://orbis-5hnm.onrender.com"
 
 export async function loginAction(formData) {
   const email = formData.get("email")
