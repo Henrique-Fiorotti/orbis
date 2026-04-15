@@ -1,5 +1,5 @@
 "use client"
-
+import Link from "next/link"
 import {
   Avatar,
   AvatarFallback,
@@ -69,27 +69,20 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              
-                <DropdownMenuItem>
+              <Link href="dashboard/perfil">
+                <DropdownMenuItem className={"cursor-pointer"}>
                   <CircleUserRoundIcon />
-                
                   Perfil
                 </DropdownMenuItem>
-              
-              <DropdownMenuItem>
-                <CreditCardIcon />
-                Contas
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon />
-                Notificações
-              </DropdownMenuItem>
+              </Link>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOutIcon />
-              Sair
-            </DropdownMenuItem>
+            <Link href="/">
+              <DropdownMenuItem className={"cursor-pointer"}>
+                <LogOutIcon />
+                Sair
+              </DropdownMenuItem>
+            </Link>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
