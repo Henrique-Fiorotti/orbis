@@ -1,7 +1,10 @@
-import { Geist, Geist_Mono, Poppins, Open_Sans } from "next/font/google"
-import "./globals.css"
-import { TooltipProvider } from "@/components/ui/tooltip"
+import { Open_Sans, Poppins } from "next/font/google"
 import { ThemeProvider } from "next-themes"
+
+import PageLoader from "@/components/Loader/PageLoader"
+import "./globals.css"
+
+/** @typedef {import("@/lib/orbis-types").RootLayoutProps} RootLayoutProps */
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -15,12 +18,16 @@ const openSans = Open_Sans({
   variable: "--font-open-sans",
 })
 
+/** @type {import("next").Metadata} */
 export const metadata = {
-  title: "Orbis - Soluções Preventivas para o Futuro",
+  title: "Orbis - Soluções Preventivas",
   description:
     "A Orbis é uma empresa de tecnologia especializada em soluções preventivas para o futuro.",
 }
 
+/**
+ * @param {RootLayoutProps} props
+ */
 export default function RootLayout({ children, modal }) {
   return (
     <html

@@ -123,6 +123,68 @@ hana-viewer>* {
   background-color: #5E17EB !important;
 }
 
+/* app/globals.css */
+
+/* Spotlight escurece o fundo corretamente em dark mode */
+[data-tour-overlay] {
+  background-color: hsl(var(--background) / 0.7);
+  backdrop-filter: blur(2px);
+}
+
+/* Card do passo herda as variáveis do shadcn/ui */
+[data-tour-step] {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px hsl(var(--foreground) / 0.12);
+  color: hsl(var(--card-foreground));
+  min-width: 300px;
+  max-width: 380px;
+
+  /* Animação de entrada suave */
+  animation: tour-fade-in 0.2s ease-out;
+}
+
+@keyframes tour-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Ring do spotlight usa a cor primária do tema */
+[data-tour-spotlight-ring] {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.2);
+}
+
+/* Título do passo */
+[data-tour-title] {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+/* Descrição do passo */
+[data-tour-description] {
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.5;
+}
+
+/* Responsividade mobile */
+@media (max-width: 640px) {
+  [data-tour-step] {
+    min-width: unset;
+    max-width: calc(100vw - 32px);
+    margin: 0 16px;
+  }
+}
+
 :root {
   --background: oklch(1.0000 0 0);
   --foreground: oklch(0.2077 0.0398 265.7549);

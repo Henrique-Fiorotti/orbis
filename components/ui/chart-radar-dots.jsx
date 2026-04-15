@@ -1,13 +1,15 @@
+// @ts-check
+
 "use client"
 
-import { TrendingUp } from "lucide-react"
-import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts"
+import * as React from "react"
+import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart } from "recharts"
 
+import { useMaquinas } from "@/components/context/maquinas-context"
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -16,47 +18,52 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { getIntegridadePorSetor } from "@/lib/orbis-dashboard"
 
-export const description = "A radar chart with dots"
+/** @typedef {import("@/lib/orbis-types").ChartConfig} ChartConfig */
 
-const chartData = [
-  { month: "January", desktop: 186 },
-  { month: "February", desktop: 305 },
-  { month: "March", desktop: 237 },
-  { month: "April", desktop: 273 },
-  { month: "May", desktop: 209 },
-  { month: "June", desktop: 214 },
-]
+export const description = "Radar de integridade media por setor monitorado"
 
+/** @type {ChartConfig} */
 const chartConfig = {
-  desktop: {
-    label: "Desktop",
+  integridade: {
+    label: "Integridade média",
     color: "var(--chart-1)",
   },
 }
 
 export function ChartRadarDots() {
+  const { maquinas } = useMaquinas()
+  const chartData = React.useMemo(() => getIntegridadePorSetor(maquinas), [maquinas])
+
   return (
-    <Card className="w-3/6 mr-6">
+    <Card className="w-full xl:w-1/2">
       <CardHeader className="items-center">
-        <CardTitle>Radar Chart - Dots</CardTitle>
-        <CardDescription>
-          Showing total visitors for the last 6 months
-        </CardDescription>
+        <CardTitle>Integridade por setor</CardTitle>
+        <CardDescription>{chartData.length} setores monitorados pela Orbis</CardDescription>
       </CardHeader>
       <CardContent className="pb-0">
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square max-h-[250px]"
+          className="mx-auto aspect-square max-h-[280px] w-full"
         >
           <RadarChart data={chartData}>
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            <PolarAngleAxis dataKey="month" />
+            <ChartTooltip
+              cursor={false}
+              content={
+                <ChartTooltipContent
+                  labelFormatter={(_, payload) => payload?.[0]?.payload?.setor ?? ""}
+                />
+              }
+            />
+            <PolarAngleAxis dataKey="setorLabel" />
+            <PolarRadiusAxis axisLine={false} tick={false} domain={[0, 100]} />
             <PolarGrid />
             <Radar
-              dataKey="desktop"
-              fill="var(--color-desktop)"
-              fillOpacity={0.6}
+              dataKey="integridade"
+              fill="var(--color-integridade)"
+              fillOpacity={0.35}
+              stroke="var(--color-integridade)"
               dot={{
                 r: 4,
                 fillOpacity: 1,

@@ -1,59 +1,84 @@
+// @ts-check
+
 "use client"
 
 import * as React from "react"
 import dadosIniciais from "@/app/dashboard/sensores/data.json"
 
-// =============================================================
-// INTEGRAÇÃO COM A API — quando a API estiver pronta:
-//
-// GET  /sensores           → lista todos os sensores
-// POST /sensores           → cria novo sensor
-// PUT  /sensores/:id       → atualiza sensor
-// DELETE /sensores/:id     → remove sensor
-// =============================================================
+/** @typedef {import("@/lib/orbis-types").WithChildrenProps} WithChildrenProps */
+/** @typedef {import("@/lib/orbis-types").Sensor} Sensor */
+/** @typedef {import("@/lib/orbis-types").NovoSensorInput} NovoSensorInput */
+/** @typedef {import("@/lib/orbis-types").AtualizacaoSensorInput} AtualizacaoSensorInput */
+/** @typedef {import("@/lib/orbis-types").SensoresContextValue} SensoresContextValue */
 
+const STORAGE_KEY = "orbis-sensores"
+
+/** @type {Sensor[]} */
+const SENSORES_INICIAIS = dadosIniciais
+
+/** @type {React.Context<SensoresContextValue | null>} */
 const SensoresContext = React.createContext(null)
 
+/**
+ * @returns {Sensor[]}
+ */
+function carregarSensores() {
+  if (typeof window === "undefined") return SENSORES_INICIAIS
+
+  try {
+    const salvo = localStorage.getItem(STORAGE_KEY)
+    return salvo ? /** @type {Sensor[]} */ (JSON.parse(salvo)) : SENSORES_INICIAIS
+  } catch {
+    return SENSORES_INICIAIS
+  }
+}
+
+/**
+ * @param {WithChildrenProps} props
+ */
 export function SensoresProvider({ children }) {
-  const [sensores, setSensores] = React.useState(() => {
-    if (typeof window === "undefined") return dadosIniciais
-    try {
-      const salvo = localStorage.getItem("orbis-sensores")
-      return salvo ? JSON.parse(salvo) : dadosIniciais
-    } catch {
-      return dadosIniciais
-    }
-  })
+  const [sensores, setSensores] = React.useState(() => carregarSensores())
 
   React.useEffect(() => {
     try {
-      localStorage.setItem("orbis-sensores", JSON.stringify(sensores))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sensores))
     } catch {}
   }, [sensores])
 
+  /**
+   * @param {NovoSensorInput} dados
+   * @returns {Sensor}
+   */
   function adicionarSensor(dados) {
     const novo = {
       ...dados,
-      id: sensores.length > 0 ? Math.max(...sensores.map(s => s.id)) + 1 : 1,
+      id: sensores.length > 0 ? Math.max(...sensores.map((sensor) => sensor.id)) + 1 : 1,
       status: "ONLINE",
-      valorAtual: 0,
       ultimaLeituraEm: new Date().toISOString(),
     }
-    setSensores(prev => [novo, ...prev])
+
+    setSensores((prev) => [novo, ...prev])
     return novo
   }
 
+  /**
+   * @param {number} id
+   * @param {AtualizacaoSensorInput} dados
+   */
   function editarSensor(id, dados) {
-    setSensores(prev => prev.map(s => s.id === id ? { ...s, ...dados } : s))
+    setSensores((prev) => prev.map((sensor) => (sensor.id === id ? { ...sensor, ...dados } : sensor)))
   }
 
+  /**
+   * @param {number} id
+   */
   function excluirSensor(id) {
-    setSensores(prev => prev.filter(s => s.id !== id))
+    setSensores((prev) => prev.filter((sensor) => sensor.id !== id))
   }
 
   function resetarDados() {
-    setSensores(dadosIniciais)
-    localStorage.removeItem("orbis-sensores")
+    setSensores(SENSORES_INICIAIS)
+    localStorage.removeItem(STORAGE_KEY)
   }
 
   return (
@@ -63,8 +88,15 @@ export function SensoresProvider({ children }) {
   )
 }
 
+/**
+ * @returns {SensoresContextValue}
+ */
 export function useSensores() {
   const ctx = React.useContext(SensoresContext)
-  if (!ctx) throw new Error("useSensores deve ser usado dentro de SensoresProvider")
-  return ctx
+
+  if (!ctx) {
+    throw new Error("useSensores deve ser usado dentro de SensoresProvider")
+  }
+
+  return /** @type {SensoresContextValue} */ (ctx)
 }

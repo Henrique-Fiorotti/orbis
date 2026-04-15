@@ -1,19 +1,23 @@
-'use client'
+// @ts-check
 
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { MaquinasProvider } from "@/components/context/maquinas-context"
-import { SensoresProvider } from "@/components/context/sensores-context"
-import { AlertasProvider } from "@/components/context/alertas-context"
-import { TecnicosProvider } from "@/components/context/tecnicos-context"
+"use client"
+
 import { Toaster } from "sonner"
 
+import { AppSidebar } from "@/components/app-sidebar"
+import { AlertasProvider } from "@/components/context/alertas-context"
+import { MaquinasProvider } from "@/components/context/maquinas-context"
+import { SensoresProvider } from "@/components/context/sensores-context"
+import { TecnicosProvider } from "@/components/context/tecnicos-context"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
+/** @typedef {import("@/lib/orbis-types").DashboardLayoutProps} DashboardLayoutProps */
 
+/**
+ * @param {DashboardLayoutProps} props
+ */
 export default function DashboardLayout({ children }) {
-
   return (
     <MaquinasProvider>
       <SensoresProvider>
@@ -24,7 +28,8 @@ export default function DashboardLayout({ children }) {
                 style={{
                   "--sidebar-width": "calc(var(--spacing) * 72)",
                   "--header-height": "calc(var(--spacing) * 12)",
-                }}>
+                }}
+              >
                 <AppSidebar variant="inset" />
                 <SidebarInset>
                   <TooltipProvider>{children}</TooltipProvider>
