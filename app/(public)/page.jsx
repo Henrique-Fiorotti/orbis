@@ -7,6 +7,7 @@ import { ChartPieDonut } from "@/components/ui/chart-pie-donut";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
 
 /* ── tiny hook: fade-in on scroll ── */
 function useFadeIn() {
@@ -56,7 +57,7 @@ function Counter({ to, suffix = "" }) {
 }
 
 /* ── feature card ── */
-function FeatureCard({ icon, title, desc, delay }) {
+function FeatureCard({ icon, title, desc, delay, isDark }) {
   const [hovered, setHovered] = useState(false);
   const [ref, visible] = useFadeIn();
   return (
@@ -66,8 +67,8 @@ function FeatureCard({ icon, title, desc, delay }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         flex: "1 1 220px",
-        background: hovered ? "white" : "white",
-        border: `1.5px solid ${hovered ? "#7c3aed" : "#ede9fe"}`,
+        background: isDark ? "#111114" : "white",
+        border: `1.5px solid ${hovered ? "#7c3aed" : isDark ? "rgba(255,255,255,0.08)" : "#ede9fe"}`,
         borderRadius: "8px",
         padding: "28px 24px",
         transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
@@ -76,7 +77,9 @@ function FeatureCard({ icon, title, desc, delay }) {
         transitionDelay: `${delay}ms`,
         boxShadow: hovered
           ? "0 16px 48px rgba(124,58,237,0.12)"
-          : "0 2px 8px rgba(0,0,0,0.04)",
+          : isDark
+            ? "0 2px 8px rgba(0,0,0,0.24)"
+            : "0 2px 8px rgba(0,0,0,0.04)",
         cursor: "default",
       }}
     >
@@ -89,7 +92,7 @@ function FeatureCard({ icon, title, desc, delay }) {
         style={{
           fontWeight: 700,
           fontSize: "0.95rem",
-          color: "#111",
+          color: isDark ? "#fafafa" : "#111",
           margin: "0 0 8px",
         }}
       >
@@ -98,7 +101,7 @@ function FeatureCard({ icon, title, desc, delay }) {
       <p
         style={{
           fontSize: "0.82rem",
-          color: "#6b7280",
+          color: isDark ? "#a1a1aa" : "#6b7280",
           lineHeight: 1.65,
           margin: 0,
         }}
@@ -110,7 +113,7 @@ function FeatureCard({ icon, title, desc, delay }) {
 }
 
 /* ── step item ── */
-function Step({ n, title, desc, delay }) {
+function Step({ n, title, desc, delay, isDark }) {
   const [ref, visible] = useFadeIn();
   return (
     <div
@@ -146,7 +149,7 @@ function Step({ n, title, desc, delay }) {
           style={{
             fontWeight: 700,
             fontSize: "0.95rem",
-            color: "#111",
+            color: isDark ? "#fafafa" : "#111",
             margin: "0 0 4px",
           }}
         >
@@ -155,7 +158,7 @@ function Step({ n, title, desc, delay }) {
         <p
           style={{
             fontSize: "0.82rem",
-            color: "#6b7280",
+            color: isDark ? "#a1a1aa" : "#6b7280",
             lineHeight: 1.65,
             margin: 0,
           }}
@@ -168,12 +171,37 @@ function Step({ n, title, desc, delay }) {
 }
 
 export default function HomePage() {
+  const { resolvedTheme } = useTheme();
   const [heroVisible, setHeroVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 80);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = mounted && resolvedTheme === "dark";
+  const palette = {
+    pageBg: isDark ? "#09090b" : "#fff",
+    sectionBg: isDark ? "#09090b" : "#fff",
+    altBg: isDark ? "#111114" : "#fafafa",
+    quoteBg: isDark
+      ? "linear-gradient(135deg, #171127 0%, #0f0b1c 100%)"
+      : "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)",
+    text: isDark ? "#f4f4f5" : "#111",
+    heading: isDark ? "#fafafa" : "#212121",
+    muted: isDark ? "#a1a1aa" : "#6b7280",
+    subtle: isDark ? "#71717a" : "#9ca3af",
+    gridDot: isDark ? "rgba(167,139,250,0.35)" : "#e9d5ff",
+    secondaryBorder: isDark ? "rgba(255,255,255,0.12)" : "#e5e7eb",
+    buttonBg: isDark ? "#f4f4f5" : "#212121",
+    buttonFg: isDark ? "#09090b" : "#ffffff",
+    pulseRing: isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.25)",
+  };
 
   const scrollDown = () => {
     window.scrollBy({ top: window.innerHeight * 0.85, behavior: "smooth" });
@@ -186,9 +214,10 @@ export default function HomePage() {
     <div
       style={{
         fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-        background: "#fff",
-        color: "#111",
+        background: palette.pageBg,
+        color: palette.text,
         overflowX: "hidden",
+        transition: "background-color 0.25s ease, color 0.25s ease",
       }}
     >
       <style>{`
@@ -214,7 +243,7 @@ export default function HomePage() {
           justifyContent: "center",
           padding: "180px 15% 100px 15%",
           position: "relative",
-          background: "#fff",
+          background: palette.sectionBg,
           objectFit: "cover",
           marginTop: "70px",
         }}
@@ -227,7 +256,7 @@ export default function HomePage() {
             zIndex: 0,
             pointerEvents: "none",
             backgroundImage:
-              "radial-gradient(circle, #e9d5ff 1px, transparent 1px)",
+              `radial-gradient(circle, ${palette.gridDot} 1px, transparent 1px)`,
             backgroundSize: "53px 36px",
             opacity: 0.35,
           }}
@@ -249,7 +278,7 @@ export default function HomePage() {
             src="https://cdn.spline.design/@splinetool/hana-viewer@1.2.51/hana-viewer.js"
           ></script>
          <iframe src="https://my.spline.design/pixeltextsetcopycopy-FVOpkQ2LEECtjtmYxOWm4Dq9-V1Z/" frameBorder="0" width="100%" height="100%"></iframe>
-         <div className="absolute! bg-white! h-15 w-45 right-0! bottom-0!"></div>
+         <div className="absolute! h-15 w-45 right-0! bottom-0!" style={{ background: palette.sectionBg }}></div>
         </div>
 
         <div style={{ position: "relative", zIndex: 1, maxWidth: "600px" }}>
@@ -264,7 +293,7 @@ export default function HomePage() {
               opacity: heroVisible ? 1 : 0,
               transform: heroVisible ? "none" : "translateY(20px)",
               transition: "opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s",
-              color: "#212121",
+              color: palette.heading,
             }}
           >
             Antecipando <span style={{ color: "#7c3aed" }}>falhas</span>,<br />
@@ -275,7 +304,7 @@ export default function HomePage() {
           <p
             style={{
               fontSize: "1.4rem",
-              color: "#6b7280",
+              color: palette.muted,
               lineHeight: 1.3,
               fontFamily: "'Open-sans', 'Segoe UI', sans-serif",
               maxWidth: "420px",
@@ -334,7 +363,7 @@ export default function HomePage() {
               href="#sobre"
               style={{
                 background: "transparent",
-                color: "#111",
+                color: palette.text,
                 padding: "13px 28px",
                 borderRadius: "10px",
                 fontWeight: 500,
@@ -342,18 +371,18 @@ export default function HomePage() {
                 fontFamily: "'Poppins', sans-serif",
                 textDecoration: "none",
                 letterSpacing: "0.01em",
-                border: "2px solid #e5e7eb",
+                border: `2px solid ${palette.secondaryBorder}`,
                 transition: "border-color 0.2s ease, color 0.2s ease",
                 display: "inline-block",
-                color: "#212121",
+                color: palette.heading,
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = "#7c3aed";
                 e.currentTarget.style.color = "#7c3aed";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "#e5e7eb";
-                e.currentTarget.style.color = "#212121";
+                e.currentTarget.style.borderColor = palette.secondaryBorder;
+                e.currentTarget.style.color = palette.heading;
               }}
             >
               Sobre
@@ -371,7 +400,7 @@ export default function HomePage() {
             <p
               style={{
                 fontSize: "0.82rem",
-                color: "#9ca3af",
+                color: palette.subtle,
                 marginBottom: "4px",
               }}
             >
@@ -427,7 +456,7 @@ export default function HomePage() {
               width: "44px",
               height: "44px",
               borderRadius: "50%",
-              background: "#212121",
+              background: palette.buttonBg,
               border: "none",
               cursor: "pointer",
               display: "flex",
@@ -443,7 +472,7 @@ export default function HomePage() {
                 position: "absolute",
                 inset: 0,
                 borderRadius: "50%",
-                border: "2px solid rgba(0,0,0,0.25)",
+                border: `2px solid ${palette.pulseRing}`,
                 animation: "pulse-ring 2s ease-out infinite",
               }}
             />
@@ -452,7 +481,7 @@ export default function HomePage() {
               width="20"
               height="20"
               viewBox="0 0 24 24"
-              fill="white"
+              fill={palette.buttonFg}
             >
               <path d="M12 16l-6-6h12z" />
             </svg>
@@ -464,7 +493,7 @@ export default function HomePage() {
       <section
         style={{
           height: "30dvh",
-          background: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)",
+          background: palette.quoteBg,
           padding: "28px 8vw",
           marginTop: "70px",
         }}
@@ -496,7 +525,7 @@ export default function HomePage() {
                 lineHeight: 1.3,
                 letterSpacing: "-0.5px",
                 textAlign: "start",
-                color: "#212121",
+                color: palette.heading,
                 marginBottom: "16px",
               }}
             >
@@ -506,7 +535,7 @@ export default function HomePage() {
             <p
               style={{
                 fontSize: "0.82rem",
-                color: "#6b7280",
+                color: palette.muted,
                 lineHeight: 1.6,
                 textAlign: "start",
               }}
@@ -538,7 +567,7 @@ export default function HomePage() {
           <h2
             style={{
               fontFamily: "'Syne', sans-serif",
-              color: "#212121",
+              color: palette.heading,
               fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
               fontWeight: 200,
               letterSpacing: "-1px",
@@ -555,36 +584,40 @@ export default function HomePage() {
               title="Monitoramento em tempo real"
               desc="Acompanhe cada operação da sua empresa com dashboards precisos e alertas instantâneos."
               delay={0}
+              isDark={isDark}
             />
             <FeatureCard
               icon="/bolt.svg"
               title="Previsão de falhas"
               desc="Algoritmos preditivos identificam riscos antes que se tornem problemas reais."
               delay={80}
+              isDark={isDark}
             />
             <FeatureCard
               icon="/shield.svg"
               title="Segurança avançada"
               desc="Criptografia de ponta a ponta e controle de acesso granular para cada usuário."
               delay={160}
+              isDark={isDark}
             />
             <FeatureCard
               icon="/analytics.svg"
               title="Relatórios inteligentes"
               desc="Relatórios automáticos com insights acionáveis para decisões mais rápidas e assertivas."
               delay={240}
+              isDark={isDark}
             />
           </div>
         </div>
       </section>
 
       {/* ══ STATS ══ */}
-      <section style={{ background: "#fafafa" }}>
+      <section style={{ background: palette.altBg, transition: "background-color 0.25s ease" }}>
         <HeroDashboard />
       </section>
 
       {/* ══ HOW IT WORKS ══ */}
-      <section style={{ padding: "96px 8vw", background: "#fff" }}>
+      <section style={{ padding: "96px 8vw", background: palette.sectionBg }}>
         <div
           style={{
             maxWidth: "1100px",
@@ -611,7 +644,7 @@ export default function HomePage() {
             <h2
               style={{
                 fontFamily: "'Poppins', sans-serif",
-                color: "#212121",
+                color: palette.heading,
                 fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
                 fontWeight: 200,
                 letterSpacing: "-1px",
@@ -647,24 +680,28 @@ export default function HomePage() {
               title="Registre sua empresa"
               desc="Crie sua conta em minutos e configure o perfil da sua organização."
               delay={0}
+              isDark={isDark}
             />
             <Step
               n="2"
               title="Conecte suas operações"
               desc="Integre sistemas existentes ou utilize nossa plataforma nativa para monitoramento."
               delay={100}
+              isDark={isDark}
             />
             <Step
               n="3"
               title="Monitore e preveja"
               desc="Receba alertas inteligentes e veja tendências antes de virarem crises."
               delay={200}
+              isDark={isDark}
             />
             <Step
               n="4"
               title="Aja com confiança"
               desc="Tome decisões respaldadas por dados reais e previsões precisas."
               delay={300}
+              isDark={isDark}
             />
           </div>
         </div>
