@@ -38,7 +38,6 @@ export default function RootLayout({ children, modal }) {
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
-          <PageLoader />
           {modal}
         </ThemeProvider>
       </body>

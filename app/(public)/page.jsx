@@ -220,6 +220,7 @@ export default function HomePage() {
         transition: "background-color 0.25s ease, color 0.25s ease",
       }}
     >
+         
       <style>{`
         
         html { scroll-behavior: smooth; }
