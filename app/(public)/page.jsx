@@ -314,7 +314,6 @@ export default function HomePage() {
                 letterSpacing: "0.01em",
                 transition:
                   "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), background-color 0.2s ease",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
                 display: "inline-block",
               }}
               onMouseEnter={(e) => {
