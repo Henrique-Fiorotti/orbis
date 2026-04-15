@@ -269,12 +269,25 @@ export default function MaquinasPage() {
         {/* Tabela */}
         <div className="overflow-hidden rounded-lg border">
           <Table>
+           
+
+
+            {/* TableHeader: */}
+
             <TableHeader className="bg-muted">
+              {table.getHeaderGroups().map(hg => (
+                <TableRow key={hg.id}>
+                  {hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}
+                </TableRow>
+              ))}
+            </TableHeader>
+
+            {/*  <TableHeader className="bg-muted">
               {table.getHeaderGroups().map((hg) => (
                 <TableRow key={hg.id}>
                   {hg.headers.map((h) => {
                     // Verifica se o texto do header é "Ultimo Sinal"
-                    const isUltimoSinal = h.column.columnDef.header === "Ultimo Sinal";
+                    const isUltimoSinal = h.column.columnDef.header === "Último Sinal";
 
                     return (
                       <TableHead
@@ -288,16 +301,6 @@ export default function MaquinasPage() {
                       </TableHead>
                     );
                   })}
-                </TableRow>
-              ))}
-            </TableHeader>
-
-            {/* TableHeader antigo: */}
-
-            {/* <TableHeader className="bg-muted">
-              {table.getHeaderGroups().map(hg => (
-                <TableRow key={hg.id}>
-                  {hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}
                 </TableRow>
               ))}
             </TableHeader> */}
