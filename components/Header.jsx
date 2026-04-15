@@ -95,7 +95,7 @@ export default function Header() {
                 href="/login"
                 className="nav-link border! border-[#5e17eb]! text-[#5e17eb]! p-1.5! w-22.5! flex! justify-center! rounded-[10px]! cursor-pointer! font-poppins! hover:bg-[#5e17eb]! hover:text-[#ffffff]! hover:border-[#5e17eb]! transition-all! duration-150 ease-in-out!"
               >
-                Login
+                Entrar
               </Link>
             </li>
           </div>
