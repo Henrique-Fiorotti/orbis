@@ -238,6 +238,7 @@ export default function HomePage() {
       {/* ══ HERO ══ */}
       <section
         style={{
+          href: "#inicio",
           minHeight: "85vh",
           display: "flex",
           flexDirection: "row-reverse",
