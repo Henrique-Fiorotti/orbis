@@ -205,7 +205,7 @@ export default function HomePage() {
   };
 
   const scrollDown = () => {
-    window.scrollBy({ top: window.innerHeight * 0.85, behavior: "smooth" });
+    window.scrollBy({ top: window.innerHeight * 1.0, behavior: "smooth" });
   };
 
   const [quoteRef, quoteVisible] = useFadeIn();
@@ -448,9 +448,9 @@ export default function HomePage() {
             transition: "opacity 0.6s ease 0.8s",
           }}
         >
-          <button
+          <button 
             onClick={scrollDown}
-            style={{
+              style={{
               width: "44px",
               height: "44px",
               borderRadius: "50%",
