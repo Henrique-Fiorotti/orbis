@@ -23,13 +23,8 @@ export default function HomeLoader() {
     if (!visible) return null
 
     return (
-        <div className={`
-  fixed inset-0 flex items-center justify-center z-[9999]
-  bg-white dark:bg-[#09090b]
-  transition-opacity duration-600
-  ${fadingOut ? 'opacity-0' : 'opacity-100'}
-`}>
-            <Loader />
-        </div>
-    )
-}
+        <div className={`fixed inset-0 flex items-center 
+            justify-center z-[9999] bg-white dark:bg-[#09090b] 
+            transition-opacity duration-600 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}
+            ><Loader />
+        </div>)}
