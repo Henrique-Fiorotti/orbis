@@ -11,7 +11,7 @@ function PrivacyModal({ onClose }) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.45)",
+        background: "rgba(0,0,0,0.6)",
         backdropFilter: "blur(4px)",
         display: "flex",
         alignItems: "center",
@@ -24,32 +24,33 @@ function PrivacyModal({ onClose }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#fff",
+          background: "#0f0f12",         
+          border: "1px solid #27272a",   
           borderRadius: "20px",
           width: "100%",
           maxWidth: "560px",
           maxHeight: "78vh",
           display: "flex",
           flexDirection: "column",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.18)",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
           animation: "slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)",
           overflow: "hidden",
         }}
       >
-        <div style={{ padding: "24px 28px 20px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div style={{ padding: "24px 28px 20px", borderBottom: "1px solid #27272a", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#111" }}>Política de Privacidade</h3>
-            <p style={{ margin: "4px 0 0", fontSize: "0.75rem", color: "#9ca3af" }}>Última atualização: março de 2025</p>
+            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4e4e7" }}>Política de Privacidade</h3>
+            <p style={{ margin: "4px 0 0", fontSize: "0.75rem", color: "#52525b" }}>Última atualização: março de 2025</p>
           </div>
           <button
             onClick={onClose}
-            style={{ background: "#f3f4f6", border: "none", borderRadius: "8px", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", fontSize: "1rem", transition: "background 0.2s", flexShrink: 0 }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#e5e7eb")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#f3f4f6")}
+            style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "8px", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#71717a", fontSize: "1rem", transition: "background 0.2s", flexShrink: 0 }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#27272a")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#18181b")}
           >✕</button>
         </div>
 
-        <div style={{ overflowY: "auto", padding: "24px 28px 28px", fontSize: "0.85rem", color: "#374151", lineHeight: 1.75, scrollbarWidth: "thin", scrollbarColor: "#ddd6fe transparent" }}>
+        <div style={{ overflowY: "auto", padding: "24px 28px 28px", fontSize: "0.85rem", color: "#a1a1aa", lineHeight: 1.75, scrollbarWidth: "thin", scrollbarColor: "#27272a transparent" }}>
           {[
             { title: "1. Informações que coletamos", text: "Coletamos informações que você nos fornece diretamente, como nome, endereço de e-mail e dados de acesso ao criar uma conta ou entrar em contato conosco." },
             { title: "2. Como usamos suas informações", text: "Utilizamos suas informações para fornecer, manter e melhorar nossos serviços, enviar comunicações relacionadas à conta e garantir a segurança da plataforma." },
@@ -61,13 +62,13 @@ function PrivacyModal({ onClose }) {
             { title: "8. Contato", text: "Dúvidas? Entre em contato pelo e-mail suporte.orbis@gmail.com." },
           ].map((section, i) => (
             <div key={i} style={{ marginBottom: "20px" }}>
-              <p style={{ fontWeight: 600, color: "#7c3aed", margin: "0 0 6px", fontSize: "0.875rem" }}>{section.title}</p>
+              <p style={{ fontWeight: 600, color: "#8C52ff", margin: "0 0 6px", fontSize: "0.875rem" }}>{section.title}</p>
               <p style={{ margin: 0 }}>{section.text}</p>
             </div>
           ))}
         </div>
 
-        <div style={{ padding: "16px 28px", borderTop: "1px solid #f3f4f6", flexShrink: 0 }}>
+        <div style={{ padding: "16px 28px", borderTop: "1px solid #27272a", flexShrink: 0 }}>
           <button
             onClick={onClose}
             style={{ width: "100%", background: "#8C52ff", color: "#fff", border: "none", borderRadius: "10px", padding: "12px", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", transition: "opacity 0.2s ease" }}
@@ -91,21 +92,15 @@ export default function LoginCard() {
   const [showPrivacy, setShowPrivacy] = useState(false);
 
   async function handleSubmit(formData) {
-
-    // Chama o Server Action — roda no servidor, nunca expõe a API_URL
     const result = await loginAction(formData)
-
     if (result.error) {
       alert(result.error)
       return
     }
-
     if (result) {
-      // alert("Login bem-sucedido!");
       window.location.href = "/dashboard";
     }
   }
-
 
   return (
     <>
@@ -115,11 +110,12 @@ export default function LoginCard() {
         .orbis-card {
           width: 100%;
           max-width: 420px;
-          background: #fff;
+          background: #0f0f12;
           border-radius: 24px;
           overflow: hidden;
-          box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+          box-shadow: 0 8px 40px rgba(0,0,0,0.5);
           font-family: 'DM Sans', sans-serif;
+          border: 1px solid #27272a;
         }
 
         .orbis-top {
@@ -176,12 +172,13 @@ export default function LoginCard() {
 
         .orbis-body {
           padding: 32px 36px 36px;
+          background: #0f0f12;
         }
 
         .orbis-label {
           font-size: 12px;
           font-weight: 500;
-          color: #9ca3af;
+          color: #52525b;
           margin: 0 0 6px;
           letter-spacing: 0.04em;
           text-transform: uppercase;
@@ -189,22 +186,26 @@ export default function LoginCard() {
 
         .orbis-input {
           width: 100%;
-          border: 1px solid #e5e7eb;
+          border: 1px solid #27272a;
           border-radius: 10px;
           padding: 11px 14px;
           font-size: 14px;
           font-family: 'DM Sans', sans-serif;
-          color: #2e2e2e;
-          background: #f9fafb;
+          color: #e4e4e7;
+          background: #18181b;
           outline: none;
           box-sizing: border-box;
           transition: border-color 0.2s, box-shadow 0.2s;
         }
 
+        .orbis-input::placeholder {
+          color: #3f3f46;
+        }
+
         .orbis-input:focus {
           border-color: #8C52ff;
-          box-shadow: 0 0 0 3px rgba(140,82,255,0.12);
-          background: #fff;
+          box-shadow: 0 0 0 3px rgba(140,82,255,0.15);
+          background: #1c1c1f;
         }
 
         .orbis-btn {
@@ -227,9 +228,10 @@ export default function LoginCard() {
 
         .orbis-footer {
           font-size: 12px;
-          color: #9ca3af;
+          color: #3f3f46;
           text-align: center;
           margin-top: 20px;
+          background: #0f0f12;
         }
 
         .orbis-footer button {
@@ -244,7 +246,7 @@ export default function LoginCard() {
         }
       `}</style>
 
-      <div className="orbis-card  justify-center flex-col flex ">
+      <div className="orbis-card">
         <div className="orbis-top">
           <img style={{ height: "55px" }} src="LogoBrancaGrande.svg" alt="" />
           <h2 className="orbis-greeting">Bem-vindo de volta</h2>
@@ -285,7 +287,7 @@ export default function LoginCard() {
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    color: "#8C52ff",
+                    color: "#52525b",
                     padding: 0,
                   }}
                 >
@@ -299,19 +301,16 @@ export default function LoginCard() {
             </p>
 
             <button type="submit" className="orbis-btn" style={{ marginTop: "20px" }}>Entrar</button>
-            </div>
+          </div>
         </form>
-        <p className="orbis-footer w-85 m-auto mb-4 text-center justify-center items-center "  >
+
+        <p className="orbis-footer w-85 m-auto mb-4 text-center justify-center items-center">
           Ao continuar, você concorda com nossa{" "}
           <button onClick={() => setShowPrivacy(true)}>Política de Privacidade</button>
         </p>
       </div>
 
-
-
-
-      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />
-      }
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
     </>
   );
 }
