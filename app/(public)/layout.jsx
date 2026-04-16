@@ -4,6 +4,7 @@ import Head from 'next/head'
 import FooterPage from '../footer-01/page'
 import Footer from '@/components/shadcn-space/blocks/footer-01/footer'
 import HomeLoader from "@/components/Loader/HomeLoader"
+import SmoothScroll from '@/components/SmootScroll'
 
 
 const poppins = Poppins({
@@ -23,8 +24,9 @@ export default function RootLayout({ children }) {
     <div className={`${poppins.variable} ${openSans.variable}`}>
       <Header />
       <HomeLoader />
-      {children}
-      <HomeLoader />
+      <SmoothScroll>
+        {children}
+      </SmoothScroll>
       <Footer />
     </div>
   )
