@@ -22,7 +22,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 h-[60px] flex items-center justify-between px-[5%] gap-6 bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08]">
+      <header className="fixed top-0 left-0 right-0 z-50 h-[60px] grid grid-cols-[1fr_auto_1fr] items-center px-[5%] justify-between  gap-6 bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08]">
         
         {/* Logo */}
         <Link href="/">
@@ -30,20 +30,19 @@ export default function Header() {
         </Link>
 
         {/* Nav — desktop */}
-        <nav className="hidden md:flex items-center gap-0.5 bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.08] dark:border-white/[0.07] rounded-[10px] p-1">
+        <nav className="hidden md:flex items-center gap-0.5 bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.08] dark:border-white/[0.07] rounded-[10px] p-1 ms-4">
           {navLinks.map(({ label, href }) => (
             <Link
               key={href}
               href={href}
-              className="text-[13.5px] text-black/55 dark:text-white/50 px-3.5 py-1.5 rounded-[7px] border border-transparent hover:bg-white dark:hover:bg-white/[0.08] hover:border-black/[0.08] dark:hover:border-white/[0.07] hover:text-[#5e17eb] transition-all duration-150"
-            >
+              className="text-[13.5px] text-black/55 dark:text-white/50 px-3.5 py-1.5 rounded-[7px] border border-transparent hover:bg-white dark:hover:bg-white/[0.08] hover:border-black/[0.08] dark:hover:border-white/[0.07] hover:text-[#5e17eb] transition-all duration-150" >
               {label}
             </Link>
           ))}
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+       <div className="flex items-center gap-2 justify-end"> {/* adiciona justify-end */}
           {/* Theme toggle */}
           <button
             onClick={() => setTheme(isDark ? 'light' : 'dark')}
