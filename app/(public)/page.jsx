@@ -275,10 +275,6 @@ export default function HomePage() {
             zIndex: 0,
           }}
         >
-          <script
-            type="module"
-            src="https://cdn.spline.design/@splinetool/hana-viewer@1.2.51/hana-viewer.js"
-          ></script>
          <iframe src="https://my.spline.design/pixeltextsetcopycopy-FVOpkQ2LEECtjtmYxOWm4Dq9-V1Z/" frameBorder="0" width="100%" height="100%"></iframe>
          <div className="absolute! h-15 w-45 right-0! bottom-0!" style={{ background: palette.sectionBg }}></div>
         </div>
