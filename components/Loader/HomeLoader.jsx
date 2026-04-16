@@ -11,7 +11,7 @@ export default function HomeLoader() {
     const isDark = resolvedTheme === 'dark'
 
     useEffect(() => {
-        const fadeTimer = setTimeout(() => setFadingOut(true), 2500) // começa a desaparecer depois de 2.5 segundos
+        const fadeTimer = setTimeout(() => setFadingOut(true), 2600) // começa a desaparecer depois de 2.5 segundos
         const hideTimer = setTimeout(() => setVisible(false), 3000) // esconde completamente depois de 2.5 segundos
 
         return () => {
