@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   Avatar,
   AvatarFallback,
@@ -20,12 +21,19 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { clearAuthSession } from "@/lib/auth-session"
 import { EllipsisVerticalIcon, CircleUserRoundIcon, CreditCardIcon, BellIcon, LogOutIcon } from "lucide-react"
 
 export function NavUser({
   user
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+
+  function handleLogout() {
+    clearAuthSession()
+    router.replace("/")
+  }
 
   return (
     <SidebarMenu>
@@ -77,12 +85,10 @@ export function NavUser({
               </Link>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <Link href="/">
-              <DropdownMenuItem className={"cursor-pointer"}>
-                <LogOutIcon />
-                Sair
-              </DropdownMenuItem>
-            </Link>
+            <DropdownMenuItem className={"cursor-pointer"} onClick={handleLogout}>
+              <LogOutIcon />
+              Sair
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
