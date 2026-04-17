@@ -42,12 +42,12 @@ export default function Page() {
                 <ChartRadarDots />
                 <ChartBarStacked />
               </div>
-            </DashboardChartsProvider>
 
-            {/* id adicionado */}
-            <div id="tour-data-table">
-              <DataTable />
-            </div>
+              {/* id adicionado */}
+              <div id="tour-data-table">
+                <DataTable />
+              </div>
+            </DashboardChartsProvider>
           </div>
         </div>
       </div>
