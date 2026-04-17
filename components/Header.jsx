@@ -71,7 +71,7 @@ export default function Header() {
         <div className="flex items-center gap-2 justify-end">
           <button
             onClick={() => setTheme(isDark ? 'light' : 'dark')}
-            className="w-9 h-9 flex items-center justify-center rounded-[10px] border border-black/[0.08] dark:border-white/[0.08] text-black/70 dark:text-white/70 hover:bg-[#5e17eb]/[0.08] hover:border-[#5e17eb]/20 hover:text-[#5e17eb] transition-all duration-150"
+            className="cursor-pointer w-9 h-9 flex items-center justify-center rounded-[10px] border border-black/[0.08] dark:border-white/[0.08] text-black/70 dark:text-white/70 hover:bg-[#5e17eb]/[0.08] hover:border-[#5e17eb]/20 hover:text-[#5e17eb] transition-all duration-150"
           >
             {mounted ? (
               isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />

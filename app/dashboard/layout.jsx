@@ -11,6 +11,7 @@ import { SensoresProvider } from "@/components/context/sensores-context"
 import { TecnicosProvider } from "@/components/context/tecnicos-context"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import SmoothScroll from "@/components/SmootScroll"
 
 /** @typedef {import("@/lib/orbis-types").DashboardLayoutProps} DashboardLayoutProps */
 
@@ -32,7 +33,9 @@ export default function DashboardLayout({ children }) {
               >
                 <AppSidebar variant="inset" />
                 <SidebarInset>
-                  <TooltipProvider>{children}</TooltipProvider>
+                  <SmoothScroll>
+                    <TooltipProvider>{children}</TooltipProvider>
+                    </SmoothScroll>
                   <Toaster position="top-left" />
                 </SidebarInset>
               </SidebarProvider>
