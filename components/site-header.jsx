@@ -77,6 +77,13 @@ function corFundo(tipo) {
   return "bg-blue-50 border-blue-100"
 }
 
+function getSaudacao() {
+  const hora = new Date().getHours()
+  if (hora >= 5 && hora < 12) return "Bom dia"
+  if (hora >= 12 && hora < 18) return "Boa tarde"
+  return "Boa noite"
+}
+
 export function SiteHeader() {
   const { resolvedTheme, setTheme } = useTheme()
   const [painelAberto, setPainelAberto] = React.useState(false)
@@ -146,8 +153,24 @@ export function SiteHeader() {
           <h1 className="text-gray-500! text-[10pt]! m-0! dark:text-gray-300!">
             Dashboard Orbis
           </h1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
           <h2 className="text-sm text-muted-foreground font-normal m-0! dark:text-white!">
-            Bom dia, Administrador!
+            {getSaudacao()}, Administrador!
           </h2>
         </div>
 
