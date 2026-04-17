@@ -1,18 +1,16 @@
+// PageLoader.jsx
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useTheme } from 'next-themes'
 import Loader from './page'
 
-export default function HomeLoader() {
-    const [visible, setVisible] = useState(true)
+export default function PageLoader() {
+    const [visible, setVisible] = useState(true)  // começa true direto
     const [fadingOut, setFadingOut] = useState(false)
-    const { resolvedTheme } = useTheme()
-    const isDark = resolvedTheme === 'dark'
 
     useEffect(() => {
-        const fadeTimer = setTimeout(() => setFadingOut(true), 1600) // começa a desaparecer depois de 2.5 segundos
-        const hideTimer = setTimeout(() => setVisible(false), 2050) // esconde completamente depois de 2.5 segundos
+        const fadeTimer = setTimeout(() => setFadingOut(true), 5000) // começa a desaparecer depois de 5 segundos
+        const hideTimer = setTimeout(() => setVisible(false), 5500) // esconde completamente depois de 5.5 segundos
 
         return () => {
             clearTimeout(fadeTimer)
@@ -23,8 +21,18 @@ export default function HomeLoader() {
     if (!visible) return null
 
     return (
-        <div className={`fixed inset-0 flex items-center 
-            justify-center z-[9999] bg-white dark:bg-[#09090b] 
-            transition-opacity duration-600 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}
-            ><Loader />
-        </div>)}
+        <div style={{
+            position: 'fixed',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#fff',
+            zIndex: 9999,
+            opacity: fadingOut ? 0 : 1,
+            transition: 'opacity 600ms ease', 
+        }}>
+            <Loader />
+        </div>
+    )
+}

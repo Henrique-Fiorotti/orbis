@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { loginAction } from "@/app/actions/auth.actions";
+import { saveAuthSession } from "@/lib/auth-session";
 import { Eye, EyeOff } from 'lucide-react'
 
 function PrivacyModal({ onClose }) {
@@ -105,6 +106,14 @@ export default function LoginCard() {
     window.location.href = "/dashboard"
 
     if (result) {
+      const session = saveAuthSession(result)
+
+      if (!session?.accessToken) {
+        alert("Login realizado, mas nao foi possivel iniciar a sessao.")
+        return
+      }
+
+      // alert("Login bem-sucedido!");
       window.location.href = "/dashboard";
     }
   }

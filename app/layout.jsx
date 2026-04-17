@@ -1,7 +1,7 @@
 import { Open_Sans, Poppins } from "next/font/google"
 import { ThemeProvider } from "next-themes"
+import HomeLoader from "@/components/Loader/HomeLoader"
 
-import PageLoader from "@/components/Loader/PageLoader"
 import "./globals.css"
 
 /** @typedef {import("@/lib/orbis-types").RootLayoutProps} RootLayoutProps */
@@ -36,10 +36,14 @@ export default function RootLayout({ children, modal }) {
       suppressHydrationWarning
     >
       <body>
+        
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <HomeLoader />
           {children}
           {modal}
+          
         </ThemeProvider>
+        
       </body>
     </html>
   )
