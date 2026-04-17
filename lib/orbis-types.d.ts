@@ -234,3 +234,31 @@ export interface IntegridadeSetorChartDatum {
   integridade: number;
   maquinas: number;
 }
+
+export interface AlertTrendChartDatum {
+  date: string;
+  limite: number;
+  tendencia: number;
+}
+
+export interface StatusDistribuicaoChartDatum {
+  status: "Estavel" | "Alerta" | "Critico";
+  quantidade: number;
+  fill: string;
+}
+
+export interface DashboardChartsContextValue {
+  status: "loading" | "success" | "error";
+  mensagem: string;
+  maquinas: Maquina[];
+  sensores: Sensor[];
+  alertTrendData: AlertTrendChartDatum[];
+  errors: {
+    maquinas: string;
+    sensores: string;
+    alertTrend: string;
+  };
+  notices: {
+    alertTrend: string;
+  };
+}
