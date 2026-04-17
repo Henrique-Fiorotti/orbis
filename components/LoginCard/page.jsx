@@ -172,7 +172,6 @@ export default function LoginCard() {
 
         .orbis-body {
           padding: 32px 36px 36px;
-          background: #0f0f12;
         }
 
         .orbis-label {
