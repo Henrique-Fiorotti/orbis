@@ -2,12 +2,16 @@
   width: 3.25em;
   transform-origin: center;
   animation: rotate4 2s linear infinite;
+.container {
+  width: 3.25em;
+  transform-origin: center;
+  animation: rotate4 2s linear infinite;
 }
 
 .loader {
   fill: none;
   stroke: #7c3aed;
-  stroke-width: 8;
+  stroke-width: 7;
   stroke-dasharray: 2, 200;
   stroke-dashoffset: 0;
   stroke-linecap: round;

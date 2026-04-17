@@ -1,157 +1,122 @@
-"use client";
+'use client'
 
-import React from "react";
-import Link from "next/link";
-import { MoonIcon, SunIcon } from "lucide-react";
-import { useTheme } from "next-themes";
-import "bootstrap/dist/css/bootstrap.min.css"
+import React from 'react'
+import Link from 'next/link'
+import { MoonIcon, SunIcon, MenuIcon, XIcon } from 'lucide-react'
+import { useTheme } from 'next-themes'
+
 export default function Header() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+  const [menuOpen, setMenuOpen] = React.useState(false)
+  const [visible, setVisible] = React.useState(true)
+  const lastScrollY = React.useRef(0)
+
+  React.useEffect(() => setMounted(true), [])
 
   React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  
+    const handleScroll = () => { // scroll de mostrar/esconder o header
+      const currentY = window.scrollY
 
-  const isDark = resolvedTheme === "dark";
+      if (currentY < 10) { // Sempre mostrar o header quando estiver no topo da página
+        setVisible(true)
+      } else if (currentY > lastScrollY.current) { // Esconde o header ao rolar para baixo
+        setVisible(false)
+      } else { // Mostra o header ao rolar para cima
+        setVisible(true)
+      }
 
-  function toggleTheme() {
-    setTheme(isDark ? "light" : "dark");
-  }
+      lastScrollY.current = currentY
+    }
+    
+    window.addEventListener('scroll', handleScroll, { passive: true }) 
+    return () => window.removeEventListener('scroll', handleScroll) 
+  }, [])
+
+  const isDark = resolvedTheme === 'dark'
+
+  const navLinks = [
+    { label: 'Início', href: '/#inicio' },
+    { label: 'Sobre', href: '/#sobre' },
+    { label: 'Contato', href: '/contact' },
+  ]
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg bg-body-tertiary z-10 fixed! main-header flex justify-between items-center pl-[15%]! pr-[15%]! w-full h-16 bg-[#fffffff9]! border border-[#2222222a] dark:bg-[#09090bf2]! dark:border-white/10!">
-        <div className="container-fluid">
-          <div className="w-22.5! h-8!">
-            <a href="/" className="navbar-brand icon-header h-full w-5!">
-              <img
-                src="/Orbis.svg"
-                alt=""
-                className="h-full! w-full! cursor-pointer dark:invert!"
-              />
-            </a>
-          </div>
-          <button
-            className="navbar-toggler"
-            type="button"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#offcanvasRight"
-            aria-controls="offcanvasRight"
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
-          
-          <div className="collapse navbar-collapse width-auto-important" id="navbarNav">
-            <ul className="navbar-nav bg-gray-100! rounded-[10px]! border-3! border-gray-100! dark:bg-white/5! dark:border-white/5!">
-              <li className="nav-item">
-                <a
-                  href="/"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]/70! font-poppins! hover:bg-white! border! border-gray-100! hover:border! hover:border-gray-300! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! dark:text-white/70! dark:border-white/5! dark:hover:bg-white/8! dark:hover:border-white/15! dark:hover:text-[#5e17eb]!"
-                  aria-current="page"
-                >
-                  Home
-                </a>
-              </li>
-              <li className="nav-item">
-                <a
-                  href="/#sobre"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]/70! font-poppins! hover:bg-white! border! border-gray-100! hover:border! hover:border-gray-300! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! dark:text-white/70! dark:border-white/5! dark:hover:bg-white/8! dark:hover:border-white/15! dark:hover:text-[#5e17eb]!"
-                >
-                  Sobre
-                </a>
-              </li>
-              <li className="nav-item">
-                <a
-                  href="/contact"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]/70! font-poppins! hover:bg-white! border! border-gray-100! hover:border! hover:border-gray-300! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! dark:text-white/70! dark:border-white/5! dark:hover:bg-white/8! dark:hover:border-white/15! dark:hover:text-[#5e17eb]!"
-                  aria-current="page"
-                >
-                  Contato
-                </a>
-              </li>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 h-[60px] grid grid-cols-[1fr_auto_1fr] items-center px-[5%] gap-6 bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08] transition-transform duration-300 ${
+          visible ? 'translate-y-0' : '-translate-y-full' // Esconde o header quando não estiver visível
+        }`} 
+      >
+        {/* Logo */}
+        <Link href="/">
+          <img src="/Orbis.svg" alt="Orbis" className="h-7 dark:invert" />
+        </Link>
 
-              
-            </ul>
-          
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={isDark ? "Ativar modo claro" : "Ativar modo escuro"}
-              className="flex h-10! w-10! items-center justify-center rounded-[10px]! border! border-[#5e17eb]/20! text-[#5e17eb]! transition-all! duration-150 ease-in-out! hover:bg-[#5e17eb]! hover:text-white! dark:border-white/10! dark:text-white!"
+        {/* Nav — desktop */}
+        <nav className="hidden md:flex items-center gap-0.5 bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.08] dark:border-white/[0.07] rounded-[10px] p-1 ms-4">
+          {navLinks.map(({ label, href }) => (
+            <Link
+              key={href}
+              href={href}
+              className="text-[13.5px] text-black/55 dark:text-white/50 px-3.5 py-1.5 rounded-[7px] border border-transparent hover:bg-white dark:hover:bg-white/[0.08] hover:border-black/[0.08] dark:hover:border-white/[0.07] hover:text-[#5e17eb] transition-all duration-150"
             >
-              {mounted ? (
-                isDark ? <SunIcon size={18} /> : <MoonIcon size={18} />
-              ) : (
-                <MoonIcon size={18} className="opacity-0" />
-              )}
-            </button>
-            <li className="nav-item list-none! loginbutton">
-              <Link
-                href="/login"
-                className="nav-link border! border-[#5e17eb]! text-[#5e17eb]! p-1.5! w-22.5! flex! justify-center! rounded-[10px]! cursor-pointer! font-poppins! hover:bg-[#5e17eb]! hover:text-[#ffffff]! hover:border-[#5e17eb]! transition-all! duration-150 ease-in-out!"
-              >
-                Login
-              </Link>
-            </li>
-          </div>
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 justify-end">
+          <button
+            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            className="cursor-pointer w-9 h-9 flex items-center justify-center rounded-[10px] border border-black/[0.08] dark:border-white/[0.08] text-black/70 dark:text-white/70 hover:bg-[#5e17eb]/[0.08] hover:border-[#5e17eb]/20 hover:text-[#5e17eb] transition-all duration-150"
+          >
+            {mounted ? (
+              isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />
+            ) : (
+              <MoonIcon size={16} className="opacity-0" />
+            )}
+          </button>
+
+          <Link
+            href="/login"
+            className="hidden md:flex items-center text-[13.5px] px-4 py-[7px] rounded-[10px] border border-[#5e17eb] text-[#5e17eb] hover:bg-[#5e17eb] hover:text-white transition-all duration-150"
+          >
+            Entrar
+          </Link>
+
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden w-9 h-9 flex items-center justify-center rounded-[10px] border border-black/[0.08] dark:border-white/[0.08] text-black/70 dark:text-white/70 transition-all duration-150"
+          >
+            {menuOpen ? <XIcon size={16} /> : <MenuIcon size={16} />}
+          </button>
         </div>
-      </nav>
+      </header>
 
-      <div className="offcanvas offcanvas-end dark:bg-[#09090b]! dark:text-white!" tabIndex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
-            <div className="offcanvas-header pl-[15%]! pr-[15%]! h-16 bg-[#fffffff9]! border border-[#2222222a] dark:bg-[#09090bf2]! dark:border-white/10!">
-              <img src="/Orbis.svg" alt="Orbis" className="h-full w-auto" />
-              <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-            </div>
-            <div className="offcanvas-body pl-[15%]! pr-[15%]! dark:bg-[#09090b]!">
-              <a
-                  href="/"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]! dark:text-white! dark:hover:bg-white/8!"
-                  aria-current="page"
-                >
-                  Home
-                </a>
-
-                <a
-                  href="/#sobre"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]! dark:text-white! dark:hover:bg-white/8!"
-                >
-                  Sobre
-                </a>
-
-                <a
-                  href="/contact"
-                  className="nav-link relative! px-4! py-2! rounded-[8px]! inline-block! text-[#2e2e2e]! font-poppins! hover:bg-gray-200/90! hover:text-[#5e17eb]! transition-all! duration-150 ease-in-out! text-[25px]! dark:text-white! dark:hover:bg-white/8!"
-                  aria-current="page"
-                >
-                  Contato
-                </a>
-
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className="mt-4! mb-4! flex h-12! w-12! items-center justify-center rounded-[10px]! border! border-[#5e17eb]/25! text-[#5e17eb]! transition-all! duration-150 ease-in-out! hover:bg-[#5e17eb]! hover:text-white! dark:border-white/10! dark:text-white!"
-                >
-                  {mounted ? (
-                    isDark ? <SunIcon size={20} /> : <MoonIcon size={20} />
-                  ) : (
-                    <MoonIcon size={20} className="opacity-0" />
-                  )}
-                </button>
-
-                <Link
-                  href="/login"
-                  className="nav-link border-2! border-[#5e17eb]! text-[#5e17eb]! p-1.5! w-22.5! flex! justify-center! rounded-[10px]! cursor-pointer! font-poppins! hover:bg-[#5013ca]! hover:text-[#ffffff]! hover:border-[#5013ca]! transition-all! duration-150 ease-in-out text-[25px]!"
-                >
-                  Login
-                </Link>
-            </div>
-          </div>
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+      {/* Menu mobile */}
+      {menuOpen && (
+        <div className="fixed top-[60px] left-0 right-0 z-40 flex flex-col gap-1 px-[5%] pt-3 pb-5 bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08] md:hidden">
+          {navLinks.map(({ label, href }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setMenuOpen(false)}
+              className="text-[18px] text-black dark:text-white px-3.5 py-2.5 rounded-[10px] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] hover:text-[#5e17eb] transition-all duration-150"
+            >
+              {label}
+            </Link>
+          ))}
+          <Link
+            href="/login"
+            className="mt-2 flex justify-center text-[16px] px-4 py-2.5 rounded-[10px] border-2 border-[#5e17eb] text-[#5e17eb] hover:bg-[#5e17eb] hover:text-white transition-all duration-150"
+          >
+            Entrar
+          </Link>
+        </div>
+      )}
     </>
-  );
+  )
 }

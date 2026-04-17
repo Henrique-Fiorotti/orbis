@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
+import Loader from "@/components/Loader/page";
 
 /* ── tiny hook: fade-in on scroll ── */
 function useFadeIn() {
@@ -204,7 +205,7 @@ export default function HomePage() {
   };
 
   const scrollDown = () => {
-    window.scrollBy({ top: window.innerHeight * 0.85, behavior: "smooth" });
+    window.scrollBy({ top: window.innerHeight * 1.0, behavior: "smooth" });
   };
 
   const [quoteRef, quoteVisible] = useFadeIn();
@@ -238,6 +239,7 @@ export default function HomePage() {
       {/* ══ HERO ══ */}
       <section
         style={{
+          href: "#inicio",
           minHeight: "85vh",
           display: "flex",
           flexDirection: "row-reverse",
@@ -274,10 +276,6 @@ export default function HomePage() {
             zIndex: 0,
           }}
         >
-          <script
-            type="module"
-            src="https://cdn.spline.design/@splinetool/hana-viewer@1.2.51/hana-viewer.js"
-          ></script>
          <iframe src="https://my.spline.design/pixeltextsetcopycopy-FVOpkQ2LEECtjtmYxOWm4Dq9-V1Z/" frameBorder="0" width="100%" height="100%"></iframe>
          <div className="absolute! h-15 w-45 right-0! bottom-0!" style={{ background: palette.sectionBg }}></div>
         </div>
@@ -451,9 +449,9 @@ export default function HomePage() {
             transition: "opacity 0.6s ease 0.8s",
           }}
         >
-          <button
+          <button 
             onClick={scrollDown}
-            style={{
+              style={{
               width: "44px",
               height: "44px",
               borderRadius: "50%",
