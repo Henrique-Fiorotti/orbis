@@ -135,6 +135,34 @@ const data = {
 export function AppSidebar({
   ...props
 }) {
+
+  const [userData, setUserData] = React.useState({
+    name: "Orbis Admin",
+    email: "carregando...",
+    avatar: "/Orbis.svg",
+  })
+
+   // ✅ Lê o localStorage assim que o componente aparece na tela
+  React.useEffect(() => {
+    const email = localStorage.getItem("orbis_user_email")
+    const name = localStorage.getItem("orbis_user_name")
+
+    if (email) {
+      setUserData({
+        name: name || "Orbis Admin",
+        email: email,
+        avatar: "/Orbis.svg",
+      })
+    }
+  }, []) // o [] significa: roda só uma vez, quando o componente abre
+
+    // Mova os dados do navMain, navSecondary etc. para fora ou mantenha aqui
+  const navData = {
+    navMain: [ /* ... seu navMain atual ... */ ],
+    navSecondary: [ /* ... seu navSecondary atual ... */ ],
+    documents: [],
+  }
+
   return (
     <Sidebar tourId="tour-sidebar" collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -151,7 +179,7 @@ export function AppSidebar({
         <NavSecondary items={data.navSecondary} className="mt-auto dark:text-white" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+          <NavUser user={userData} />
       </SidebarFooter>
     </Sidebar>
   );

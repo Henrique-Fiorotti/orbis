@@ -24,8 +24,8 @@ function PrivacyModal({ onClose }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#0f0f12",         
-          border: "1px solid #27272a",   
+          background: "#0f0f12",
+          border: "1px solid #27272a",
           borderRadius: "20px",
           width: "100%",
           maxWidth: "560px",
@@ -97,6 +97,13 @@ export default function LoginCard() {
       alert(result.error)
       return
     }
+
+    const email = formData.get("email")
+    localStorage.setItem("orbis_user_email", result.email || result.user?.email || email)
+    localStorage.setItem("orbis_user_name", result.name || result.user?.name || "Orbis Admin")
+
+    window.location.href = "/dashboard"
+
     if (result) {
       window.location.href = "/dashboard";
     }

@@ -5,7 +5,7 @@ const API_URL = process.env.API_URL || "http://orbis-5hnm.onrender.com"
 export async function loginAction(formData) {
   const email = formData.get("email")
   const senha = formData.get("password")
-
+  
   if (!email || !senha) {
     return { error: "Preencha todos os campos." }
   }
