@@ -1,5 +1,3 @@
-// @ts-check
-
 "use client"
 
 import * as React from "react"
@@ -70,11 +68,7 @@ export default function DashboardLayout({ children }) {
           <TecnicosProvider>
             <TooltipProvider>
               <SidebarProvider
-                style={{
-                  "--sidebar-width": "calc(var(--spacing) * 72)",
-                  "--header-height": "calc(var(--spacing) * 12)",
-                }}
-              >
+                style={{ "--sidebar-width": "calc(var(--spacing) * 72)", "--header-height": "calc(var(--spacing) * 12)",  }}>
                 <AppSidebar variant="inset" />
                 <SidebarInset>
                   <SmoothScroll>
