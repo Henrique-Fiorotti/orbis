@@ -120,7 +120,7 @@ export function DashboardTour() {
   }
 
   function handleValueChange(nextStep) {
-    if (nextStep >= TOUR_STEPS.length - 1) {
+    if (nextStep >= TOUR_STEPS.length) {
       resetTour()
       return
     }
@@ -159,6 +159,8 @@ export function DashboardTour() {
               target={step.target}
               side={step.side}
               align={step.align}
+
+              className="overflow-y-hidden mt-5"
             >
               <TourArrow />
               <TourClose onClick={resetTour} />
@@ -170,7 +172,7 @@ export function DashboardTour() {
 
               <TourFooter>
                 <TourStepCounter />
-                <div className="ml-auto flex gap-2">
+                <div className="flex flex-wrap justify-end gap-2 sm:ml-auto sm:flex-nowrap">
                   <TourSkip onClick={resetTour} />
                   <TourPrev />
                   <TourNext onClick={(event) => handleNextClick(event, isLastStep)}>

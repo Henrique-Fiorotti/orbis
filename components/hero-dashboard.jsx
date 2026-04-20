@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function HeroDashboard() {
+export default function HeroDashboard({ isDark }) {
   return (
     <>
       <div className="w-full flex justify-between gap-12 px-[15%] py-12 text-zinc-950 transition-colors dark:text-zinc-50">
@@ -63,7 +63,7 @@ export default function HeroDashboard() {
         <div className="w-2/4 h-[100%]">
           <Image
             className="h-[100%] object-cover! transition-transform duration-300"
-            src="/orbis_dashboard_hero.svg"
+            src={isDark ? "/Orbis-hero-dashboard-dark.svg" : "/orbis_dashboard_hero.svg"}
             alt="Dashboard Preventivo"
             width={600}
             height={500}
