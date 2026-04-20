@@ -168,7 +168,8 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-                <img src="/Orbis.svg" alt="Orbis" className="size-9! dark:invert" />
+                <img src="/Orbis.svg" alt="Orbis" className="size-9! dark:hidden" />
+                <img src="/Orbis-dark.svg" alt="Orbis" className="hidden size-8.5! dark:block" />
                 <span className="text-base font-semibold no-underline! font-poppins! text-black dark:text-white"></span>
           </SidebarMenuItem>
         </SidebarMenu>
