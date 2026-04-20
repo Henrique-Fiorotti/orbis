@@ -126,10 +126,15 @@ export type AtualizacaoAlertaInput = Partial<NovoAlertaInput>;
 
 export interface MaquinasContextValue {
   maquinas: Maquina[];
-  adicionarMaquina: (dados: NovaMaquinaInput) => Maquina;
-  editarMaquina: (id: number, dados: AtualizacaoMaquinaInput) => void;
-  excluirMaquina: (id: number) => void;
-  resetarDados: () => void;
+  status: "loading" | "success" | "error";
+  mensagem: string;
+  carregando: boolean;
+  salvando: boolean;
+  adicionarMaquina: (dados: NovaMaquinaInput) => Promise<void>;
+  editarMaquina: (id: number, dados: AtualizacaoMaquinaInput) => Promise<void>;
+  excluirMaquina: (id: number) => Promise<void>;
+  recarregarMaquinas: () => Promise<void>;
+  resetarDados: () => Promise<void>;
 }
 
 export interface SensoresContextValue {

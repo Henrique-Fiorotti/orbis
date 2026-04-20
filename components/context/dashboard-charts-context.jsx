@@ -27,7 +27,7 @@ const OPTIONAL_ALERT_TREND_ENDPOINTS = [
 /** @type {DashboardChartsContextValue} */
 const INITIAL_STATE = {
   status: "loading",
-  mensagem: "Carregando graficos do dashboard...",
+  mensagem: "Carregando dados do dashboard...",
   maquinas: [],
   sensores: [],
   alertTrendData: [],
@@ -57,7 +57,7 @@ export function DashboardChartsProvider({ children }) {
       setState({
         ...INITIAL_STATE,
         status: "error",
-        mensagem: "Faca login para carregar os graficos do dashboard.",
+        mensagem: "Faca login para carregar os dados do dashboard.",
       })
       return
     }
@@ -141,7 +141,7 @@ export function DashboardChartsProvider({ children }) {
       const hasResolvedCoreData =
         maquinasResult.status === "fulfilled" || sensoresResult.status === "fulfilled"
       const firstError =
-        errors.maquinas || errors.sensores || errors.alertTrend || "Nao foi possivel carregar os graficos do dashboard."
+        errors.maquinas || errors.sensores || errors.alertTrend || "Nao foi possivel carregar os dados do dashboard."
 
       setState({
         status: hasResolvedCoreData ? "success" : "error",
@@ -162,7 +162,7 @@ export function DashboardChartsProvider({ children }) {
       const message =
         error instanceof Error
           ? error.message
-          : "Nao foi possivel carregar os graficos do dashboard."
+          : "Nao foi possivel carregar os dados do dashboard."
 
       if (getHttpErrorStatus(error) === 401) {
         clearAuthSession()
