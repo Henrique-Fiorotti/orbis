@@ -271,14 +271,16 @@ export default function MaquinasPage() {
       <div className="flex flex-col gap-6 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+
             <Tooltip>
-              <TooltipContent><p className="mb-0!">Voltar ao dashboard</p></TooltipContent>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
                   <ArrowLeftIcon className="size-4" />
                 </Button>
               </TooltipTrigger>
+              <TooltipContent><p className="mb-0!">Voltar ao dashboard</p></TooltipContent>
             </Tooltip>
+
             <div>
               <div className="flex items-center gap-2">
                 <WashingMachineIcon size={22} />
