@@ -168,20 +168,22 @@ export default function MaquinasPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+
             <Tooltip>
-              <TooltipContent><p className="mb-0!">Voltar ao dashboard</p></TooltipContent>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
                   <ArrowLeftIcon className="size-4" />
                 </Button>
               </TooltipTrigger>
+              <TooltipContent><p className="mb-0!">Voltar ao dashboard</p></TooltipContent>
             </Tooltip>
+
             <div>
               <div className="flex items-center gap-2">
                 <WashingMachineIcon size={22} />
                 <h1 className="text-[18pt]! mb-0! font-medium text-[#3B2867]">Máquinas</h1>
               </div>
-           
+
             </div>
           </div>
           <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -237,11 +239,10 @@ export default function MaquinasPage() {
           <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Integridade média</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                integridadeMedia >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
-                integridadeMedia >= 50 ? "text-yellow-700 bg-yellow-50 border border-yellow-200" :
-                "text-red-700 bg-red-50 border border-red-200"
-              }`}>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${integridadeMedia >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
+                  integridadeMedia >= 50 ? "text-yellow-700 bg-yellow-50 border border-yellow-200" :
+                    "text-red-700 bg-red-50 border border-red-200"
+                }`}>
                 {integridadeMedia >= 75 ? "Estável" : integridadeMedia >= 50 ? "Atenção" : "Crítico"}
               </span>
             </div>
@@ -249,9 +250,8 @@ export default function MaquinasPage() {
             <div className="flex flex-col gap-1.5">
               <div className="h-2 w-50 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${
-                    integridadeMedia >= 75 ? "bg-green-500" : integridadeMedia >= 50 ? "bg-yellow-400" : "bg-red-500"
-                  }`}
+                  className={`h-full rounded-full transition-all ${integridadeMedia >= 75 ? "bg-green-500" : integridadeMedia >= 50 ? "bg-yellow-400" : "bg-red-500"
+                    }`}
                   style={{ width: `${integridadeMedia}%` }}
                 />
               </div>
@@ -312,8 +312,8 @@ export default function MaquinasPage() {
               </SheetTitle>
               <SheetDescription>
                 {modoSheet === "criar" ? "Preencha os dados para cadastrar uma nova máquina." :
-                 modoSheet === "editar" ? "Altere os dados e clique em salvar." :
-                 "Informações completas da máquina."}
+                  modoSheet === "editar" ? "Altere os dados e clique em salvar." :
+                    "Informações completas da máquina."}
               </SheetDescription>
             </SheetHeader>
             <div className="flex flex-col gap-4 px-4 py-4 overflow-y-auto flex-1">

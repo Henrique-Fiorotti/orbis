@@ -31,7 +31,7 @@ function TooltipContent({
   ...props
 }) {
   return (
-    <TooltipPrimitive.Portal>
+    <TooltipPrimitive.Portal asChild>
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
         sideOffset={sideOffset}
