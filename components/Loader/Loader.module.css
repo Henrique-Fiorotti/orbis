@@ -7,7 +7,7 @@
 .loader {
   fill: none;
   stroke: #7c3aed;
-  stroke-width: 8;
+  stroke-width: 7;
   stroke-dasharray: 2, 200;
   stroke-dashoffset: 0;
   stroke-linecap: round;
@@ -20,18 +20,19 @@
   }
 }
 
-@keyframes dash4 {
-  0% {
-    stroke-dasharray: 1, 200;
-    stroke-dashoffset: 0;
-  }
 
-  50% {
-    stroke-dasharray: 90, 200;
-    stroke-dashoffset: -35px;
-  }
+  @keyframes dash4 {
+    0% {
+      stroke-dasharray: 1, 200;
+      stroke-dashoffset: 0;
+    }
 
-  100% {
-    stroke-dashoffset: -125px;
+    50% {
+      stroke-dasharray: 90, 200;
+      stroke-dashoffset: -35px;
+    }
+
+    100% {
+      stroke-dashoffset: -125px;
+    }
   }
-}

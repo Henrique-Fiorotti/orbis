@@ -40,6 +40,7 @@ const POINTER_DOWN_OUTSIDE = "tour.pointerDownOutside";
 const INTERACT_OUTSIDE = "tour.interactOutside";
 const OPEN_AUTO_FOCUS = "tour.openAutoFocus";
 const CLOSE_AUTO_FOCUS = "tour.closeAutoFocus";
+const SCROLL_LOCK_CHANGE = "tour.scrollLockChange";
 const EVENT_OPTIONS = { bubbles: false, cancelable: true };
 
 const SIDE_OPTIONS = ["top", "right", "bottom", "left"];
@@ -377,17 +378,75 @@ function useScrollLock(enabled) {
   React.useEffect(() => {
     if (!enabled) return;
 
-    const originalStyle = window.getComputedStyle(document.body).overflow;
+    const originalBodyOverflow = window.getComputedStyle(document.body).overflow;
+    const originalHtmlOverflow = window.getComputedStyle(document.documentElement).overflow;
+    const originalBodyOverscrollBehavior = window.getComputedStyle(document.body).overscrollBehavior;
+    const originalHtmlOverscrollBehavior = window.getComputedStyle(document.documentElement).overscrollBehavior;
     const scrollbarWidth =
       window.innerWidth - document.documentElement.clientWidth;
+    const preventScrollKeys = new Set([
+      "ArrowUp",
+      "ArrowDown",
+      "ArrowLeft",
+      "ArrowRight",
+      "PageUp",
+      "PageDown",
+      "Home",
+      "End",
+      " ",
+    ]);
+
+    function notifyScrollLockChange(locked) {
+      window.dispatchEvent(
+        new CustomEvent(SCROLL_LOCK_CHANGE, {
+          detail: { locked },
+        })
+      );
+    }
+
+    function preventScroll(event) {
+      event.preventDefault();
+    }
+
+    function onKeyDown(event) {
+      if (!preventScrollKeys.has(event.key)) return;
+
+      const target = event.target;
+      const isEditableTarget =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT");
+
+      if (isEditableTarget) return;
+
+      event.preventDefault();
+    }
 
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    document.documentElement.style.overscrollBehavior = "none";
     if (scrollbarWidth > 0) {
       document.body.style.paddingRight = `${scrollbarWidth}px`;
     }
 
+    window.addEventListener("wheel", preventScroll, { passive: false });
+    window.addEventListener("touchmove", preventScroll, { passive: false });
+    window.addEventListener("keydown", onKeyDown);
+    notifyScrollLockChange(true);
+
     return () => {
-      document.body.style.overflow = originalStyle;
+      window.removeEventListener("wheel", preventScroll);
+      window.removeEventListener("touchmove", preventScroll);
+      window.removeEventListener("keydown", onKeyDown);
+      notifyScrollLockChange(false);
+
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.overscrollBehavior = originalBodyOverscrollBehavior;
+      document.documentElement.style.overscrollBehavior = originalHtmlOverscrollBehavior;
       document.body.style.paddingRight = "";
     };
   }, [enabled]);
@@ -451,6 +510,19 @@ function Tour(props) {
     scrollOffset,
   });
 
+  const scrollStepIntoView = React.useCallback((step) => {
+    if (!step || !propsRef.current.autoScroll) return;
+
+    const targetElement = getTargetElement(step.target);
+    if (!targetElement) return;
+
+    onScrollToElement(
+      targetElement,
+      propsRef.current.scrollBehavior,
+      propsRef.current.scrollOffset
+    );
+  }, [propsRef]);
+
   const store = React.useMemo(() => ({
     subscribe: (cb) => {
       listenersRef.current.add(cb);
@@ -470,6 +542,10 @@ function Tour(props) {
           if (stateRef.current.steps.length > 0) {
             if (stateRef.current.value >= stateRef.current.steps.length) {
               store.setState("value", 0);
+            } else {
+              scrollStepIntoView(
+                stateRef.current.steps[stateRef.current.value]
+              );
             }
           }
         } else {
@@ -500,21 +576,13 @@ function Tour(props) {
 
         if (propsRef.current.valueProp !== undefined) {
           propsRef.current.onValueChange?.(value);
+          scrollStepIntoView(nextStep);
           return;
         }
 
         propsRef.current.onValueChange?.(value);
 
-        if (nextStep && propsRef.current.autoScroll) {
-          const targetElement = getTargetElement(nextStep.target);
-          if (targetElement) {
-            onScrollToElement(
-              targetElement,
-              propsRef.current.scrollBehavior,
-              propsRef.current.scrollOffset
-            );
-          }
-        }
+        scrollStepIntoView(nextStep);
       }
 
       store.notify();
@@ -548,7 +616,7 @@ function Tour(props) {
 
       store.notify();
     },
-  }), [stateRef, listenersRef, stepIdsMapRef, stepIdCounterRef, propsRef]);
+  }), [stateRef, listenersRef, stepIdsMapRef, stepIdCounterRef, propsRef, scrollStepIntoView]);
 
   const open = useStore((state) => state.open, store);
 
@@ -783,7 +851,7 @@ function TourStep(props) {
       stepData.avoidCollisions &&
         shift({
           mainAxis: true,
-          crossAxis: false,
+          crossAxis: true,
           limiter: stepData.sticky === "partial" ? limitShift() : undefined,
           ...detectOverflowOptions,
         }),
@@ -1023,7 +1091,7 @@ function TourStep(props) {
         onFocusCapture={onFocusCapture}
         onBlurCapture={onBlurCapture}
         className={cn(
-          "fixed z-50 flex w-[580px] flex-col gap-4 rounded-lg border bg-popover p-8 text-popover-foreground shadow-md outline-none",
+          "fixed z-50 flex w-[min(580px,calc(100vw-2rem))] max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-4 overflow-y-auto rounded-lg border bg-popover p-8 text-popover-foreground shadow-md outline-none",
           className
         )}
         style={{
@@ -1394,7 +1462,7 @@ function TourFooter(props) {
       dir={context.dir}
       {...footerProps}
       ref={composedRef}
-      className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)} />
+      className={cn("flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center", className)} />
   );
 }
 

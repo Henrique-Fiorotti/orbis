@@ -1,11 +1,11 @@
 "use server"
 
-const API_URL = process.env.API_URL || "http://orbis-5hnm.onrender.com"
+const API_URL = process.env.API_URL || "https://orbis-5hnm.onrender.com"
 
 export async function loginAction(formData) {
   const email = formData.get("email")
   const senha = formData.get("password")
-
+  
   if (!email || !senha) {
     return { error: "Preencha todos os campos." }
   }
@@ -19,14 +19,12 @@ export async function loginAction(formData) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      return { error: errorData.message || `Erro ${response.status}: falha na autenticação.` }
+      return { error: errorData.mensagem || errorData.message || `Erro ${response.status}: falha na autenticacao.` }
     }
 
-    const data = await response.json()
-    return data
+    return await response.json()
   } catch (error) {
-    // Erro de rede (API offline, DNS, etc.)
     console.error("[loginAction]", error)
-    return { error: "Não foi possível conectar ao servidor. Tente novamente." }
+    return { error: "Nao foi possivel conectar ao servidor. Tente novamente." }
   }
 }

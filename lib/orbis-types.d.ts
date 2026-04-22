@@ -126,10 +126,15 @@ export type AtualizacaoAlertaInput = Partial<NovoAlertaInput>;
 
 export interface MaquinasContextValue {
   maquinas: Maquina[];
-  adicionarMaquina: (dados: NovaMaquinaInput) => Maquina;
-  editarMaquina: (id: number, dados: AtualizacaoMaquinaInput) => void;
-  excluirMaquina: (id: number) => void;
-  resetarDados: () => void;
+  status: "loading" | "success" | "error";
+  mensagem: string;
+  carregando: boolean;
+  salvando: boolean;
+  adicionarMaquina: (dados: NovaMaquinaInput) => Promise<void>;
+  editarMaquina: (id: number, dados: AtualizacaoMaquinaInput) => Promise<void>;
+  excluirMaquina: (id: number) => Promise<void>;
+  recarregarMaquinas: () => Promise<void>;
+  resetarDados: () => Promise<void>;
 }
 
 export interface SensoresContextValue {
@@ -233,4 +238,32 @@ export interface IntegridadeSetorChartDatum {
   setorLabel: string;
   integridade: number;
   maquinas: number;
+}
+
+export interface AlertTrendChartDatum {
+  date: string;
+  limite: number;
+  tendencia: number;
+}
+
+export interface StatusDistribuicaoChartDatum {
+  status: "Estavel" | "Alerta" | "Critico";
+  quantidade: number;
+  fill: string;
+}
+
+export interface DashboardChartsContextValue {
+  status: "loading" | "success" | "error";
+  mensagem: string;
+  maquinas: Maquina[];
+  sensores: Sensor[];
+  alertTrendData: AlertTrendChartDatum[];
+  errors: {
+    maquinas: string;
+    sensores: string;
+    alertTrend: string;
+  };
+  notices: {
+    alertTrend: string;
+  };
 }

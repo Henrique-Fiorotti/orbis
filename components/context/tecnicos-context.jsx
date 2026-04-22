@@ -1,5 +1,3 @@
-// @ts-check
-
 "use client"
 
 import * as React from "react"
