@@ -1,23 +1,25 @@
 .container {
   width: 3.25em;
   transform-origin: center;
-  animation: rotate4 2s linear infinite;}
- 
-  .loader {
-    fill: none;
-    stroke: #7c3aed;
-    stroke-width: 7;
-    stroke-dasharray: 2, 200;
-    stroke-dashoffset: 0;
-    stroke-linecap: round;
-    animation: dash4 1.5s ease-in-out infinite;
-  }
+  animation: rotate4 2s linear infinite;
+}
 
-  @keyframes rotate4 {
-    100% {
-      transform: rotate(360deg);
-    }
+.loader {
+  fill: none;
+  stroke: #7c3aed;
+  stroke-width: 7;
+  stroke-dasharray: 2, 200;
+  stroke-dashoffset: 0;
+  stroke-linecap: round;
+  animation: dash4 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate4 {
+  100% {
+    transform: rotate(360deg);
   }
+}
+
 
   @keyframes dash4 {
     0% {

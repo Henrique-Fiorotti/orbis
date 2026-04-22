@@ -612,7 +612,7 @@ export default function HomePage() {
 
       {/* ══ STATS ══ */}
       <section style={{ background: palette.altBg, transition: "background-color 0.25s ease" }}>
-        <HeroDashboard />
+        <HeroDashboard isDark={isDark} />
       </section>
 
       {/* ══ HOW IT WORKS ══ */}

@@ -219,7 +219,7 @@ export default function AlertasPage() {
           <div className="rounded-xl  border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Total</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Todos os sensores</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Todos os alertas</span>
 
             </div>
             <span className="text-3xl font-bold text-[#3B2867]">{alertas.length}</span>
