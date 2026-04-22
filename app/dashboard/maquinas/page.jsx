@@ -33,12 +33,7 @@ import { tempoRelativo } from "@/lib/utils"
 const formVazio = { nome: "", setor: "", tipo: "", criticidade: "MEDIA" }
 
 function CriticidadeBadge({ value }) {
-  const styles = {
-    ALTA: "bg-red-100 text-red-700 border-red-200",
-    MEDIA: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    BAIXA: "bg-green-100 text-green-700 border-green-200",
-  }
-
+  const styles = { ALTA: "bg-white text-gray-700  border-gray-200", MEDIA: "bg-white text-gray-700 border-gray-200", BAIXA: "bg-white text-gray-700 border-gray-200" }
   return <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>{value.charAt(0) + value.slice(1).toLowerCase()}</Badge>
 }
 
@@ -57,10 +52,11 @@ function IntegridadeBar({ value }) {
 
   return (
     <div className="flex items-center gap-2 min-w-[110px]">
-      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+      <span className={`text-sm font-medium w-9 text-start  tabular-nums ${textCor}`}>{value}%</span>
+      <div className="flex-1 h-1.5 w-4 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${value}%` }} />
       </div>
-      <span className={`text-sm font-medium w-9 text-right tabular-nums ${textCor}`}>{value}%</span>
+
     </div>
   )
 }
@@ -228,7 +224,7 @@ export default function MaquinasPage() {
       ),
     },
     { accessorKey: "setor", header: "Setor", cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.setor}</span> },
-    { accessorKey: "criticidade", header: "Criticidade", cell: ({ row }) => <CriticidadeBadge value={row.original.criticidade} /> },
+    { accessorKey: "criticidade", header: "Importância", cell: ({ row }) => <CriticidadeBadge value={row.original.criticidade} /> }, //troquei o header pra importancia ass:Gui
     { accessorKey: "status", header: "Status", cell: ({ row }) => <StatusBadge value={row.original.status} /> },
     { accessorKey: "integridade", header: "Integridade", cell: ({ row }) => <IntegridadeBar value={row.original.integridade} /> },
     { accessorKey: "ultimaLeituraEm", header: "Ultimo sinal", cell: ({ row }) => <span className="text-muted-foreground text-sm">{tempoRelativo(row.original.ultimaLeituraEm)}</span> },
@@ -288,6 +284,7 @@ export default function MaquinasPage() {
                 <WashingMachineIcon size={22} />
                 <h1 className="text-[18pt]! mb-0! font-medium text-[#3B2867]">Maquinas</h1>
               </div>
+
             </div>
           </div>
           <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
@@ -339,7 +336,7 @@ export default function MaquinasPage() {
 
           <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Criticidade alta</span>
+              <span className="text-sm text-muted-foreground font-medium">Alta Importância</span>
               <span className="text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full font-medium">
                 atencao
               </span>
@@ -358,23 +355,21 @@ export default function MaquinasPage() {
 
           <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Integridade media</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                integridadeMedia >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
-                integridadeMedia >= 50 ? "text-yellow-700 bg-yellow-50 border border-yellow-200" :
-                "text-red-700 bg-red-50 border border-red-200"
-              }`}>
-                {loadingInicial ? "Calculando" : integridadeMedia >= 75 ? "Estavel" : integridadeMedia >= 50 ? "Atencao" : "Critico"}
+              <span className="text-sm text-muted-foreground font-medium">Integridade média</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${integridadeMedia >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
+                  integridadeMedia >= 50 ? "text-yellow-700 bg-yellow-50 border border-yellow-200" :
+                    "text-red-700 bg-red-50 border border-red-200"
+                }`}>
+                {integridadeMedia >= 75 ? "Estável" : integridadeMedia >= 50 ? "Atenção" : "Crítico"}
               </span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867]">{formatMetric(integridadeMedia, loadingInicial, "%")}</span>
             <div className="flex flex-col gap-1.5">
               <div className="h-2 w-50 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${
-                    integridadeMedia >= 75 ? "bg-green-500" : integridadeMedia >= 50 ? "bg-yellow-400" : "bg-red-500"
-                  }`}
-                  style={{ width: loadingInicial ? "0%" : `${integridadeMedia}%` }}
+                  className={`h-full rounded-full transition-all ${integridadeMedia >= 75 ? "bg-green-500" : integridadeMedia >= 50 ? "bg-yellow-400" : "bg-red-500"
+                    }`}
+                  style={{ width: `${integridadeMedia}%` }}
                 />
               </div>
               <span className="text-muted-foreground text-xs">Media de integridade da frota</span>
@@ -494,18 +489,9 @@ export default function MaquinasPage() {
                     </div>
                   </div>
                   <Separator />
-                  <div className="flex flex-col gap-2">
-                    <Label className="text-muted-foreground text-xs">Integridade</Label>
-                    <IntegridadeBar value={maquinaSelecionada.integridade} />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label className="text-muted-foreground text-xs">Score de estabilidade</Label>
-                    <IntegridadeBar value={maquinaSelecionada.scoreEstabilidade} />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-muted-foreground text-xs">Ultimo sinal</Label>
-                    <span className="text-sm">{tempoRelativo(maquinaSelecionada.ultimaLeituraEm)}</span>
-                  </div>
+                  <div className="flex flex-col gap-2"><Label className="text-muted-foreground text-xs">Integridade</Label><IntegridadeBar value={maquinaSelecionada.integridade} /></div>
+                  <div className="flex flex-col gap-2"><Label className="text-muted-foreground text-xs">Score de estabilidade</Label><IntegridadeBar value={maquinaSelecionada.scoreEstabilidade} /></div>
+                  <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs  text-right!">Último sinal</Label><span className="text-sm ">{tempoRelativo(maquinaSelecionada.ultimaLeituraEm)}</span></div>
                   <Separator />
                   <div className="flex gap-2">
                     <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(maquinaSelecionada), 100) }} disabled={salvando}>
