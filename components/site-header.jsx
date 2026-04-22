@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useAuthSession } from "@/hooks/use-auth-session"
+import { formatRoleLabel } from "@/lib/user-models"
 import {
   Tooltip,
   TooltipContent,
@@ -86,6 +88,7 @@ function getSaudacao() {
 
 export function SiteHeader() {
   const { resolvedTheme, setTheme } = useTheme()
+  const session = useAuthSession()
   const [painelAberto, setPainelAberto] = React.useState(false)
   const [notificacoes, setNotificacoes] = React.useState(MOCK_NOTIFICACOES)
   const panelRef = React.useRef(null)
@@ -131,6 +134,9 @@ export function SiteHeader() {
     setNotificacoes((prev) => prev.filter((n) => n.id !== id))
   }
 
+  const roleLabel = session?.role ? formatRoleLabel(session.role) : ""
+  const nomeUsuario = session?.usuario?.nome || roleLabel || "Usuario Orbis"
+
   return (
     <header className="flex h-[90px] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
@@ -170,7 +176,7 @@ export function SiteHeader() {
 
 
           <h2 className="text-sm text-muted-foreground font-normal m-0! dark:text-white!">
-            {getSaudacao()}, Administrador!
+            {getSaudacao()}, {nomeUsuario}! {roleLabel ? `(${roleLabel})` : ""}
           </h2>
         </div>
 

@@ -9,7 +9,7 @@ import { AlertasProvider } from "@/components/context/alertas-context"
 import { MaquinasProvider } from "@/components/context/maquinas-context"
 import { SensoresProvider } from "@/components/context/sensores-context"
 import { TecnicosProvider } from "@/components/context/tecnicos-context"
-import { getValidAuthSession } from "@/lib/auth-session"
+import { getValidAuthSession, subscribeToAuthSessionChange } from "@/lib/auth-session"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import SmoothScroll from "@/components/SmootScroll"
@@ -38,18 +38,14 @@ export default function DashboardLayout({ children }) {
 
     validateSession()
 
-    function handleStorageChange(event) {
-      if (event.key && event.key !== "orbis-auth-session") {
-        return
-      }
-
+    function handleSessionUpdate() {
       validateSession()
     }
 
-    window.addEventListener("storage", handleStorageChange)
+    const unsubscribe = subscribeToAuthSessionChange(handleSessionUpdate)
 
     return () => {
-      window.removeEventListener("storage", handleStorageChange)
+      unsubscribe()
     }
   }, [router])
 

@@ -2,6 +2,8 @@
 
 import * as React from "react"
 
+import { useAuthSession } from "@/hooks/use-auth-session"
+import { formatRoleLabel } from "@/lib/user-models"
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -12,18 +14,11 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon, WashingMachineIcon, AlertTriangleIcon, NfcIcon } from "lucide-react"
+import { LayoutDashboardIcon, Settings2Icon, CircleHelpIcon, SearchIcon, WashingMachineIcon, AlertTriangleIcon, NfcIcon, UsersIcon } from "lucide-react"
 
-const data = {
-  user: {
-    name: "Orbis Admin",
-    email: "orbis@gmail.com",
-    avatar: "/Orbis.svg",
-  },
-  navMain: [
+const NAV_MAIN_ITEMS = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -49,62 +44,9 @@ const data = {
     url: "/dashboard/tecnicos",
     icon: <UsersIcon />,
   },
-],
-  navClouds: [
-    {
-      title: "Capturar Imagem",
-      icon: (
-        <CameraIcon />
-      ),
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Propostas Ativas",
-          url: "#",
-        },
-        {
-          title: "Arquivadas",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Propostas",
-      icon: (
-        <FileTextIcon />
-      ),
-      url: "#",
-      items: [
-        {
-          title: "Propostas Ativas",
-          url: "#",
-        },
-        {
-          title: "Arquivadas",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: (
-        <FileTextIcon />
-      ),
-      url: "#",
-      items: [
-        {
-          title: "Propostas Ativas",
-          url: "#",
-        },
-        {
-          title: "Arquivadas",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
+]
+
+const NAV_SECONDARY_ITEMS = [
     {
       title: "Configurações",
       style: "text-muted-foreground dark:text-white!",
@@ -127,41 +69,23 @@ const data = {
         <SearchIcon className="dark:text-white" />
       ),
     },
-  ],
-  documents: [
-  ],
-}
+]
 
 export function AppSidebar({
   ...props
 }) {
-
-  const [userData, setUserData] = React.useState({
-    name: "Orbis Admin",
-    email: "carregando...",
-    avatar: "/Orbis.svg",
-  })
-
-   // ✅ Lê o localStorage assim que o componente aparece na tela
-  React.useEffect(() => {
-    const email = localStorage.getItem("orbis_user_email")
-    const name = localStorage.getItem("orbis_user_name")
-
-    if (email) {
-      setUserData({
-        name: name || "Orbis Admin",
-        email: email,
-        avatar: "/Orbis.svg",
-      })
-    }
-  }, []) // o [] significa: roda só uma vez, quando o componente abre
-
-    // Mova os dados do navMain, navSecondary etc. para fora ou mantenha aqui
-  const navData = {
-    navMain: [ /* ... seu navMain atual ... */ ],
-    navSecondary: [ /* ... seu navSecondary atual ... */ ],
-    documents: [],
+  const session = useAuthSession()
+  const isAdmin = session?.role === "ADMIN"
+  const userData = {
+    name: session?.usuario?.nome || "Usuario Orbis",
+    email: session?.usuario?.email || "carregando...",
+    avatar: session?.usuario?.foto || "/Orbis.svg",
+    roleLabel: session?.role ? formatRoleLabel(session.role) : "",
   }
+  const navMainItems = React.useMemo(
+    () => NAV_MAIN_ITEMS.filter((item) => (item.url === "/dashboard/tecnicos" ? isAdmin : true)),
+    [isAdmin]
+  )
 
   return (
     <Sidebar tourId="tour-sidebar" collapsible="offcanvas" {...props}>
@@ -175,9 +99,9 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto dark:text-white" />
+        <NavMain items={navMainItems} />
+        <NavDocuments items={[]} />
+        <NavSecondary items={NAV_SECONDARY_ITEMS} className="mt-auto dark:text-white" />
       </SidebarContent>
       <SidebarFooter>
           <NavUser user={userData} />

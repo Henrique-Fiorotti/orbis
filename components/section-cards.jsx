@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react"
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
 
-import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
+import { getAuthSession } from "@/lib/auth-session"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://orbis-5hnm.onrender.com"
+import { apiFetch } from "@/utils/apiFetch"
 
 const EMPTY_RESUMO = {
   totalMaquinas: 0,
@@ -85,23 +84,10 @@ export function SectionCards() {
       setMensagem("Carregando indicadores do dashboard...")
 
       try {
-        const response = await fetch(`${API_URL}/dashboard/resumo`, {
+        const payload = await apiFetch("/dashboard/resumo", {
+          auth: "auto",
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-          cache: "no-store",
         })
-
-        const payload = await response.json().catch(() => ({}))
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            clearAuthSession()
-          }
-
-          throw new Error(getErrorMessage(response.status, payload))
-        }
 
         if (!isActive) {
           return
@@ -115,9 +101,14 @@ export function SectionCards() {
           return
         }
 
+        const statusCode = error?.status ?? null
         setResumo(EMPTY_RESUMO)
         setStatus("error")
-        setMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar o resumo do dashboard.")
+        setMensagem(
+          error instanceof Error
+            ? error.message
+            : getErrorMessage(statusCode ?? 500, null)
+        )
       }
     }
 

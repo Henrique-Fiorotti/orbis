@@ -1,6 +1,6 @@
 "use server"
 
-const API_URL = process.env.API_URL || "https://orbis-5hnm.onrender.com"
+import { apiFetch } from "@/utils/apiFetch"
 
 export async function loginAction(formData) {
   const email = formData.get("email")
@@ -11,20 +11,18 @@ export async function loginAction(formData) {
   }
 
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    return await apiFetch("/auth/login", {
+      auth: "none",
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, senha }),
+      body: { email, senha },
     })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      return { error: errorData.mensagem || errorData.message || `Erro ${response.status}: falha na autenticacao.` }
-    }
-
-    return await response.json()
   } catch (error) {
     console.error("[loginAction]", error)
-    return { error: "Nao foi possivel conectar ao servidor. Tente novamente." }
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao servidor. Tente novamente.",
+    }
   }
 }

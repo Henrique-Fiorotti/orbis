@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { loginAction } from "@/app/actions/auth.actions";
 import { saveAuthSession } from "@/lib/auth-session";
+import { formatRoleLabel } from "@/lib/user-models";
 import { Eye, EyeOff } from 'lucide-react'
 import { useTheme } from "next-themes";
 
@@ -119,23 +120,16 @@ export default function LoginCard({isDark}) {
       return
     }
 
-    const email = formData.get("email")
-    localStorage.setItem("orbis_user_email", result.email || result.user?.email || email)
-    localStorage.setItem("orbis_user_name", result.name || result.user?.name || "Orbis Admin")
+    const session = saveAuthSession(result)
 
-    window.location.href = "/dashboard"
-
-    if (result) {
-      const session = saveAuthSession(result)
-
-      if (!session?.accessToken) {
-        alert("Login realizado, mas nao foi possivel iniciar a sessao.")
-        return
-      }
-
-      // alert("Login bem-sucedido!");
-      window.location.href = "/dashboard";
+    if (!session?.accessToken) {
+      alert("Login realizado, mas nao foi possivel iniciar a sessao.")
+      return
     }
+
+    const roleLabel = formatRoleLabel(session.role)
+    console.info(`[auth] Sessao iniciada para ${roleLabel.toLowerCase()}.`)
+    window.location.href = "/dashboard"
   }
 
   return (
