@@ -10,6 +10,7 @@ export interface RootLayoutProps extends WithChildrenProps {
 
 export interface DashboardLayoutProps extends WithChildrenProps {}
 
+export type Role = "ADMIN" | "TECNICO";
 export type Criticidade = "ALTA" | "MEDIA" | "BAIXA";
 export type StatusMaquina = "OK" | "ALERTA";
 
@@ -72,10 +73,13 @@ export interface Tecnico {
   email: string;
   telefone: string;
   especialidade: string;
+  setor: string;
   status: StatusTecnico;
   alertasAtendidos: number;
   criadoEm: string;
+  ultimoLoginEm: string;
   foto: string | null;
+  role: Role;
 }
 
 export interface NovoTecnicoInput {
@@ -83,8 +87,10 @@ export interface NovoTecnicoInput {
   email: string;
   telefone: string;
   especialidade: string;
+  setor: string;
   status: StatusTecnico;
   foto: string | null;
+  role: Role;
 }
 
 export type AtualizacaoTecnicoInput = Partial<NovoTecnicoInput>;
@@ -147,10 +153,16 @@ export interface SensoresContextValue {
 
 export interface TecnicosContextValue {
   tecnicos: Tecnico[];
-  adicionarTecnico: (dados: NovoTecnicoInput) => Tecnico;
-  editarTecnico: (id: number, dados: AtualizacaoTecnicoInput) => void;
-  excluirTecnico: (id: number) => void;
-  resetarDados: () => void;
+  status: "idle" | "loading" | "success" | "error";
+  mensagem: string;
+  carregando: boolean;
+  salvando: boolean;
+  adicionarTecnico: (dados: NovoTecnicoInput) => Promise<Tecnico>;
+  editarTecnico: (id: number, dados: AtualizacaoTecnicoInput) => Promise<Tecnico>;
+  excluirTecnico: (id: number) => Promise<void>;
+  buscarTecnicoPorId: (id: number) => Tecnico | null;
+  recarregarTecnicos: () => Promise<void>;
+  resetarDados: () => Promise<void>;
 }
 
 export interface AlertasContextValue {

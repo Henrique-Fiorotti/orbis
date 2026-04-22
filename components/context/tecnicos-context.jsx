@@ -1,7 +1,15 @@
 "use client"
 
 import * as React from "react"
-import dadosIniciais from "@/app/dashboard/tecnicos/data.json"
+
+import { clearAuthSession, getAuthSession, isAdminSession } from "@/lib/auth-session"
+import {
+  createTecnico,
+  deleteTecnico,
+  fetchTecnicos,
+  normalizeTecnico,
+  updateTecnico,
+} from "@/lib/users-api"
 
 /** @typedef {import("@/lib/orbis-types").WithChildrenProps} WithChildrenProps */
 /** @typedef {import("@/lib/orbis-types").Tecnico} Tecnico */
@@ -9,78 +17,159 @@ import dadosIniciais from "@/app/dashboard/tecnicos/data.json"
 /** @typedef {import("@/lib/orbis-types").AtualizacaoTecnicoInput} AtualizacaoTecnicoInput */
 /** @typedef {import("@/lib/orbis-types").TecnicosContextValue} TecnicosContextValue */
 
-const STORAGE_KEY = "orbis-tecnicos"
-
-/** @type {Tecnico[]} */
-const TECNICOS_INICIAIS = dadosIniciais
-
 /** @type {React.Context<TecnicosContextValue | null>} */
 const TecnicosContext = React.createContext(null)
-
-/**
- * @returns {Tecnico[]}
- */
-function carregarTecnicos() {
-  if (typeof window === "undefined") return TECNICOS_INICIAIS
-
-  try {
-    const salvo = localStorage.getItem(STORAGE_KEY)
-    return salvo ? /** @type {Tecnico[]} */ (JSON.parse(salvo)) : TECNICOS_INICIAIS
-  } catch {
-    return TECNICOS_INICIAIS
-  }
-}
 
 /**
  * @param {WithChildrenProps} props
  */
 export function TecnicosProvider({ children }) {
-  const [tecnicos, setTecnicos] = React.useState(() => carregarTecnicos())
+  const [tecnicos, setTecnicos] = React.useState([])
+  const [status, setStatus] = React.useState("idle")
+  const [mensagem, setMensagem] = React.useState("")
+  const [salvando, setSalvando] = React.useState(false)
+
+  const carregarTecnicos = React.useCallback(async ({ silent = false } = {}) => {
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      setTecnicos([])
+      setStatus("error")
+      setMensagem("Faca login para carregar os tecnicos.")
+      return
+    }
+
+    if (!isAdminSession(session)) {
+      setTecnicos([])
+      setStatus("idle")
+      setMensagem("")
+      return
+    }
+
+    if (!silent) {
+      setStatus("loading")
+      setMensagem("Carregando tecnicos...")
+    }
+
+    try {
+      const nextTecnicos = await fetchTecnicos()
+      setTecnicos(nextTecnicos)
+      setStatus("success")
+      setMensagem("")
+    } catch (error) {
+      if (error?.status === 401) {
+        clearAuthSession()
+      }
+
+      const nextMessage =
+        error instanceof Error ? error.message : "Nao foi possivel carregar os tecnicos."
+      setStatus("error")
+      setMensagem(nextMessage)
+      setTecnicos((current) => (silent ? current : []))
+      throw error
+    }
+  }, [])
 
   React.useEffect(() => {
+    carregarTecnicos().catch(() => {})
+  }, [carregarTecnicos])
+
+  const executarMutacao = React.useCallback(async (callback, fallbackLabel) => {
+    setSalvando(true)
+
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tecnicos))
-    } catch {}
-  }, [tecnicos])
+      const result = await callback()
+      await carregarTecnicos({ silent: true })
+      setStatus("success")
+      setMensagem("")
+      return result
+    } catch (error) {
+      if (error?.status === 401) {
+        clearAuthSession()
+      }
+
+      const nextMessage = error instanceof Error ? error.message : fallbackLabel
+      setStatus("error")
+      setMensagem(nextMessage)
+      throw error instanceof Error ? error : new Error(nextMessage)
+    } finally {
+      setSalvando(false)
+    }
+  }, [carregarTecnicos])
 
   /**
    * @param {NovoTecnicoInput} dados
    * @returns {Tecnico}
    */
-  function adicionarTecnico(dados) {
-    const novo = {
-      ...dados,
-      id: tecnicos.length > 0 ? Math.max(...tecnicos.map((tecnico) => tecnico.id)) + 1 : 1,
-      alertasAtendidos: 0,
-      criadoEm: new Date().toISOString(),
-    }
-
-    setTecnicos((prev) => [novo, ...prev])
-    return novo
-  }
+  const adicionarTecnico = React.useCallback(async (dados) => (
+    executarMutacao(
+      async () => normalizeTecnico(await createTecnico(dados), dados),
+      "Nao foi possivel cadastrar o tecnico."
+    )
+  ), [executarMutacao])
 
   /**
    * @param {number} id
    * @param {AtualizacaoTecnicoInput} dados
    */
-  function editarTecnico(id, dados) {
-    setTecnicos((prev) => prev.map((tecnico) => (tecnico.id === id ? { ...tecnico, ...dados } : tecnico)))
-  }
+  const editarTecnico = React.useCallback(async (id, dados) => (
+    executarMutacao(
+      async () => normalizeTecnico(await updateTecnico(id, dados), { id, ...dados }),
+      "Nao foi possivel atualizar o tecnico."
+    )
+  ), [executarMutacao])
 
   /**
    * @param {number} id
    */
-  function excluirTecnico(id) {
-    setTecnicos((prev) => prev.filter((tecnico) => tecnico.id !== id))
-  }
+  const excluirTecnico = React.useCallback(async (id) => {
+    await executarMutacao(
+      async () => {
+        await deleteTecnico(id)
+      },
+      "Nao foi possivel remover o tecnico."
+    )
+  }, [executarMutacao])
 
-  function resetarDados() {
-    setTecnicos(TECNICOS_INICIAIS)
-    localStorage.removeItem(STORAGE_KEY)
-  }
+  const buscarTecnicoPorId = React.useCallback((id) => (
+    tecnicos.find((tecnico) => tecnico.id === id) ?? null
+  ), [tecnicos])
+
+  const recarregarTecnicos = React.useCallback(async () => {
+    await carregarTecnicos()
+  }, [carregarTecnicos])
+
+  const resetarDados = React.useCallback(async () => {
+    await carregarTecnicos()
+  }, [carregarTecnicos])
+
+  const value = React.useMemo(() => ({
+    tecnicos,
+    status,
+    mensagem,
+    carregando: status === "loading",
+    salvando,
+    adicionarTecnico,
+    editarTecnico,
+    excluirTecnico,
+    buscarTecnicoPorId,
+    recarregarTecnicos,
+    resetarDados,
+  }), [
+    tecnicos,
+    status,
+    mensagem,
+    salvando,
+    adicionarTecnico,
+    editarTecnico,
+    excluirTecnico,
+    buscarTecnicoPorId,
+    recarregarTecnicos,
+    resetarDados,
+  ])
 
   return (
-    <TecnicosContext.Provider value={{ tecnicos, adicionarTecnico, editarTecnico, excluirTecnico, resetarDados }}>
+    <TecnicosContext.Provider value={value}>
       {children}
     </TecnicosContext.Provider>
   )
