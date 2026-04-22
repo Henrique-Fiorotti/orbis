@@ -77,7 +77,7 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <Link href="dashboard/perfil">
+              <Link href="/dashboard/perfil">
                 <DropdownMenuItem className={"cursor-pointer"}>
                   <CircleUserRoundIcon />
                   Perfil
