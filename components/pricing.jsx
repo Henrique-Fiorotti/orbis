@@ -37,7 +37,7 @@ const Pricing = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-15! py-12 text-zinc-950 transition-colors dark:bg-[#09090b] dark:text-zinc-50">
       <h2 className="text-center text-4xl! font-semibold tracking-[-0.03em]">
-        Nossos <span className="text-[#5E17EB]">planos</span>
+        Nossos <span style={{ color: "var(--landing-accent-strong, #5E17EB)" }}>planos</span>
       </h2>
       <p className="mt-3 text-center text-xl text-muted-foreground dark:text-zinc-400">
         Escolha o plano que se adeque as suas necessidades <br /> e comece hoje
@@ -52,7 +52,15 @@ const Pricing = () => {
           >
             <h3 className="text-lg font-medium">{plan.name}</h3>
             <h4
-              className={`${plan.isPopular ? "h-7 w-26 rounded-[15px] border border-[#5E17EB] pt-1 text-center text-[11pt]! text-2xl font-bold text-[#5E17EB]!" : ""}`}
+              className={`${plan.isPopular ? "h-7 w-26 rounded-[15px] pt-1 text-center text-[11pt]! text-2xl font-bold!" : ""}`}
+              style={
+                plan.isPopular
+                  ? {
+                      border: "1px solid var(--landing-accent-strong, #5E17EB)",
+                      color: "var(--landing-accent-strong, #5E17EB)",
+                    }
+                  : undefined
+              }
             >
               {plan.isPopular ? "Popular" : ""}
             </h4>

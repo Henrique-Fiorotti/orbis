@@ -70,7 +70,7 @@ const Footer = () => {
             {/* Brand column */}
             <div className="col-span-full lg:col-span-4">
               <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-100 ease-in-out fill-mode-both">
-                <a href="/">
+                <a href="/" aria-label="Orbis - Página inicial">
                   <Logo />
                 </a>
 
@@ -108,7 +108,7 @@ const Footer = () => {
                       <li key={title}>
                         <a
                           href={href}
-                          className="text-[#6b7280]! hover:text-[#5e17eb]! no-underline! text-sm font-normal transition-colors duration-150">
+                          className="text-[#6b7280]! dark:text-[#9ca3af]! hover:text-[#5e17eb]! dark:hover:text-[#b794ff]! no-underline! text-sm font-normal transition-colors duration-150">
                           {title}
                         </a>
                       </li>

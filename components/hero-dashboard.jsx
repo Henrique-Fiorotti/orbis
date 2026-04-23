@@ -1,75 +1,51 @@
-import Image from "next/image";
 import Link from "next/link";
 
-export default function HeroDashboard({ isDark }) {
+import ThemeAwareImage from "@/components/landing/theme-aware-image";
+
+export default function HeroDashboard() {
   return (
-    <>
-      <div className="w-full flex justify-between gap-12 px-[15%] py-12 text-zinc-950 transition-colors dark:text-zinc-50">
-        <div className="w-1/4 flex flex-col justify-between gap-6">
-          <div>
-            <p
-              style={{
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                letterSpacing: "0.12em",
-                color: "#7c3aed",
-                textTransform: "uppercase",
-                marginBottom: "12px",
-              }}
-            >
-              Interface grafica
-            </p>
-            <h1 className="font-poppins text-[33pt]/11! font-thin!">
-              Dashboard <br />
-              Preventivo
-            </h1>
-            <p className="text-[15pt]/6 text-gray-400 dark:text-zinc-400">
-              Gestao geral das suas maquinas, interface intuitiva, sua empresa
-              na sua tela.
-            </p>
-          </div>
-          <Link
-            href="/login"
+    <div className="w-full flex justify-between gap-12 px-[15%] py-12 text-zinc-950 transition-colors dark:text-zinc-50">
+      <div className="w-1/4 flex flex-col justify-between gap-6">
+        <div>
+          <p
             style={{
-              background: "#7b39ed",
-              color: "#fff",
-              padding: "13px 28px",
-              borderRadius: "10px",
+              fontSize: "0.75rem",
               fontWeight: 600,
-              fontSize: "0.9rem",
-              fontFamily: "'Poppins', sans-serif",
-              textDecoration: "none",
-              letterSpacing: "0.01em",
-              textAlign: "center",
-              transition:
-                "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), background-color 0.2s ease",
-              display: "inline-block",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "white";
-              e.currentTarget.style.color = "#7b39ed";
-              e.currentTarget.style.border = "2px solid #7b39ed";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "none";
-              e.currentTarget.style.color = "#fff";
-              e.currentTarget.style.backgroundColor = "#7b39ed";
-              e.currentTarget.style.border = "2px solid transparent";
+              letterSpacing: "0.12em",
+              color: "var(--landing-accent-label, #7c3aed)",
+              textTransform: "uppercase",
+              marginBottom: "12px",
             }}
           >
-            Comece agora
-          </Link>
+            Interface grafica
+          </p>
+          <h1 className="font-poppins text-[33pt]/11! font-thin!">
+            Dashboard <br />
+            Preventivo
+          </h1>
+          <p className="text-[15pt]/6 text-gray-400 dark:text-zinc-400">
+            Gestao geral das suas maquinas, interface intuitiva, sua empresa na sua
+            tela.
+          </p>
         </div>
-        <div className="w-2/4 h-[100%]">
-          <Image
-            className="h-[100%] object-cover! transition-transform duration-300"
-            src={isDark ? "/Orbis-hero-dashboard-dark.svg" : "/orbis_dashboard_hero.svg"}
-            alt="Dashboard Preventivo"
-            width={600}
-            height={500}
-          />
-        </div>
+        <Link
+          href="/login"
+          prefetch={false}
+          className="inline-block rounded-[10px] border-2 border-transparent bg-[#7b39ed] px-7 py-[13px] text-center font-[Poppins] text-[0.9rem] font-semibold tracking-[0.01em] text-white transition-[background-color,color,border-color,transform] duration-200 hover:border-[#7b39ed] hover:bg-white hover:text-[#7b39ed]"
+        >
+          Comece agora
+        </Link>
       </div>
-    </>
+      <div className="h-full min-w-[280px] flex-[1.5]">
+        <ThemeAwareImage
+          className="h-full w-full object-cover"
+          lightSrc="/orbis_dashboard_hero.svg"
+          darkSrc="/Orbis-hero-dashboard-dark.svg"
+          alt="Dashboard Preventivo"
+          width="600"
+          height="500"
+        />
+      </div>
+    </div>
   );
 }
