@@ -1,27 +1,111 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
 
 const faqs = [
-  { question: "O que é o Orbis?", answer: "O Orbis é uma plataforma completa de gestão e comunicação para empresas e equipes que buscam mais eficiência no dia a dia." },
-  { question: "Como posso criar minha conta?", answer: "Basta acessar o site, clicar em 'Criar conta' e preencher seus dados. O processo leva menos de 2 minutos." },
-  { question: "O Orbis é gratuito?", answer: "Oferecemos um plano gratuito com funcionalidades essenciais. Para recursos avançados, confira nossos planos pagos." },
-  { question: "Como entro em contato com o suporte?", answer: "Você pode entrar em contato pelo WhatsApp, telefone SAC ou pelo e-mail suporte.orbis@gmail.com listados ao lado." },
-  { question: "Posso cancelar minha assinatura a qualquer momento?", answer: "Sim, o cancelamento pode ser feito a qualquer momento diretamente pelo painel da sua conta, sem burocracia." },
+  {
+    question: "O que é o Orbis?",
+    answer:
+      "O Orbis é uma plataforma completa de gestão e comunicação para empresas e equipes que buscam mais eficiência no dia a dia.",
+  },
+  {
+    question: "Como posso criar minha conta?",
+    answer:
+      "Basta acessar o site, clicar em 'Criar conta' e preencher seus dados. O processo leva menos de 2 minutos.",
+  },
+  {
+    question: "O Orbis é gratuito?",
+    answer:
+      "Oferecemos um plano gratuito com funcionalidades essenciais. Para recursos avançados, confira nossos planos pagos.",
+  },
+  {
+    question: "Como entro em contato com o suporte?",
+    answer:
+      "Você pode entrar em contato pelo WhatsApp, telefone SAC ou pelo e-mail suporte.orbis@gmail.com listados ao lado.",
+  },
+  {
+    question: "Posso cancelar minha assinatura a qualquer momento?",
+    answer:
+      "Sim, o cancelamento pode ser feito a qualquer momento diretamente pelo painel da sua conta, sem burocracia.",
+  },
 ];
 
-const WhatsAppIcon = ({ size = 46 }) => (
-  <img src="/whatsapp-128-svgrepo-com.svg" alt="WhatsApp" width={size} height={size} />
+const themeColors = {
+  light: {
+    pageBg: "#ffffff",
+    panelBg: "#ffffff",
+    panelBorder: "#ddd6fe",
+    panelShadow: "0 4px 32px rgba(124,58,237,0.07)",
+    divider: "#ddd6fe",
+    faqBorder: "#f0eaff",
+    text: "#374151",
+    muted: "#9ca3af",
+    answer: "#6b7280",
+    cardBg: "#ffffff",
+    cardBgHover: "linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%)",
+    cardBorder: "#ddd6fe",
+    cardShadow: "0 2px 12px rgba(0,0,0,0.05)",
+    cardShadowHover: "0 12px 40px rgba(124,58,237,0.15)",
+    inputBg: "#fafafa",
+    inputBorder: "#e5e7eb",
+    inputText: "#111111",
+    inputPlaceholder: "#9ca3af",
+  },
+  dark: {
+    pageBg: "#09090b",
+    panelBg: "#111114",
+    panelBorder: "rgba(167,139,250,0.22)",
+    panelShadow: "0 14px 40px rgba(0,0,0,0.38)",
+    divider: "rgba(167,139,250,0.28)",
+    faqBorder: "rgba(255,255,255,0.08)",
+    text: "#e4e4e7",
+    muted: "#a1a1aa",
+    answer: "#d4d4d8",
+    cardBg: "#18181b",
+    cardBgHover:
+      "linear-gradient(135deg, rgba(124,58,237,0.18) 0%, rgba(39,39,42,0.95) 100%)",
+    cardBorder: "rgba(167,139,250,0.2)",
+    cardShadow: "0 2px 16px rgba(0,0,0,0.28)",
+    cardShadowHover: "0 18px 40px rgba(124,58,237,0.18)",
+    inputBg: "#18181b",
+    inputBorder: "#27272a",
+    inputText: "#f5f5f5",
+    inputPlaceholder: "#71717a",
+  },
+};
+
+const WhatsAppIcon = ({ size = 46, isDark = false }) => (
+  <img
+    src="/whatsapp-128-svgrepo-com.svg"
+    alt="WhatsApp"
+    width={size}
+    height={size}
+    style={{
+      filter: isDark ? "brightness(0) invert(1)" : "none",
+      transition: "filter 0.25s ease",
+    }}
+  />
 );
 
-const EmailIcon = ({ size = 37 }) => (
-  <img src="/email-1572-svgrepo-com.svg" alt="Email" width={size} height={size} />
+const EmailIcon = ({ size = 37, isDark = false }) => (
+  <img
+    src="/email-1572-svgrepo-com.svg"
+    alt="Email"
+    width={size}
+    height={size}
+    style={{
+      filter: isDark ? "brightness(0) invert(1)" : "none",
+      transition: "filter 0.25s ease",
+    }}
+  />
 );
 
 const ChevronIcon = ({ open }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="18" height="18"
+    width="18"
+    height="18"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -43,26 +127,33 @@ function FaqItem({ faq, index, open, onToggle }) {
   return (
     <div
       style={{
-        borderBottom: "1px solid #f0eaff",
+        borderBottom: "1px solid var(--contact-faq-border)",
         overflow: "hidden",
       }}
     >
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between py-3 px-1 text-left group"
+        className="group flex w-full items-center justify-between px-1 py-3 text-left"
         style={{ background: "none", border: "none", cursor: "pointer" }}
       >
         <span
           style={{
             fontSize: "0.875rem",
             fontWeight: 500,
-            color: open ? "#7c3aed" : "#374151",
+            color: open ? "#7c3aed" : "var(--contact-text)",
             transition: "color 0.25s ease",
           }}
         >
           {index + 1}. {faq.question}
         </span>
-        <span style={{ color: open ? "#7c3aed" : "#9ca3af", transition: "color 0.25s ease", flexShrink: 0, marginLeft: 8 }}>
+        <span
+          style={{
+            color: open ? "#7c3aed" : "var(--contact-muted)",
+            transition: "color 0.25s ease",
+            flexShrink: 0,
+            marginLeft: 8,
+          }}
+        >
           <ChevronIcon open={open} />
         </span>
       </button>
@@ -79,7 +170,7 @@ function FaqItem({ faq, index, open, onToggle }) {
         <p
           style={{
             fontSize: "0.8rem",
-            color: "#6b7280",
+            color: "var(--contact-answer)",
             lineHeight: 1.7,
             padding: "0 4px 14px",
           }}
@@ -105,26 +196,46 @@ function ContactCard({ href, icon, label, value, delay = 0 }) {
         display: "flex",
         alignItems: "center",
         gap: "20px",
-        border: `2px solid ${hovered ? "#7c3aed" : "#ddd6fe"}`,
+        flex: "1 1 0",
+        border: hovered
+          ? "2px solid #7c3aed"
+          : "2px solid var(--contact-card-border)",
         borderRadius: "16px",
         padding: "20px 24px",
-        width: "390px",
-        height: "33%",
+        width: "100%",
+        minHeight: "calc((100% - 28px) / 3)",
         textDecoration: "none",
-        background: hovered ? "linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%)" : "#fff",
+        background: hovered
+          ? "var(--contact-card-bg-hover)"
+          : "var(--contact-card-bg)",
         boxShadow: hovered
-          ? "0 12px 40px rgba(124,58,237,0.15)"
-          : "0 2px 12px rgba(0,0,0,0.05)",
+          ? "var(--contact-card-shadow-hover)"
+          : "var(--contact-card-shadow)",
         transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
         animationDelay: `${delay}ms`,
       }}
     >
       <div style={{ flexShrink: 0 }}>{icon}</div>
       <div>
-        <p style={{ fontSize: "1rem", fontWeight: 600, color: "#7c3aed", margin: 0, lineHeight: 1.3 }}>
+        <p
+          style={{
+            fontSize: "1rem",
+            fontWeight: 600,
+            color: "#7c3aed",
+            margin: 0,
+            lineHeight: 1.3,
+          }}
+        >
           {value}
         </p>
-        <p style={{ fontSize: "0.75rem", color: "#9ca3af", margin: "3px 0 0", fontWeight: 400 }}>
+        <p
+          style={{
+            fontSize: "0.75rem",
+            color: "var(--contact-muted)",
+            margin: "3px 0 0",
+            fontWeight: 400,
+          }}
+        >
           {label}
         </p>
       </div>
@@ -147,12 +258,14 @@ function FloatingInput({ placeholder, type = "text", className = "" }) {
         onBlur={() => setFocused(false)}
         style={{
           width: "100%",
-          border: `1.5px solid ${focused ? "#7c3aed" : "#e5e7eb"}`,
+          border: focused
+            ? "1.5px solid #7c3aed"
+            : "1.5px solid var(--contact-input-border)",
           borderRadius: "10px",
           padding: "14px 14px 6px",
           fontSize: "0.875rem",
-          color: "#111",
-          background: "#fafafa",
+          color: "var(--contact-input-text)",
+          background: "var(--contact-input-bg)",
           outline: "none",
           transition: "border-color 0.25s ease, box-shadow 0.25s ease",
           boxSizing: "border-box",
@@ -166,7 +279,7 @@ function FloatingInput({ placeholder, type = "text", className = "" }) {
           top: active ? "5px" : "50%",
           transform: active ? "translateY(0)" : "translateY(-50%)",
           fontSize: active ? "0.65rem" : "0.85rem",
-          color: focused ? "#7c3aed" : "#9ca3af",
+          color: focused ? "#7c3aed" : "var(--contact-input-placeholder)",
           fontWeight: active ? 500 : 400,
           pointerEvents: "none",
           transition: "all 0.22s cubic-bezier(0.4,0,0.2,1)",
@@ -194,12 +307,14 @@ function FloatingTextarea({ placeholder }) {
         onBlur={() => setFocused(false)}
         style={{
           width: "100%",
-          border: `1.5px solid ${focused ? "#7c3aed" : "#e5e7eb"}`,
+          border: focused
+            ? "1.5px solid #7c3aed"
+            : "1.5px solid var(--contact-input-border)",
           borderRadius: "10px",
           padding: "22px 14px 8px",
           fontSize: "0.875rem",
-          color: "#111",
-          background: "#fafafa",
+          color: "var(--contact-input-text)",
+          background: "var(--contact-input-bg)",
           outline: "none",
           resize: "none",
           transition: "border-color 0.25s ease, box-shadow 0.25s ease",
@@ -214,7 +329,7 @@ function FloatingTextarea({ placeholder }) {
           left: "14px",
           top: active ? "6px" : "14px",
           fontSize: active ? "0.65rem" : "0.85rem",
-          color: focused ? "#7c3aed" : "#9ca3af",
+          color: focused ? "#7c3aed" : "var(--contact-input-placeholder)",
           fontWeight: active ? 500 : 400,
           pointerEvents: "none",
           transition: "all 0.22s cubic-bezier(0.4,0,0.2,1)",
@@ -228,59 +343,89 @@ function FloatingTextarea({ placeholder }) {
 }
 
 export default function ContatoPage() {
+  const { resolvedTheme } = useTheme();
   const [openFaq, setOpenFaq] = useState(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const colors = mounted && resolvedTheme === "dark"
+    ? themeColors.dark
+    : themeColors.light;
+  const isDark = mounted && resolvedTheme === "dark";
 
   return (
     <div
+      className="px-4 pb-16 pt-28 sm:px-6 md:px-8 lg:px-10"
       style={{
+        "--contact-page-bg": colors.pageBg,
+        "--contact-panel-bg": colors.panelBg,
+        "--contact-panel-border": colors.panelBorder,
+        "--contact-panel-shadow": colors.panelShadow,
+        "--contact-divider": colors.divider,
+        "--contact-faq-border": colors.faqBorder,
+        "--contact-text": colors.text,
+        "--contact-muted": colors.muted,
+        "--contact-answer": colors.answer,
+        "--contact-card-bg": colors.cardBg,
+        "--contact-card-bg-hover": colors.cardBgHover,
+        "--contact-card-border": colors.cardBorder,
+        "--contact-card-shadow": colors.cardShadow,
+        "--contact-card-shadow-hover": colors.cardShadowHover,
+        "--contact-input-bg": colors.inputBg,
+        "--contact-input-border": colors.inputBorder,
+        "--contact-input-text": colors.inputText,
+        "--contact-input-placeholder": colors.inputPlaceholder,
         minHeight: "100vh",
         maxWidth: "100%",
-        background: "white",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "115px 24px 120px 24px !important",
+        background: "var(--contact-page-bg)",
         fontFamily: "'Inter', 'Segoe UI', sans-serif",
+        transition: "background-color 0.25s ease, color 0.25s ease",
       }}
     >
       <div
+        className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]"
         style={{
-          width: "100%",
-          maxWidth: "73%",
-          display: "flex",
-          gap: "28px",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
+          alignItems: "stretch",
         }}
       >
-
-        {/* LEFT — scrollable panel */}
         <div
+          className="min-w-0"
           style={{
-            border: "2px solid #ddd6fe",
+            border: "2px solid var(--contact-panel-border)",
             borderRadius: "20px",
             overflowY: "auto",
-            minHeight: "560px",
-            width: "650px",
-            background: "#fff",
-            boxShadow: "0 4px 32px rgba(124,58,237,0.07)",
+            minHeight: "clamp(480px, 68vh, 720px)",
+            background: "var(--contact-panel-bg)",
+            boxShadow: "var(--contact-panel-shadow)",
             scrollbarWidth: "thin",
-            scrollbarColor: "#ddd6fe transparent",
+            scrollbarColor: "var(--contact-panel-border) transparent",
+            transition:
+              "background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease",
           }}
         >
-          {/* Nos Contate */}
           <div style={{ padding: "36px 32px 28px" }}>
-            <img style={{
+            <img
+              style={{
                 width: "70px",
-                height: "70px"
-            }} src="/connect_icon_contact.svg" alt="" />
-            </div>
-            
+                height: "70px",
+              }}
+              src="/connect_icon_contact.svg"
+              alt=""
+            />
+          </div>
 
-          {/* Divider */}
-          <div style={{ height: "1px", background: "linear-gradient(to right, transparent, #ddd6fe, transparent)", margin: "0 24px" }} />
+          <div
+            style={{
+              height: "1px",
+              background:
+                "linear-gradient(to right, transparent, var(--contact-divider), transparent)",
+              margin: "0 24px",
+            }}
+          />
 
-          {/* Dúvidas Frequentes */}
           <div style={{ padding: "28px 32px 36px" }}>
             <div
               style={{
@@ -314,12 +459,11 @@ export default function ContatoPage() {
           </div>
         </div>
 
-        {/* RIGHT — contact cards */}
         <div
+          className="min-w-0 xl:sticky xl:top-28"
           style={{
-            flex: "0 1",
             display: "flex",
-            height: "560px",
+            minHeight: "clamp(420px, 68vh, 720px)",
             flexDirection: "column",
             gap: "14px",
             zIndex: 1,
@@ -327,27 +471,26 @@ export default function ContatoPage() {
         >
           <ContactCard
             href="https://wa.me/5511900000000"
-            icon={<WhatsAppIcon />}
+            icon={<WhatsAppIcon isDark={isDark} />}
             label="Whatsapp"
             value="+55 11 9000-0000"
             delay={0}
           />
           <ContactCard
             href="tel:+5511900000000"
-            icon={<WhatsAppIcon />}
+            icon={<WhatsAppIcon isDark={isDark} />}
             label="SAC"
             value="+55 11 9000-0000"
             delay={80}
           />
           <ContactCard
             href="mailto:suporte.orbis@gmail.com"
-            icon={<EmailIcon />}
+            icon={<EmailIcon isDark={isDark} />}
             label="E-mail"
             value="suporte.orbis@gmail.com"
             delay={160}
           />
         </div>
-
       </div>
     </div>
   );
