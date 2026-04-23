@@ -1,7 +1,5 @@
 import Header from '@/components/Header'
 import { Poppins, Open_Sans } from 'next/font/google'
-import Head from 'next/head'
-import FooterPage from '../footer-01/page'
 import Footer from '@/components/shadcn-space/blocks/footer-01/footer'
 import HomeLoader from "@/components/Loader/HomeLoader"
 import SmoothScroll from '@/components/SmootScroll'
@@ -25,7 +23,7 @@ export default function RootLayout({ children }) {
       <Header />
       <HomeLoader />
       <SmoothScroll>
-        {children}
+        <main>{children}</main>
       </SmoothScroll>
       <Footer />
     </div>
