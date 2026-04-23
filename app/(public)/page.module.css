@@ -1,0 +1,266 @@
+.root {
+  --landing-page-bg: #fff;
+  --landing-section-bg: #fff;
+  --landing-alt-bg: #fafafa;
+  --landing-quote-bg: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  --landing-accent-label: #7c3aed;
+  --landing-accent-strong: #5e17eb;
+  --landing-text: #111;
+  --landing-heading: #212121;
+  --landing-muted: #6b7280;
+  --landing-subtle: #9ca3af;
+  --landing-grid-dot: #e9d5ff;
+  --landing-secondary-border: #e5e7eb;
+  --landing-button-bg: #212121;
+  --landing-button-fg: #ffffff;
+  --landing-pulse-ring: rgba(0, 0, 0, 0.25);
+  --landing-feature-bg: #fff;
+  --landing-feature-border: #ede9fe;
+  --landing-feature-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --landing-feature-shadow-hover: 0 16px 48px rgba(124, 58, 237, 0.12);
+  font-family: "DM Sans", "Segoe UI", sans-serif;
+  background: var(--landing-page-bg);
+  color: var(--landing-text);
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+:global(.dark) .root {
+  --landing-page-bg: #09090b;
+  --landing-section-bg: #09090b;
+  --landing-alt-bg: #111114;
+  --landing-quote-bg: linear-gradient(135deg, #171127 0%, #0f0b1c 100%);
+  --landing-accent-label: #b794ff;
+  --landing-accent-strong: #c5a3ff;
+  --landing-text: #f4f4f5;
+  --landing-heading: #fafafa;
+  --landing-muted: #a1a1aa;
+  --landing-subtle: #71717a;
+  --landing-grid-dot: rgba(167, 139, 250, 0.35);
+  --landing-secondary-border: rgba(255, 255, 255, 0.12);
+  --landing-button-bg: #f4f4f5;
+  --landing-button-fg: #09090b;
+  --landing-pulse-ring: rgba(255, 255, 255, 0.16);
+  --landing-feature-bg: #111114;
+  --landing-feature-border: rgba(255, 255, 255, 0.08);
+  --landing-feature-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+}
+
+:global(html) {
+  scroll-behavior: smooth;
+}
+
+.heroTitle,
+.heroSubtitle,
+.heroActions,
+.heroRegister,
+.heroScroll {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  animation: landingFadeUp 0.6s ease forwards;
+}
+
+.heroTitle {
+  animation-delay: 0.2s;
+}
+
+.heroSubtitle {
+  animation-delay: 0.35s;
+}
+
+.heroActions {
+  animation-delay: 0.45s;
+}
+
+.heroRegister {
+  animation-delay: 0.55s;
+}
+
+.heroScroll {
+  animation-delay: 0.8s;
+}
+
+.heroSpline,
+.heroSplineFallback {
+  position: relative;
+  width: 540px;
+  height: 440px;
+  border-radius: 10%;
+  pointer-events: none;
+  z-index: 0;
+  background: var(--landing-section-bg);
+}
+
+.heroSplineFrame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  transition: opacity 0.25s ease;
+}
+
+.heroSplineMask {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 11.25rem;
+  height: 3.75rem;
+  background: var(--landing-section-bg);
+}
+
+.primaryCta,
+.secondaryCta,
+.finalCta {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.primaryCta {
+  background: #7b39ed;
+  color: #fff;
+  padding: 13px 28px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  font-weight: 600;
+  font-size: 0.9rem;
+  font-family: "Poppins", sans-serif;
+  letter-spacing: 0.01em;
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.primaryCta:hover {
+  background-color: #fff;
+  color: #7b39ed;
+  border-color: #7b39ed;
+}
+
+.secondaryCta {
+  background: transparent;
+  color: var(--landing-heading);
+  padding: 13px 28px;
+  border-radius: 10px;
+  border: 2px solid var(--landing-secondary-border);
+  font-weight: 500;
+  font-size: 0.9rem;
+  font-family: "Poppins", sans-serif;
+  letter-spacing: 0.01em;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.secondaryCta:hover {
+  border-color: #7c3aed;
+  color: #7c3aed;
+}
+
+.registerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  color: #7c3aed;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 500;
+}
+
+.featureCard {
+  background: var(--landing-feature-bg);
+  border: 1.5px solid var(--landing-feature-border);
+  border-radius: 8px;
+  padding: 28px 24px;
+  box-shadow: var(--landing-feature-shadow);
+  transition:
+    border-color 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: default;
+}
+
+.featureCard:hover {
+  border-color: #7c3aed;
+  box-shadow: var(--landing-feature-shadow-hover);
+}
+
+.featureIcon {
+  width: 1.8rem;
+  height: 1.8rem;
+  margin-bottom: 14px;
+}
+
+.scrollButton {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--landing-button-bg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  animation: landingFloat 2.4s ease-in-out infinite;
+}
+
+.scrollButtonRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--landing-pulse-ring);
+  animation: landingPulseRing 2s ease-out infinite;
+}
+
+.scrollButtonIcon {
+  fill: var(--landing-button-fg);
+}
+
+.finalCta {
+  background: transparent;
+  color: #fff;
+  padding: 14px 32px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+  font-size: 0.9rem;
+  font-family: "Poppins", sans-serif;
+  transition: border-color 0.2s ease;
+}
+
+.finalCta:hover {
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes landingFadeUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes landingPulseRing {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+@keyframes landingFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
