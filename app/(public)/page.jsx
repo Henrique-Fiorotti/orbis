@@ -365,14 +365,10 @@ export default function HomePage() {
         </RevealOnScroll>
       </section>
 
-
-
-
-
-
-
   {/* aqui é onde deve ter o real sobre */}
-    <section> 
+    <section style={{
+          background: "var(--landing-alt-bg)",
+          transition: "background-color 0.25s ease"}}> 
      <SobreInformativo />
     </section>
     

@@ -8,7 +8,7 @@ import styles from "../app/(public)/page.module.css";
 
 export default function SobreInformativo() {
     return (
-        <section className="flex min-h-max bg-[#f0f0f0] dark:bg-zinc-900">
+        <section style={{background: "var(--landing-alt-bg)"}} className="flex min-h-max bg-[#f0f0f056] dark:bg-zinc-900">
             {/* Lado esquerdo - conteúdo */}
             <div className="w-500 flex flex-col justify-center pl-97 px-16 py-20 gap-10">
 
