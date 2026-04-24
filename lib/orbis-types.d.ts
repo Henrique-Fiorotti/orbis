@@ -46,20 +46,29 @@ export type StatusSensor = "ONLINE" | "OFFLINE";
 export interface Sensor {
   id: number;
   nome: string;
-  maquinaId: number;
+  tipo: string;
+  maquinaId: number | null;
   maquinaNome: string;
   status: StatusSensor;
+  active: boolean;
   ultimaLeituraEm: string;
+  limiteTemperatura: number;
+  idealTemperatura: number;
+  limiteVibracao: number;
+  idealVibracao: number;
   temperatura: SensorLeitura | null;
   vibracao: SensorLeitura | null;
 }
 
 export interface NovoSensorInput {
-  nome: string;
-  maquinaId: number;
-  maquinaNome: string;
-  temperatura: SensorLeitura | null;
-  vibracao: SensorLeitura | null;
+  tipo: string;
+  maquinaId: number | null;
+  status: StatusSensor;
+  active: boolean;
+  limiteTemperatura: number;
+  idealTemperatura: number;
+  limiteVibracao: number;
+  idealVibracao: number;
 }
 
 export type AtualizacaoSensorInput = Partial<NovoSensorInput>;
@@ -139,10 +148,15 @@ export interface MaquinasContextValue {
 
 export interface SensoresContextValue {
   sensores: Sensor[];
-  adicionarSensor: (dados: NovoSensorInput) => Sensor;
-  editarSensor: (id: number, dados: AtualizacaoSensorInput) => void;
-  excluirSensor: (id: number) => void;
-  resetarDados: () => void;
+  status: "loading" | "success" | "error";
+  mensagem: string;
+  carregando: boolean;
+  salvando: boolean;
+  adicionarSensor: (dados: NovoSensorInput) => Promise<void>;
+  editarSensor: (id: number, dados: AtualizacaoSensorInput) => Promise<void>;
+  excluirSensor: (id: number) => Promise<void>;
+  recarregarSensores: () => Promise<void>;
+  resetarDados: () => Promise<void>;
 }
 
 export interface TecnicosContextValue {

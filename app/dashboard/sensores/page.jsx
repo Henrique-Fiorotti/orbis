@@ -1,46 +1,77 @@
 "use client"
 
 import * as React from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
-import { useSensores } from "@/components/context/sensores-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
+import { useSensores } from "@/components/context/sensores-context"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Checkbox } from "@/components/ui/checkbox"
 import { SiteHeader } from "@/components/site-header"
 import {
-  CircleCheckIcon, WifiOffIcon, EllipsisVerticalIcon, PlusIcon,
-  ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
-  ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon,
-  NfcIcon, ThermometerIcon, ActivityIcon, AlertTriangleIcon,
+  ActivityIcon,
+  AlertTriangleIcon,
+  ArrowLeftIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
+  CircleCheckIcon,
+  EllipsisVerticalIcon,
+  EyeIcon,
+  NfcIcon,
+  PencilIcon,
+  PlusIcon,
+  RefreshCcwIcon,
+  SearchIcon,
+  ThermometerIcon,
+  Trash2Icon,
+  WifiOffIcon,
 } from "lucide-react"
 import {
-  flexRender, getCoreRowModel, getFilteredRowModel,
-  getPaginationRowModel, getSortedRowModel, useReactTable,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
 } from "@tanstack/react-table"
-import { cn, tempoRelativo } from "@/lib/utils"
+
+import { tempoRelativo } from "@/lib/utils"
+
+const SEM_MAQUINA_VALUE = "__sem_maquina__"
 
 const formVazio = {
-  nome: "", maquinaId: "", maquinaNome: "",
-  temperatura: { habilitado: true, limiteMin: "", limiteMax: "" },
-  vibracao: { habilitado: true, limiteMin: "", limiteMax: "" },
+  tipo: "",
+  maquinaId: "",
+  limiteTemperatura: "",
+  idealTemperatura: "",
+  limiteVibracao: "",
+  idealVibracao: "",
 }
 
 function StatusBadge({ value }) {
   const isOnline = value === "ONLINE"
+
   return (
-    <Badge variant="outline" className={`px-1.5 ${isOnline ? "text-green-700 bg-green-50 border-green-200" : "text-red-700 bg-red-50 border-red-200"}`}>
+    <Badge
+      variant="outline"
+      className={`px-1.5 ${
+        isOnline
+          ? "border-green-200 bg-green-50 text-green-700"
+          : "border-red-200 bg-red-50 text-red-700"
+      }`}
+    >
       {isOnline ? <CircleCheckIcon className="fill-green-600!" /> : <WifiOffIcon className="text-red-500" />}
       {value}
     </Badge>
@@ -48,29 +79,91 @@ function StatusBadge({ value }) {
 }
 
 function LeituraCell({ valor, unidade, limiteMin, limiteMax }) {
-  if (valor === undefined || valor === null) return <span className="text-muted-foreground text-sm">—</span>
+  if (valor === undefined || valor === null) {
+    return <span className="text-sm text-muted-foreground">--</span>
+  }
+
   const overLimit = valor > limiteMax || valor < limiteMin
   const pct = limiteMax > limiteMin ? Math.min(100, Math.max(0, ((valor - limiteMin) / (limiteMax - limiteMin)) * 100)) : 0
   const barColor = overLimit ? "bg-red-500" : pct > 80 ? "bg-yellow-400" : "bg-green-500"
+
   return (
-    <div className="flex flex-col gap-1 min-w-[110px]">
+    <div className="flex min-w-[110px] flex-col gap-1">
       <div className="flex items-center gap-1">
         <span className={`font-mono text-sm font-medium ${overLimit ? "text-red-600" : "text-foreground"}`}>
-          {valor}<span className="text-muted-foreground font-normal ml-0.5 text-xs">{unidade}</span>
+          {valor}
+          <span className="ml-0.5 text-xs font-normal text-muted-foreground">{unidade}</span>
         </span>
-        {overLimit && <AlertTriangleIcon className="size-3 text-red-500" />}
+        {overLimit ? <AlertTriangleIcon className="size-3 text-red-500" /> : null}
       </div>
-      <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
         <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   )
 }
 
+function StatePanel({ message, tone = "muted" }) {
+  return (
+    <div
+      className={`flex min-h-[280px] items-center justify-center rounded-lg border border-dashed px-4 text-center text-sm ${
+        tone === "error"
+          ? "border-destructive/30 bg-destructive/5 text-destructive"
+          : "border-border/60 bg-muted/20 text-muted-foreground"
+      }`}
+    >
+      {message}
+    </div>
+  )
+}
+
+function isFilledNumber(value) {
+  return Number.isFinite(parseFormNumber(value))
+}
+
+function parseFormNumber(value) {
+  const normalized = String(value).trim().replace(",", ".")
+
+  if (!normalized) {
+    return NaN
+  }
+
+  return Number(normalized)
+}
+
+function formatValue(value, suffix) {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return "--"
+  }
+
+  return `${parsed}${suffix}`
+}
+
+function getSelectedMaquinaId(value) {
+  if (!value || value === SEM_MAQUINA_VALUE) {
+    return null
+  }
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 export default function SensoresPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { sensores, adicionarSensor, editarSensor, excluirSensor } = useSensores()
+  const {
+    sensores,
+    status,
+    mensagem,
+    carregando,
+    salvando,
+    adicionarSensor,
+    editarSensor,
+    excluirSensor,
+    recarregarSensores,
+  } = useSensores()
   const { maquinas } = useMaquinas()
 
   const [busca, setBusca] = React.useState("")
@@ -82,107 +175,267 @@ export default function SensoresPage() {
   const [sensorExcluir, setSensorExcluir] = React.useState(null)
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
 
-  // --- Cards computed values ---
-  const totalOnline = sensores.filter(s => s.status === "ONLINE").length
-  const totalOffline = sensores.filter(s => s.status !== "ONLINE").length
-  const foraDoLimite = sensores.filter(s => {
-    const tempFora = s.temperatura && (s.temperatura.valorAtual > s.temperatura.limiteMax || s.temperatura.valorAtual < s.temperatura.limiteMin)
-    const vibFora = s.vibracao && (s.vibracao.valorAtual > s.vibracao.limiteMax || s.vibracao.valorAtual < s.vibracao.limiteMin)
+  const loadingInicial = carregando && sensores.length === 0
+  const errorSemDados = status === "error" && sensores.length === 0
+
+  const totalOnline = React.useMemo(() => sensores.filter((sensor) => sensor.status === "ONLINE").length, [sensores])
+  const totalOffline = React.useMemo(() => sensores.filter((sensor) => sensor.status !== "ONLINE").length, [sensores])
+  const semMaquina = React.useMemo(() => sensores.filter((sensor) => !sensor.maquinaId).length, [sensores])
+  const foraDoLimite = React.useMemo(() => sensores.filter((sensor) => {
+    const tempFora =
+      sensor.temperatura &&
+      (sensor.temperatura.valorAtual > sensor.temperatura.limiteMax ||
+        sensor.temperatura.valorAtual < sensor.temperatura.limiteMin)
+    const vibFora =
+      sensor.vibracao &&
+      (sensor.vibracao.valorAtual > sensor.vibracao.limiteMax ||
+        sensor.vibracao.valorAtual < sensor.vibracao.limiteMin)
+
     return tempFora || vibFora
-  }).length
-  const comAmbos = sensores.filter(s => s.temperatura && s.vibracao).length
+  }).length, [sensores])
 
   React.useEffect(() => {
-    if (searchParams.get("action") === "new") abrirCriar()
-  }, [])
+    if (searchParams.get("action") === "new") {
+      abrirCriar()
+    }
+  }, [searchParams])
 
-  function abrirCriar() { setModoSheet("criar"); setForm(formVazio); setSensorSelecionado(null); setSheetAberto(true) }
+  function abrirCriar() {
+    setModoSheet("criar")
+    setForm(formVazio)
+    setSensorSelecionado(null)
+    setSheetAberto(true)
+  }
+
   function abrirEditar(sensor) {
     setModoSheet("editar")
     setForm({
-      nome: sensor.nome, maquinaId: String(sensor.maquinaId), maquinaNome: sensor.maquinaNome,
-      temperatura: sensor.temperatura
-        ? { habilitado: true, limiteMin: String(sensor.temperatura.limiteMin), limiteMax: String(sensor.temperatura.limiteMax) }
-        : { habilitado: false, limiteMin: "", limiteMax: "" },
-      vibracao: sensor.vibracao
-        ? { habilitado: true, limiteMin: String(sensor.vibracao.limiteMin), limiteMax: String(sensor.vibracao.limiteMax) }
-        : { habilitado: false, limiteMin: "", limiteMax: "" },
+      tipo: sensor.tipo ?? "",
+      maquinaId: sensor.maquinaId ? String(sensor.maquinaId) : "",
+      limiteTemperatura: String(sensor.limiteTemperatura ?? ""),
+      idealTemperatura: String(sensor.idealTemperatura ?? ""),
+      limiteVibracao: String(sensor.limiteVibracao ?? ""),
+      idealVibracao: String(sensor.idealVibracao ?? ""),
     })
-    setSensorSelecionado(sensor); setSheetAberto(true)
+    setSensorSelecionado(sensor)
+    setSheetAberto(true)
   }
-  function abrirVer(sensor) { setModoSheet("ver"); setSensorSelecionado(sensor); setSheetAberto(true) }
-  function handleMaquinaChange(maquinaId) {
-    const maquina = maquinas.find(m => String(m.id) === maquinaId)
-    setForm(p => ({ ...p, maquinaId, maquinaNome: maquina?.nome ?? "" }))
-  }
-  function setTempField(field, value) { setForm(p => ({ ...p, temperatura: { ...p.temperatura, [field]: value } })) }
-  function setVibField(field, value) { setForm(p => ({ ...p, vibracao: { ...p.vibracao, [field]: value } })) }
 
-  function salvar() {
-    if (!form.nome.trim() || !form.maquinaId) { toast.error("Preencha o nome e a máquina vinculada."); return }
-    if (!form.temperatura.habilitado && !form.vibracao.habilitado) { toast.error("Habilite ao menos um sensor."); return }
-    if (form.temperatura.habilitado && (!form.temperatura.limiteMin || !form.temperatura.limiteMax)) { toast.error("Informe os limites do sensor de temperatura."); return }
-    if (form.vibracao.habilitado && (!form.vibracao.limiteMin || !form.vibracao.limiteMax)) { toast.error("Informe os limites do sensor de vibração."); return }
-    const payload = {
-      nome: form.nome, maquinaId: Number(form.maquinaId), maquinaNome: form.maquinaNome,
-      temperatura: form.temperatura.habilitado ? { valorAtual: 0, limiteMin: Number(form.temperatura.limiteMin), limiteMax: Number(form.temperatura.limiteMax) } : null,
-      vibracao: form.vibracao.habilitado ? { valorAtual: 0, limiteMin: Number(form.vibracao.limiteMin), limiteMax: Number(form.vibracao.limiteMax) } : null,
+  function abrirVer(sensor) {
+    setModoSheet("ver")
+    setSensorSelecionado(sensor)
+    setSheetAberto(true)
+  }
+
+  function handleMaquinaChange(value) {
+    const maquinaId = getSelectedMaquinaId(value)
+
+    setForm((current) => ({
+      ...current,
+      maquinaId: maquinaId === null ? "" : String(maquinaId),
+    }))
+  }
+
+  function setFormField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function validarFormulario() {
+    if (!form.tipo.trim()) {
+      toast.error("Informe o tipo do sensor.")
+      return false
     }
-    if (modoSheet === "criar") { adicionarSensor(payload); toast.success("Equipamento Orbis cadastrado com sucesso!") }
-    else { editarSensor(sensorSelecionado.id, payload); toast.success("Equipamento atualizado com sucesso!") }
-    setSheetAberto(false)
-  }
-  function confirmarExcluir(sensor) { setSensorExcluir(sensor); setDialogExcluir(true) }
-  function excluir() { excluirSensor(sensorExcluir.id); toast.success("Equipamento removido."); setDialogExcluir(false); setSheetAberto(false) }
 
-  const dadosFiltrados = React.useMemo(() =>
-    sensores.filter(s =>
-      s.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      s.maquinaNome.toLowerCase().includes(busca.toLowerCase())
-    ), [sensores, busca])
+    const requiredFields = [
+      ["limiteTemperatura", "Informe o limite de temperatura."],
+      ["idealTemperatura", "Informe a temperatura ideal."],
+      ["limiteVibracao", "Informe o limite de vibracao."],
+      ["idealVibracao", "Informe a vibracao ideal."],
+    ]
+
+    for (const [field, message] of requiredFields) {
+      if (!isFilledNumber(form[field])) {
+        toast.error(message)
+        return false
+      }
+    }
+
+    return true
+  }
+
+  function criarPayloadSensor() {
+    const maquinaId = getSelectedMaquinaId(form.maquinaId)
+    const vinculado = maquinaId !== null
+
+    return {
+      maquinaId,
+      tipo: form.tipo.trim(),
+      status: vinculado ? "ONLINE" : "OFFLINE",
+      active: vinculado,
+      limiteTemperatura: parseFormNumber(form.limiteTemperatura),
+      idealTemperatura: parseFormNumber(form.idealTemperatura),
+      limiteVibracao: parseFormNumber(form.limiteVibracao),
+      idealVibracao: parseFormNumber(form.idealVibracao),
+    }
+  }
+
+  async function salvar() {
+    if (!validarFormulario()) {
+      return
+    }
+
+    const payload = criarPayloadSensor()
+
+    try {
+      if (modoSheet === "criar") {
+        await adicionarSensor(payload)
+        toast.success(payload.maquinaId ? "Sensor cadastrado com sucesso!" : "Sensor cadastrado inativo, sem maquina vinculada.")
+      } else {
+        await editarSensor(sensorSelecionado.id, payload)
+        toast.success("Sensor atualizado com sucesso!")
+      }
+
+      setSheetAberto(false)
+      setForm(formVazio)
+      setSensorSelecionado(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar o sensor.")
+    }
+  }
+
+  function confirmarExcluir(sensor) {
+    setSensorExcluir(sensor)
+    setDialogExcluir(true)
+  }
+
+  function alternarDialogExcluir(open) {
+    setDialogExcluir(open)
+
+    if (!open) {
+      setSensorExcluir(null)
+    }
+  }
+
+  async function excluir() {
+    if (!sensorExcluir) {
+      return
+    }
+
+    try {
+      await excluirSensor(sensorExcluir.id)
+      toast.success("Sensor removido.")
+      setDialogExcluir(false)
+      setSheetAberto(false)
+      setSensorExcluir(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel remover o sensor.")
+    }
+  }
+
+  const dadosFiltrados = React.useMemo(() => sensores.filter((sensor) => {
+    const termo = busca.toLowerCase()
+
+    return (
+      sensor.nome.toLowerCase().includes(termo) ||
+      sensor.tipo.toLowerCase().includes(termo) ||
+      sensor.maquinaNome.toLowerCase().includes(termo)
+    )
+  }), [sensores, busca])
 
   const columns = [
     {
-      accessorKey: "nome", header: "Equipamento",
+      accessorKey: "tipo",
+      header: "Sensor",
       cell: ({ row }) => (
-        <button onClick={() => abrirVer(row.original)} className="text-left font-medium text-sm hover:underline hover:text-primary transition-colors">
-          {row.original.nome}
+        <button
+          onClick={() => abrirVer(row.original)}
+          className="text-left text-sm font-medium transition-colors hover:text-primary hover:underline"
+        >
+          {row.original.tipo}
         </button>
       ),
     },
-    { accessorKey: "maquinaNome", header: "Máquina", cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.maquinaNome}</span> },
+    {
+      accessorKey: "maquinaNome",
+      header: "Maquina",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {row.original.maquinaId ? row.original.maquinaNome : "Sem maquina vinculada"}
+        </span>
+      ),
+    },
     { accessorKey: "status", header: "Status", cell: ({ row }) => <StatusBadge value={row.original.status} /> },
     {
       id: "temperatura",
-      header: () => <div className="flex items-center gap-1"><ThermometerIcon color="#5E17EB" className="size-3.5" />Temperatura</div>,
+      header: () => (
+        <div className="flex items-center gap-1">
+          <ThermometerIcon color="#5E17EB" className="size-3.5" />
+          Temperatura
+        </div>
+      ),
       cell: ({ row }) => {
-        const t = row.original.temperatura
-        if (!t) return <span className="text-muted-foreground text-sm">—</span>
-        return <LeituraCell valor={t.valorAtual} unidade="°C" limiteMin={t.limiteMin} limiteMax={t.limiteMax} />
+        const sensorAtivo = row.original.active && row.original.maquinaId !== null
+        const temperatura = row.original.temperatura
+
+        if (!temperatura) {
+          return <span className="text-sm text-muted-foreground">--</span>
+        }
+
+        if (!sensorAtivo) {
+          return <span className="text-sm text-muted-foreground">N/A - Sensor Inativo</span>
+        }
+
+        return <LeituraCell valor={temperatura.valorAtual} unidade="C" limiteMin={temperatura.limiteMin} limiteMax={temperatura.limiteMax} />
       },
     },
     {
       id: "vibracao",
-      header: () => <div className="flex items-center gap-1"><ActivityIcon color="#5E17EB" className="size-3.5" />Vibração</div>,
+      header: () => (
+        <div className="flex items-center gap-1">
+          <ActivityIcon color="#5E17EB" className="size-3.5" />
+          Vibracao
+        </div>
+      ),
       cell: ({ row }) => {
-        const v = row.original.vibracao
-        if (!v) return <span className="text-muted-foreground text-sm">—</span>
-        return <LeituraCell valor={v.valorAtual} unidade="mm/s" limiteMin={v.limiteMin} limiteMax={v.limiteMax} />
+        const sensorAtivo = row.original.active && row.original.maquinaId !== null
+        const vibracao = row.original.vibracao
+
+        if (!vibracao) {
+          return <span className="text-sm text-muted-foreground">--</span>
+        }
+
+        if (!sensorAtivo) {
+          return <span className="text-sm text-muted-foreground">N/A - Sensor Inativo</span>
+        }
+
+        return <LeituraCell valor={vibracao.valorAtual} unidade="mm/s" limiteMin={vibracao.limiteMin} limiteMax={vibracao.limiteMax} />
       },
     },
-    { accessorKey: "ultimaLeituraEm", header: "Último sinal", cell: ({ row }) => <span className="text-muted-foreground text-sm">{tempoRelativo(row.original.ultimaLeituraEm)}</span> },
+    {
+      accessorKey: "ultimaLeituraEm",
+      header: "Ultimo sinal",
+      cell: ({ row }) => <span className="text-sm text-muted-foreground">{tempoRelativo(row.original.ultimaLeituraEm)}</span>,
+    },
     {
       id: "actions",
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon"><EllipsisVerticalIcon /></Button>
+            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+              <EllipsisVerticalIcon />
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => abrirVer(row.original)}>
+              <EyeIcon className="mr-1 size-4" /> Ver detalhes
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => abrirEditar(row.original)}>
+              <PencilIcon className="mr-1 size-4" /> Editar
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}>
+              <Trash2Icon className="mr-1 size-4" /> Excluir
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -190,7 +443,8 @@ export default function SensoresPage() {
   ]
 
   const table = useReactTable({
-    data: dadosFiltrados, columns,
+    data: dadosFiltrados,
+    columns,
     state: { pagination },
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
@@ -203,241 +457,376 @@ export default function SensoresPage() {
     <>
       <SiteHeader />
       <div className="flex flex-col gap-6 p-6">
-
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}><ArrowLeftIcon className="size-4" /></Button>
-            <div>
-              <div className="flex items-center gap-2">
-                <NfcIcon size={22} className="text-[#3B2867]" />
-                <h1 className="text-lg font-medium text-[#3B2867]">Equipamentos Orbis</h1>
-              </div>
-             
+            <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
+              <ArrowLeftIcon className="size-4" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <NfcIcon size={22} className="text-[#3B2867]" />
+              <h1 className="text-lg font-medium text-[#3B2867]">Sensores</h1>
             </div>
           </div>
-          <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <PlusIcon className="size-4 mr-1" />Novo equipamento
+          <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
+            <PlusIcon className="mr-1 size-4" />
+            Novo sensor
           </Button>
         </div>
 
         <Separator />
 
-        {/* Cards de resumo */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-
-          {/* Online / Offline */}
-          <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Equipamentos online</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{sensores.length} total</span>
+        {mensagem ? (
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm ${
+              status === "error"
+                ? "border-destructive/25 bg-destructive/5 text-destructive"
+                : "border-border/60 bg-muted/30 text-muted-foreground"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span>{mensagem}</span>
+              <Button variant="outline" size="sm" onClick={() => recarregarSensores()} disabled={carregando || salvando}>
+                <RefreshCcwIcon className="mr-1 size-4" />
+                Atualizar
+              </Button>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{totalOnline}</span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-green-700 flex items-center gap-1">
-                <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {totalOnline} transmitindo normalmente
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Sensores online</span>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                {loadingInicial ? "Sincronizando" : `${sensores.length} total`}
               </span>
-              <span className="text-red-600 flex items-center gap-1">
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867]">{loadingInicial ? "--" : totalOnline}</span>
+            <div className="flex flex-col gap-0.5 text-sm">
+              <span className="flex items-center gap-1 text-green-700">
+                <CircleCheckIcon className="size-3.5 fill-green-600" />
+                {loadingInicial ? "Atualizando sensores..." : `${totalOnline} transmitindo normalmente`}
+              </span>
+              <span className="flex items-center gap-1 text-red-600">
                 <WifiOffIcon className="size-3.5" />
-                {totalOffline} offline
+                {loadingInicial ? "Lendo inativos..." : `${totalOffline} offline ou inativos`}
               </span>
             </div>
           </div>
 
-          {/* Fora do limite */}
-          <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
+          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Leituras fora do limite</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${foraDoLimite > 0 ? "text-red-700 bg-red-50 border border-red-200" : "text-green-700 bg-green-50 border border-green-200"}`}>
-                {foraDoLimite > 0 ? "⚠ alerta" : "✓ normal"}
+              <span className="text-sm font-medium text-muted-foreground">Leituras fora do limite</span>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${foraDoLimite > 0 ? "border border-red-200 bg-red-50 text-red-700" : "border border-green-200 bg-green-50 text-green-700"}`}>
+                {loadingInicial ? "..." : foraDoLimite > 0 ? "alerta" : "normal"}
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{foraDoLimite}</span>
+            <span className="text-3xl font-bold text-[#3B2867]">{loadingInicial ? "--" : foraDoLimite}</span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-muted-foreground">
-                {sensores.length - foraDoLimite} dentro dos limites
+                {loadingInicial ? "Verificando limites..." : `${Math.max(sensores.length - foraDoLimite, 0)} dentro dos limites`}
               </span>
-              <span className="text-muted-foreground text-xs">Temperatura ou vibração acima do máx.</span>
+              <span className="text-xs text-muted-foreground">Temperatura ou vibracao acima do limite.</span>
             </div>
           </div>
 
-          {/* Cobertura dupla */}
-          {/* <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
+          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Cobertura dupla</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">temp + vibração</span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{comAmbos}</span>
-            <div className="flex flex-col gap-1.5">
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                <div className="h-full rounded-full bg-[#5E17EB] transition-all" style={{ width: sensores.length ? `${(comAmbos / sensores.length) * 100}%` : "0%" }} />
-              </div>
-              <span className="text-muted-foreground text-xs">
-                {sensores.length ? Math.round((comAmbos / sensores.length) * 100) : 0}% com ambos os sensores ativos
+              <span className="text-sm font-medium text-muted-foreground">Sem maquina vinculada</span>
+              <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+                inativos
               </span>
             </div>
-          </div> */}
-
+            <span className="text-3xl font-bold text-[#3B2867]">{loadingInicial ? "--" : semMaquina}</span>
+            <span className="text-sm text-muted-foreground">
+              {loadingInicial ? "Conferindo vinculos..." : "Sensores sem maquina sao cadastrados como OFFLINE."}
+            </span>
+          </div>
         </div>
 
-        {/* Busca */}
         <div className="relative w-full max-w-sm">
           <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
-          <Input placeholder="Buscar por nome ou máquina..." value={busca} onChange={e => setBusca(e.target.value)} className="pl-8" />
+          <Input
+            placeholder="Buscar por tipo ou maquina..."
+            value={busca}
+            onChange={(event) => setBusca(event.target.value)}
+            className="pl-8"
+          />
         </div>
 
-        {/* Tabela */}
-        <div className="overflow-hidden rounded-lg border">
-          <Table>
-            <TableHeader className="bg-muted">
-              {table.getHeaderGroups().map(hg => (
-                <TableRow key={hg.id}>
-                  {hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows.length ? (
-                table.getRowModel().rows.map(row => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow><TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">Nenhum equipamento encontrado.</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        {loadingInicial ? (
+          <StatePanel message="Sincronizando sensores da pagina com a API..." />
+        ) : errorSemDados ? (
+          <StatePanel message={mensagem || "Nao foi possivel carregar os sensores."} tone="error" />
+        ) : (
+          <>
+            <div className="overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader className="bg-muted">
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow key={row.id}>
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                        Nenhum sensor encontrado.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-        {/* Paginação */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{dadosFiltrados.length} resultado(s)</span>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}><ChevronsLeftIcon className="size-4" /></Button>
-            <Button variant="outline" size="icon" className="size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}><ChevronLeftIcon className="size-4" /></Button>
-            <span className="text-sm">Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
-            <Button variant="outline" size="icon" className="size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}><ChevronRightIcon className="size-4" /></Button>
-            <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}><ChevronsRightIcon className="size-4" /></Button>
-          </div>
-        </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{dadosFiltrados.length} resultado(s)</span>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
+                  <ChevronsLeftIcon className="size-4" />
+                </Button>
+                <Button variant="outline" size="icon" className="size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+                  <ChevronLeftIcon className="size-4" />
+                </Button>
+                <span className="text-sm">Pag. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
+                <Button variant="outline" size="icon" className="size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+                  <ChevronRightIcon className="size-4" />
+                </Button>
+                <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
+                  <ChevronsRightIcon className="size-4" />
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
 
-        {/* Sheet */}
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
           <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
             <SheetHeader>
               <SheetTitle>
-                {modoSheet === "criar" ? "Novo equipamento Orbis" : modoSheet === "editar" ? "Editar equipamento" : "Detalhes do equipamento"}
+                {modoSheet === "criar" ? "Novo sensor" : modoSheet === "editar" ? "Editar sensor" : "Detalhes do sensor"}
               </SheetTitle>
               <SheetDescription>
-                {modoSheet === "criar" ? "Cadastre um novo equipamento com os sensores embutidos." :
-                 modoSheet === "editar" ? "Altere as configurações e clique em salvar." :
-                 "Leituras e configurações do equipamento Orbis."}
+                {modoSheet === "criar"
+                  ? "Cadastre os limites e ideais que serao enviados para a API."
+                  : modoSheet === "editar"
+                    ? "Altere as configuracoes e clique em salvar."
+                    : "Leituras e configuracoes do sensor."}
               </SheetDescription>
             </SheetHeader>
-            <div className="flex flex-col gap-4 px-4 py-4 overflow-y-auto flex-1">
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
               {modoSheet === "ver" && sensorSelecionado ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Equipamento</Label><span className="text-sm font-semibold">{sensorSelecionado.nome}</span></div>
-                    <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Máquina vinculada</Label><span className="text-sm font-medium">{sensorSelecionado.maquinaNome}</span></div>
-                    <div className="flex flex-col gap-1 col-span-2"><Label className="text-muted-foreground text-xs">Status</Label><StatusBadge value={sensorSelecionado.status} /></div>
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs text-muted-foreground">Tipo</Label>
+                      <span className="text-sm font-semibold">{sensorSelecionado.tipo}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs text-muted-foreground">Maquina vinculada</Label>
+                      <span className="text-sm font-medium">{sensorSelecionado.maquinaId ? sensorSelecionado.maquinaNome : "Sem maquina vinculada"}</span>
+                    </div>
+                    <div className="col-span-2 flex flex-col gap-1">
+                      <Label className="text-xs text-muted-foreground">Status</Label>
+                      <StatusBadge value={sensorSelecionado.status} />
+                    </div>
                   </div>
                   <Separator />
-                  <div className="rounded-lg border border-orange-100 bg-orange-50/40 p-3 flex flex-col gap-3">
-                    <div className="flex items-center gap-2"><ThermometerIcon className="size-4 text-orange-500" /><span className="text-sm font-medium">Sensor de Temperatura</span></div>
-                    {sensorSelecionado.temperatura ? (
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Leitura atual</Label><span className={`text-sm font-semibold ${sensorSelecionado.temperatura.valorAtual > sensorSelecionado.temperatura.limiteMax ? "text-red-600" : "text-foreground"}`}>{sensorSelecionado.temperatura.valorAtual} °C</span></div>
-                        <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Limite mín.</Label><span className="text-sm">{sensorSelecionado.temperatura.limiteMin} °C</span></div>
-                        <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Limite máx.</Label><span className="text-sm">{sensorSelecionado.temperatura.limiteMax} °C</span></div>
+                  <div className="flex flex-col gap-3 rounded-lg border border-orange-100 bg-orange-50/40 p-3">
+                    <div className="flex items-center gap-2">
+                      <ThermometerIcon className="size-4 text-orange-500" />
+                      <span className="text-sm font-medium">Temperatura</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs text-muted-foreground">Leitura</Label>
+                        <span className="text-sm font-semibold">{formatValue(sensorSelecionado.temperatura?.valorAtual, " C")}</span>
                       </div>
-                    ) : <span className="text-sm text-muted-foreground">Não habilitado</span>}
-                  </div>
-                  <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-3 flex flex-col gap-3">
-                    <div className="flex items-center gap-2"><ActivityIcon className="size-4 text-blue-500" /><span className="text-sm font-medium">Sensor de Vibração</span></div>
-                    {sensorSelecionado.vibracao ? (
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Leitura atual</Label><span className={`text-sm font-semibold ${sensorSelecionado.vibracao.valorAtual > sensorSelecionado.vibracao.limiteMax ? "text-red-600" : "text-foreground"}`}>{sensorSelecionado.vibracao.valorAtual} mm/s</span></div>
-                        <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Limite mín.</Label><span className="text-sm">{sensorSelecionado.vibracao.limiteMin} mm/s</span></div>
-                        <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Limite máx.</Label><span className="text-sm">{sensorSelecionado.vibracao.limiteMax} mm/s</span></div>
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs text-muted-foreground">Ideal</Label>
+                        <span className="text-sm">{formatValue(sensorSelecionado.idealTemperatura, " C")}</span>
                       </div>
-                    ) : <span className="text-sm text-muted-foreground">Não habilitado</span>}
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs text-muted-foreground">Limite</Label>
+                        <span className="text-sm">{formatValue(sensorSelecionado.limiteTemperatura, " C")}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Último sinal</Label><span className="text-sm">{tempoRelativo(sensorSelecionado.ultimaLeituraEm)}</span></div>
+                  <div className="flex flex-col gap-3 rounded-lg border border-blue-100 bg-blue-50/40 p-3">
+                    <div className="flex items-center gap-2">
+                      <ActivityIcon className="size-4 text-blue-500" />
+                      <span className="text-sm font-medium">Vibracao</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs text-muted-foreground">Leitura</Label>
+                        <span className="text-sm font-semibold">{formatValue(sensorSelecionado.vibracao?.valorAtual, " mm/s")}</span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs text-muted-foreground">Ideal</Label>
+                        <span className="text-sm">{formatValue(sensorSelecionado.idealVibracao, " mm/s")}</span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label className="text-xs text-muted-foreground">Limite</Label>
+                        <span className="text-sm">{formatValue(sensorSelecionado.limiteVibracao, " mm/s")}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs text-muted-foreground">Ultimo sinal</Label>
+                    <span className="text-sm">{tempoRelativo(sensorSelecionado.ultimaLeituraEm)}</span>
+                  </div>
                   <Separator />
                   <div className="flex gap-2">
-                    <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(sensorSelecionado), 100) }}><PencilIcon className="size-4 mr-1" /> Editar</Button>
-                    <Button variant="destructive" onClick={() => confirmarExcluir(sensorSelecionado)}><Trash2Icon className="size-4 mr-1" /> Excluir</Button>
+                    <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(sensorSelecionado), 100) }} disabled={salvando}>
+                      <PencilIcon className="mr-1 size-4" />
+                      Editar
+                    </Button>
+                    <Button variant="destructive" onClick={() => confirmarExcluir(sensorSelecionado)} disabled={salvando}>
+                      <Trash2Icon className="mr-1 size-4" />
+                      Excluir
+                    </Button>
                   </div>
                 </>
               ) : (
                 <>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="nome">Nome do equipamento <span className="text-red-500">*</span></Label>
-                    <Input id="nome" placeholder="Ex: Orbis A1" value={form.nome} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))} />
+                    <Label htmlFor="tipo">
+                      Tipo do sensor <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="tipo"
+                      placeholder="Ex: TEMPERATURA_VIBRACAO"
+                      value={form.tipo}
+                      onChange={(event) => setFormField("tipo", event.target.value)}
+                    />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="maquina">Máquina vinculada <span className="text-red-500">*</span></Label>
-                    <Select value={form.maquinaId} onValueChange={handleMaquinaChange}>
-                      <SelectTrigger id="maquina" className="w-full"><SelectValue placeholder="Selecione uma máquina" /></SelectTrigger>
-                      <SelectContent><SelectGroup>{maquinas.map(m => <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>)}</SelectGroup></SelectContent>
+                    <Label htmlFor="maquina">Maquina vinculada</Label>
+                    <Select value={form.maquinaId || SEM_MAQUINA_VALUE} onValueChange={handleMaquinaChange}>
+                      <SelectTrigger id="maquina" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value={SEM_MAQUINA_VALUE}>Sem maquina vinculada</SelectItem>
+                          {maquinas.map((maquina) => (
+                            <SelectItem key={maquina.id} value={String(maquina.id)}>
+                              {maquina.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
                     </Select>
+                    <span className={`text-xs ${form.maquinaId ? "text-muted-foreground" : "font-medium text-red-600"}`}>
+                      {form.maquinaId
+                        ? "Sensor sera vinculado a maquina selecionada."
+                        : "Sem maquina vinculada: selecione uma maquina antes de salvar se quiser atribuir este sensor."}
+                    </span>
                   </div>
                   <Separator />
-                  <div className="rounded-lg border border-orange-100 bg-orange-50/30 p-3 flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                      <Checkbox id="temp-habilitado" checked={form.temperatura.habilitado} onCheckedChange={v => setTempField("habilitado", v)} />
-                      <Label htmlFor="temp-habilitado" className="flex items-center gap-1.5 cursor-pointer"><ThermometerIcon className="size-4 text-orange-500" />Sensor de Temperatura</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="ideal-temperatura" className="text-xs text-muted-foreground">
+                        Temperatura ideal <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="ideal-temperatura"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="60"
+                        value={form.idealTemperatura}
+                        onChange={(event) => setFormField("idealTemperatura", event.target.value)}
+                      />
                     </div>
-                    {form.temperatura.habilitado && (
-                      <div className="grid grid-cols-2 gap-2 pl-6">
-                        <div className="flex flex-col gap-1"><Label htmlFor="temp-min" className="text-xs text-muted-foreground">Limite mín. (°C) <span className="text-red-500">*</span></Label><Input id="temp-min" type="number" placeholder="0" value={form.temperatura.limiteMin} onChange={e => setTempField("limiteMin", e.target.value)} /></div>
-                        <div className="flex flex-col gap-1"><Label htmlFor="temp-max" className="text-xs text-muted-foreground">Limite máx. (°C) <span className="text-red-500">*</span></Label><Input id="temp-max" type="number" placeholder="100" value={form.temperatura.limiteMax} onChange={e => setTempField("limiteMax", e.target.value)} /></div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="rounded-lg border border-blue-100 bg-blue-50/30 p-3 flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                      <Checkbox id="vib-habilitado" checked={form.vibracao.habilitado} onCheckedChange={v => setVibField("habilitado", v)} />
-                      <Label htmlFor="vib-habilitado" className="flex items-center gap-1.5 cursor-pointer"><ActivityIcon className="size-4 text-blue-500" />Sensor de Vibração</Label>
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="limite-temperatura" className="text-xs text-muted-foreground">
+                        Limite temperatura <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="limite-temperatura"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="80"
+                        value={form.limiteTemperatura}
+                        onChange={(event) => setFormField("limiteTemperatura", event.target.value)}
+                      />
                     </div>
-                    {form.vibracao.habilitado && (
-                      <div className="grid grid-cols-2 gap-2 pl-6">
-                        <div className="flex flex-col gap-1"><Label htmlFor="vib-min" className="text-xs text-muted-foreground">Limite mín. (mm/s) <span className="text-red-500">*</span></Label><Input id="vib-min" type="number" placeholder="0" step="0.01" value={form.vibracao.limiteMin} onChange={e => setVibField("limiteMin", e.target.value)} /></div>
-                        <div className="flex flex-col gap-1"><Label htmlFor="vib-max" className="text-xs text-muted-foreground">Limite máx. (mm/s) <span className="text-red-500">*</span></Label><Input id="vib-max" type="number" placeholder="0.8" step="0.01" value={form.vibracao.limiteMax} onChange={e => setVibField("limiteMax", e.target.value)} /></div>
-                      </div>
-                    )}
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="ideal-vibracao" className="text-xs text-muted-foreground">
+                        Vibracao ideal <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="ideal-vibracao"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0.4"
+                        value={form.idealVibracao}
+                        onChange={(event) => setFormField("idealVibracao", event.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="limite-vibracao" className="text-xs text-muted-foreground">
+                        Limite vibracao <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="limite-vibracao"
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0.8"
+                        value={form.limiteVibracao}
+                        onChange={(event) => setFormField("limiteVibracao", event.target.value)}
+                      />
+                    </div>
                   </div>
                 </>
               )}
             </div>
-            {modoSheet !== "ver" && (
+            {modoSheet !== "ver" ? (
               <SheetFooter className="px-4 pb-4">
-                <Button variant="outline" onClick={() => setSheetAberto(false)}>Cancelar</Button>
-                <Button onClick={salvar}>{modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}</Button>
+                <Button variant="outline" onClick={() => setSheetAberto(false)} disabled={salvando}>
+                  Cancelar
+                </Button>
+                <Button onClick={salvar} disabled={salvando}>
+                  {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alteracoes"}
+                </Button>
               </SheetFooter>
-            )}
+            ) : null}
           </SheetContent>
         </Sheet>
 
-        {/* Dialog exclusão */}
-        <Dialog open={dialogExcluir} onOpenChange={setDialogExcluir}>
+        <Dialog open={dialogExcluir} onOpenChange={alternarDialogExcluir}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirmar exclusão</DialogTitle>
+              <DialogTitle>Confirmar exclusao</DialogTitle>
               <DialogDescription>
-                Tem certeza que deseja excluir o equipamento <strong>{sensorExcluir?.nome}</strong>? Esta ação não pode ser desfeita e removerá todos os alertas vinculados.
+                Tem certeza que deseja excluir o sensor <strong>{sensorExcluir?.tipo}</strong>? Esta acao sera enviada para a API e nao usa mais dados locais do navegador.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogExcluir(false)}>Cancelar</Button>
-              <Button variant="destructive" onClick={excluir}>Excluir</Button>
+              <Button variant="outline" onClick={() => alternarDialogExcluir(false)} disabled={salvando}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" onClick={excluir} disabled={salvando}>
+                {salvando ? "Excluindo..." : "Excluir"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
       </div>
     </>
   )

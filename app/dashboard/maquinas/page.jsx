@@ -110,6 +110,11 @@ export default function MaquinasPage() {
 
   const loadingInicial = carregando && maquinas.length === 0
   const errorSemDados = status === "error" && maquinas.length === 0
+  const sensoresVinculadosExclusao = Math.max(Number(maquinaExcluir?.sensores ?? 0), 0)
+  const podeExcluirMaquina =
+    Boolean(maquinaExcluir) &&
+    confirmacaoExclusao === maquinaExcluir?.nome &&
+    !salvando
 
   const totalOk = React.useMemo(() => maquinas.filter((maquina) => maquina.status === "OK").length, [maquinas])
   const totalAlerta = React.useMemo(() => maquinas.filter((maquina) => maquina.status !== "OK").length, [maquinas])
@@ -183,6 +188,15 @@ export default function MaquinasPage() {
     setMaquinaExcluir(maquina)
     setConfirmacaoExclusao("")
     setDialogExcluir(true)
+  }
+
+  function alternarDialogExcluir(open) {
+    setDialogExcluir(open)
+
+    if (!open) {
+      setMaquinaExcluir(null)
+      setConfirmacaoExclusao("")
+    }
   }
 
   async function excluir() {
@@ -547,14 +561,29 @@ export default function MaquinasPage() {
           </SheetContent>
         </Sheet>
 
-        <Dialog open={dialogExcluir} onOpenChange={setDialogExcluir}>
+        <Dialog open={dialogExcluir} onOpenChange={alternarDialogExcluir}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Confirmar exclusao</DialogTitle>
               <DialogDescription>
-                Tem certeza que deseja excluir <strong>{maquinaExcluir?.nome}</strong>? Esta acao nao pode ser desfeita e removera todos os sensores e alertas vinculados.
+                A maquina <strong>{maquinaExcluir?.nome}</strong> ficara inativa no banco de dados (active: false). Os sensores vinculados tambem ficarao inativos. Tem certeza que deseja excluir?
               </DialogDescription>
             </DialogHeader>
+            <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+              <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
+              <div className="flex flex-col gap-1">
+                <span className="font-medium">
+                  {sensoresVinculadosExclusao > 0
+                    ? `${sensoresVinculadosExclusao} sensor(es) vinculado(s) serao inativados.`
+                    : "Nenhum sensor vinculado foi informado pela API."}
+                </span>
+                <span>
+                  {sensoresVinculadosExclusao > 0
+                    ? "A exclusao sera enviada para a API. O backend deve aplicar soft delete na maquina e inativar os sensores relacionados."
+                    : "A exclusao sera enviada para a API e a maquina deve sair das listagens ativas."}
+                </span>
+              </div>
+            </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="confirmacao-exclusao" className="text-sm text-muted-foreground">
                 Digite o nome da maquina para confirmar:
@@ -564,13 +593,14 @@ export default function MaquinasPage() {
                 placeholder={maquinaExcluir?.nome}
                 value={confirmacaoExclusao}
                 onChange={(event) => setConfirmacaoExclusao(event.target.value)}
+                disabled={salvando}
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogExcluir(false)} disabled={salvando}>Cancelar</Button>
+              <Button variant="outline" onClick={() => alternarDialogExcluir(false)} disabled={salvando}>Cancelar</Button>
               <Button
                 variant="destructive"
-                disabled={confirmacaoExclusao !== maquinaExcluir?.nome || salvando}
+                disabled={!podeExcluirMaquina}
                 onClick={excluir}
               >
                 {salvando ? "Excluindo..." : "Excluir"}
