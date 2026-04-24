@@ -16,7 +16,7 @@ export default function SobreInformativo() {
                 <div className="flex items-center gap-1">
                     <ThemeAwareImage
                         lightSrc="/Orbis_extended.svg"
-                        darkSrc="/LogoBrancaGrande.svg"
+                        darkSrc="/LogoBrancaGrandeV3.png"
                         alt="Logo Orbis"
                         width={280}
                         height={70}
