@@ -366,13 +366,13 @@ export default function HomePage() {
       </section>
 
   {/* aqui é onde deve ter o real sobre */}
-    <section style={{
+    <section id="sobre" style={{
           background: "var(--landing-alt-bg)",
           transition: "background-color 0.25s ease"}}> 
      <SobreInformativo />
     </section>
     
-      <section id="sobre" style={{ padding: "96px 8vw", ...DEFERRED_SECTION_STYLE }}>
+      <section style={{ padding: "96px 8vw", ...DEFERRED_SECTION_STYLE }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <p
             style={{
