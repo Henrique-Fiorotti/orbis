@@ -6,6 +6,7 @@ import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
 import Pricing from "@/components/pricing";
 import { Separator } from "@/components/ui/separator";
+import SobreInformativo from "@/components/sobre-informativo";
 
 import styles from "./page.module.css";
 
@@ -201,6 +202,7 @@ export default function HomePage() {
           overlayClassName={styles.heroSplineMask}
         />
 
+          {/* Essa parte vai até o registrar empresa */}
         <div style={{ position: "relative", zIndex: 1, maxWidth: "600px" }}>
           <h1
             className={styles.heroTitle}
@@ -299,7 +301,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section
+      <section // Essa parte é o confie no processo lá
         style={{
           height: "30dvh",
           background: "var(--landing-quote-bg)",
@@ -363,6 +365,17 @@ export default function HomePage() {
         </RevealOnScroll>
       </section>
 
+
+
+
+
+
+
+  {/* aqui é onde deve ter o real sobre */}
+    <section> 
+     <SobreInformativo />
+    </section>
+    
       <section id="sobre" style={{ padding: "96px 8vw", ...DEFERRED_SECTION_STYLE }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <p
