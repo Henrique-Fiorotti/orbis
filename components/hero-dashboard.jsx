@@ -36,9 +36,9 @@ export default function HeroDashboard() {
           Comece agora
         </Link>
       </div>
-      <div className="h-full min-w-[280px] flex-[1.5]">
+      <div className="h-full flex flex-col items-end min-w-[280px] flex-[1.5]">
         <ThemeAwareImage
-          className="h-full w-full object-cover"
+          className="h-full w-[600px] object-cover"
           lightSrc="/orbis_dashboard_hero.svg"
           darkSrc="/Orbis-hero-dashboard-dark.svg"
           alt="Dashboard Preventivo"

@@ -111,7 +111,7 @@ export default function Header() {
           <Link
             href="/login"
             prefetch={false}
-            className="hidden md:flex items-center text-[13.5px] px-4 py-[7px] rounded-[10px] border border-[#5e17eb] text-[#5e17eb] hover:bg-[#5e17eb] hover:text-white transition-all duration-150"
+            className="hidden md:flex items-center text-[13.5px] px-4 py-[7px] rounded-[10px] border border-[#5e17eb] text-[#5e17eb] hover:bg-[#5e17eb] hover:text-gray-200 dark:bg-[#5e17eb]/30 dark:hover:bg-[#5e17eb] dark:text-gray-300 transition-all duration-150"
           >
             Entrar
           </Link>
