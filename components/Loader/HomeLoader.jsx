@@ -8,8 +8,8 @@ export default function PageLoader() {
     const [fadingOut, setFadingOut] = useState(false)
 
     useEffect(() => {
-        const fadeTimer = setTimeout(() => setFadingOut(true), 1600)
-        const hideTimer = setTimeout(() => setVisible(false), 2100)
+        const fadeTimer = setTimeout(() => setFadingOut(true), 2000)
+        const hideTimer = setTimeout(() => setVisible(false), 2500)
         return () => {
             clearTimeout(fadeTimer)
             clearTimeout(hideTimer)
