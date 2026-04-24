@@ -4,9 +4,12 @@
 @custom-variant dark (&:is(.dark *));
 @import "shadcn/tailwind.css";
 
-@tailwind base;
-@tailwind components;
 @tailwind utilities;
+
+::selection {
+  color: rgb(255, 255, 255);
+  background-color: #6027c2a8;
+}
 
 /* Modern browsers — Chrome 121+, Edge 121+, Firefox, Safari 18.2+ */
 html,
@@ -15,8 +18,6 @@ html,
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 
 }
-
-
 
 /* Legacy WebKit — older Chrome/Edge/Safari, radius, borders & shadows */
 html::-webkit-scrollbar,
