@@ -365,14 +365,19 @@ export default function HomePage() {
         </RevealOnScroll>
       </section>
 
-  {/* aqui é onde deve ter o real sobre */}
+  {/* aqui é o local do Sr Orbis */}
     <section id="sobre" style={{
           background: "var(--landing-alt-bg)",
-          transition: "background-color 0.25s ease"}}> 
+          transition: "background-color 0.25s ease",
+          paddingTop: "70px",
+          }}> 
      <SobreInformativo />
     </section>
-    
-      <section style={{ padding: "96px 8vw", ...DEFERRED_SECTION_STYLE }}>
+    {/* blocos de beneficios */}
+      <section style={{  background: "var(--landing-quote-bg)", padding: "96px 8vw", ...DEFERRED_SECTION_STYLE }}
+      
+           
+      >
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <p
             style={{
