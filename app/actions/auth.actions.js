@@ -21,9 +21,14 @@ export async function loginAction(formData) {
       const errorData = await response.json().catch(() => ({}))
       return { error: errorData.mensagem || errorData.message || `Erro ${response.status}: falha na autenticacao.` }
     }
+    const data = await response.json()
 
-    return await response.json()
-  } catch (error) {
+    console.log("[loginAction] response data:", data)
+    return data
+  
+  }
+  
+  catch (error) {
     console.error("[loginAction]", error)
     return { error: "Nao foi possivel conectar ao servidor. Tente novamente." }
   }
