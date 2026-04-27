@@ -121,7 +121,7 @@ export default function LoginCard({isDark}) {
 
     const email = formData.get("email")
     localStorage.setItem("orbis_user_email", result.email || result.user?.email || email)
-    localStorage.setItem("orbis_user_name", result.name || result.user?.name || "Orbis Admin")
+    localStorage.setItem("orbis_user_name", result.usuarioSemSenha.nome || result.user?.name || "Orbis Admin")
 
     window.location.href = "/dashboard"
 
