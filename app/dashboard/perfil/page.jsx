@@ -465,9 +465,9 @@ export default function PerfilPage() {
                 Histórico de alertas atendidos
               </div>
 
-              <div className="overflow-x-auto rounded-lg border">
+              <div className="min-h-[300px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
                 <Table>
-                  <TableHeader className="bg-muted">
+                  <TableHeader className="sticky top-0 z-10 bg-muted">
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Máquina</TableHead>
                       <TableHead className="whitespace-nowrap">Tipo</TableHead>
