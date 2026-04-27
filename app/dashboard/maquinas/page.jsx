@@ -33,14 +33,18 @@ import { tempoRelativo } from "@/lib/utils"
 const formVazio = { nome: "", setor: "", tipo: "", criticidade: "MEDIA" }
 
 function CriticidadeBadge({ value }) {
-  const styles = { ALTA: "bg-white text-gray-700  border-gray-200", MEDIA: "bg-white text-gray-700 border-gray-200", BAIXA: "bg-white text-gray-700 border-gray-200" }
+  const styles = {
+    ALTA: "bg-white text-gray-700 border-gray-200 dark:border-border dark:bg-muted/30 dark:text-muted-foreground",
+    MEDIA: "bg-white text-gray-700 border-gray-200 dark:border-border dark:bg-muted/30 dark:text-muted-foreground",
+    BAIXA: "bg-white text-gray-700 border-gray-200 dark:border-border dark:bg-muted/30 dark:text-muted-foreground",
+  }
   return <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>{value.charAt(0) + value.slice(1).toLowerCase()}</Badge>
 }
 
 function StatusBadge({ value }) {
   return (
     <Badge variant="outline" className="px-1.5 text-muted-foreground">
-      {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]!" /> : <AlertTriangleIcon className="text-red-500" />}
+      {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]! dark:fill-primary!" /> : <AlertTriangleIcon className="text-red-500 dark:text-red-300" />}
       {value}
     </Badge>
   )
@@ -48,7 +52,7 @@ function StatusBadge({ value }) {
 
 function IntegridadeBar({ value }) {
   const cor = value < 50 ? "bg-red-500" : value < 75 ? "bg-yellow-400" : "bg-green-500"
-  const textCor = value < 50 ? "text-red-500" : value < 75 ? "text-yellow-500" : "text-green-600"
+  const textCor = value < 50 ? "text-red-500 dark:text-red-300" : value < 75 ? "text-yellow-500 dark:text-yellow-300" : "text-green-600 dark:text-green-300"
 
   return (
     <div className="flex items-center gap-2 min-w-[110px]">
@@ -297,8 +301,8 @@ export default function MaquinasPage() {
 
             <div>
               <div className="flex items-center gap-2">
-                <WashingMachineIcon size={22} />
-                <h1 className="text-[18pt]! mb-0! font-medium text-[#3B2867]">Maquinas</h1>
+                <WashingMachineIcon size={22} className="text-[#3B2867] dark:text-white" />
+                <h1 className="text-[18pt]! mb-0! font-medium text-[#3B2867] dark:text-white">Maquinas</h1>
               </div>
 
             </div>
@@ -337,13 +341,13 @@ export default function MaquinasPage() {
                 {loadingInicial ? "Sincronizando" : `${maquinas.length} cadastradas`}
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{formatMetric(maquinas.length, loadingInicial)}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(maquinas.length, loadingInicial)}</span>
             <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-green-700 flex items-center gap-1">
+              <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
                 {loadingInicial ? "Atualizando operacao..." : `${totalOk} operando normalmente`}
               </span>
-              <span className="text-red-600 flex items-center gap-1">
+              <span className="text-red-600 dark:text-red-300 flex items-center gap-1">
                 <AlertTriangleIcon className="size-3.5" />
                 {loadingInicial ? "Lendo alertas..." : `${totalAlerta} requerem atencao`}
               </span>
@@ -353,13 +357,13 @@ export default function MaquinasPage() {
           <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Alta Importância</span>
-              <span className="text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full font-medium">
+              <span className="text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full font-medium dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
                 atencao
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{formatMetric(criticasAlta, loadingInicial)}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(criticasAlta, loadingInicial)}</span>
             <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-red-600 flex items-center gap-1">
+              <span className="text-red-600 dark:text-red-300 flex items-center gap-1">
                 <ShieldAlertIcon className="size-3.5" />
                 {loadingInicial ? "Verificando status..." : `${criticasAltaAlerta} em alerta agora`}
               </span>
@@ -372,16 +376,16 @@ export default function MaquinasPage() {
           <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Integridade média</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${integridadeMedia >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
-                  integridadeMedia >= 50 ? "text-yellow-700 bg-yellow-50 border border-yellow-200" :
-                    "text-red-700 bg-red-50 border border-red-200"
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${integridadeMedia >= 75 ? "text-green-700 bg-green-50 border border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300" :
+                  integridadeMedia >= 50 ? "text-yellow-700 bg-yellow-50 border border-yellow-200 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" :
+                    "text-red-700 bg-red-50 border border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
                 }`}>
                 {integridadeMedia >= 75 ? "Estável" : integridadeMedia >= 50 ? "Atenção" : "Crítico"}
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{formatMetric(integridadeMedia, loadingInicial, "%")}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(integridadeMedia, loadingInicial, "%")}</span>
             <div className="flex flex-col gap-1.5">
-              <div className="h-2 w-50 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-2 w-50 bg-gray-200 dark:bg-muted rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${integridadeMedia >= 75 ? "bg-green-500" : integridadeMedia >= 50 ? "bg-yellow-400" : "bg-red-500"
                     }`}

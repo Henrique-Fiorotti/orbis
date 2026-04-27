@@ -39,22 +39,26 @@ const TIPOS_ALERTA_LABEL = {
 const formVazio = { tipo: "LIMITE_ULTRAPASSADO", maquinaId: "", maquinaNome: "", sensorId: "", sensorNome: "", severidade: "MEDIA", descricao: "" }
 
 function SeveridadeBadge({ value }) {
-  const styles = { ALTA: "bg-red-100 text-red-700 border-red-200", MEDIA: "bg-yellow-100 text-yellow-700 border-yellow-200", BAIXA: "bg-green-100 text-green-700 border-green-200" }
+  const styles = {
+    ALTA: "bg-red-100 text-red-700 border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
+    MEDIA: "bg-yellow-100 text-yellow-700 border-yellow-200 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300",
+    BAIXA: "bg-green-100 text-green-700 border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
+  }
   return <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>{value.charAt(0) + value.slice(1).toLowerCase()}</Badge>
 }
 
 function StatusAlertaBadge({ value }) {
   const cfg = {
-    ABERTO: { cls: "bg-red-50 text-red-700 border-red-200", Icon: ShieldAlertIcon },
-    ATENDIDO: { cls: "bg-green-50 text-green-700 border-green-200", Icon: CircleCheckIcon },
-    IGNORADO: { cls: "bg-gray-100 text-gray-500 border-gray-200", Icon: CircleXIcon },
+    ABERTO: { cls: "bg-red-50 text-red-700 border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300", Icon: ShieldAlertIcon },
+    ATENDIDO: { cls: "bg-green-50 text-green-700 border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300", Icon: CircleCheckIcon },
+    IGNORADO: { cls: "bg-gray-100 text-gray-500 border-gray-200 dark:border-border dark:bg-muted/30 dark:text-muted-foreground", Icon: CircleXIcon },
   }
   const { cls, Icon } = cfg[value] ?? cfg.ABERTO
   return <Badge variant="outline" className={`px-1.5 ${cls}`}><Icon className="size-3 mr-1" />{value.charAt(0) + value.slice(1).toLowerCase()}</Badge>
 }
 
 function TipoAlertaBadge({ value }) {
-  return <Badge variant="outline" className="px-1.5 text-[#3B2867] border-purple-200 bg-purple-50 text-xs font-normal">{TIPOS_ALERTA_LABEL[value] ?? value}</Badge>
+  return <Badge variant="outline" className="px-1.5 text-[#3B2867] border-purple-200 bg-purple-50 text-xs font-normal dark:border-primary/40 dark:bg-primary/10 dark:text-primary-foreground">{TIPOS_ALERTA_LABEL[value] ?? value}</Badge>
 }
 
 function AlertasTable({ data, onVer, onExcluir, onStatus }) {
@@ -77,9 +81,9 @@ function AlertasTable({ data, onVer, onExcluir, onStatus }) {
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem onClick={() => onVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
             <DropdownMenuSeparator />
-            {row.original.status !== "ATENDIDO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "ATENDIDO")}><CircleCheckIcon className="size-4 mr-1 text-green-600" /> Marcar atendido</DropdownMenuItem>}
-            {row.original.status !== "IGNORADO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "IGNORADO")}><CircleXIcon className="size-4 mr-1 text-gray-400" /> Ignorar alerta</DropdownMenuItem>}
-            {row.original.status !== "ABERTO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "ABERTO")}><ShieldAlertIcon className="size-4 mr-1 text-red-500" /> Reabrir</DropdownMenuItem>}
+            {row.original.status !== "ATENDIDO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "ATENDIDO")}><CircleCheckIcon className="size-4 mr-1 text-green-600 dark:text-green-300" /> Marcar atendido</DropdownMenuItem>}
+            {row.original.status !== "IGNORADO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "IGNORADO")}><CircleXIcon className="size-4 mr-1 text-gray-400 dark:text-muted-foreground" /> Ignorar alerta</DropdownMenuItem>}
+            {row.original.status !== "ABERTO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "ABERTO")}><ShieldAlertIcon className="size-4 mr-1 text-red-500 dark:text-red-300" /> Reabrir</DropdownMenuItem>}
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={() => onExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
           </DropdownMenuContent>
@@ -222,10 +226,10 @@ export default function AlertasPage() {
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Todos os alertas</span>
 
             </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{alertas.length}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{alertas.length}</span>
             <div className="flex flex-col gap-0.5 text-sm ">
               <div className="flex ">
-                <span className={` flex items-center gap-1 ${taxaResolucao >= 75 ? "text-green-700" : taxaResolucao >= 40 ? "text-yellow-700" : "text-red-700"}`}>
+                <span className={` flex items-center gap-1 ${taxaResolucao >= 75 ? "text-green-700 dark:text-green-300" : taxaResolucao >= 40 ? "text-yellow-700 dark:text-yellow-300" : "text-red-700 dark:text-red-300"}`}>
                   {totalAtendidos} / {alertas.length} atendidos.
 
                 </span>
@@ -233,15 +237,15 @@ export default function AlertasPage() {
               </div>
 
               <div>
-                <span className={`text-md   font-medium ${taxaResolucao >= 75 ? "text-green-700" :
-                  taxaResolucao >= 40 ? "text-yellow-700" :
-                    "text-red-700"
+                <span className={`text-md   font-medium ${taxaResolucao >= 75 ? "text-green-700 dark:text-green-300" :
+                  taxaResolucao >= 40 ? "text-yellow-700 dark:text-yellow-300" :
+                    "text-red-700 dark:text-red-300"
                   }`}>
                   Taxa de resolução
                 </span>
-                <span className={`text-xs ms-1 px-2 py-0.5 rounded-full font-medium ${taxaResolucao >= 75 ? "text-green-700 bg-green-50 border border-green-200" :
-                  taxaResolucao >= 40 ? "text-yellow-700 bg-yellow-50 border border-yellow-200" :
-                    "text-red-700 bg-red-50 border border-red-200"
+                <span className={`text-xs ms-1 px-2 py-0.5 rounded-full font-medium ${taxaResolucao >= 75 ? "text-green-700 bg-green-50 border border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300" :
+                  taxaResolucao >= 40 ? "text-yellow-700 bg-yellow-50 border border-yellow-200 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" :
+                    "text-red-700 bg-red-50 border border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
                   }`}>
                   {taxaResolucao >= 75 ? "Boa" : taxaResolucao >= 40 ? "Regular" : "Baixa"}
                 </span>
@@ -254,13 +258,13 @@ export default function AlertasPage() {
           <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Alertas em aberto</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${totalAbertos > 0 ? "text-red-700 bg-red-50 border border-red-200" : "text-green-700 bg-green-50 border border-green-200"}`}>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${totalAbertos > 0 ? "text-red-700 bg-red-50 border border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : "text-green-700 bg-green-50 border border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"}`}>
                 {totalAbertos > 0 ? "⚠ Pendente" : "✓ Zerado"}
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{totalAbertos}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{totalAbertos}</span>
             <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-red-600 flex items-center gap-1">
+              <span className="text-red-600 dark:text-red-300 flex items-center gap-1">
                 <ShieldAlertIcon className="size-3.5" />
                 {altaSeveridadeAbertos} de alta severidade
               </span>
@@ -277,10 +281,10 @@ export default function AlertasPage() {
               <span className="text-sm text-muted-foreground font-medium">Alertas atendidos</span>
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Total</span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{totalAtendidos}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{totalAtendidos}</span>
             <div className="flex flex-col gap-0.5 text-sm">
-              <span className={` flex items-center gap-1 ${taxaResolucao >= 10 ? "text-green-700" : "text-gray-400"}`}>
-                  <CircleCheckIcon className={`size-3.5  ${taxaResolucao >= 10 ? "fill-green-600" : "fill-gray-200"}`} />
+              <span className={` flex items-center gap-1 ${taxaResolucao >= 10 ? "text-green-700 dark:text-green-300" : "text-gray-400 dark:text-muted-foreground"}`}>
+                  <CircleCheckIcon className={`size-3.5  ${taxaResolucao >= 10 ? "fill-green-600" : "fill-gray-200 dark:fill-muted"}`} />
                 {totalAtendidos} resolvidos
               </span>
               <span className="text-muted-foreground text-xs">De um total de {alertas.length} alertas</span>
@@ -302,7 +306,7 @@ export default function AlertasPage() {
         <Tabs defaultValue="abertos" className="w-full flex-col gap-4">
           <TabsList>
             <TabsTrigger value="abertos">
-              Em aberto{abertos.length > 0 && <Badge variant="secondary" className="ml-1.5 bg-red-100! text-red-700! border-red-200!">{abertos.length}</Badge>}
+              Em aberto{abertos.length > 0 && <Badge variant="secondary" className="ml-1.5 bg-red-100! text-red-700! border-red-200! dark:bg-red-950/30! dark:text-red-300! dark:border-red-900/60!">{abertos.length}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="atendidos">
               Atendidos{atendidos.length > 0 && <Badge variant="secondary" className="ml-1.5">{atendidos.length}</Badge>}
