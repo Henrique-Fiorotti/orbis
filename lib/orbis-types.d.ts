@@ -90,13 +90,18 @@ export interface Tecnico {
 export interface NovoTecnicoInput {
   nome: string;
   email: string;
-  telefone: string;
-  especialidade: string;
-  status: StatusTecnico;
-  foto: string | null;
+  senha: string;
+  role: string;
 }
 
-export type AtualizacaoTecnicoInput = Partial<NovoTecnicoInput>;
+export interface AtualizacaoTecnicoInput {
+  nome?: string;
+  email?: string;
+  telefone?: string;
+  especialidade?: string;
+  status?: StatusTecnico;
+  foto?: string | null;
+}
 
 export type TipoAlerta =
   | "LIMITE_ULTRAPASSADO"
@@ -161,10 +166,17 @@ export interface SensoresContextValue {
 
 export interface TecnicosContextValue {
   tecnicos: Tecnico[];
-  adicionarTecnico: (dados: NovoTecnicoInput) => Tecnico;
-  editarTecnico: (id: number, dados: AtualizacaoTecnicoInput) => void;
-  excluirTecnico: (id: number) => void;
-  resetarDados: () => void;
+  status: "loading" | "success" | "error";
+  mensagem: string;
+  carregando: boolean;
+  salvando: boolean;
+  totalPaginas: number;
+  paginaAtual: number;
+  adicionarTecnico: (dados: NovoTecnicoInput) => Promise<void>;
+  editarTecnico: (id: number, dados: AtualizacaoTecnicoInput) => Promise<void>;
+  excluirTecnico: (id: number) => Promise<void>;
+  recarregarTecnicos: (page?: number, limit?: number) => Promise<void>;
+  resetarDados: () => Promise<void>;
 }
 
 export interface AlertasContextValue {
