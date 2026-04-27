@@ -64,9 +64,9 @@ function getIniciais(nome) {
 
 function CriticidadeBadge({ value }) {
   const styles = {
-    ALTA: "bg-red-100 text-red-700 border-red-200",
-    MEDIA: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    BAIXA: "bg-green-100 text-green-700 border-green-200",
+    ALTA: "bg-red-100 text-red-700 border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
+    MEDIA: "bg-yellow-100 text-yellow-700 border-yellow-200 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300",
+    BAIXA: "bg-green-100 text-green-700 border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
   }
   return (
     <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>
@@ -79,8 +79,8 @@ function StatusMaquinaBadge({ value }) {
   return (
     <Badge variant="outline" className="px-1.5 text-muted-foreground">
       {value === "OK"
-        ? <CircleCheckIcon className="fill-[#5E17EB]!" />
-        : <AlertTriangleIcon className="text-red-500" />}
+        ? <CircleCheckIcon className="fill-[#5E17EB]! dark:fill-primary!" />
+        : <AlertTriangleIcon className="text-red-500 dark:text-red-300" />}
       {value}
     </Badge>
   )
@@ -88,9 +88,9 @@ function StatusMaquinaBadge({ value }) {
 
 function StatusAlertaBadge({ value }) {
   if (value === "RESOLVIDO")
-    return <Badge variant="outline" className="px-1.5 bg-green-100 text-green-700 border-green-200">Resolvido</Badge>
+    return <Badge variant="outline" className="px-1.5 bg-green-100 text-green-700 border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">Resolvido</Badge>
   if (value === "EM_ANDAMENTO")
-    return <Badge variant="outline" className="px-1.5 bg-yellow-100 text-yellow-700 border-yellow-200">Em andamento</Badge>
+    return <Badge variant="outline" className="px-1.5 bg-yellow-100 text-yellow-700 border-yellow-200 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300">Em andamento</Badge>
   return <Badge variant="outline" className="px-1.5">{value}</Badge>
 }
 
@@ -179,11 +179,11 @@ export default function PerfilPage() {
             </p>
             <p className="text-sm sm:text-base text-muted-foreground">{form.email}</p>
             <div className="flex flex-wrap justify-center sm:justify-start items-center gap-1.5 mt-1">
-              <Badge variant="outline" className="px-1.5 bg-purple-100 text-purple-700 border-purple-200 text-xs">
+              <Badge variant="outline" className="px-1.5 bg-purple-100 text-purple-700 border-purple-200 text-xs dark:border-primary/40 dark:bg-primary/10 dark:text-primary-foreground">
                 <span className="mr-1 size-1.5 rounded-full bg-purple-500 inline-block" />
                 {USUARIO_MOCK.perfil}
               </Badge>
-              <Badge variant="outline" className="px-1.5 bg-green-100 text-green-700 border-green-200 text-xs">
+              <Badge variant="outline" className="px-1.5 bg-green-100 text-green-700 border-green-200 text-xs dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
                 <span className="mr-1 size-1.5 rounded-full bg-green-500 inline-block" />
                 Ativo
               </Badge>
@@ -216,7 +216,7 @@ export default function PerfilPage() {
             {/* Informações pessoais */}
             <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-4">
               <div className="flex items-center gap-2 font-semibold text-sm">
-                <UserIcon className="size-4 text-[#5E17EB]" />
+                <UserIcon className="size-4 text-[#5E17EB] dark:text-primary" />
                 Informações pessoais
               </div>
 
@@ -310,7 +310,7 @@ export default function PerfilPage() {
             {/* Informações da conta */}
             <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-4">
               <div className="flex items-center gap-2 font-semibold text-sm">
-                <ShieldCheckIcon className="size-4 text-[#5E17EB]" />
+                <ShieldCheckIcon className="size-4 text-[#5E17EB] dark:text-primary" />
                 Informações da conta
               </div>
 
@@ -330,7 +330,7 @@ export default function PerfilPage() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                   <span className="text-xs text-muted-foreground uppercase tracking-wide">Status</span>
-                  <Badge variant="outline" className="px-1.5 bg-green-100 text-green-700 border-green-200 w-fit mt-0.5">
+                  <Badge variant="outline" className="px-1.5 bg-green-100 text-green-700 border-green-200 w-fit mt-0.5 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
                     <span className="mr-1 size-1.5 rounded-full bg-green-500 inline-block" />
                     Ativo
                   </Badge>
@@ -346,7 +346,7 @@ export default function PerfilPage() {
           <TabsContent value="seguranca" className="mt-4">
             <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-4 w-full max-w-md">
               <div className="flex items-center gap-2 font-semibold text-sm">
-                <LockIcon className="size-4 text-[#5E17EB]" />
+                <LockIcon className="size-4 text-[#5E17EB] dark:text-primary" />
                 Alterar senha
               </div>
 
@@ -419,7 +419,7 @@ export default function PerfilPage() {
                 { label: "Alertas em andamento", value: alertasEmAndamento },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-xl border bg-card p-4">
-                  <p className="text-2xl font-bold text-[#5E17EB]">{stat.value}</p>
+                  <p className="text-2xl font-bold text-[#5E17EB] dark:text-white">{stat.value}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
                 </div>
               ))}
@@ -428,7 +428,7 @@ export default function PerfilPage() {
             {/* Máquinas responsáveis */}
             <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
               <div className="flex items-center gap-2 font-semibold text-sm">
-                <WrenchIcon className="size-4 text-[#5E17EB]" />
+                <WrenchIcon className="size-4 text-[#5E17EB] dark:text-primary" />
                 Máquinas sob responsabilidade
               </div>
 
@@ -436,10 +436,10 @@ export default function PerfilPage() {
                 {MAQUINAS_MOCK.map((m) => (
                   <div
                     key={m.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border px-4 py-3 hover:border-[#5E17EB]/40 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border px-4 py-3 hover:border-[#5E17EB]/40 dark:hover:border-primary/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-[#5E17EB]">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-[#5E17EB] dark:bg-primary/10 dark:text-primary">
                         <WrenchIcon className="size-4" />
                       </div>
                       <div>
@@ -461,13 +461,13 @@ export default function PerfilPage() {
             {/* Histórico de alertas — scroll horizontal em telas pequenas */}
             <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
               <div className="flex items-center gap-2 font-semibold text-sm">
-                <ActivityIcon className="size-4 text-[#5E17EB]" />
+                <ActivityIcon className="size-4 text-[#5E17EB] dark:text-primary" />
                 Histórico de alertas atendidos
               </div>
 
-              <div className="overflow-x-auto rounded-lg border">
+              <div className="min-h-[300px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
                 <Table>
-                  <TableHeader className="bg-muted">
+                  <TableHeader className="sticky top-0 z-10 bg-muted">
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Máquina</TableHead>
                       <TableHead className="whitespace-nowrap">Tipo</TableHead>

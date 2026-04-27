@@ -62,7 +62,7 @@ function TecnicoAvatar({ tecnico, size = "default" }) {
   return (
     <Avatar className={sizeClass}>
       <AvatarImage src={tecnico.foto || undefined} alt={tecnico.nome} />
-      <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold">
+      <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold dark:bg-primary/20 dark:text-primary-foreground">
         {getInitials(tecnico.nome)}
       </AvatarFallback>
     </Avatar>
@@ -72,8 +72,8 @@ function TecnicoAvatar({ tecnico, size = "default" }) {
 function StatusTecnicoBadge({ value }) {
   const isAtivo = value === "ATIVO"
   return (
-    <Badge variant="outline" className={`px-1.5 ${isAtivo ? "text-green-700 bg-green-50 border-green-200" : "text-gray-500 bg-gray-50 border-gray-200"}`}>
-      {isAtivo ? <CircleCheckIcon className="fill-green-600!" /> : <CircleMinusIcon className="text-gray-400" />}
+    <Badge variant="outline" className={`px-1.5 ${isAtivo ? "text-green-700 bg-green-50 border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300" : "text-gray-500 bg-gray-50 border-gray-200 dark:border-border dark:bg-muted/30 dark:text-muted-foreground"}`}>
+      {isAtivo ? <CircleCheckIcon className="fill-green-600!" /> : <CircleMinusIcon className="text-gray-400 dark:text-muted-foreground" />}
       {isAtivo ? "Ativo" : "Inativo"}
     </Badge>
   )
@@ -207,7 +207,7 @@ export default function TecnicosPage() {
       accessorKey: "alertasAtendidos",
       header: "Alertas atendidos",
       cell: ({ row }) => (
-        <span className="font-medium tabular-nums text-sm text-[#3B2867]">{row.original.alertasAtendidos}</span>
+        <span className="font-medium tabular-nums text-sm text-[#3B2867] dark:text-white">{row.original.alertasAtendidos}</span>
       ),
     },
     {
@@ -253,8 +253,8 @@ export default function TecnicosPage() {
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <UsersIcon size={22} className="text-[#3B2867]" />
-                <h1 className="text-lg font-medium text-[#3B2867]">Técnicos</h1>
+                <UsersIcon size={22} className="text-[#3B2867] dark:text-white" />
+                <h1 className="text-lg font-medium text-[#3B2867] dark:text-white">Técnicos</h1>
               </div>
             
             </div>
@@ -277,14 +277,14 @@ export default function TecnicosPage() {
         {tecnicos.filter(t => t.status === "ATIVO").length} ativos
       </span>
     </div>
-    <span className="text-3xl font-bold text-[#3B2867]">{tecnicos.length}</span>
+    <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{tecnicos.length}</span>
     <div className="flex flex-col gap-0.5 text-sm">
-      <span className="text-green-700 flex items-center gap-1">
+      <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
         <CircleCheckIcon className="size-3.5 fill-green-600" />
         {tecnicos.filter(t => t.status === "ATIVO").length} operando normalmente
       </span>
       <span className="text-muted-foreground flex items-center gap-1">
-        <CircleMinusIcon className="size-3.5 text-gray-400" />
+        <CircleMinusIcon className="size-3.5 text-gray-400 dark:text-muted-foreground" />
         {tecnicos.filter(t => t.status === "INATIVO").length} inativos
       </span>
     </div>
@@ -296,7 +296,7 @@ export default function TecnicosPage() {
       <span className="text-sm text-muted-foreground font-medium">Com alertas ativos</span>
       <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">hoje</span>
     </div>
-    <span className="text-3xl font-bold text-[#3B2867]">{tecnicosComAlertas}</span>
+    <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{tecnicosComAlertas}</span>
     <div className="flex flex-col gap-0.5 text-sm">
       <span className="text-muted-foreground">
         {tecnicos.filter(t => t.status === "ATIVO").length - tecnicosComAlertas} disponíveis
@@ -311,7 +311,7 @@ export default function TecnicosPage() {
       <span className="text-sm text-muted-foreground font-medium">Alertas atendidos</span>
       <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">total</span>
     </div>
-    <span className="text-3xl font-bold text-[#3B2867]">{totalAlertas}</span>
+    <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{totalAlertas}</span>
     <div className="flex flex-col gap-0.5 text-sm">
       <span className="text-muted-foreground">
         Média de {tecnicos.length ? (totalAlertas / tecnicos.length).toFixed(1) : 0} por técnico
@@ -329,9 +329,9 @@ export default function TecnicosPage() {
         </div>
 
         {/* Tabela */}
-        <div className="overflow-hidden rounded-lg border">
+        <div className="min-h-[500px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
           <Table>
-            <TableHeader className="bg-muted">
+            <TableHeader className="sticky top-0 z-10 bg-muted">
               {table.getHeaderGroups().map(hg => (
                 <TableRow key={hg.id}>
                   {hg.headers.map(h => <TableHead key={h.id}>{h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}</TableHead>)}
@@ -341,7 +341,7 @@ export default function TecnicosPage() {
             <TableBody>
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map(row => (
-                  <TableRow className="h-[100px]!" key={row.id}>
+                  <TableRow className="relative z-0" key={row.id}>
                     {row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}
                   </TableRow>
                 ))
@@ -357,12 +357,12 @@ export default function TecnicosPage() {
         {/* Paginação */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">{dadosFiltrados.length} resultado(s)</span>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}><ChevronsLeftIcon className="size-4" /></Button>
+          <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
+            <Button variant="outline" size="icon" className="hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}><ChevronsLeftIcon className="size-4" /></Button>
             <Button variant="outline" size="icon" className="size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}><ChevronLeftIcon className="size-4" /></Button>
             <span className="text-sm">Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
             <Button variant="outline" size="icon" className="size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}><ChevronRightIcon className="size-4" /></Button>
-            <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}><ChevronsRightIcon className="size-4" /></Button>
+            <Button variant="outline" size="icon" className="hidden size-8 lg:flex" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}><ChevronsRightIcon className="size-4" /></Button>
           </div>
         </div>
 
@@ -386,10 +386,10 @@ export default function TecnicosPage() {
               {modoSheet === "ver" && tecnicoSelecionado ? (
                 <>
                   {/* Avatar + nome em destaque */}
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100">
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-100 dark:from-primary/10 dark:to-muted/30 dark:border-primary/30">
                     <TecnicoAvatar tecnico={tecnicoSelecionado} size="lg" />
                     <div className="flex flex-col gap-1">
-                      <span className="font-semibold text-base text-[#3B2867]">{tecnicoSelecionado.nome}</span>
+                      <span className="font-semibold text-base text-[#3B2867] dark:text-white">{tecnicoSelecionado.nome}</span>
                       <span className="text-sm text-muted-foreground">{tecnicoSelecionado.especialidade}</span>
                       <StatusTecnicoBadge value={tecnicoSelecionado.status} />
                     </div>
@@ -413,7 +413,7 @@ export default function TecnicosPage() {
 
                   <div className="flex flex-col gap-1">
                     <Label className="text-muted-foreground text-xs">Alertas atendidos</Label>
-                    <span className="text-2xl font-bold text-[#3B2867]">{tecnicoSelecionado.alertasAtendidos}</span>
+                    <span className="text-2xl font-bold text-[#3B2867] dark:text-white">{tecnicoSelecionado.alertasAtendidos}</span>
                   </div>
 
                   <Separator />
@@ -436,7 +436,7 @@ export default function TecnicosPage() {
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/40 border">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={form.foto || undefined} />
-                      <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold text-sm">
+                      <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold text-sm dark:bg-primary/20 dark:text-primary-foreground">
                         {form.nome ? getInitials(form.nome) : <ImageIcon className="size-4 text-muted-foreground" />}
                       </AvatarFallback>
                     </Avatar>
