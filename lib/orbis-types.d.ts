@@ -10,6 +10,21 @@ export interface RootLayoutProps extends WithChildrenProps {
 
 export interface DashboardLayoutProps extends WithChildrenProps {}
 
+export interface DashboardPermissions {
+  role: string;
+  isAdmin: boolean;
+  isTecnico: boolean;
+  canViewDashboard: boolean;
+  canViewTecnicos: boolean;
+  canManageMaquinas: boolean;
+  canManageSensores: boolean;
+  canManageTecnicos: boolean;
+  canCreateAlertas: boolean;
+  canDeleteAlertas: boolean;
+  canUpdateAlertStatus: boolean;
+  canEditOwnProfile: boolean;
+}
+
 export type Criticidade = "ALTA" | "MEDIA" | "BAIXA";
 export type StatusMaquina = "OK" | "ALERTA";
 

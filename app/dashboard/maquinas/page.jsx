@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { useMaquinas } from "@/components/context/maquinas-context"
+import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -90,6 +91,7 @@ function formatMetric(value, loading, suffix = "") {
 export default function MaquinasPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const permissions = useDashboardPermissions()
   const {
     maquinas,
     status,
@@ -114,6 +116,7 @@ export default function MaquinasPage() {
 
   const loadingInicial = carregando && maquinas.length === 0
   const errorSemDados = status === "error" && maquinas.length === 0
+  const canManageMaquinas = permissions.canManageMaquinas
   const sensoresVinculadosExclusao = Math.max(Number(maquinaExcluir?.sensores ?? 0), 0)
   const podeExcluirMaquina =
     Boolean(maquinaExcluir) &&
@@ -136,11 +139,20 @@ export default function MaquinasPage() {
 
   React.useEffect(() => {
     if (searchParams.get("action") === "new") {
+      if (!canManageMaquinas) {
+        router.replace("/dashboard/maquinas")
+        return
+      }
+
       abrirCriar()
     }
-  }, [searchParams])
+  }, [canManageMaquinas, router, searchParams])
 
   function abrirCriar() {
+    if (!canManageMaquinas) {
+      return
+    }
+
     setModoSheet("criar")
     setForm(formVazio)
     setMaquinaSelecionada(null)
@@ -148,6 +160,10 @@ export default function MaquinasPage() {
   }
 
   function abrirEditar(maquina) {
+    if (!canManageMaquinas) {
+      return
+    }
+
     setModoSheet("editar")
     setForm({
       nome: maquina.nome,
@@ -189,6 +205,10 @@ export default function MaquinasPage() {
   }
 
   function confirmarExcluir(maquina) {
+    if (!canManageMaquinas) {
+      return
+    }
+
     setMaquinaExcluir(maquina)
     setConfirmacaoExclusao("")
     setDialogExcluir(true)
@@ -259,13 +279,17 @@ export default function MaquinasPage() {
             <DropdownMenuItem onClick={() => abrirVer(row.original)}>
               <EyeIcon className="mr-1 size-4" /> Ver detalhes
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => abrirEditar(row.original)}>
-              <PencilIcon className="mr-1 size-4" /> Editar
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}>
-              <Trash2Icon className="mr-1 size-4" /> Excluir
-            </DropdownMenuItem>
+            {canManageMaquinas ? (
+              <>
+                <DropdownMenuItem onClick={() => abrirEditar(row.original)}>
+                  <PencilIcon className="mr-1 size-4" /> Editar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}>
+                  <Trash2Icon className="mr-1 size-4" /> Excluir
+                </DropdownMenuItem>
+              </>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -307,10 +331,12 @@ export default function MaquinasPage() {
 
             </div>
           </div>
-          <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
-            <PlusIcon className="mr-1 size-4" />
-            Nova maquina
-          </Button>
+          {canManageMaquinas ? (
+            <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
+              <PlusIcon className="mr-1 size-4" />
+              Nova maquina
+            </Button>
+          ) : null}
         </div>
 
         <Separator />
@@ -513,14 +539,16 @@ export default function MaquinasPage() {
                   <div className="flex flex-col gap-2"><Label className="text-muted-foreground text-xs">Score de estabilidade</Label><IntegridadeBar value={maquinaSelecionada.scoreEstabilidade} /></div>
                   <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs  text-right!">Último sinal</Label><span className="text-sm ">{tempoRelativo(maquinaSelecionada.ultimaLeituraEm)}</span></div>
                   <Separator />
-                  <div className="flex gap-2">
-                    <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(maquinaSelecionada), 100) }} disabled={salvando}>
-                      <PencilIcon className="mr-1 size-4" /> Editar
-                    </Button>
-                    <Button variant="destructive" onClick={() => confirmarExcluir(maquinaSelecionada)} disabled={salvando}>
-                      <Trash2Icon className="mr-1 size-4" /> Excluir
-                    </Button>
-                  </div>
+                  {canManageMaquinas ? (
+                    <div className="flex gap-2">
+                      <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(maquinaSelecionada), 100) }} disabled={salvando}>
+                        <PencilIcon className="mr-1 size-4" /> Editar
+                      </Button>
+                      <Button variant="destructive" onClick={() => confirmarExcluir(maquinaSelecionada)} disabled={salvando}>
+                        <Trash2Icon className="mr-1 size-4" /> Excluir
+                      </Button>
+                    </div>
+                  ) : null}
                 </>
               ) : (
                 <>

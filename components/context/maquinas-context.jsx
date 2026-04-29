@@ -3,6 +3,7 @@
 import * as React from "react"
 
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
+import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import {
   fetchDashboardJson,
   getHttpErrorStatus,
@@ -72,6 +73,15 @@ export function MaquinasProvider({ children }) {
 
     if (!session?.accessToken) {
       const error = new Error("Faca login para gerenciar as maquinas.")
+      setStatus("error")
+      setMensagem(error.message)
+      throw error
+    }
+
+    const permissions = getDashboardPermissions(session.usuario)
+
+    if (!permissions.canManageMaquinas) {
+      const error = new Error("Seu perfil tem acesso somente leitura para maquinas.")
       setStatus("error")
       setMensagem(error.message)
       throw error

@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import dadosIniciais from "@/app/dashboard/alertas/data.json"
+import { getAuthSession } from "@/lib/auth-session"
+import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 
 /** @typedef {import("@/lib/orbis-types").WithChildrenProps} WithChildrenProps */
 /** @typedef {import("@/lib/orbis-types").Alerta} Alerta */
@@ -32,6 +34,16 @@ function carregarAlertas() {
   }
 }
 
+function getAlertasMutationPermissions() {
+  const session = getAuthSession()
+
+  if (!session?.accessToken) {
+    throw new Error("Faca login para gerenciar os alertas.")
+  }
+
+  return getDashboardPermissions(session.usuario)
+}
+
 /**
  * @param {WithChildrenProps} props
  */
@@ -49,6 +61,12 @@ export function AlertasProvider({ children }) {
    * @returns {Alerta}
    */
   function adicionarAlerta(dados) {
+    const permissions = getAlertasMutationPermissions()
+
+    if (!permissions.canCreateAlertas) {
+      throw new Error("Seu perfil pode apenas atualizar o status dos alertas.")
+    }
+
     const novo = {
       ...dados,
       id: alertas.length > 0 ? Math.max(...alertas.map((alerta) => alerta.id)) + 1 : 1,
@@ -67,6 +85,12 @@ export function AlertasProvider({ children }) {
    * @param {AtualizacaoAlertaInput} dados
    */
   function editarAlerta(id, dados) {
+    const permissions = getAlertasMutationPermissions()
+
+    if (!permissions.canCreateAlertas) {
+      throw new Error("Seu perfil pode apenas atualizar o status dos alertas.")
+    }
+
     setAlertas((prev) => prev.map((alerta) => (alerta.id === id ? { ...alerta, ...dados } : alerta)))
   }
 
@@ -75,6 +99,12 @@ export function AlertasProvider({ children }) {
    * @param {StatusAlerta} novoStatus
    */
   function atualizarStatus(id, novoStatus) {
+    const permissions = getAlertasMutationPermissions()
+
+    if (!permissions.canUpdateAlertStatus) {
+      throw new Error("Seu perfil nao pode alterar alertas.")
+    }
+
     setAlertas((prev) => prev.map((alerta) => (alerta.id === id ? { ...alerta, status: novoStatus } : alerta)))
   }
 
@@ -82,6 +112,12 @@ export function AlertasProvider({ children }) {
    * @param {number} id
    */
   function excluirAlerta(id) {
+    const permissions = getAlertasMutationPermissions()
+
+    if (!permissions.canDeleteAlertas) {
+      throw new Error("Seu perfil pode apenas atualizar o status dos alertas.")
+    }
+
     setAlertas((prev) => prev.filter((alerta) => alerta.id !== id))
   }
 
