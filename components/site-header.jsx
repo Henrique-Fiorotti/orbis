@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { AUTH_SESSION_UPDATED_EVENT, getAuthSessionUser } from "@/lib/auth-session"
 import {
   Tooltip,
   TooltipContent,
@@ -93,9 +94,26 @@ export function SiteHeader() {
   const [notificacoes, setNotificacoes] = React.useState(MOCK_NOTIFICACOES)
   const panelRef = React.useRef(null)
   const [mounted, setMounted] = React.useState(false)
+  const [nomeUsuario, setNomeUsuario] = React.useState("usuario")
 
   React.useEffect(() => {
     setMounted(true)
+  }, [])
+
+  React.useEffect(() => {
+    function syncUserName() {
+      setNomeUsuario(getAuthSessionUser()?.nome || "usuario")
+    }
+
+    syncUserName()
+
+    window.addEventListener("storage", syncUserName)
+    window.addEventListener(AUTH_SESSION_UPDATED_EVENT, syncUserName)
+
+    return () => {
+      window.removeEventListener("storage", syncUserName)
+      window.removeEventListener(AUTH_SESSION_UPDATED_EVENT, syncUserName)
+    }
   }, [])
 
   const isDark = resolvedTheme === "dark"

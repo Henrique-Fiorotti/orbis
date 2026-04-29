@@ -68,11 +68,11 @@ function StatusBadge({ value }) {
       variant="outline"
       className={`px-1.5 ${
         isOnline
-          ? "border-green-200 bg-green-50 text-green-700"
-          : "border-red-200 bg-red-50 text-red-700"
+          ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
+          : "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
       }`}
     >
-      {isOnline ? <CircleCheckIcon className="fill-green-600!" /> : <WifiOffIcon className="text-red-500" />}
+      {isOnline ? <CircleCheckIcon className="fill-green-600!" /> : <WifiOffIcon className="text-red-500 dark:text-red-300" />}
       {value}
     </Badge>
   )
@@ -90,11 +90,11 @@ function LeituraCell({ valor, unidade, limiteMin, limiteMax }) {
   return (
     <div className="flex min-w-[110px] flex-col gap-1">
       <div className="flex items-center gap-1">
-        <span className={`font-mono text-sm font-medium ${overLimit ? "text-red-600" : "text-foreground"}`}>
+        <span className={`font-mono text-sm font-medium ${overLimit ? "text-red-600 dark:text-red-300" : "text-foreground"}`}>
           {valor}
           <span className="ml-0.5 text-xs font-normal text-muted-foreground">{unidade}</span>
         </span>
-        {overLimit ? <AlertTriangleIcon className="size-3 text-red-500" /> : null}
+        {overLimit ? <AlertTriangleIcon className="size-3 text-red-500 dark:text-red-300" /> : null}
       </div>
       <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
         <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
@@ -463,8 +463,8 @@ export default function SensoresPage() {
               <ArrowLeftIcon className="size-4" />
             </Button>
             <div className="flex items-center gap-2">
-              <NfcIcon size={22} className="text-[#3B2867]" />
-              <h1 className="text-lg font-medium text-[#3B2867]">Sensores</h1>
+              <NfcIcon size={22} className="text-[#3B2867] dark:text-white" />
+              <h1 className="text-lg font-medium text-[#3B2867] dark:text-white">Sensores</h1>
             </div>
           </div>
           <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
@@ -501,13 +501,13 @@ export default function SensoresPage() {
                 {loadingInicial ? "Sincronizando" : `${sensores.length} total`}
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{loadingInicial ? "--" : totalOnline}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{loadingInicial ? "--" : totalOnline}</span>
             <div className="flex flex-col gap-0.5 text-sm">
-              <span className="flex items-center gap-1 text-green-700">
+              <span className="flex items-center gap-1 text-green-700 dark:text-green-300">
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
                 {loadingInicial ? "Atualizando sensores..." : `${totalOnline} transmitindo normalmente`}
               </span>
-              <span className="flex items-center gap-1 text-red-600">
+              <span className="flex items-center gap-1 text-red-600 dark:text-red-300">
                 <WifiOffIcon className="size-3.5" />
                 {loadingInicial ? "Lendo inativos..." : `${totalOffline} offline ou inativos`}
               </span>
@@ -517,11 +517,11 @@ export default function SensoresPage() {
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Leituras fora do limite</span>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${foraDoLimite > 0 ? "border border-red-200 bg-red-50 text-red-700" : "border border-green-200 bg-green-50 text-green-700"}`}>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${foraDoLimite > 0 ? "border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : "border border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"}`}>
                 {loadingInicial ? "..." : foraDoLimite > 0 ? "alerta" : "normal"}
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{loadingInicial ? "--" : foraDoLimite}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{loadingInicial ? "--" : foraDoLimite}</span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-muted-foreground">
                 {loadingInicial ? "Verificando limites..." : `${Math.max(sensores.length - foraDoLimite, 0)} dentro dos limites`}
@@ -533,11 +533,11 @@ export default function SensoresPage() {
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Sem maquina vinculada</span>
-              <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+              <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
                 inativos
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867]">{loadingInicial ? "--" : semMaquina}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{loadingInicial ? "--" : semMaquina}</span>
             <span className="text-sm text-muted-foreground">
               {loadingInicial ? "Conferindo vinculos..." : "Sensores sem maquina sao cadastrados como OFFLINE."}
             </span>
@@ -560,9 +560,9 @@ export default function SensoresPage() {
           <StatePanel message={mensagem || "Nao foi possivel carregar os sensores."} tone="error" />
         ) : (
           <>
-            <div className="overflow-hidden rounded-lg border">
+            <div className="min-h-[500px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
               <Table>
-                <TableHeader className="bg-muted">
+                <TableHeader className="sticky top-0 z-10 bg-muted">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
                       {headerGroup.headers.map((header) => (
@@ -576,7 +576,7 @@ export default function SensoresPage() {
                 <TableBody>
                   {table.getRowModel().rows.length ? (
                     table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id}>
+                      <TableRow key={row.id} className="relative z-0">
                         {row.getVisibleCells().map((cell) => (
                           <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                         ))}
@@ -593,20 +593,20 @@ export default function SensoresPage() {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between px-4">
               <span className="text-sm text-muted-foreground">{dadosFiltrados.length} resultado(s)</span>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
+              <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
+                <Button variant="outline" size="icon" className="hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
                   <ChevronsLeftIcon className="size-4" />
                 </Button>
                 <Button variant="outline" size="icon" className="size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
                   <ChevronLeftIcon className="size-4" />
                 </Button>
-                <span className="text-sm">Pag. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
+                <span className="flex w-fit items-center justify-center text-sm font-medium">Pag. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
                 <Button variant="outline" size="icon" className="size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
                   <ChevronRightIcon className="size-4" />
                 </Button>
-                <Button variant="outline" size="icon" className="size-8" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
+                <Button variant="outline" size="icon" className="hidden size-8 lg:flex" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
                   <ChevronsRightIcon className="size-4" />
                 </Button>
               </div>
@@ -646,9 +646,9 @@ export default function SensoresPage() {
                     </div>
                   </div>
                   <Separator />
-                  <div className="flex flex-col gap-3 rounded-lg border border-orange-100 bg-orange-50/40 p-3">
+                  <div className="flex flex-col gap-3 rounded-lg border border-orange-100 bg-orange-50/40 p-3 dark:border-orange-900/40 dark:bg-orange-950/20">
                     <div className="flex items-center gap-2">
-                      <ThermometerIcon className="size-4 text-orange-500" />
+                      <ThermometerIcon className="size-4 text-orange-500 dark:text-orange-300" />
                       <span className="text-sm font-medium">Temperatura</span>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
@@ -666,9 +666,9 @@ export default function SensoresPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-3 rounded-lg border border-blue-100 bg-blue-50/40 p-3">
+                  <div className="flex flex-col gap-3 rounded-lg border border-blue-100 bg-blue-50/40 p-3 dark:border-blue-900/40 dark:bg-blue-950/20">
                     <div className="flex items-center gap-2">
-                      <ActivityIcon className="size-4 text-blue-500" />
+                      <ActivityIcon className="size-4 text-blue-500 dark:text-blue-300" />
                       <span className="text-sm font-medium">Vibracao</span>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
@@ -732,7 +732,7 @@ export default function SensoresPage() {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    <span className={`text-xs ${form.maquinaId ? "text-muted-foreground" : "font-medium text-red-600"}`}>
+                    <span className={`text-xs ${form.maquinaId ? "text-muted-foreground" : "font-medium text-red-600 dark:text-red-300"}`}>
                       {form.maquinaId
                         ? "Sensor sera vinculado a maquina selecionada."
                         : "Sem maquina vinculada: selecione uma maquina antes de salvar se quiser atribuir este sensor."}
