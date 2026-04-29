@@ -500,7 +500,7 @@ export default function MaquinasPage() {
                   <Separator />
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
-                      <Label className="text-muted-foreground text-xs">Criticidade</Label>
+                      <Label className="text-muted-foreground text-xs">Importância</Label>
                       <CriticidadeBadge value={maquinaSelecionada.criticidade} />
                     </div>
                     <div className="flex flex-col gap-1">

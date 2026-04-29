@@ -5,6 +5,7 @@ import { loginAction } from "@/app/actions/auth.actions";
 import { saveAuthSession } from "@/lib/auth-session";
 import { Eye, EyeOff } from 'lucide-react'
 import { useTheme } from "next-themes";
+import { getValidAuthSession } from "@/lib/auth-session";
 
 function PrivacyModal({ onClose }) {
   return (
@@ -97,6 +98,14 @@ export default function LoginCard({isDark}) {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() =>{
+    const session = getValidAuthSession()
+    if (session){
+      window.location.href = "/dashboard"
+    }
+  }, [])
+  // O [] significa: rode isso UMA VEZ, assim que o componente aparecer na tela
 
   const darkMode = typeof isDark === "boolean" ? isDark : mounted && resolvedTheme === "dark"
   const cardStyles = {
