@@ -168,19 +168,18 @@ export default function HomePage() {
   return (
     <div className={styles.root}>
       <section
-        id="inicio"
-        style={{
-          minHeight: "85vh",
-          display: "flex",
-          flexDirection: "row-reverse",
-          justifyContent: "center",
-          padding: "180px 15% 100px 15%",
-          position: "relative",
-          background: "var(--landing-section-bg)",
-          objectFit: "cover",
-          marginTop: "70px",
-        }}
-      >
+    id="inicio"
+    style={{
+        minHeight: "85vh",
+        display: "flex",
+        flexDirection: "row-reverse",
+        justifyContent: "center",
+        position: "relative",
+        background: "var(--landing-section-bg)",
+        objectFit: "cover",
+    }}
+    className="mt-10 sm:mt-12 md:mt-14 lg:mt-[65px] px-[8%] sm:px-[10%] md:px-[12%] lg:px-[15%] pt-16 sm:pt-20 md:pt-28 lg:pt-[180px] pb-12 sm:pb-16 md:pb-20 lg:pb-[100px]"
+>
         <div
           style={{
             position: "absolute",
@@ -306,7 +305,7 @@ export default function HomePage() {
           height: "30dvh",
           background: "var(--landing-quote-bg)",
           padding: "28px 8vw",
-          marginTop: "70px", 
+          marginTop: "70px",
           ...DEFERRED_SECTION_STYLE,
         }}
       >
@@ -369,7 +368,7 @@ export default function HomePage() {
       <section id="sobre" style={{
         background: "var(--landing-alt-bg)",
         transition: "background-color 0.25s ease",
-        paddingTop:"15px"
+        paddingTop: "15px"
       }}>
         <SobreInformativo />
       </section>
