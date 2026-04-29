@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { useTecnicos } from "@/components/context/tecnicos-context"
+import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -41,7 +42,7 @@ const ESPECIALIDADES = [
 
 const formVazio = {
   nome: "", email: "", senha: "", telefone: "",
-  especialidade: "Elétrica Industrial", status: "ATIVO", foto: "",
+  especialidade: "Elétrica Industrial", ativo: true, foto: "",
 }
 
 function getInitials(nome) {
@@ -105,6 +106,7 @@ function formatMetric(value, loading, suffix = "") {
 export default function TecnicosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const permissions = useDashboardPermissions()
   const {
     tecnicos,
     status,
@@ -128,8 +130,15 @@ export default function TecnicosPage() {
   const [tecnicoExcluir, setTecnicoExcluir] = React.useState(null)
   const [limiteItems] = React.useState(10)
 
+  React.useEffect(() => {
+    if (!permissions.canViewTecnicos) {
+      router.replace("/dashboard")
+    }
+  }, [permissions.canViewTecnicos, router])
+
   const loadingInicial = carregando && tecnicos.length === 0
   const errorSemDados = status === "error" && tecnicos.length === 0
+  const canManageTecnicos = permissions.canManageTecnicos
   const totalAtivos = React.useMemo(() => tecnicos.filter((tecnico) => tecnico.status === "ATIVO").length, [tecnicos])
   const totalInativos = React.useMemo(() => tecnicos.filter((tecnico) => tecnico.status === "INATIVO").length, [tecnicos])
   const totalAlertas = React.useMemo(
@@ -142,14 +151,37 @@ export default function TecnicosPage() {
   )
 
   React.useEffect(() => {
-    if (searchParams.get("action") === "new") abrirCriar()
-  }, [searchParams])
+    if (!permissions.canViewTecnicos) {
+      return
+    }
+
+    if (searchParams.get("action") === "new") {
+      if (!canManageTecnicos) {
+        router.replace("/dashboard/tecnicos")
+        return
+      }
+
+      abrirCriar()
+    }
+  }, [canManageTecnicos, permissions.canViewTecnicos, router, searchParams])
 
   React.useEffect(() => {
+    if (!permissions.canViewTecnicos) {
+      return
+    }
+
     recarregarTecnicos(1, limiteItems)
-  }, [])
+  }, [limiteItems, permissions.canViewTecnicos, recarregarTecnicos])
+
+  if (!permissions.canViewTecnicos) {
+    return null
+  }
 
   function abrirCriar() {
+    if (!canManageTecnicos) {
+      return
+    }
+
     setModoSheet("criar")
     setForm(formVazio)
     setTecnicoSelecionado(null)
@@ -157,6 +189,10 @@ export default function TecnicosPage() {
   }
 
   function abrirEditar(tecnico) {
+    if (!canManageTecnicos) {
+      return
+    }
+
     setModoSheet("editar")
     setForm({
       nome: tecnico.nome, email: tecnico.email,
@@ -196,11 +232,11 @@ export default function TecnicosPage() {
       } else {
         await editarTecnico(tecnicoSelecionado.id, {
           nome: form.nome.trim(),
-          email: form.email.trim(),
+          //email: form.email.trim(),
           telefone: form.telefone.trim(),
           especialidade: form.especialidade,
-          status: form.status,
-          foto: form.foto.trim() || null,
+          ativo: form.status,
+          ...(form.foto && { foto: form.foto.trim() || null }),
         })
         toast.success("Técnico atualizado com sucesso!")
       }
@@ -214,6 +250,10 @@ export default function TecnicosPage() {
   }
 
   function confirmarExcluir(tecnico) {
+    if (!canManageTecnicos) {
+      return
+    }
+
     setTecnicoExcluir(tecnico)
     setDialogExcluir(true)
   }
@@ -296,9 +336,13 @@ export default function TecnicosPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
             <DropdownMenuItem onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+            {canManageTecnicos ? (
+              <>
+                <DropdownMenuItem onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+              </>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -331,9 +375,11 @@ export default function TecnicosPage() {
             
             </div>
           </div>
-          <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
-            <PlusIcon className="size-4 mr-1" />Novo técnico
-          </Button>
+          {canManageTecnicos ? (
+            <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
+              <PlusIcon className="size-4 mr-1" />Novo técnico
+            </Button>
+          ) : null}
         </div>
 
         <Separator />
@@ -549,14 +595,16 @@ export default function TecnicosPage() {
 
                   <Separator />
 
-                  <div className="flex gap-2">
-                    <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
-                      <PencilIcon className="size-4 mr-1" /> Editar
-                    </Button>
-                    <Button variant="destructive" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>
-                      <Trash2Icon className="size-4 mr-1" /> Excluir
-                    </Button>
-                  </div>
+                  {canManageTecnicos ? (
+                    <div className="flex gap-2">
+                      <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
+                        <PencilIcon className="size-4 mr-1" /> Editar
+                      </Button>
+                      <Button variant="destructive" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>
+                        <Trash2Icon className="size-4 mr-1" /> Excluir
+                      </Button>
+                    </div>
+                  ) : null}
                 </>
 
               ) : (

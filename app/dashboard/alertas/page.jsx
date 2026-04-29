@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { useAlertas } from "@/components/context/alertas-context"
+import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -61,7 +62,7 @@ function TipoAlertaBadge({ value }) {
   return <Badge variant="outline" className="px-1.5 text-[#3B2867] border-purple-200 bg-purple-50 text-xs font-normal dark:border-primary/40 dark:bg-primary/10 dark:text-primary-foreground">{TIPOS_ALERTA_LABEL[value] ?? value}</Badge>
 }
 
-function AlertasTable({ data, onVer, onExcluir, onStatus }) {
+function AlertasTable({ data, onVer, onExcluir, onStatus, canDeleteAlertas, canUpdateAlertStatus }) {
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const columns = React.useMemo(() => [
     {
@@ -80,17 +81,21 @@ function AlertasTable({ data, onVer, onExcluir, onStatus }) {
           <DropdownMenuTrigger asChild><Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon"><EllipsisVerticalIcon /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem onClick={() => onVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {row.original.status !== "ATENDIDO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "ATENDIDO")}><CircleCheckIcon className="size-4 mr-1 text-green-600 dark:text-green-300" /> Marcar atendido</DropdownMenuItem>}
-            {row.original.status !== "IGNORADO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "IGNORADO")}><CircleXIcon className="size-4 mr-1 text-gray-400 dark:text-muted-foreground" /> Ignorar alerta</DropdownMenuItem>}
-            {row.original.status !== "ABERTO" && <DropdownMenuItem onClick={() => onStatus(row.original.id, "ABERTO")}><ShieldAlertIcon className="size-4 mr-1 text-red-500 dark:text-red-300" /> Reabrir</DropdownMenuItem>}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={() => onExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+            {canUpdateAlertStatus || canDeleteAlertas ? <DropdownMenuSeparator /> : null}
+            {canUpdateAlertStatus && row.original.status !== "ATENDIDO" ? <DropdownMenuItem onClick={() => onStatus(row.original.id, "ATENDIDO")}><CircleCheckIcon className="size-4 mr-1 text-green-600 dark:text-green-300" /> Marcar atendido</DropdownMenuItem> : null}
+            {canUpdateAlertStatus && row.original.status !== "IGNORADO" ? <DropdownMenuItem onClick={() => onStatus(row.original.id, "IGNORADO")}><CircleXIcon className="size-4 mr-1 text-gray-400 dark:text-muted-foreground" /> Ignorar alerta</DropdownMenuItem> : null}
+            {canUpdateAlertStatus && row.original.status !== "ABERTO" ? <DropdownMenuItem onClick={() => onStatus(row.original.id, "ABERTO")}><ShieldAlertIcon className="size-4 mr-1 text-red-500 dark:text-red-300" /> Reabrir</DropdownMenuItem> : null}
+            {canDeleteAlertas ? (
+              <>
+                {canUpdateAlertStatus ? <DropdownMenuSeparator /> : null}
+                <DropdownMenuItem variant="destructive" onClick={() => onExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+              </>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
     },
-  ], [onVer, onExcluir, onStatus])
+  ], [canDeleteAlertas, canUpdateAlertStatus, onVer, onExcluir, onStatus])
 
   const table = useReactTable({
     data, columns, state: { pagination }, onPaginationChange: setPagination,
@@ -128,6 +133,7 @@ function AlertasTable({ data, onVer, onExcluir, onStatus }) {
 
 export default function AlertasPage() {
   const router = useRouter()
+  const permissions = useDashboardPermissions()
   const { alertas, adicionarAlerta, atualizarStatus, excluirAlerta } = useAlertas()
 
   const [busca, setBusca] = React.useState("")
@@ -137,6 +143,9 @@ export default function AlertasPage() {
   const [form, setForm] = React.useState(formVazio)
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [alertaExcluir, setAlertaExcluir] = React.useState(null)
+  const canCreateAlertas = permissions.canCreateAlertas
+  const canDeleteAlertas = permissions.canDeleteAlertas
+  const canUpdateAlertStatus = permissions.canUpdateAlertStatus
 
   // --- Cards computed values ---
   const totalAbertos = alertas.filter(a => a.status === "ABERTO").length
@@ -144,22 +153,63 @@ export default function AlertasPage() {
   const altaSeveridadeAbertos = alertas.filter(a => a.status === "ABERTO" && a.severidade === "ALTA").length
   const taxaResolucao = alertas.length ? Math.round((totalAtendidos / alertas.length) * 100) : 0
 
-  function abrirCriar() { setModoSheet("criar"); setForm(formVazio); setAlertaSelecionado(null); setSheetAberto(true) }
+  function abrirCriar() {
+    if (!canCreateAlertas) {
+      return
+    }
+
+    setModoSheet("criar")
+    setForm(formVazio)
+    setAlertaSelecionado(null)
+    setSheetAberto(true)
+  }
   function abrirVer(alerta) { setModoSheet("ver"); setAlertaSelecionado(alerta); setSheetAberto(true) }
-  function confirmarExcluir(alerta) { setAlertaExcluir(alerta); setDialogExcluir(true) }
-  function excluir() { excluirAlerta(alertaExcluir.id); toast.success("Alerta removido."); setDialogExcluir(false); setSheetAberto(false) }
+  function confirmarExcluir(alerta) {
+    if (!canDeleteAlertas) {
+      return
+    }
+
+    setAlertaExcluir(alerta)
+    setDialogExcluir(true)
+  }
+  function excluir() {
+    if (!alertaExcluir) {
+      return
+    }
+
+    try {
+      excluirAlerta(alertaExcluir.id)
+      toast.success("Alerta removido.")
+      setDialogExcluir(false)
+      setSheetAberto(false)
+      setAlertaExcluir(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel excluir o alerta.")
+    }
+  }
   function handleStatus(id, status) {
-    atualizarStatus(id, status)
-    const labels = { ATENDIDO: "marcado como atendido", IGNORADO: "ignorado", ABERTO: "reaberto" }
-    toast.success(`Alerta ${labels[status] ?? "atualizado"}.`)
+    try {
+      atualizarStatus(id, status)
+      const labels = { ATENDIDO: "marcado como atendido", IGNORADO: "ignorado", ABERTO: "reaberto" }
+      toast.success(`Alerta ${labels[status] ?? "atualizado"}.`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel atualizar o alerta.")
+    }
   }
   function salvar() {
     if (!form.maquinaNome.trim() || !form.sensorNome.trim() || !form.descricao.trim()) { toast.error("Preencha todos os campos obrigatórios."); return }
-    adicionarAlerta({
-      ...form,
-      maquinaId: form.maquinaId ? Number(form.maquinaId) : null,
-      sensorId: form.sensorId ? Number(form.sensorId) : null,
-    }); toast.success("Alerta registrado com sucesso!"); setSheetAberto(false)
+
+    try {
+      adicionarAlerta({
+        ...form,
+        maquinaId: form.maquinaId ? Number(form.maquinaId) : null,
+        sensorId: form.sensorId ? Number(form.sensorId) : null,
+      })
+      toast.success("Alerta registrado com sucesso!")
+      setSheetAberto(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel registrar o alerta.")
+    }
   }
 
   const dadosFiltrados = React.useMemo(() =>
@@ -190,9 +240,11 @@ export default function AlertasPage() {
              
             </div>
           </div>
-          <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <PlusIcon className="size-4 mr-1" />Novo alerta
-          </Button>
+          {canCreateAlertas ? (
+            <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <PlusIcon className="size-4 mr-1" />Novo alerta
+            </Button>
+          ) : null}
         </div>
 
         <Separator />
@@ -323,7 +375,14 @@ export default function AlertasPage() {
             { value: "todos", data: dadosFiltrados },
           ].map(({ value, data }) => (
             <TabsContent key={value} value={value} className="flex flex-col gap-4">
-              <AlertasTable data={data} onVer={abrirVer} onExcluir={confirmarExcluir} onStatus={handleStatus} />
+              <AlertasTable
+                data={data}
+                onVer={abrirVer}
+                onExcluir={confirmarExcluir}
+                onStatus={handleStatus}
+                canDeleteAlertas={canDeleteAlertas}
+                canUpdateAlertStatus={canUpdateAlertStatus}
+              />
             </TabsContent>
           ))}
         </Tabs>
@@ -355,10 +414,10 @@ export default function AlertasPage() {
                   <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs">Criado em</Label><span className="text-sm">{tempoRelativo(alertaSelecionado.criadoEm)}</span></div>
                   <Separator />
                   <div className="flex flex-col gap-2">
-                    {alertaSelecionado.status !== "ATENDIDO" && <Button className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "ATENDIDO"); setSheetAberto(false) }}><CircleCheckIcon className="size-4 mr-1" /> Marcar como atendido</Button>}
-                    {alertaSelecionado.status !== "IGNORADO" && <Button variant="outline" className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "IGNORADO"); setSheetAberto(false) }}><CircleXIcon className="size-4 mr-1" /> Ignorar alerta</Button>}
-                    {alertaSelecionado.status !== "ABERTO" && <Button variant="outline" className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "ABERTO"); setSheetAberto(false) }}><ShieldAlertIcon className="size-4 mr-1" /> Reabrir alerta</Button>}
-                    <Button variant="destructive" className="w-full" onClick={() => confirmarExcluir(alertaSelecionado)}><Trash2Icon className="size-4 mr-1" /> Excluir</Button>
+                    {canUpdateAlertStatus && alertaSelecionado.status !== "ATENDIDO" ? <Button className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "ATENDIDO"); setSheetAberto(false) }}><CircleCheckIcon className="size-4 mr-1" /> Marcar como atendido</Button> : null}
+                    {canUpdateAlertStatus && alertaSelecionado.status !== "IGNORADO" ? <Button variant="outline" className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "IGNORADO"); setSheetAberto(false) }}><CircleXIcon className="size-4 mr-1" /> Ignorar alerta</Button> : null}
+                    {canUpdateAlertStatus && alertaSelecionado.status !== "ABERTO" ? <Button variant="outline" className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "ABERTO"); setSheetAberto(false) }}><ShieldAlertIcon className="size-4 mr-1" /> Reabrir alerta</Button> : null}
+                    {canDeleteAlertas ? <Button variant="destructive" className="w-full" onClick={() => confirmarExcluir(alertaSelecionado)}><Trash2Icon className="size-4 mr-1" /> Excluir</Button> : null}
                   </div>
                 </>
               ) : (

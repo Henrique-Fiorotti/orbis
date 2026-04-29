@@ -9,6 +9,7 @@ import { flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
 import { useDashboardCharts } from "./context/dashboard-charts-context"
+import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -126,7 +127,7 @@ function getMachineSensors(maquina, sensores) {
   return sensores.filter((sensor) => sensor.maquinaId === maquina.id || sensor.maquinaNome === maquina.nome)
 }
 
-function getTableColumns(sensores, sensorError) {
+function getTableColumns(sensores, sensorError, canManageMaquinas) {
   return [
     { id: "drag", header: () => null, cell: ({ row }) => <DragHandle id={row.original.id} /> },
     {
@@ -200,8 +201,12 @@ function getTableColumns(sensores, sensorError) {
           <DropdownMenuContent align="end" className="w-32">
             <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
             <DropdownMenuItem>Ver alertas</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">Remover</DropdownMenuItem>
+            {canManageMaquinas ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive">Remover</DropdownMenuItem>
+              </>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -223,7 +228,11 @@ function MaquinasTable({
   const [sorting, setSorting] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const sortableId = React.useId()
-  const columns = React.useMemo(() => getTableColumns(sensores, sensorError), [sensores, sensorError])
+  const permissions = useDashboardPermissions()
+  const columns = React.useMemo(
+    () => getTableColumns(sensores, sensorError, permissions.canManageMaquinas),
+    [sensores, sensorError, permissions.canManageMaquinas]
+  )
   const dndSensors = useSensors(
     useSensor(MouseSensor, {}),
     useSensor(TouchSensor, {}),
@@ -350,6 +359,7 @@ function MaquinasTable({
 
 export function DataTable() {
   const router = useRouter()
+  const permissions = useDashboardPermissions()
   const { status, mensagem, maquinas, sensores, errors } = useDashboardCharts()
   const emAlerta = React.useMemo(() => maquinas.filter((maquina) => maquina.status === "ALERTA"), [maquinas])
   const loading = status === "loading" && maquinas.length === 0
@@ -388,10 +398,12 @@ export function DataTable() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/maquinas?action=new")}>
-            <PlusIcon />
-            <span className="hidden lg:inline">Nova maquina</span>
-          </Button>
+          {permissions.canManageMaquinas ? (
+            <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/maquinas?action=new")}>
+              <PlusIcon />
+              <span className="hidden lg:inline">Nova maquina</span>
+            </Button>
+          ) : null}
 
           <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/maquinas")}>
             <span className="hidden lg:inline">Ver todas</span>

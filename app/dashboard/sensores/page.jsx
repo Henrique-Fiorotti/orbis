@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { useMaquinas } from "@/components/context/maquinas-context"
 import { useSensores } from "@/components/context/sensores-context"
+import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -153,6 +154,7 @@ function getSelectedMaquinaId(value) {
 export default function SensoresPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const permissions = useDashboardPermissions()
   const {
     sensores,
     status,
@@ -177,6 +179,7 @@ export default function SensoresPage() {
 
   const loadingInicial = carregando && sensores.length === 0
   const errorSemDados = status === "error" && sensores.length === 0
+  const canManageSensores = permissions.canManageSensores
 
   const totalOnline = React.useMemo(() => sensores.filter((sensor) => sensor.status === "ONLINE").length, [sensores])
   const totalOffline = React.useMemo(() => sensores.filter((sensor) => sensor.status !== "ONLINE").length, [sensores])
@@ -196,11 +199,20 @@ export default function SensoresPage() {
 
   React.useEffect(() => {
     if (searchParams.get("action") === "new") {
+      if (!canManageSensores) {
+        router.replace("/dashboard/sensores")
+        return
+      }
+
       abrirCriar()
     }
-  }, [searchParams])
+  }, [canManageSensores, router, searchParams])
 
   function abrirCriar() {
+    if (!canManageSensores) {
+      return
+    }
+
     setModoSheet("criar")
     setForm(formVazio)
     setSensorSelecionado(null)
@@ -208,6 +220,10 @@ export default function SensoresPage() {
   }
 
   function abrirEditar(sensor) {
+    if (!canManageSensores) {
+      return
+    }
+
     setModoSheet("editar")
     setForm({
       tipo: sensor.tipo ?? "",
@@ -304,6 +320,10 @@ export default function SensoresPage() {
   }
 
   function confirmarExcluir(sensor) {
+    if (!canManageSensores) {
+      return
+    }
+
     setSensorExcluir(sensor)
     setDialogExcluir(true)
   }
@@ -429,13 +449,17 @@ export default function SensoresPage() {
             <DropdownMenuItem onClick={() => abrirVer(row.original)}>
               <EyeIcon className="mr-1 size-4" /> Ver detalhes
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => abrirEditar(row.original)}>
-              <PencilIcon className="mr-1 size-4" /> Editar
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}>
-              <Trash2Icon className="mr-1 size-4" /> Excluir
-            </DropdownMenuItem>
+            {canManageSensores ? (
+              <>
+                <DropdownMenuItem onClick={() => abrirEditar(row.original)}>
+                  <PencilIcon className="mr-1 size-4" /> Editar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}>
+                  <Trash2Icon className="mr-1 size-4" /> Excluir
+                </DropdownMenuItem>
+              </>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -467,10 +491,12 @@ export default function SensoresPage() {
               <h1 className="text-lg font-medium text-[#3B2867] dark:text-white">Sensores</h1>
             </div>
           </div>
-          <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
-            <PlusIcon className="mr-1 size-4" />
-            Novo sensor
-          </Button>
+          {canManageSensores ? (
+            <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
+              <PlusIcon className="mr-1 size-4" />
+              Novo sensor
+            </Button>
+          ) : null}
         </div>
 
         <Separator />
@@ -691,16 +717,18 @@ export default function SensoresPage() {
                     <span className="text-sm">{tempoRelativo(sensorSelecionado.ultimaLeituraEm)}</span>
                   </div>
                   <Separator />
-                  <div className="flex gap-2">
-                    <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(sensorSelecionado), 100) }} disabled={salvando}>
-                      <PencilIcon className="mr-1 size-4" />
-                      Editar
-                    </Button>
-                    <Button variant="destructive" onClick={() => confirmarExcluir(sensorSelecionado)} disabled={salvando}>
-                      <Trash2Icon className="mr-1 size-4" />
-                      Excluir
-                    </Button>
-                  </div>
+                  {canManageSensores ? (
+                    <div className="flex gap-2">
+                      <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(sensorSelecionado), 100) }} disabled={salvando}>
+                        <PencilIcon className="mr-1 size-4" />
+                        Editar
+                      </Button>
+                      <Button variant="destructive" onClick={() => confirmarExcluir(sensorSelecionado)} disabled={salvando}>
+                        <Trash2Icon className="mr-1 size-4" />
+                        Excluir
+                      </Button>
+                    </div>
+                  ) : null}
                 </>
               ) : (
                 <>
