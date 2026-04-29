@@ -15,6 +15,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { AUTH_SESSION_UPDATED_EVENT, getAuthSessionUser } from "@/lib/auth-session"
+import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import {
   AlertTriangleIcon,
   CircleHelpIcon,
@@ -75,6 +76,18 @@ const data = {
   documents: [],
 }
 
+function getNavMainItems(usuario) {
+  const permissions = getDashboardPermissions(usuario)
+
+  return data.navMain.filter((item) => {
+    if (item.url === "/dashboard/tecnicos") {
+      return permissions.canViewTecnicos
+    }
+
+    return true
+  })
+}
+
 function getUserDataFromSession() {
   const usuario = getAuthSessionUser()
 
@@ -86,6 +99,7 @@ function getUserDataFromSession() {
 }
 
 export function AppSidebar({ ...props }) {
+  const [navMainItems, setNavMainItems] = React.useState(() => getNavMainItems(getAuthSessionUser()))
   const [userData, setUserData] = React.useState({
     name: "Orbis Admin",
     email: "carregando...",
@@ -94,7 +108,9 @@ export function AppSidebar({ ...props }) {
 
   React.useEffect(() => {
     function syncUserData() {
+      const usuario = getAuthSessionUser()
       setUserData(getUserDataFromSession())
+      setNavMainItems(getNavMainItems(usuario))
     }
 
     syncUserData()
@@ -120,7 +136,7 @@ export function AppSidebar({ ...props }) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMainItems} />
         <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto dark:text-white" />
       </SidebarContent>
