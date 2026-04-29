@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useTheme } from "next-themes"
 import { Separator } from "@/components/ui/separator"
+import { usePathname } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +22,8 @@ import {
   CircleCheckIcon,
   RouteIcon,
 } from "lucide-react"
+
+
 
 const MOCK_NOTIFICACOES = [
   {
@@ -130,7 +133,9 @@ export function SiteHeader() {
   function removerNotificacao(id) {
     setNotificacoes((prev) => prev.filter((n) => n.id !== id))
   }
-
+ 
+  const pathname = usePathname() // isso é usado para definir em que rota tal objeto deve aparecer
+  console.log("pathname atual:", pathname) // ← adiciona isso
   return (
     <header className="flex h-[90px] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
@@ -154,7 +159,7 @@ export function SiteHeader() {
             Dashboard Orbis
           </h1>
 
-            <h2 className="text-sm text-muted-foreground font-normal m-0! dark:text-white!">
+          <h2 className="text-sm text-muted-foreground font-normal m-0! dark:text-white!">
             {getSaudacao()}, {localStorage.getItem("orbis_user_name")}!
           </h2>
         </div>
@@ -164,22 +169,24 @@ export function SiteHeader() {
         <div className="flex items-center gap-1">
 
           {/* Tour */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => window.dispatchEvent(new CustomEvent("orbit:start-tour"))}
-                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Tour guiado"
-              >
-                <RouteIcon className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <span>Tour guiado</span>
-            </TooltipContent>
-          </Tooltip>
+          {pathname === "/dashboard" && ( // aqui eu aviso que esse conteudo aparece somente em /dashboard
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => window.dispatchEvent(new CustomEvent("orbit:start-tour"))}
+                  className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Tour guiado"
+                >
+                  <RouteIcon className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>Tour guiado</span>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           {/* Tema */}
           <Tooltip>
@@ -265,9 +272,8 @@ export function SiteHeader() {
                     notificacoes.map((n) => (
                       <div
                         key={n.id}
-                        className={`group relative flex gap-3 px-4 py-3 border-b last:border-0 transition-colors ${
-                          n.lida ? "bg-background" : "bg-muted/30"
-                        } hover:bg-muted/50`}
+                        className={`group relative flex gap-3 px-4 py-3 border-b last:border-0 transition-colors ${n.lida ? "bg-background" : "bg-muted/30"
+                          } hover:bg-muted/50`}
                       >
                         <div
                           className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${corFundo(n.tipo)}`}
@@ -281,9 +287,8 @@ export function SiteHeader() {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <p
-                              className={`text-xs font-semibold leading-snug ${
-                                n.lida ? "text-muted-foreground" : "text-foreground"
-                              }`}
+                              className={`text-xs font-semibold leading-snug ${n.lida ? "text-muted-foreground" : "text-foreground"
+                                }`}
                             >
                               {n.titulo}
                             </p>
