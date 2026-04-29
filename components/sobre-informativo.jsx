@@ -28,7 +28,7 @@ export default function SobreInformativo() {
                 </div>
 
                 {/* Parágrafo 1 */}
-                <p className="text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center md:text-left">
+                <p style={{ fontFamily: "'Poppins', sans-serif"}} className="text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center md:text-left">
                     A <strong className="text-black dark:text-white">Orbis supervisiona continuamente</strong> o
                     funcionamento das <strong className="text-black dark:text-white">máquinas e equipamentos industriais</strong>,
                     identificando irregularidades antes que se tornem problemas maiores e garantindo mais{" "}
@@ -36,7 +36,7 @@ export default function SobreInformativo() {
                 </p>
 
                 {/* Parágrafo 2 */}
-                <p className="text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center md:text-left">
+                <p style={{ fontFamily: "'Poppins', sans-serif"}} className="text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center md:text-left">
                     Com <strong className="text-black dark:text-white">monitoramento constante</strong>, o sistema detecta
                     rapidamente qualquer alteração no desempenho dos equipamentos, permitindo que as medidas
                     necessárias sejam tomadas com <strong className="text-black dark:text-white">agilidade</strong> e{" "}
