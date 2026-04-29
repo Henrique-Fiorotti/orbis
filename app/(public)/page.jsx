@@ -202,7 +202,7 @@ export default function HomePage() {
           overlayClassName={styles.heroSplineMask}
         />
 
-          {/* Essa parte vai até o registrar empresa */}
+        {/* Essa parte vai até o registrar empresa */}
         <div style={{ position: "relative", zIndex: 1, maxWidth: "600px" }}>
           <h1
             className={styles.heroTitle}
@@ -306,7 +306,7 @@ export default function HomePage() {
           height: "30dvh",
           background: "var(--landing-quote-bg)",
           padding: "28px 8vw",
-          marginTop: "70px",
+          marginTop: "70px", 
           ...DEFERRED_SECTION_STYLE,
         }}
       >
@@ -365,18 +365,16 @@ export default function HomePage() {
         </RevealOnScroll>
       </section>
 
-  {/* aqui é o local do Sr Orbis */}
-    <section id="sobre" style={{
-          background: "var(--landing-alt-bg)",
-          transition: "background-color 0.25s ease",
-          paddingTop: "70px",
-          }}> 
-     <SobreInformativo />
-    </section>
-    {/* blocos de beneficios */}
-      <section style={{  background: "var(--landing-quote-bg)", padding: "96px 8vw", ...DEFERRED_SECTION_STYLE }}
-      
-           
+      {/* aqui é o local do Sr Orbis */}
+      <section id="sobre" style={{
+        background: "var(--landing-alt-bg)",
+        transition: "background-color 0.25s ease",
+        paddingTop:"15px"
+      }}>
+        <SobreInformativo />
+      </section>
+      {/* blocos de beneficios */}
+      <section style={{ background: "var(--landing-quote-bg)", padding: "96px 8vw", ...DEFERRED_SECTION_STYLE }}
       >
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <p
