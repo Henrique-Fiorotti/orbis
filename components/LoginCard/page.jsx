@@ -119,23 +119,14 @@ export default function LoginCard({isDark}) {
       return
     }
 
-    const email = formData.get("email")
-    localStorage.setItem("orbis_user_email", result.email || result.user?.email || email)
-    localStorage.setItem("orbis_user_name", result.usuarioSemSenha.nome || result.user?.name || "Orbis Admin")
+    const session = saveAuthSession(result)
+
+    if (!session?.accessToken) {
+      alert("Login realizado, mas nao foi possivel iniciar a sessao.")
+      return
+    }
 
     window.location.href = "/dashboard"
-
-    if (result) {
-      const session = saveAuthSession(result)
-
-      if (!session?.accessToken) {
-        alert("Login realizado, mas nao foi possivel iniciar a sessao.")
-        return
-      }
-
-      // alert("Login bem-sucedido!");
-      window.location.href = "/dashboard";
-    }
   }
 
   return (

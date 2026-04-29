@@ -12,165 +12,110 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon, WashingMachineIcon, AlertTriangleIcon, NfcIcon } from "lucide-react"
+import { AUTH_SESSION_UPDATED_EVENT, getAuthSessionUser } from "@/lib/auth-session"
+import {
+  AlertTriangleIcon,
+  CircleHelpIcon,
+  LayoutDashboardIcon,
+  NfcIcon,
+  SearchIcon,
+  Settings2Icon,
+  UsersIcon,
+  WashingMachineIcon,
+} from "lucide-react"
 
 const data = {
-  user: {
-    name: "Orbis Admin",
-    email: "orbis@gmail.com",
-    avatar: "/Orbis.svg",
-  },
   navMain: [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: <LayoutDashboardIcon />,
-  },
-  {
-    title: "Máquinas",
-    url: "/dashboard/maquinas",
-    icon: <WashingMachineIcon />,
-  },
-  {
-    title: "Sensores",
-    url: "/dashboard/sensores",
-    icon: <NfcIcon />,
-  },
-  {
-    title: "Alertas",
-    url: "/dashboard/alertas",
-    icon: <AlertTriangleIcon />,
-  },
-  {
-    title: "Técnicos",
-    url: "/dashboard/tecnicos",
-    icon: <UsersIcon />,
-  },
-],
-  navClouds: [
     {
-      title: "Capturar Imagem",
-      icon: (
-        <CameraIcon />
-      ),
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Propostas Ativas",
-          url: "#",
-        },
-        {
-          title: "Arquivadas",
-          url: "#",
-        },
-      ],
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: <LayoutDashboardIcon />,
     },
     {
-      title: "Propostas",
-      icon: (
-        <FileTextIcon />
-      ),
-      url: "#",
-      items: [
-        {
-          title: "Propostas Ativas",
-          url: "#",
-        },
-        {
-          title: "Arquivadas",
-          url: "#",
-        },
-      ],
+      title: "Maquinas",
+      url: "/dashboard/maquinas",
+      icon: <WashingMachineIcon />,
     },
     {
-      title: "Prompts",
-      icon: (
-        <FileTextIcon />
-      ),
-      url: "#",
-      items: [
-        {
-          title: "Propostas Ativas",
-          url: "#",
-        },
-        {
-          title: "Arquivadas",
-          url: "#",
-        },
-      ],
+      title: "Sensores",
+      url: "/dashboard/sensores",
+      icon: <NfcIcon />,
+    },
+    {
+      title: "Alertas",
+      url: "/dashboard/alertas",
+      icon: <AlertTriangleIcon />,
+    },
+    {
+      title: "Tecnicos",
+      url: "/dashboard/tecnicos",
+      icon: <UsersIcon />,
     },
   ],
   navSecondary: [
     {
-      title: "Configurações",
+      title: "Configuracoes",
       style: "text-muted-foreground dark:text-white!",
       url: "#",
-      icon: (
-        <Settings2Icon className="dark:text-white" />
-      ),
+      icon: <Settings2Icon className="dark:text-white" />,
     },
     {
       title: "Ajuda",
       url: "#",
-      icon: (
-        <CircleHelpIcon className="dark:text-white" />
-      ),
+      icon: <CircleHelpIcon className="dark:text-white" />,
     },
     {
       title: "Pesquisar",
       url: "#",
-      icon: (
-        <SearchIcon className="dark:text-white" />
-      ),
+      icon: <SearchIcon className="dark:text-white" />,
     },
   ],
-  documents: [
-  ],
+  documents: [],
 }
 
-export function AppSidebar({
-  ...props
-}) {
+function getUserDataFromSession() {
+  const usuario = getAuthSessionUser()
 
+  return {
+    name: usuario?.nome || "Orbis Admin",
+    email: usuario?.email || "carregando...",
+    avatar: "/Orbis.svg",
+  }
+}
+
+export function AppSidebar({ ...props }) {
   const [userData, setUserData] = React.useState({
     name: "Orbis Admin",
     email: "carregando...",
     avatar: "/Orbis.svg",
   })
 
-   // ✅ Lê o localStorage assim que o componente aparece na tela
   React.useEffect(() => {
-    const email = localStorage.getItem("orbis_user_email")
-    const name = localStorage.getItem("orbis_user_name")
-
-    if (email) {
-      setUserData({
-        name: name || "Orbis Admin",
-        email: email,
-        avatar: "/Orbis.svg",
-      })
+    function syncUserData() {
+      setUserData(getUserDataFromSession())
     }
-  }, []) // o [] significa: roda só uma vez, quando o componente abre
 
-    // Mova os dados do navMain, navSecondary etc. para fora ou mantenha aqui
-  const navData = {
-    navMain: [ /* ... seu navMain atual ... */ ],
-    navSecondary: [ /* ... seu navSecondary atual ... */ ],
-    documents: [],
-  }
+    syncUserData()
+
+    window.addEventListener("storage", syncUserData)
+    window.addEventListener(AUTH_SESSION_UPDATED_EVENT, syncUserData)
+
+    return () => {
+      window.removeEventListener("storage", syncUserData)
+      window.removeEventListener(AUTH_SESSION_UPDATED_EVENT, syncUserData)
+    }
+  }, [])
 
   return (
     <Sidebar tourId="tour-sidebar" collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-                <img src="/Orbis.svg" alt="Orbis" className="size-9! dark:hidden" />
-                <img src="/Orbis-dark.svg" alt="Orbis" className="hidden size-8.5! dark:block" />
-                <span className="text-base font-semibold no-underline! font-poppins! text-black dark:text-white"></span>
+            <img src="/Orbis.svg" alt="Orbis" className="size-9! dark:hidden" />
+            <img src="/Orbis-dark.svg" alt="Orbis" className="hidden size-8.5! dark:block" />
+            <span className="text-base font-semibold no-underline! font-poppins! text-black dark:text-white" />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -180,8 +125,8 @@ export function AppSidebar({
         <NavSecondary items={data.navSecondary} className="mt-auto dark:text-white" />
       </SidebarContent>
       <SidebarFooter>
-          <NavUser user={userData} />
+        <NavUser user={userData} />
       </SidebarFooter>
     </Sidebar>
-  );
+  )
 }

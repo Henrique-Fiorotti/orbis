@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { AUTH_SESSION_UPDATED_EVENT, getAuthSessionUser } from "@/lib/auth-session"
 import {
   Tooltip,
   TooltipContent,
@@ -90,9 +91,26 @@ export function SiteHeader() {
   const [notificacoes, setNotificacoes] = React.useState(MOCK_NOTIFICACOES)
   const panelRef = React.useRef(null)
   const [mounted, setMounted] = React.useState(false)
+  const [nomeUsuario, setNomeUsuario] = React.useState("usuario")
 
   React.useEffect(() => {
     setMounted(true)
+  }, [])
+
+  React.useEffect(() => {
+    function syncUserName() {
+      setNomeUsuario(getAuthSessionUser()?.nome || "usuario")
+    }
+
+    syncUserName()
+
+    window.addEventListener("storage", syncUserName)
+    window.addEventListener(AUTH_SESSION_UPDATED_EVENT, syncUserName)
+
+    return () => {
+      window.removeEventListener("storage", syncUserName)
+      window.removeEventListener(AUTH_SESSION_UPDATED_EVENT, syncUserName)
+    }
   }, [])
 
   const isDark = resolvedTheme === "dark"
@@ -155,7 +173,7 @@ export function SiteHeader() {
           </h1>
 
             <h2 className="text-sm text-muted-foreground font-normal m-0! dark:text-white!">
-            {getSaudacao()}, {localStorage.getItem("orbis_user_name")}!
+            {getSaudacao()}, {nomeUsuario}!
           </h2>
         </div>
 
