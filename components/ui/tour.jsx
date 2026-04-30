@@ -1440,7 +1440,7 @@ function TourStepCounter(props) {
       data-slot="tour-step-counter"
       {...stepCounterProps}
       className={cn("text-muted-foreground text-sm", className)}>
-      {children ?? format(value + 1, steps.length - 1)}
+      {children ?? format(value + 1, steps.length)}
     </StepCounterPrimitive>
   );
 }
