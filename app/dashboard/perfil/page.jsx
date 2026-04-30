@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { clearAuthSession, getAuthSession, updateAuthSessionUser } from "@/lib/auth-session"
@@ -31,6 +32,7 @@ import {
 const EMPTY_FORM = {
   nome: "",
   email: "",
+  role: "",
   telefone: "",
   especialidade: "",
 }
@@ -78,7 +80,7 @@ function normalizePerfil(raw) {
     ...EMPTY_PERFIL,
     ...source,
     nome: normalizeString(source.nome),
-    email: normalizeString(source.email),
+    email: normalizeString(source.email ?? source.emailUsuario),
     role: normalizeString(source.role),
     ativo: typeof source.ativo === "boolean" ? source.ativo : true,
     telefone: normalizeString(source.telefone),
@@ -92,6 +94,7 @@ function getFormFromPerfil(perfil) {
   return {
     nome: perfil.nome,
     email: perfil.email,
+    role: perfil.role,
     telefone: perfil.telefone,
     especialidade: perfil.especialidade,
   }
@@ -112,6 +115,11 @@ function getRoleLabel(role) {
   if (role === "ADMIN") return "Admin"
   if (role === "TECNICO") return "Tecnico"
   return role || "Perfil nao informado"
+}
+
+function getEspecialidadeLabel(perfil) {
+  if (perfil.role === "ADMIN") return "Administrador"
+  return perfil.especialidade || "Sem especialidade"
 }
 
 function formatDateTime(value) {
@@ -196,6 +204,8 @@ export default function PerfilPage() {
   })
 
   const loading = status === "loading"
+  const podeEditarIdentidade = status === "success" && perfil.role === "ADMIN"
+  const podeVerAtividade = status === "success" && perfil.role !== "ADMIN"
   const alertasResolvidos = ALERTAS_MOCK.filter((a) => a.status === "RESOLVIDO").length
   const alertasEmAndamento = ALERTAS_MOCK.filter((a) => a.status === "EM_ANDAMENTO").length
 
@@ -261,14 +271,88 @@ export default function PerfilPage() {
     setSalvandoDados(true)
 
     try {
-      const payload = await requestDashboardJson("/perfil", session.accessToken, "a atualizacao do perfil", {
-        method: "PUT",
-        body: {
-          telefone: form.telefone.trim(),
-          especialidade: form.especialidade.trim(),
-        },
-      })
-      const nextPerfil = normalizePerfil({ ...perfil, ...payload })
+      const nome = form.nome.trim()
+      const email = form.email.trim()
+      const role = form.role || perfil.role
+      const body = {
+        telefone: form.telefone.trim(),
+        especialidade: form.especialidade.trim(),
+      }
+
+      if (podeEditarIdentidade) {
+        if (nome !== perfil.nome) {
+          if (!nome) {
+            toast.error("Informe o nome.")
+            return
+          }
+          body.nome = nome
+        }
+
+        if (email !== perfil.email) {
+          if (!email) {
+            toast.error("Informe o e-mail.")
+            return
+          }
+          body.email = email
+        }
+
+        if (role !== perfil.role) {
+          if (!role) {
+            toast.error("Informe o cargo.")
+            return
+          }
+          body.role = role
+        }
+      }
+
+      const endpoint = podeEditarIdentidade && perfil.id ? `/usuarios/${perfil.id}` : "/perfil"
+      let payload
+
+      try {
+        payload = await requestDashboardJson(endpoint, session.accessToken, "a atualizacao do perfil", {
+          method: "PUT",
+          body,
+        })
+      } catch (error) {
+        if (!podeEditarIdentidade || !body.email) {
+          throw error
+        }
+
+        const { email: _email, ...bodySemEmail } = body
+        payload = await requestDashboardJson(endpoint, session.accessToken, "a atualizacao do perfil", {
+          method: "PUT",
+          body: {
+            ...bodySemEmail,
+            emailUsuario: body.email,
+          },
+        })
+      }
+
+      let nextPerfil = normalizePerfil({ ...perfil, ...payload, ...body })
+
+      if (podeEditarIdentidade) {
+        const perfilAtualizado = await requestDashboardJson("/perfil", session.accessToken, "o perfil atualizado")
+        nextPerfil = normalizePerfil({ ...perfil, ...perfilAtualizado })
+
+        if (body.email && nextPerfil.email !== body.email) {
+          const { email: _email, ...bodySemEmail } = body
+
+          payload = await requestDashboardJson(endpoint, session.accessToken, "a atualizacao do e-mail", {
+            method: "PUT",
+            body: {
+              ...bodySemEmail,
+              emailUsuario: body.email,
+            },
+          })
+
+          const perfilAtualizadoComEmail = await requestDashboardJson("/perfil", session.accessToken, "o perfil atualizado")
+          nextPerfil = normalizePerfil({ ...perfil, ...payload, ...perfilAtualizadoComEmail })
+        }
+
+        if (body.email && nextPerfil.email !== body.email) {
+          throw new Error("A API nao confirmou a alteracao do e-mail.")
+        }
+      }
 
       setPerfil(nextPerfil)
       setForm(getFormFromPerfil(nextPerfil))
@@ -403,7 +487,7 @@ export default function PerfilPage() {
                 {perfil.ativo ? "Ativo" : "Inativo"}
               </Badge>
               <Badge variant="outline" className="px-1.5 text-muted-foreground text-xs">
-                {perfil.especialidade || "Sem especialidade"}
+                {getEspecialidadeLabel(perfil)}
               </Badge>
             </div>
           </div>
@@ -417,9 +501,11 @@ export default function PerfilPage() {
             <TabsTrigger value="seguranca" className="gap-1.5">
               <LockIcon className="size-3.5" /> Seguranca
             </TabsTrigger>
-            <TabsTrigger value="atividade" className="gap-1.5">
-              <ActivityIcon className="size-3.5" /> Atividade
-            </TabsTrigger>
+            {podeVerAtividade ? (
+              <TabsTrigger value="atividade" className="gap-1.5">
+                <ActivityIcon className="size-3.5" /> Atividade
+              </TabsTrigger>
+            ) : null}
           </TabsList>
 
           <TabsContent value="dados" className="flex flex-col gap-4 mt-4">
@@ -434,24 +520,61 @@ export default function PerfilPage() {
                   <Label htmlFor="nome" className="text-xs text-muted-foreground uppercase tracking-wide">
                     Nome completo
                   </Label>
-                  <Input id="nome" value={form.nome} disabled readOnly />
-                  <p className="text-xs text-muted-foreground">Alterado apenas pelo administrador.</p>
+                  <Input
+                    id="nome"
+                    value={form.nome}
+                    disabled={loading || salvandoDados || !podeEditarIdentidade}
+                    readOnly={!podeEditarIdentidade}
+                    onChange={(e) => setForm((p) => ({ ...p, nome: e.target.value }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {podeEditarIdentidade ? "Voce pode alterar este dado." : "Alterado apenas pelo administrador."}
+                  </p>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wide">
                     E-mail corporativo
                   </Label>
-                  <Input id="email" type="email" value={form.email} disabled readOnly />
-                  <p className="text-xs text-muted-foreground">Alterado apenas pelo administrador.</p>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={form.email}
+                    disabled={loading || salvandoDados || !podeEditarIdentidade}
+                    readOnly={!podeEditarIdentidade}
+                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {podeEditarIdentidade ? "Voce pode alterar este dado." : "Alterado apenas pelo administrador."}
+                  </p>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="perfil" className="text-xs text-muted-foreground uppercase tracking-wide">
                     Cargo / Perfil
                   </Label>
-                  <Input id="perfil" value={getRoleLabel(perfil.role)} disabled readOnly />
-                  <p className="text-xs text-muted-foreground">Alterado apenas pelo administrador.</p>
+                  {podeEditarIdentidade ? (
+                    <Select
+                      value={form.role || "ADMIN"}
+                      onValueChange={(value) => setForm((p) => ({ ...p, role: value }))}
+                      disabled={loading || salvandoDados}
+                    >
+                      <SelectTrigger id="perfil" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="ADMIN">Admin</SelectItem>
+                          <SelectItem value="TECNICO">Tecnico</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input id="perfil" value={getRoleLabel(perfil.role)} disabled readOnly />
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {podeEditarIdentidade ? "Voce pode alterar este dado." : "Alterado apenas pelo administrador."}
+                  </p>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
@@ -598,81 +721,83 @@ export default function PerfilPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="atividade" className="flex flex-col gap-4 mt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {[
-                { label: "Alertas resolvidos este mes", value: alertasResolvidos },
-                { label: "Maquinas sob responsabilidade", value: MAQUINAS_MOCK.length },
-                { label: "Alertas em andamento", value: alertasEmAndamento },
-              ].map((stat) => (
-                <div key={stat.label} className="rounded-xl border bg-card p-4">
-                  <p className="text-2xl font-bold text-[#5E17EB] dark:text-white">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
-              <div className="flex items-center gap-2 font-semibold text-sm">
-                <WrenchIcon className="size-4 text-[#5E17EB] dark:text-primary" />
-                Maquinas sob responsabilidade
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {MAQUINAS_MOCK.map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border px-4 py-3 hover:border-[#5E17EB]/40 dark:hover:border-primary/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-[#5E17EB] dark:bg-primary/10 dark:text-primary">
-                        <WrenchIcon className="size-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{m.nome}</p>
-                        <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1">
-                          {m.setor} - <CriticidadeBadge value={m.criticidade} />
-                        </p>
-                      </div>
-                    </div>
-                    <div className="pl-12 sm:pl-0">
-                      <StatusMaquinaBadge value={m.status} />
-                    </div>
+          {podeVerAtividade ? (
+            <TabsContent value="atividade" className="flex flex-col gap-4 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { label: "Alertas resolvidos este mes", value: alertasResolvidos },
+                  { label: "Maquinas sob responsabilidade", value: MAQUINAS_MOCK.length },
+                  { label: "Alertas em andamento", value: alertasEmAndamento },
+                ].map((stat) => (
+                  <div key={stat.label} className="rounded-xl border bg-card p-4">
+                    <p className="text-2xl font-bold text-[#5E17EB] dark:text-white">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
                   </div>
                 ))}
               </div>
-            </div>
 
-            <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
-              <div className="flex items-center gap-2 font-semibold text-sm">
-                <ActivityIcon className="size-4 text-[#5E17EB] dark:text-primary" />
-                Historico de alertas atendidos
+              <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
+                <div className="flex items-center gap-2 font-semibold text-sm">
+                  <WrenchIcon className="size-4 text-[#5E17EB] dark:text-primary" />
+                  Maquinas sob responsabilidade
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  {MAQUINAS_MOCK.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border px-4 py-3 hover:border-[#5E17EB]/40 dark:hover:border-primary/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-[#5E17EB] dark:bg-primary/10 dark:text-primary">
+                          <WrenchIcon className="size-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{m.nome}</p>
+                          <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1">
+                            {m.setor} - <CriticidadeBadge value={m.criticidade} />
+                          </p>
+                        </div>
+                      </div>
+                      <div className="pl-12 sm:pl-0">
+                        <StatusMaquinaBadge value={m.status} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="min-h-[300px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
-                <Table>
-                  <TableHeader className="sticky top-0 z-10 bg-muted">
-                    <TableRow>
-                      <TableHead className="whitespace-nowrap">Maquina</TableHead>
-                      <TableHead className="whitespace-nowrap">Tipo</TableHead>
-                      <TableHead className="whitespace-nowrap">Data</TableHead>
-                      <TableHead className="whitespace-nowrap">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ALERTAS_MOCK.map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell className="font-medium text-sm whitespace-nowrap">{a.maquina}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{a.tipo}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{a.data}</TableCell>
-                        <TableCell><StatusAlertaBadge value={a.status} /></TableCell>
+              <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
+                <div className="flex items-center gap-2 font-semibold text-sm">
+                  <ActivityIcon className="size-4 text-[#5E17EB] dark:text-primary" />
+                  Historico de alertas atendidos
+                </div>
+
+                <div className="min-h-[300px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-muted">
+                      <TableRow>
+                        <TableHead className="whitespace-nowrap">Maquina</TableHead>
+                        <TableHead className="whitespace-nowrap">Tipo</TableHead>
+                        <TableHead className="whitespace-nowrap">Data</TableHead>
+                        <TableHead className="whitespace-nowrap">Status</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {ALERTAS_MOCK.map((a) => (
+                        <TableRow key={a.id}>
+                          <TableCell className="font-medium text-sm whitespace-nowrap">{a.maquina}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{a.tipo}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{a.data}</TableCell>
+                          <TableCell><StatusAlertaBadge value={a.status} /></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
+          ) : null}
         </Tabs>
       </div>
     </>
