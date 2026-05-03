@@ -126,7 +126,7 @@ export type TipoAlerta =
   | "INSTABILIDADE";
 
 export type SeveridadeAlerta = "ALTA" | "MEDIA" | "BAIXA";
-export type StatusAlerta = "ABERTO" | "ATENDIDO" | "IGNORADO";
+export type StatusAlerta = "ATIVO" | "EM_ANDAMENTO" | "RESOLVIDO" | "CANCELADO";
 
 export interface Alerta {
   id: number;
@@ -137,8 +137,11 @@ export interface Alerta {
   sensorNome: string;
   severidade: SeveridadeAlerta;
   status: StatusAlerta;
-  descricao: string;
+  mensagem: string;
   criadoEm: string;
+  atualizadoEm?: string | null;
+  tecnicoId?: number | null;
+  tecnicoNome?: string | null;
 }
 
 export interface NovoAlertaInput {
@@ -148,7 +151,7 @@ export interface NovoAlertaInput {
   sensorId?: number | null;
   sensorNome: string;
   severidade: SeveridadeAlerta;
-  descricao: string;
+  mensagem: string;
 }
 
 export type AtualizacaoAlertaInput = Partial<NovoAlertaInput>;
@@ -199,7 +202,7 @@ export interface AlertasContextValue {
   adicionarAlerta: (dados: NovoAlertaInput) => Alerta;
   editarAlerta: (id: number, dados: AtualizacaoAlertaInput) => void;
   atualizarStatus: (id: number, novoStatus: StatusAlerta) => void;
-  excluirAlerta: (id: number) => void;
+  cancelarAlerta: (id: number) => void;
   resetarDados: () => void;
 }
 

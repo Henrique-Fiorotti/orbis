@@ -14,8 +14,78 @@ import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 
 const STORAGE_KEY = "orbis-alertas"
 
+const STATUS_ALIASES = {
+  ABERTO: "ATIVO",
+  ATENDIDO: "RESOLVIDO",
+  IGNORADO: "CANCELADO",
+}
+
+const STATUS_VALIDOS = new Set(["ATIVO", "EM_ANDAMENTO", "RESOLVIDO", "CANCELADO"])
+
+const TRANSICOES_TECNICO = {
+  ATIVO: new Set(["EM_ANDAMENTO"]),
+  EM_ANDAMENTO: new Set(["RESOLVIDO"]),
+}
+
+const STATUS_CANCELAVEIS = new Set(["ATIVO", "EM_ANDAMENTO"])
+
+function normalizeString(value, fallback = "") {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback
+}
+
+/**
+ * @param {unknown} value
+ * @returns {StatusAlerta}
+ */
+function normalizeAlertaStatus(value) {
+  const normalized = normalizeString(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_")
+    .toUpperCase()
+
+  const mapped = STATUS_ALIASES[normalized] ?? normalized
+
+  return STATUS_VALIDOS.has(mapped) ? /** @type {StatusAlerta} */ (mapped) : "ATIVO"
+}
+
+/**
+ * @param {StatusAlerta} statusAtual
+ * @param {StatusAlerta} novoStatus
+ * @returns {boolean}
+ */
+function canAtualizarStatus(statusAtual, novoStatus) {
+  return TRANSICOES_TECNICO[statusAtual]?.has(novoStatus) ?? false
+}
+
+/**
+ * @param {any} raw
+ * @returns {Alerta}
+ */
+function normalizeAlerta(raw) {
+  const { descricao, mensagem, status, ...rest } = raw && typeof raw === "object" ? raw : {}
+
+  return {
+    ...rest,
+    maquinaId: rest.maquinaId ?? null,
+    sensorId: rest.sensorId ?? null,
+    tecnicoId: rest.tecnicoId ?? null,
+    tecnicoNome: rest.tecnicoNome ?? null,
+    status: normalizeAlertaStatus(status),
+    mensagem: normalizeString(mensagem ?? descricao, "Chamado sem mensagem registrada."),
+  }
+}
+
+/**
+ * @param {unknown} value
+ * @returns {Alerta[]}
+ */
+function normalizeAlertaCollection(value) {
+  return Array.isArray(value) ? value.map((item) => normalizeAlerta(item)) : []
+}
+
 /** @type {Alerta[]} */
-const ALERTAS_INICIAIS = dadosIniciais
+const ALERTAS_INICIAIS = normalizeAlertaCollection(dadosIniciais)
 
 /** @type {React.Context<AlertasContextValue | null>} */
 const AlertasContext = React.createContext(null)
@@ -28,20 +98,23 @@ function carregarAlertas() {
 
   try {
     const salvo = localStorage.getItem(STORAGE_KEY)
-    return salvo ? /** @type {Alerta[]} */ (JSON.parse(salvo)) : ALERTAS_INICIAIS
+    return salvo ? normalizeAlertaCollection(JSON.parse(salvo)) : ALERTAS_INICIAIS
   } catch {
     return ALERTAS_INICIAIS
   }
 }
 
-function getAlertasMutationPermissions() {
+function getAlertasMutationSession() {
   const session = getAuthSession()
 
   if (!session?.accessToken) {
-    throw new Error("Faca login para gerenciar os alertas.")
+    throw new Error("Faca login para gerenciar os chamados.")
   }
 
-  return getDashboardPermissions(session.usuario)
+  return {
+    session,
+    permissions: getDashboardPermissions(session.usuario),
+  }
 }
 
 /**
@@ -61,20 +134,21 @@ export function AlertasProvider({ children }) {
    * @returns {Alerta}
    */
   function adicionarAlerta(dados) {
-    const permissions = getAlertasMutationPermissions()
+    const { permissions } = getAlertasMutationSession()
 
     if (!permissions.canCreateAlertas) {
-      throw new Error("Seu perfil pode apenas atualizar o status dos alertas.")
+      throw new Error("Seu perfil pode apenas atualizar o status dos chamados.")
     }
 
-    const novo = {
+    const novo = normalizeAlerta({
       ...dados,
       id: alertas.length > 0 ? Math.max(...alertas.map((alerta) => alerta.id)) + 1 : 1,
       maquinaId: dados.maquinaId ?? null,
       sensorId: dados.sensorId ?? null,
-      status: "ABERTO",
+      status: "ATIVO",
       criadoEm: new Date().toISOString(),
-    }
+      atualizadoEm: null,
+    })
 
     setAlertas((prev) => [novo, ...prev])
     return novo
@@ -85,13 +159,13 @@ export function AlertasProvider({ children }) {
    * @param {AtualizacaoAlertaInput} dados
    */
   function editarAlerta(id, dados) {
-    const permissions = getAlertasMutationPermissions()
+    const { permissions } = getAlertasMutationSession()
 
     if (!permissions.canCreateAlertas) {
-      throw new Error("Seu perfil pode apenas atualizar o status dos alertas.")
+      throw new Error("Seu perfil pode apenas atualizar o status dos chamados.")
     }
 
-    setAlertas((prev) => prev.map((alerta) => (alerta.id === id ? { ...alerta, ...dados } : alerta)))
+    setAlertas((prev) => prev.map((alerta) => (alerta.id === id ? normalizeAlerta({ ...alerta, ...dados }) : alerta)))
   }
 
   /**
@@ -99,26 +173,75 @@ export function AlertasProvider({ children }) {
    * @param {StatusAlerta} novoStatus
    */
   function atualizarStatus(id, novoStatus) {
-    const permissions = getAlertasMutationPermissions()
+    const { session, permissions } = getAlertasMutationSession()
 
     if (!permissions.canUpdateAlertStatus) {
-      throw new Error("Seu perfil nao pode alterar alertas.")
+      throw new Error("Seu perfil nao pode alterar chamados.")
     }
 
-    setAlertas((prev) => prev.map((alerta) => (alerta.id === id ? { ...alerta, status: novoStatus } : alerta)))
+    const statusDestino = normalizeAlertaStatus(novoStatus)
+    const chamadoAtual = alertas.find((alerta) => alerta.id === id)
+
+    if (!chamadoAtual) {
+      throw new Error("Chamado nao encontrado.")
+    }
+
+    if (!canAtualizarStatus(chamadoAtual.status, statusDestino)) {
+      throw new Error("Este chamado nao pode seguir para o status selecionado.")
+    }
+
+    const usuario = session.usuario
+
+    setAlertas((prev) =>
+      prev.map((alerta) =>
+        alerta.id === id
+          ? {
+              ...alerta,
+              status: statusDestino,
+              atualizadoEm: new Date().toISOString(),
+              ...(statusDestino === "EM_ANDAMENTO"
+                ? {
+                    tecnicoId: usuario?.id ?? alerta.tecnicoId ?? null,
+                    tecnicoNome: usuario?.nome || alerta.tecnicoNome || null,
+                  }
+                : {}),
+            }
+          : alerta
+      )
+    )
   }
 
   /**
    * @param {number} id
    */
-  function excluirAlerta(id) {
-    const permissions = getAlertasMutationPermissions()
+  function cancelarAlerta(id) {
+    const { permissions } = getAlertasMutationSession()
 
     if (!permissions.canDeleteAlertas) {
-      throw new Error("Seu perfil pode apenas atualizar o status dos alertas.")
+      throw new Error("Apenas administradores podem cancelar chamados.")
     }
 
-    setAlertas((prev) => prev.filter((alerta) => alerta.id !== id))
+    const chamadoAtual = alertas.find((alerta) => alerta.id === id)
+
+    if (!chamadoAtual) {
+      throw new Error("Chamado nao encontrado.")
+    }
+
+    if (!STATUS_CANCELAVEIS.has(chamadoAtual.status)) {
+      throw new Error("Apenas chamados ativos ou em andamento podem ser cancelados.")
+    }
+
+    setAlertas((prev) =>
+      prev.map((alerta) =>
+        alerta.id === id
+          ? {
+              ...alerta,
+              status: "CANCELADO",
+              atualizadoEm: new Date().toISOString(),
+            }
+          : alerta
+      )
+    )
   }
 
   function resetarDados() {
@@ -127,7 +250,7 @@ export function AlertasProvider({ children }) {
   }
 
   return (
-    <AlertasContext.Provider value={{ alertas, adicionarAlerta, editarAlerta, atualizarStatus, excluirAlerta, resetarDados }}>
+    <AlertasContext.Provider value={{ alertas, adicionarAlerta, editarAlerta, atualizarStatus, cancelarAlerta, resetarDados }}>
       {children}
     </AlertasContext.Provider>
   )
