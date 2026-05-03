@@ -178,7 +178,7 @@ export function SiteHeader() {
           </h1>
 
           <h2 className="text-sm text-muted-foreground font-normal m-0! dark:text-white!">
-            {getSaudacao()}, {localStorage.getItem("orbis_user_name")}!
+            {getSaudacao()}, {nomeUsuario}!
           </h2>
         </div>
 
