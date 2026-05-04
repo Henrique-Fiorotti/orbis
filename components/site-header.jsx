@@ -158,9 +158,10 @@ export function SiteHeader() {
     <header className="flex h-[90px] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex min-w-0 w-full items-center gap-1 px-3 sm:px-4 lg:gap-2 lg:px-6">
 
+    {/* Botão de expansão/colapso da sidebar */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <SidebarTrigger className="shrink-0 dark:text-white dark:hover:bg-gray-200/10!" />
+            <SidebarTrigger className="cursor-pointer shrink-0 dark:text-white dark:hover:bg-gray-200/10!" />
           </TooltipTrigger>
           <TooltipContent>
             <span>Expandir/Contrair Sidebar</span>
@@ -194,7 +195,7 @@ export function SiteHeader() {
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => window.dispatchEvent(new CustomEvent("orbit:start-tour"))}
-                  className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                  className="cursor-pointer h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                   aria-label="Tour guiado"
                 >
                   <RouteIcon className="size-4" />
@@ -213,7 +214,7 @@ export function SiteHeader() {
                 variant="ghost"
                 size="icon-sm"
                 onClick={toggleTheme}
-                className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                className="cursor-pointer h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
               >
                 {mounted ? (
                   isDark ? (
@@ -239,7 +240,7 @@ export function SiteHeader() {
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => setPainelAberto((prev) => !prev)}
-                  className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground transition-colors relative"
+                  className="cursor-pointer h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground transition-colors relative"
                 >
                   <BellIcon className="size-4" />
                   {naoLidas > 0 && (
