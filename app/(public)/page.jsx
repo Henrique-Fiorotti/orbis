@@ -7,6 +7,7 @@ import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
 import Pricing from "@/components/pricing";
 import { Separator } from "@/components/ui/separator";
 import SobreInformativo from "@/components/sobre-informativo";
+import SAQ from "@/components/saq";
 
 import styles from "./page.module.css";
 
@@ -494,6 +495,9 @@ export default function HomePage() {
             Fale conosco
           </Link>
         </div>
+      </section>
+      <section id="contact" >
+        <SAQ/>
       </section>
     </div>
   );
