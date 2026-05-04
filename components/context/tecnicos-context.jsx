@@ -26,16 +26,16 @@ function getTecnicosEndpoints(page, limit) {
     { endpoint: `/tecnicos?page=${page}&limit=${limit}`, source: "tecnicos" },
     { endpoint: `/usuarios/tecnicos/?page=${page}&limit=${limit}`, source: "tecnicos" },
     { endpoint: `/usuarios/tecnicos?page=${page}&limit=${limit}`, source: "tecnicos" },
-    { endpoint: `/usuarios/?page=${page}&limit=${limit}&role=TECNICO`, source: "usuarios-filtered" },
-    { endpoint: `/usuarios?page=${page}&limit=${limit}&role=TECNICO`, source: "usuarios-filtered" },
-    { endpoint: `/usuarios/?role=TECNICO&page=${page}&limit=${limit}`, source: "usuarios-filtered" },
-    { endpoint: `/usuarios?role=TECNICO&page=${page}&limit=${limit}`, source: "usuarios-filtered" },
+    { endpoint: `/usuarios/?page=${page}&limit=${limit}&role=TECNICO`, source: "usuarios-filtered", optional: true },
+    { endpoint: `/usuarios?page=${page}&limit=${limit}&role=TECNICO`, source: "usuarios-filtered", optional: true },
+    { endpoint: `/usuarios/?role=TECNICO&page=${page}&limit=${limit}`, source: "usuarios-filtered", optional: true },
+    { endpoint: `/usuarios?role=TECNICO&page=${page}&limit=${limit}`, source: "usuarios-filtered", optional: true },
     { endpoint: `/usuarios/?page=${page}&limit=${limit}`, source: "usuarios" },
     { endpoint: `/usuarios?page=${page}&limit=${limit}`, source: "usuarios" },
   ]
 }
 
-function isTecnicoRecord(item) {
+function isTecnicoRecord(item, assumeTecnicoWhenRoleMissing = true) {
   if (!item || typeof item !== "object") {
     return false
   }
@@ -48,7 +48,7 @@ function isTecnicoRecord(item) {
     item.tipoUsuario
 
   if (typeof roleValue !== "string") {
-    return true
+    return assumeTecnicoWhenRoleMissing
   }
 
   return roleValue.trim().toUpperCase() === "TECNICO"
@@ -58,10 +58,119 @@ function getTecnicosFromPayload(payload, source) {
   const collection = extractCollection(payload)
 
   if (source === "usuarios") {
-    return collection.filter(isTecnicoRecord)
+    return collection.filter((item) => isTecnicoRecord(item, false))
+  }
+
+  if (source === "usuarios-filtered") {
+    return collection.filter((item) => isTecnicoRecord(item, true))
   }
 
   return collection
+}
+
+function getTecnicoRecordId(item) {
+  if (!item || typeof item !== "object") {
+    return null
+  }
+
+  const id = Number(item.id ?? item.tecnicoId ?? item.usuarioId ?? item.usuario?.id)
+  return Number.isFinite(id) ? id : null
+}
+
+function getPayloadTotal(payload, fallback) {
+  const total = Number(payload?.total ?? payload?.count ?? payload?.totalRegistros)
+  return Number.isFinite(total) ? total : fallback
+}
+
+function mergeTecnicoRecords(...groups) {
+  const records = new Map()
+
+  for (const group of groups) {
+    for (const item of group) {
+      const id = getTecnicoRecordId(item)
+
+      if (id === null) {
+        continue
+      }
+
+      records.set(id, item)
+    }
+  }
+
+  return Array.from(records.values())
+}
+
+function isTecnicoInativoRecord(item) {
+  if (!isTecnicoRecord(item, false)) {
+    return false
+  }
+
+  return item.ativo === false || item.active === false || item.usuario?.ativo === false
+}
+
+async function fetchTecnicosAtivosParaConferencia(accessToken, totalTecnicos, baseItems) {
+  if (totalTecnicos <= baseItems.length) {
+    return baseItems
+  }
+
+  const limit = Math.min(Math.max(totalTecnicos, baseItems.length), 100)
+
+  try {
+    const payload = await fetchDashboardJson(`/tecnicos/?page=1&limit=${limit}`, accessToken, "os tecnicos")
+    return mergeTecnicoRecords(baseItems, getTecnicosFromPayload(payload, "tecnicos"))
+  } catch (error) {
+    const statusCode = getHttpErrorStatus(error)
+
+    if (statusCode === 401) {
+      throw error
+    }
+
+    return baseItems
+  }
+}
+
+async function fetchTecnicosInativosPorId(accessToken, knownItems, totalTecnicos) {
+  const idsConhecidos = new Set(knownItems.map(getTecnicoRecordId).filter((id) => id !== null))
+
+  if (totalTecnicos <= idsConhecidos.size) {
+    return []
+  }
+
+  const maiorIdConhecido = Math.max(0, ...Array.from(idsConhecidos))
+  const scanLimit = Math.min(Math.max(totalTecnicos * 3, maiorIdConhecido + totalTecnicos + 10, 30), 250)
+  const idsParaBuscar = Array.from({ length: scanLimit }, (_, index) => index + 1).filter((id) => !idsConhecidos.has(id))
+  const encontrados = []
+
+  for (let index = 0; index < idsParaBuscar.length; index += 12) {
+    const batch = idsParaBuscar.slice(index, index + 12)
+    const results = await Promise.all(batch.map(async (id) => {
+      try {
+        return await fetchDashboardJson(`/usuarios/${id}`, accessToken, "o tecnico")
+      } catch (error) {
+        const statusCode = getHttpErrorStatus(error)
+
+        if ([400, 403, 404, 500].includes(Number(statusCode))) {
+          return null
+        }
+
+        throw error
+      }
+    }))
+
+    for (const item of results) {
+      if (!item || !isTecnicoInativoRecord(item)) {
+        continue
+      }
+
+      encontrados.push(item)
+    }
+
+    if (idsConhecidos.size + encontrados.length >= totalTecnicos) {
+      break
+    }
+  }
+
+  return encontrados
 }
 
 async function fetchTecnicosPayload(accessToken, page, limit) {
@@ -74,8 +183,9 @@ async function fetchTecnicosPayload(accessToken, page, limit) {
       return { payload, source: candidate.source }
     } catch (error) {
       const statusCode = getHttpErrorStatus(error)
+      const recoverableStatusCodes = candidate.optional ? [400, 403, 404, 500] : [400, 403, 404]
 
-      if ([400, 403, 404].includes(Number(statusCode))) {
+      if (recoverableStatusCodes.includes(Number(statusCode))) {
         lastRecoverableError = error
         continue
       }
@@ -131,7 +241,18 @@ export function TecnicosProvider({ children }) {
     try {
       const resolved = await fetchTecnicosPayload(session.accessToken, page, limit)
       const tecnicoItems = getTecnicosFromPayload(resolved.payload, resolved.source)
-      const normalizedTecnicos = normalizeTecnicoCollection(tecnicoItems)
+      const totalTecnicos = getPayloadTotal(resolved.payload, tecnicoItems.length)
+      const tecnicosParaConferencia = await fetchTecnicosAtivosParaConferencia(
+        session.accessToken,
+        totalTecnicos,
+        tecnicoItems
+      )
+      const tecnicosInativos = await fetchTecnicosInativosPorId(
+        session.accessToken,
+        tecnicosParaConferencia,
+        totalTecnicos
+      )
+      const normalizedTecnicos = normalizeTecnicoCollection(mergeTecnicoRecords(tecnicoItems, tecnicosInativos))
 
       setTecnicos(normalizedTecnicos)
 

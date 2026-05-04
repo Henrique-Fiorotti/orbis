@@ -42,8 +42,10 @@ const ESPECIALIDADES = [
 
 const formVazio = {
   nome: "", email: "", senha: "", telefone: "",
-  especialidade: "Elétrica Industrial", ativo: true, foto: "",
+  especialidade: "Elétrica Industrial", status: "ATIVO", foto: "",
 }
+
+const cardResumoBaseClass = "rounded-xl border bg-card p-4 flex flex-col gap-3 text-left shadow-sm transition-colors"
 
 function getInitials(nome) {
   return nome
@@ -103,6 +105,13 @@ function formatMetric(value, loading, suffix = "") {
   return `${value}${suffix}`
 }
 
+function normalizarBusca(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+}
+
 export default function TecnicosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -129,6 +138,7 @@ export default function TecnicosPage() {
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [tecnicoExcluir, setTecnicoExcluir] = React.useState(null)
   const [limiteItems] = React.useState(10)
+  const [filtroResumo, setFiltroResumo] = React.useState("TODOS")
 
   React.useEffect(() => {
     if (!permissions.canViewTecnicos) {
@@ -141,14 +151,42 @@ export default function TecnicosPage() {
   const canManageTecnicos = permissions.canManageTecnicos
   const totalAtivos = React.useMemo(() => tecnicos.filter((tecnico) => tecnico.status === "ATIVO").length, [tecnicos])
   const totalInativos = React.useMemo(() => tecnicos.filter((tecnico) => tecnico.status === "INATIVO").length, [tecnicos])
-  const totalAlertas = React.useMemo(
-    () => tecnicos.reduce((acc, tecnico) => acc + (tecnico.alertasAtendidos || 0), 0),
-    [tecnicos]
-  )
   const tecnicosComAlertas = React.useMemo(
     () => tecnicos.filter((tecnico) => tecnico.status === "ATIVO" && tecnico.alertasAtendidos > 0).length,
     [tecnicos]
   )
+  const tecnicosFiltrados = React.useMemo(() => {
+    const termo = normalizarBusca(busca)
+
+    return tecnicos.filter((tecnico) => {
+      const correspondeResumo =
+        filtroResumo === "TODOS" ||
+        tecnico.status === filtroResumo ||
+        (filtroResumo === "COM_ALERTAS" && tecnico.status === "ATIVO" && tecnico.alertasAtendidos > 0)
+
+      if (!correspondeResumo) {
+        return false
+      }
+
+      if (!termo) {
+        return true
+      }
+
+      return [
+        tecnico.nome,
+        tecnico.especialidade,
+        tecnico.email,
+        tecnico.telefone,
+        tecnico.status,
+      ].some((value) => normalizarBusca(value).includes(termo))
+    })
+  }, [busca, filtroResumo, tecnicos])
+  const filtroResumoLabel = React.useMemo(() => {
+    if (filtroResumo === "ATIVO") return "ativos"
+    if (filtroResumo === "INATIVO") return "inativos"
+    if (filtroResumo === "COM_ALERTAS") return "com alertas"
+    return "todos"
+  }, [filtroResumo])
 
   React.useEffect(() => {
     if (!permissions.canViewTecnicos) {
@@ -350,11 +388,19 @@ export default function TecnicosPage() {
   ]
 
   const table = useReactTable({
-    data: tecnicos, columns,
+    data: tecnicosFiltrados, columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
+
+  function getResumoCardClass(filtro) {
+    return `${cardResumoBaseClass} ${
+      filtroResumo === filtro
+        ? "border-[#5E17EB]! ring-2 ring-[#5E17EB]/30"
+        : "hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50"
+    }`
+  }
 
   return (
     <>
@@ -402,61 +448,71 @@ export default function TecnicosPage() {
           </div>
         ) : null}
 
-        {/* Cards de resumo */}
-<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <button type="button" className={getResumoCardClass("TODOS")} onClick={() => setFiltroResumo("TODOS")}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground font-medium">Total de técnicos</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                {loadingInicial ? "Sincronizando" : `${totalAtivos} ativos`}
+              </span>
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(tecnicos.length, loadingInicial)}</span>
+            <div className="flex flex-col gap-0.5 text-sm">
+              <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
+                <CircleCheckIcon className="size-3.5 fill-green-600" />
+                {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} operando normalmente`}
+              </span>
+              <span className="text-muted-foreground flex items-center gap-1">
+                <CircleMinusIcon className="size-3.5 text-gray-400 dark:text-muted-foreground" />
+                {loadingInicial ? "Conferindo status..." : `${totalInativos} inativos`}
+              </span>
+            </div>
+          </button>
 
-  {/* Total de técnicos */}
-  <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50">
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-foreground font-medium">Total de técnicos</span>
-      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-        {loadingInicial ? "Sincronizando" : `${totalAtivos} ativos`}
-      </span>
-    </div>
-    <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(tecnicos.length, loadingInicial)}</span>
-    <div className="flex flex-col gap-0.5 text-sm">
-      <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
-        <CircleCheckIcon className="size-3.5 fill-green-600" />
-        {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} operando normalmente`}
-      </span>
-      <span className="text-muted-foreground flex items-center gap-1">
-        <CircleMinusIcon className="size-3.5 text-gray-400 dark:text-muted-foreground" />
-        {loadingInicial ? "Conferindo status..." : `${totalInativos} inativos`}
-      </span>
-    </div>
-  </div>
+          <button type="button" className={getResumoCardClass("ATIVO")} onClick={() => setFiltroResumo("ATIVO")}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground font-medium">Técnicos ativos</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">operando</span>
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(totalAtivos, loadingInicial)}</span>
+            <div className="flex flex-col gap-0.5 text-sm">
+              <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
+                <CircleCheckIcon className="size-3.5 fill-green-600" />
+                {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} disponiveis`}
+              </span>
+              <span className="text-muted-foreground text-xs">Clique para ver somente técnicos ativos</span>
+            </div>
+          </button>
 
-  {/* Com alertas ativos */}
-  <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50">
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-foreground font-medium">Com alertas ativos</span>
-      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">hoje</span>
-    </div>
-    <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(tecnicosComAlertas, loadingInicial)}</span>
-    <div className="flex flex-col gap-0.5 text-sm">
-      <span className="text-muted-foreground">
-        {loadingInicial ? "Sincronizando disponibilidade" : `${Math.max(totalAtivos - tecnicosComAlertas, 0)} disponiveis`}
-      </span>
-      <span className="text-muted-foreground text-xs">Técnicos ativos com atendimentos</span>
-    </div>
-  </div>
+          <button type="button" className={getResumoCardClass("INATIVO")} onClick={() => setFiltroResumo("INATIVO")}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground font-medium">Técnicos inativos</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">fora da escala</span>
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(totalInativos, loadingInicial)}</span>
+            <div className="flex flex-col gap-0.5 text-sm">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <CircleMinusIcon className="size-3.5 text-gray-400 dark:text-muted-foreground" />
+                {loadingInicial ? "Conferindo status..." : `${totalInativos} sem operacao ativa`}
+              </span>
+              <span className="text-muted-foreground text-xs">Clique para ver somente técnicos inativos</span>
+            </div>
+          </button>
 
-  {/* Alertas atendidos */}
-  <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50">
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-foreground font-medium">Alertas atendidos</span>
-      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">total</span>
-    </div>
-    <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(totalAlertas, loadingInicial)}</span>
-    <div className="flex flex-col gap-0.5 text-sm">
-      <span className="text-muted-foreground">
-        {loadingInicial ? "Calculando media..." : `Media de ${tecnicos.length ? (totalAlertas / tecnicos.length).toFixed(1) : 0} por tecnico`}
-      </span>
-      <span className="text-muted-foreground text-xs">Todos os atendimentos registrados</span>
-    </div>
-  </div>
-
-</div>
+          <button type="button" className={getResumoCardClass("COM_ALERTAS")} onClick={() => setFiltroResumo("COM_ALERTAS")}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground font-medium">Com alertas ativos</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">hoje</span>
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(tecnicosComAlertas, loadingInicial)}</span>
+            <div className="flex flex-col gap-0.5 text-sm">
+              <span className="text-muted-foreground">
+                {loadingInicial ? "Sincronizando disponibilidade" : `${Math.max(totalAtivos - tecnicosComAlertas, 0)} disponiveis`}
+              </span>
+              <span className="text-muted-foreground text-xs">Técnicos ativos com atendimentos</span>
+            </div>
+          </button>
+        </div>
 
         {/* Busca */}
         <div className="relative w-full max-w-sm">
@@ -498,7 +554,7 @@ export default function TecnicosPage() {
 
         {/* Paginação */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{tecnicos.length} resultado(s) nesta página</span>
+          <span className="text-sm text-muted-foreground">{tecnicosFiltrados.length} resultado(s) nesta página - {filtroResumoLabel}</span>
           <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
             <Button 
               variant="outline" 
