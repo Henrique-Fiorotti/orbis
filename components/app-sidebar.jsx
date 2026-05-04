@@ -83,7 +83,6 @@ function getNavMainItems(usuario) {
     if (item.url === "/dashboard/tecnicos") {
       return permissions.canViewTecnicos
     }
-
     return true
   })
 }
@@ -140,6 +139,7 @@ export function AppSidebar({ ...props }) {
         <NavDocuments items={data.documents} />
         <NavSecondary items={data.navSecondary} className="mt-auto dark:text-white" />
       </SidebarContent>
+      
       <SidebarFooter>
         <NavUser user={userData} />
       </SidebarFooter>
