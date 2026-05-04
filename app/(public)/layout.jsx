@@ -2,6 +2,7 @@ import Header from '@/components/Header'
 import { Poppins, Open_Sans } from 'next/font/google'
 import Footer from '@/components/shadcn-space/blocks/footer-01/footer'
 import HomeLoader from "@/components/Loader/HomeLoader"
+import { LandingLanguageProvider } from '@/components/landing/language-provider'
 import SmoothScroll from '@/components/SmootScroll'
 
 
@@ -20,12 +21,14 @@ const openSans = Open_Sans({
 export default function RootLayout({ children }) {
   return (
     <div className={`${poppins.variable} ${openSans.variable}`}>
-      <Header />
-      <HomeLoader />
-      <SmoothScroll>
-        <main>{children}</main>
-      </SmoothScroll>
-      <Footer />
+      <LandingLanguageProvider>
+        <Header />
+        <HomeLoader />
+        <SmoothScroll>
+          <main>{children}</main>
+        </SmoothScroll>
+        <Footer />
+      </LandingLanguageProvider>
     </div>
   )
 }

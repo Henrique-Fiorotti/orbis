@@ -1,6 +1,7 @@
 "use client";
 
 export default function ScrollViewportButton({
+  ariaLabel = "Rolar para baixo",
   buttonClassName,
   iconClassName,
   ringClassName,
@@ -12,7 +13,7 @@ export default function ScrollViewportButton({
       onClick={() =>
         window.scrollBy({ top: window.innerHeight, behavior: "smooth" })
       }
-      aria-label="Rolar para baixo"
+      aria-label={ariaLabel}
     >
       <span className={ringClassName} aria-hidden="true" />
       <svg
