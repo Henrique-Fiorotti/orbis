@@ -235,7 +235,7 @@ export default function TecnicosPage() {
           //email: form.email.trim(),
           telefone: form.telefone.trim(),
           especialidade: form.especialidade,
-          ativo: form.status,
+          ativo: form.status === "ATIVO",
           ...(form.foto && { foto: form.foto.trim() || null }),
         })
         toast.success("Técnico atualizado com sucesso!")

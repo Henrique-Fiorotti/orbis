@@ -114,7 +114,7 @@ export interface AtualizacaoTecnicoInput {
   email?: string;
   telefone?: string;
   especialidade?: string;
-  status?: StatusTecnico;
+  ativo?: boolean;
   foto?: string | null;
 }
 
