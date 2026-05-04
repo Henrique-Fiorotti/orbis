@@ -13,7 +13,7 @@ export default function SobreInformativo() {
             className="flex flex-col md:flex-row min-h-max bg-[#f0f0f056] dark:bg-zinc-900 md:ms-2 lg:ms-16 xl:ms-24 2xl:ms-90"
         >
             {/* Mobile: imagem decorativa no topo */}
-            <div className="flex md:hidden w-full justify-center items-end h-[260px] sm:h-[300px] overflow-hidden">
+            <div className="hidden flex md:hidden w-full justify-center items-end h-[260px] sm:h-[300px] overflow-hidden">
                 <Image
                     src="/SrOrbis2.png"
                     alt="Profissional Orbis"
