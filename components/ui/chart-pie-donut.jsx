@@ -72,7 +72,7 @@ export function ChartPieDonut() {
   )
 
   return (
-    <Card className="mr-6 flex w-2/6 flex-col">
+    <Card className="mx-4 flex w-auto flex-col lg:mx-6 xl:mx-0 xl:mr-6 xl:w-2/6">
       <CardHeader className="items-center pb-0">
         <CardTitle>Status das maquinas</CardTitle>
         <CardDescription>{loading ? "Carregando distribuicao..." : `Atualizado em ${hoje}`}</CardDescription>

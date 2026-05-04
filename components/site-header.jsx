@@ -156,11 +156,11 @@ export function SiteHeader() {
   console.log("pathname atual:", pathname) // ← adiciona isso
   return (
     <header className="flex h-[90px] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
-      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+      <div className="flex min-w-0 w-full items-center gap-1 px-3 sm:px-4 lg:gap-2 lg:px-6">
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <SidebarTrigger className="dark:text-white dark:hover:bg-gray-200/10!" />
+            <SidebarTrigger className="shrink-0 dark:text-white dark:hover:bg-gray-200/10!" />
           </TooltipTrigger>
           <TooltipContent>
             <span>Expandir/Contrair Sidebar</span>
@@ -172,19 +172,19 @@ export function SiteHeader() {
           className="mx-2 data-[orientation=vertical]:h-auto"
         />
 
-        <div>
-          <h1 className="text-gray-500! text-[10pt]! m-0! dark:text-gray-300!">
+        <div className="min-w-0">
+          <h1 className="truncate text-gray-500! text-[10pt]! m-0! dark:text-gray-300!">
             Dashboard Orbis
           </h1>
 
-          <h2 className="text-sm text-muted-foreground font-normal m-0! dark:text-white!">
+          <h2 className="truncate text-sm text-muted-foreground font-normal m-0! dark:text-white!">
             {getSaudacao()}, {nomeUsuario}!
           </h2>
         </div>
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
 
           {/* Tour */}
           {pathname === "/dashboard" && ( // aqui eu aviso que esse conteudo aparece somente em /dashboard
@@ -194,7 +194,7 @@ export function SiteHeader() {
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => window.dispatchEvent(new CustomEvent("orbit:start-tour"))}
-                  className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                  className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                   aria-label="Tour guiado"
                 >
                   <RouteIcon className="size-4" />
@@ -213,7 +213,7 @@ export function SiteHeader() {
                 variant="ghost"
                 size="icon-sm"
                 onClick={toggleTheme}
-                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
               >
                 {mounted ? (
                   isDark ? (
@@ -239,7 +239,7 @@ export function SiteHeader() {
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => setPainelAberto((prev) => !prev)}
-                  className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground transition-colors relative"
+                  className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground transition-colors relative"
                 >
                   <BellIcon className="size-4" />
                   {naoLidas > 0 && (
@@ -255,7 +255,7 @@ export function SiteHeader() {
             </Tooltip>
 
             {painelAberto && (
-              <div className="absolute right-0 top-10 z-50 w-[360px] rounded-xl border bg-popover shadow-xl ring-1 ring-foreground/10 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150">
+              <div className="absolute right-0 top-10 z-50 w-[calc(100vw-2rem)] max-w-[360px] rounded-xl border bg-popover shadow-xl ring-1 ring-foreground/10 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150">
                 <div className="flex items-center justify-between px-4 py-3 border-b">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-foreground">

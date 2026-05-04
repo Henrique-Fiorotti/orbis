@@ -266,7 +266,7 @@ function MaquinasTable({
 
   return (
     <>
-      <div className={cn("min-h-[500px] overflow-hidden rounded-lg border dark:bg-[#0F172A] dark:border-gray-700!", className)}>
+      <div className={cn("min-h-[500px] overflow-auto rounded-lg border dark:bg-[#0F172A] dark:border-gray-700!", className)}>
         <DndContext
           collisionDetection={closestCenter}
           modifiers={[restrictToVerticalAxis]}
@@ -318,7 +318,7 @@ function MaquinasTable({
         <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
           {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} maquina(s) selecionada(s).
         </div>
-        <div className="flex w-full items-center gap-8 lg:w-fit">
+        <div className="flex w-full items-center gap-4 sm:gap-8 lg:w-fit">
           <div className="hidden items-center gap-2 lg:flex">
             <Label htmlFor="rows-pp" className="text-sm font-medium">Por pagina</Label>
             <Select value={`${table.getState().pagination.pageSize}`} onValueChange={(value) => table.setPageSize(Number(value))}>
@@ -370,7 +370,7 @@ export function DataTable() {
 
   return (
     <Tabs defaultValue="outline" className="w-full flex-col justify-start gap-6">
-      <div className="rounded-[8px]! flex items-center justify-between px-4 lg:px-6">
+      <div className="rounded-[8px]! flex flex-wrap items-center justify-between gap-2 px-4 lg:px-6">
         <TabsList className="rounded-[8px]! hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full! **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
           <TabsTrigger className="rounded-[8px]! dark:border-gray-600!" value="outline">Maquinas</TabsTrigger>
           <TabsTrigger className="rounded-[8px]! dark:border-gray-600!" value="alertas">
@@ -382,7 +382,7 @@ export function DataTable() {
             )}
           </TabsTrigger>
         </TabsList>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">

@@ -4,8 +4,8 @@ import ThemeAwareImage from "@/components/landing/theme-aware-image";
 
 export default function HeroDashboard() {
   return (
-    <div className="w-full flex justify-between gap-12 px-[15%] py-12 text-zinc-950 transition-colors dark:text-zinc-50">
-      <div className="w-1/4 flex flex-col justify-between gap-6">
+    <div className="w-full flex flex-col justify-between gap-10 px-6 py-12 text-zinc-950 transition-colors sm:px-10 lg:flex-row lg:gap-12 lg:px-[15%] dark:text-zinc-50">
+      <div className="flex w-full flex-col justify-between gap-6 lg:w-1/4">
         <div>
           <p
             style={{
@@ -19,11 +19,11 @@ export default function HeroDashboard() {
           >
             Interface grafica
           </p>
-          <h1 className="font-poppins text-[33pt]/11! font-thin!">
+          <h1 className="font-poppins text-[2.25rem]/10! font-thin! sm:text-[33pt]/11!">
             Dashboard <br />
             Preventivo
           </h1>
-          <p className="text-[15pt]/6 text-gray-400 dark:text-zinc-400">
+          <p className="max-w-md text-base/6 text-gray-400 sm:text-[15pt]/6 dark:text-zinc-400">
             Gestao geral das suas maquinas, interface intuitiva, sua empresa na sua
             tela.
           </p>
@@ -36,9 +36,9 @@ export default function HeroDashboard() {
           Comece agora
         </Link>
       </div>
-      <div className="h-full flex flex-col items-end min-w-[280px] flex-[1.5]">
+      <div className="flex h-full min-w-0 flex-[1.5] flex-col items-center lg:min-w-[280px] lg:items-end">
         <ThemeAwareImage
-          className="h-full w-[600px] object-cover"
+          className="h-full w-full max-w-[600px] object-cover"
           lightSrc="/orbis_dashboard_hero.svg"
           darkSrc="/Orbis-hero-dashboard-dark.svg"
           alt="Dashboard Preventivo"
