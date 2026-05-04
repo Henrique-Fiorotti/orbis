@@ -24,7 +24,7 @@ export default function SobreInformativo() {
             </div>
 
             {/* Lado esquerdo - conteúdo */}
-            <div className="w-full md:w-[460px] lg:w-[500px] md:flex-shrink-0 flex flex-col items-center md:items-start px-8 sm:px-12 md:px-10 lg:px-8 py-8 md:py-20 gap-6 md:gap-10">
+            <div className="w-full md:w-[460px] lg:w-[500px] md:flex-shrink-0 flex flex-col items-left md:items-start px-8 sm:px-12 md:px-10 lg:px-8 py-8 md:py-20 gap-6 md:gap-10">
                 <div className="flex items-left gap-1">
                     <ThemeAwareImage
                         lightSrc="/Orbis_extended.svg"
@@ -36,14 +36,14 @@ export default function SobreInformativo() {
                     />
                 </div>
 
-                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center md:text-left">
+                <p style={{ fontFamily: "'Poppins', sans-serif", textAlign: "left" }} className="text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center md:text-left">
                     A <strong className="text-black dark:text-white">Orbis supervisiona continuamente</strong> o
                     funcionamento das <strong className="text-black dark:text-white">máquinas e equipamentos industriais</strong>,
                     identificando irregularidades antes que se tornem problemas maiores e garantindo mais{" "}
                     <strong className="text-black dark:text-white">segurança na operação</strong>.
                 </p>
 
-                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center md:text-left">
+                <p style={{ fontFamily: "'Poppins', sans-serif",textAlign: "left" }} className="text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center md:text-left">
                     Com <strong className="text-black dark:text-white">monitoramento constante</strong>, o sistema detecta
                     rapidamente qualquer alteração no desempenho dos equipamentos, permitindo que as medidas
                     necessárias sejam tomadas com <strong className="text-black dark:text-white">agilidade</strong> e{" "}
