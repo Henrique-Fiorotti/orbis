@@ -57,7 +57,7 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Configuracoes",
+      title: "Configurações",
       style: "text-muted-foreground dark:text-white!",
       url: "#",
       icon: <Settings2Icon className="dark:text-white" />,
