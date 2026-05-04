@@ -35,18 +35,18 @@ const plans = [
 
 const Pricing = () => {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-15! py-12 text-zinc-950 transition-colors dark:bg-[#09090b] dark:text-zinc-50">
-      <h2 className="text-center text-4xl! font-semibold tracking-[-0.03em]">
+    <div className="flex min-h-screen flex-col items-center justify-center px-5! py-12 text-zinc-950 transition-colors sm:px-8! lg:px-15! dark:bg-[#09090b] dark:text-zinc-50">
+      <h2 className="text-center text-3xl! font-semibold tracking-[-0.03em] sm:text-4xl!">
         Nossos <span style={{ color: "var(--landing-accent-strong, #5E17EB)" }}>planos</span>
       </h2>
-      <p className="mt-3 text-center text-xl text-muted-foreground dark:text-zinc-400">
+      <p className="mt-3 max-w-2xl text-center text-base text-muted-foreground sm:text-xl dark:text-zinc-400">
         Escolha o plano que se adeque as suas necessidades <br /> e comece hoje
         a prever seus problemas.
       </p>
-      <div className="mx-auto mt-8! grid h-auto! max-w-(--breakpoint-lg) grid-cols-1 gap-8 sm:mt-16 lg:grid-cols-2">
+      <div className="mx-auto mt-8! grid h-auto! w-full max-w-(--breakpoint-lg) grid-cols-1 gap-6 sm:mt-16 lg:grid-cols-2 lg:gap-8">
         {plans.map((plan) => (
           <div
-            className={`flex flex-col justify-between rounded-lg border bg-white dark:bg-gray-900/70! p-12 transition-colors dark:bg-[#111114] dark:border-white/10 ${plan.isPopular ? "border-1! border-[#5E17EB]! shadow-[0px_0px_38px_0px_rgba(94,23,235,0.3)]" : ""}`}
+            className={`flex flex-col justify-between rounded-lg border bg-white p-6 transition-colors sm:p-8 lg:p-12 dark:bg-gray-900/70! dark:bg-[#111114] dark:border-white/10 ${plan.isPopular ? "border-1! border-[#5E17EB]! shadow-[0px_0px_38px_0px_rgba(94,23,235,0.3)]" : ""}`}
             variant={plan.isPopular ? "default" : "outline"}
             key={plan.name}
           >
@@ -71,7 +71,7 @@ const Pricing = () => {
             <ul className="space-y-1 py-3 pl-1!">
               {plan.features.map((feature) => (
                 <li className="flex items-start gap-2" key={feature}>
-                  <CircleCheck className="mt-1 h-4 w-4 text-[#5E17EB]" />{" "}
+                  <CircleCheck className="mt-1 h-4 w-4 shrink-0 text-[#5E17EB]" />{" "}
                   {feature}
                 </li>
               ))}

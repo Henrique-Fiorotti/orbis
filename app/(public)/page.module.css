@@ -18,6 +18,7 @@
   --landing-feature-border: #ede9fe;
   --landing-feature-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   --landing-feature-shadow-hover: 0 16px 48px rgba(124, 58, 237, 0.12);
+  --landing-header-offset: clamp(60px, 5vw, 70px);
   font-family: "DM Sans", "Segoe UI", sans-serif;
   background: var(--landing-page-bg);
   color: var(--landing-text);
@@ -80,6 +81,18 @@
   animation-delay: 0.8s;
 }
 
+.heroSection {
+  min-height: 85vh;
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: center;
+  padding: 180px 15% 100px;
+  position: relative;
+  background: var(--landing-section-bg);
+  object-fit: cover;
+  margin-top: var(--landing-header-offset);
+}
+
 .heroSpline,
 .heroSplineFallback {
   position: relative;
@@ -105,6 +118,18 @@
   width: 11.25rem;
   height: 3.75rem;
   background: var(--landing-section-bg);
+}
+
+@media (max-width: 1100px) {
+  .heroSection {
+    min-height: auto;
+    padding: 96px 8vw 88px;
+  }
+
+  .heroSpline,
+  .heroSplineFallback {
+    display: none;
+  }
 }
 
 .primaryCta,
@@ -166,6 +191,53 @@
   font-weight: 500;
 }
 
+.quoteSection {
+  height: 30dvh;
+  background: var(--landing-quote-bg);
+  padding: 28px 8vw;
+  margin-top: 70px;
+}
+
+.quoteContent {
+  display: flex;
+  max-width: 100%;
+  height: 100%;
+  margin: 0;
+  padding-left: 15%;
+  padding-right: 15%;
+  justify-content: space-between;
+  align-content: space-between;
+  align-items: center;
+  text-align: center;
+  gap: 32px;
+}
+
+.quoteText {
+  width: 60%;
+  height: auto;
+  min-width: 0;
+}
+
+.quoteImage {
+  height: 100%;
+  width: auto;
+  max-width: 45%;
+  object-fit: contain;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.benefitsSection {
+  background: var(--landing-quote-bg);
+  padding: 96px 8vw;
+}
+
+.benefitsGrid {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
 .featureCard {
   background: var(--landing-feature-bg);
   border: 1.5px solid var(--landing-feature-border);
@@ -188,6 +260,33 @@
   width: 1.8rem;
   height: 1.8rem;
   margin-bottom: 14px;
+}
+
+.processSection {
+  padding: 96px 8vw;
+  background: var(--landing-section-bg);
+}
+
+.processInner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  gap: 64px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.processIntro {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.stepsList {
+  flex: 1 1 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
 }
 
 .scrollButton {
@@ -262,5 +361,93 @@
   }
   50% {
     transform: translateY(-8px);
+  }
+}
+
+@media (max-width: 1100px) {
+  #hero-spline{
+    display: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .quoteSection {
+    height: auto;
+    min-height: 30dvh;
+    padding: 40px 8vw;
+  }
+
+  .quoteContent {
+    padding-left: 0;
+    padding-right: 0;
+    gap: 24px;
+  }
+
+  .quoteText {
+    width: 58%;
+  }
+
+  .quoteImage {
+    height: auto;
+    max-width: 38%;
+    max-height: 240px;
+  }
+
+  .processInner {
+    gap: 40px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .root {
+    --landing-header-offset: 60px;
+  }
+
+  .heroSection {
+    padding: 56px 6vw 84px;
+  }
+
+  .quoteSection {
+    margin-top: 40px;
+    padding: 36px 6vw;
+  }
+
+  .quoteContent {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .quoteText {
+    width: 100%;
+  }
+
+  .quoteImage {
+    width: min(100%, 340px);
+    max-width: 100%;
+    max-height: none;
+    align-self: center;
+  }
+
+  .benefitsSection,
+  .processSection {
+    padding: 64px 6vw;
+  }
+
+  .benefitsGrid {
+    gap: 14px;
+  }
+
+  .featureCard {
+    padding: 24px 20px;
+  }
+
+  .processInner {
+    gap: 32px;
+  }
+
+  .stepsList {
+    gap: 24px;
   }
 }

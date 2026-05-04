@@ -169,17 +169,7 @@ export default function HomePage() {
     <div className={styles.root}>
       <section
         id="inicio"
-        style={{
-          minHeight: "85vh",
-          display: "flex",
-          flexDirection: "row-reverse",
-          justifyContent: "center",
-          padding: "180px 15% 100px 15%",
-          position: "relative",
-          background: "var(--landing-section-bg)",
-          objectFit: "cover",
-          marginTop: "70px",
-        }}
+        className={styles.heroSection}
       >
         <div
           style={{
@@ -198,6 +188,7 @@ export default function HomePage() {
           src="https://my.spline.design/pixeltextsetcopycopy-FVOpkQ2LEECtjtmYxOWm4Dq9-V1Z/"
           title="Demonstração 3D da Orbis"
           className={styles.heroSpline}
+          id="hero-spline"
           frameClassName={styles.heroSplineFrame}
           overlayClassName={styles.heroSplineMask}
         />
@@ -302,29 +293,11 @@ export default function HomePage() {
       </section>
 
       <section // Essa parte é o confie no processo lá
-        style={{
-          height: "30dvh",
-          background: "var(--landing-quote-bg)",
-          padding: "28px 8vw",
-          marginTop: "70px", 
-          ...DEFERRED_SECTION_STYLE,
-        }}
+        className={styles.quoteSection}
+        style={DEFERRED_SECTION_STYLE}
       >
-        <RevealOnScroll
-          style={{
-            display: "flex",
-            maxWidth: "100%",
-            height: "100%",
-            margin: "0",
-            paddingLeft: "15%",
-            paddingRight: "15%",
-            justifyContent: "space-between",
-            alignContent: "space-between",
-            alignItems: "center",
-            textAlign: "center",
-          }}
-        >
-          <div className="w-3/5 h-auto">
+        <RevealOnScroll className={styles.quoteContent}>
+          <div className={styles.quoteText}>
             <p
               style={{
                 fontFamily: "'Poppins', sans-serif",
@@ -354,7 +327,7 @@ export default function HomePage() {
             </p>
           </div>
           <img
-            className="h-full"
+            className={styles.quoteImage}
             src="/banner_hero.svg"
             alt=""
             width="545"
@@ -369,12 +342,12 @@ export default function HomePage() {
       <section id="sobre" style={{
         background: "var(--landing-alt-bg)",
         transition: "background-color 0.25s ease",
-        paddingTop:"15px"
+        paddingTop:"45px"
       }}>
         <SobreInformativo />
       </section>
       {/* blocos de beneficios */}
-      <section style={{ background: "var(--landing-quote-bg)", padding: "96px 8vw", ...DEFERRED_SECTION_STYLE }}
+      <section className={styles.benefitsSection} style={DEFERRED_SECTION_STYLE}
       >
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <p
@@ -403,7 +376,7 @@ export default function HomePage() {
           >
             Tecnologia que trabalha enquanto você lidera.
           </h2>
-          <div style={{ display: "flex", gap: "18px", flexWrap: "wrap" }}>
+          <div className={styles.benefitsGrid}>
             {FEATURES.map((feature) => (
               <FeatureCard key={feature.title} {...feature} />
             ))}
@@ -422,23 +395,11 @@ export default function HomePage() {
       </section>
 
       <section
-        style={{
-          padding: "96px 8vw",
-          background: "var(--landing-section-bg)",
-          ...DEFERRED_SECTION_STYLE,
-        }}
+        className={styles.processSection}
+        style={DEFERRED_SECTION_STYLE}
       >
-        <div
-          style={{
-            maxWidth: "1100px",
-            margin: "0 auto",
-            display: "flex",
-            gap: "64px",
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ flex: "1 1 320px" }}>
+        <div className={styles.processInner}>
+          <div className={styles.processIntro}>
             <p
               style={{
                 fontSize: "0.75rem",
@@ -477,14 +438,7 @@ export default function HomePage() {
               Poderoso no uso.
             </h2>
           </div>
-          <div
-            style={{
-              flex: "1 1 320px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "28px",
-            }}
-          >
+          <div className={styles.stepsList}>
             {STEPS.map((step) => (
               <Step key={step.n} {...step} />
             ))}

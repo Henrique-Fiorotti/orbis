@@ -10,7 +10,7 @@ export default function SobreInformativo() {
     return (
         <section
             style={{ background: "var(--landing-alt-bg)" }}
-            className="flex flex-col md:flex-row min-h-max bg-[#f0f0f056] dark:bg-zinc-900 md:ms-0 lg:ms-16 xl:ms-90"
+            className="flex flex-col md:flex-row min-h-max bg-[#f0f0f056] dark:bg-zinc-900 md:ms-2 lg:ms-16 xl:ms-24 2xl:ms-90"
         >
             {/* Mobile: imagem decorativa no topo */}
             <div className="flex md:hidden w-full justify-center items-end h-[260px] sm:h-[300px] overflow-hidden">
@@ -61,13 +61,13 @@ export default function SobreInformativo() {
             </div>
 
             {/* Lado direito - imagem (tablet/desktop) */}
-            <div className="hidden md:flex md:flex-1 md:items-center md:justify-center min-h-[480px] lg:min-h-[560px] px-4 lg:px-0 lg:me-10 xl:me-20">
+            <div className="hidden md:flex md:flex-1 md:items-center h-auto md:justify-center min-h-[auto] lg:min-h-[auto] px-4 lg:px-0 lg:me-10 xl:me-20">
                 <Image
                     src="/SrOrbis2.png"
                     alt="Profissional Orbis"
                     width={900}
                     height={900}
-                    className="object-contain w-full max-w-[300px] lg:max-w-[420px] xl:max-w-[540px]"
+                    className="mt-7 object-contain w-full max-w-[300px] lg:max-w-[420px] xl:max-w-[540px]"
                 />
             </div>
         </section>
