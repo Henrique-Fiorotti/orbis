@@ -27,7 +27,8 @@ export default function SobreInformativo() {
             style={{ background: "var(--landing-alt-bg)" }}
             className="flex flex-col md:flex-row min-h-max bg-[#f0f0f056] dark:bg-zinc-900 md:ms-2 lg:ms-16 xl:ms-24 2xl:ms-90"
         >
-            <div className="flex md:hidden w-full justify-center items-end h-[260px] sm:h-[300px] overflow-hidden">
+            {/* Mobile: imagem decorativa no topo */}
+            <div className="hidden flex md:hidden w-full justify-center items-end h-[260px] sm:h-[300px] overflow-hidden">
                 <Image
                     src="/SrOrbis2.png"
                     alt={about.imageAlt}
@@ -37,7 +38,8 @@ export default function SobreInformativo() {
                 />
             </div>
 
-            <div className="w-full md:w-[460px] lg:w-[500px] md:flex-shrink-0 flex flex-col items-center md:items-start px-8 sm:px-12 md:px-10 lg:px-8 py-8 md:py-20 gap-6 md:gap-10">
+            {/* Lado esquerdo - conteúdo */}
+            <div className="w-full md:w-[460px] lg:w-[500px] md:flex-shrink-0 flex flex-col items-left md:items-start px-8 sm:px-12 md:px-10 lg:px-8 py-8 md:py-20 gap-6 md:gap-10">
                 <div className="flex items-left gap-1">
                     <ThemeAwareImage
                         lightSrc="/Orbis_extended.svg"

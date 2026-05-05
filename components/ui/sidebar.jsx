@@ -453,7 +453,7 @@ const sidebarMenuButtonVariants = cva(
     variants: {
       // Na cva sidebarMenuButtonVariants, variant default:
       variant: {
-        default: "hover:text-sidebar-accent-foreground hover:bg-background! border-1 border-gray-100 dark:border-border rounded-[8px]! hover:border hover:border-gray-200 dark:hover:border-border!",
+        default: "cursor-pointer hover:text-sidebar-accent-foreground hover:bg-background! border-1 border-gray-100 dark:border-border rounded-[8px]! hover:border hover:border-gray-200 dark:hover:border-border!",
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))] rounded-[8px]!",
       },

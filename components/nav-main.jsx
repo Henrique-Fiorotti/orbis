@@ -23,7 +23,7 @@ export function NavMain({ items }) {
               <SidebarMenuButton
                 onClick={() => (window.location.href = "/dashboard/maquinas?action=new")}
                 tooltip="Adicionar"
-                className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                className="cursor-pointer transition-colors min-w-8 bg-primary text-primary-foreground duration-200 ease-out transform hover:bg-primary/90 hover:text-gray-600 active:translate-y-0 active:scale-95 active:bg-primary/90 active:text-primary-foreground"
               >
                 <CirclePlusIcon />
                 <span>Adicionar</span>
