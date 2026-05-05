@@ -41,7 +41,7 @@ export const LANDING_COPY = {
       nav: [
         { label: "Início", href: "/#inicio" },
         { label: "Sobre", href: "/#sobre" },
-        { label: "Contato", href: "/contact" },
+        { label: "Contato", href: "/#contact" },
       ],
       theme: {
         light: "Ativar tema claro",
@@ -233,7 +233,7 @@ export const LANDING_COPY = {
             { title: "Início", href: "/" },
             { title: "Sobre", href: "/#sobre" },
             { title: "Planos", href: "/#planos" },
-            { title: "Contato", href: "/contact" },
+            { title: "Contato", href: "/#contact" },
           ],
         },
         {
@@ -264,7 +264,7 @@ export const LANDING_COPY = {
       nav: [
         { label: "Home", href: "/#inicio" },
         { label: "About", href: "/#sobre" },
-        { label: "Contact", href: "/contact" },
+        { label: "Contact", href: "/#contact" },
       ],
       theme: {
         light: "Enable light theme",
@@ -456,7 +456,7 @@ export const LANDING_COPY = {
             { title: "Home", href: "/" },
             { title: "About", href: "/#sobre" },
             { title: "Plans", href: "/#planos" },
-            { title: "Contact", href: "/contact" },
+            { title: "Contact", href: "/#contact" },
           ],
         },
         {
@@ -487,7 +487,7 @@ export const LANDING_COPY = {
       nav: [
         { label: "Inicio", href: "/#inicio" },
         { label: "Sobre", href: "/#sobre" },
-        { label: "Contacto", href: "/contact" },
+        { label: "Contacto", href: "/#contact" },
       ],
       theme: {
         light: "Activar tema claro",
@@ -676,10 +676,10 @@ export const LANDING_COPY = {
         {
           title: "Navegación",
           links: [
-            { title: "Inicio", href: "/" },
+            { title: "Inicio", href: "/#inicio" },
             { title: "Sobre", href: "/#sobre" },
             { title: "Planes", href: "/#planos" },
-            { title: "Contacto", href: "/contact" },
+            { title: "Contacto", href: "/#contact" },
           ],
         },
         {

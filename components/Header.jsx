@@ -59,6 +59,45 @@ export default function Header() {
   const isDark = resolvedTheme === 'dark'
   const navLinks = copy.header.nav
 
+  const scrollToLandingHash = React.useCallback((href) => {
+    if (typeof window === 'undefined') return false
+
+    let url
+
+    try {
+      url = new URL(href, window.location.origin)
+    } catch {
+      return false
+    }
+
+    if (url.pathname !== '/' || !url.hash) return false
+
+    const targetId = decodeURIComponent(url.hash.slice(1))
+    const target = document.getElementById(targetId)
+
+    if (!target) return false
+
+    const search = url.search || window.location.search
+
+    window.history.pushState(
+      window.history.state,
+      '',
+      `${url.pathname}${search}${url.hash}`
+    )
+    visibleRef.current = true
+    setVisible(true)
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+    return true
+  }, [])
+
+  const handleNavClick = (event, href) => {
+    if (!scrollToLandingHash(href)) return
+
+    event.preventDefault()
+    setMenuOpen(false)
+  }
+
   const handleLanguageChange = (event) => {
     setLocale(event.target.value)
     setMenuOpen(false)
@@ -87,6 +126,7 @@ export default function Header() {
               key={href}
               href={href}
               prefetch={false}
+              onClick={(event) => handleNavClick(event, href)}
               className="text-[13.5px] text-black/55 dark:text-white/50 px-3.5 py-1.5 rounded-[7px] border border-transparent hover:bg-white dark:hover:bg-white/[0.08] hover:border-black/[0.08] dark:hover:border-white/[0.07] hover:text-[#5e17eb] transition-all duration-150"
             >
               {label}
@@ -161,7 +201,7 @@ export default function Header() {
               key={href}
               href={href}
               prefetch={false}
-              onClick={() => setMenuOpen(false)}
+              onClick={(event) => handleNavClick(event, href)}
               className="text-[18px] text-black dark:text-white px-3.5 py-2.5 rounded-[10px] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] hover:text-[#5e17eb] transition-all duration-150"
             >
               {label}

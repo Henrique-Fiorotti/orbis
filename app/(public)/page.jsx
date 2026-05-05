@@ -454,7 +454,7 @@ export default function HomePage() {
             flexWrap: "wrap",
           }}
         >
-          <Link href="/contact" prefetch={false} className={styles.finalCta}>
+          <Link href="/#contact" prefetch={false} className={styles.finalCta}>
             {home.final.cta}
           </Link>
         </div>
