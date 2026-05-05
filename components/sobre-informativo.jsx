@@ -39,7 +39,7 @@ export default function SobreInformativo() {
             </div>
 
             {/* Lado esquerdo - conteúdo */}
-            <div className="w-full md:w-[460px] lg:w-[500px] md:flex-shrink-0 flex flex-col items-left md:items-start px-8 sm:px-12 md:px-10 lg:px-8 py-8 md:py-20 gap-6 md:gap-10">
+            <div className="w-full md:w-[460px] lg:w-[500px] md:flex-shrink-0 flex flex-col sm:items-left md:items-start px-8 sm:px-12 md:px-10 lg:px-8 py-8 md:py-20 gap-6 md:gap-10">
                 <div className="flex items-left gap-1">
                     <ThemeAwareImage
                         lightSrc="/Orbis_extended.svg"
@@ -51,11 +51,11 @@ export default function SobreInformativo() {
                     />
                 </div>
 
-                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center md:text-left">
+                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-left text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center">
                     <RichText parts={about.paragraphs[0]} />
                 </p>
 
-                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center md:text-left">
+                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-left text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center">
                     <RichText parts={about.paragraphs[1]} />
                 </p>
 
