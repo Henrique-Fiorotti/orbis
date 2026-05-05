@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 
 import HeroDashboard from "@/components/hero-dashboard";
+import { useLandingLanguage } from "@/components/landing/language-provider";
 import LazySplineFrame from "@/components/landing/lazy-spline-frame";
 import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
@@ -10,60 +13,6 @@ import SobreInformativo from "@/components/sobre-informativo";
 import SAQ from "@/components/saq";
 
 import styles from "./page.module.css";
-
-const FEATURES = [
-  {
-    icon: "/visibility.svg",
-    title: "Monitoramento em tempo real",
-    desc: "Acompanhe cada operação da sua empresa com dashboards precisos e alertas instantâneos.",
-    delay: 0,
-  },
-  {
-    icon: "/bolt.svg",
-    title: "Previsão de falhas",
-    desc: "Algoritmos preditivos identificam riscos antes que se tornem problemas reais.",
-    delay: 80,
-  },
-  {
-    icon: "/shield.svg",
-    title: "Segurança avançada",
-    desc: "Criptografia de ponta a ponta e controle de acesso granular para cada usuário.",
-    delay: 160,
-  },
-  {
-    icon: "/analytics.svg",
-    title: "Relatórios inteligentes",
-    desc: "Relatórios automáticos com insights acionáveis para decisões mais rápidas e assertivas.",
-    delay: 240,
-  },
-];
-
-const STEPS = [
-  {
-    n: "1",
-    title: "Registre sua empresa",
-    desc: "Crie sua conta em minutos e configure o perfil da sua organização.",
-    delay: 0,
-  },
-  {
-    n: "2",
-    title: "Conecte suas operações",
-    desc: "Integre sistemas existentes ou utilize nossa plataforma nativa para monitoramento.",
-    delay: 100,
-  },
-  {
-    n: "3",
-    title: "Monitore e preveja",
-    desc: "Receba alertas inteligentes e veja tendências antes de virarem crises.",
-    delay: 200,
-  },
-  {
-    n: "4",
-    title: "Aja com confiança",
-    desc: "Tome decisões respaldadas por dados reais e previsões precisas.",
-    delay: 300,
-  },
-];
 
 const DEFERRED_SECTION_STYLE = {
   contentVisibility: "auto",
@@ -166,6 +115,9 @@ function Step({ n, title, desc, delay }) {
 }
 
 export default function HomePage() {
+  const { copy } = useLandingLanguage();
+  const { home } = copy;
+
   return (
     <div className={styles.root}>
       <section
@@ -187,14 +139,13 @@ export default function HomePage() {
 
         <LazySplineFrame
           src="https://my.spline.design/pixeltextsetcopycopy-FVOpkQ2LEECtjtmYxOWm4Dq9-V1Z/"
-          title="Demonstração 3D da Orbis"
+          title={home.hero.splineTitle}
           className={styles.heroSpline}
           id="hero-spline"
           frameClassName={styles.heroSplineFrame}
           overlayClassName={styles.heroSplineMask}
         />
 
-        {/* Essa parte vai até o registrar empresa */}
         <div style={{ position: "relative", zIndex: 1, maxWidth: "600px" }}>
           <h1
             className={styles.heroTitle}
@@ -208,8 +159,14 @@ export default function HomePage() {
               color: "var(--landing-heading)",
             }}
           >
-            Antecipando <span style={{ color: "#7c3aed" }}>falhas</span>,<br />
-            realizando operações <span style={{ color: "#7c3aed" }}>seguras</span>.
+            {home.hero.titleLines.map((line, index) => (
+              <span key={`${line.highlight}-${index}`}>
+                {line.before}
+                <span style={{ color: "#7c3aed" }}>{line.highlight}</span>
+                {line.after}
+                {index < home.hero.titleLines.length - 1 ? <br /> : null}
+              </span>
+            ))}
           </h1>
 
           <p
@@ -223,7 +180,7 @@ export default function HomePage() {
               marginBottom: "36px",
             }}
           >
-            Inteligência operacional para empresas que não podem errar.
+            {home.hero.subtitle}
           </p>
 
           <div
@@ -236,25 +193,29 @@ export default function HomePage() {
             }}
           >
             <Link href="/login" prefetch={false} className={styles.primaryCta}>
-              Acesse o Orbis
+              {home.hero.primaryCta}
             </Link>
             <Link href="#sobre" className={styles.secondaryCta}>
-              Sobre
+              {home.hero.secondaryCta}
             </Link>
           </div>
 
           <div className={styles.heroRegister}>
             <p
               style={{
-                fontSize: "0.82rem",
+                fontSize: "1rem",
                 color: "var(--landing-subtle)",
-                marginBottom: "4px",
               }}
             >
-              Não tem uma conta?
+              {home.hero.registerQuestion}
             </p>
-            <Link href="/registro" prefetch={false} className={styles.registerLink}>
-              Registrar empresa
+            <Link
+              href="/registro"
+              prefetch={false}
+              className={styles.registerLink}
+              style={{ fontSize: "1rem" }}
+            >
+              {home.hero.registerCta}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="13"
@@ -285,6 +246,7 @@ export default function HomePage() {
         >
           <div className={styles.heroScroll}>
             <ScrollViewportButton
+              ariaLabel={home.hero.scrollDownLabel}
               buttonClassName={styles.scrollButton}
               ringClassName={styles.scrollButtonRing}
               iconClassName={styles.scrollButtonIcon}
@@ -293,7 +255,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section // Essa parte é o confie no processo lá
+      <section
         className={styles.quoteSection}
         style={DEFERRED_SECTION_STYLE}
       >
@@ -311,8 +273,11 @@ export default function HomePage() {
                 marginBottom: "16px",
               }}
             >
-              "Prever <span style={{ color: "#7c3aed" }}>erros</span> hoje é evitar
-              prejuízos <span style={{ color: "#7c3aed" }}>amanhã</span>"
+              {home.quote.before}
+              <span style={{ color: "#7c3aed" }}>{home.quote.highlight}</span>
+              {home.quote.middle}
+              <span style={{ color: "#7c3aed" }}>{home.quote.secondHighlight}</span>
+              {home.quote.after}
             </p>
             <p
               style={{
@@ -322,9 +287,9 @@ export default function HomePage() {
                 textAlign: "start",
               }}
             >
-              Confie no processo.
+              {home.quote.supportText}
               <br />
-              <strong style={{ color: "var(--landing-heading)" }}>Junte-se à Orbis</strong>
+              <strong style={{ color: "var(--landing-heading)" }}>{home.quote.joinText}</strong>
             </p>
           </div>
           <img
@@ -339,7 +304,6 @@ export default function HomePage() {
         </RevealOnScroll>
       </section>
 
-      {/* aqui é o local do Sr Orbis */}
       <section id="sobre" style={{
         background: "var(--landing-alt-bg)",
         transition: "background-color 0.25s ease",
@@ -347,7 +311,6 @@ export default function HomePage() {
       }}>
         <SobreInformativo />
       </section>
-      {/* blocos de beneficios */}
       <section className={styles.benefitsSection} style={DEFERRED_SECTION_STYLE}
       >
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
@@ -361,7 +324,7 @@ export default function HomePage() {
               marginBottom: "12px",
             }}
           >
-            O que oferecemos
+            {home.benefits.eyebrow}
           </p>
           <h2
             style={{
@@ -375,10 +338,10 @@ export default function HomePage() {
               lineHeight: 1.15,
             }}
           >
-            Tecnologia que trabalha enquanto você lidera.
+            {home.benefits.title}
           </h2>
           <div className={styles.benefitsGrid}>
-            {FEATURES.map((feature) => (
+            {home.features.map((feature) => (
               <FeatureCard key={feature.title} {...feature} />
             ))}
           </div>
@@ -411,7 +374,7 @@ export default function HomePage() {
                 marginBottom: "12px",
               }}
             >
-              Como funciona
+              {home.process.eyebrow}
             </p>
             <h2
               style={{
@@ -424,7 +387,7 @@ export default function HomePage() {
                 marginBottom: "8px",
               }}
             >
-              Simples de começar.
+              {home.process.titleLine1}
             </h2>
             <h2
               style={{
@@ -436,11 +399,11 @@ export default function HomePage() {
                 color: "var(--landing-accent-strong)",
               }}
             >
-              Poderoso no uso.
+              {home.process.titleLine2}
             </h2>
           </div>
           <div className={styles.stepsList}>
-            {STEPS.map((step) => (
+            {home.steps.map((step) => (
               <Step key={step.n} {...step} />
             ))}
           </div>
@@ -471,7 +434,7 @@ export default function HomePage() {
             marginBottom: "16px",
           }}
         >
-          Pronto para operar com segurança?
+          {home.final.title}
         </h2>
         <p
           style={{
@@ -481,7 +444,7 @@ export default function HomePage() {
             lineHeight: 1.6,
           }}
         >
-          Junte-se a centenas de empresas que já confiam no Orbis.
+          {home.final.description}
         </p>
         <div
           style={{
@@ -492,7 +455,7 @@ export default function HomePage() {
           }}
         >
           <Link href="/contact" prefetch={false} className={styles.finalCta}>
-            Fale conosco
+            {home.final.cta}
           </Link>
         </div>
       </section>

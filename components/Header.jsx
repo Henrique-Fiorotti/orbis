@@ -3,11 +3,13 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { MoonIcon, SunIcon, MenuIcon, XIcon } from 'lucide-react'
+import { Globe2Icon, MoonIcon, SunIcon, MenuIcon, XIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { useLandingLanguage } from '@/components/landing/language-provider'
 
 export default function Header() {
   const { resolvedTheme, setTheme } = useTheme()
+  const { copy, languages, locale, setLocale } = useLandingLanguage()
   const [mounted, setMounted] = React.useState(false)
   const [menuOpen, setMenuOpen] = React.useState(false)
   const [visible, setVisible] = React.useState(true)
@@ -23,11 +25,11 @@ export default function Header() {
       const currentY = window.scrollY
       let nextVisible = true
 
-      if (currentY < 10) { // Sempre mostrar o header quando estiver no topo da página
+      if (currentY < 10) {
         nextVisible = true
-      } else if (currentY > lastScrollY.current) { // Esconde o header ao rolar para baixo
+      } else if (currentY > lastScrollY.current) {
         nextVisible = false
-      } else { // Mostra o header ao rolar para cima
+      } else {
         nextVisible = true
       }
 
@@ -55,22 +57,21 @@ export default function Header() {
   }, [])
 
   const isDark = resolvedTheme === 'dark'
+  const navLinks = copy.header.nav
 
-  const navLinks = [
-    { label: 'Início', href: '/#inicio' },
-    { label: 'Sobre', href: '/#sobre' },
-    { label: 'Contato', href: '/#contact' },
-  ]
+  const handleLanguageChange = (event) => {
+    setLocale(event.target.value)
+    setMenuOpen(false)
+  }
 
   return (
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-50 h-[60px] grid grid-cols-[1fr_auto_1fr] items-center px-[5%] gap-6 bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08] transition-transform duration-300 ${
-          visible ? 'translate-y-0' : '-translate-y-full' // Esconde o header quando não estiver visível
+          visible ? 'translate-y-0' : '-translate-y-full'
         }`} 
       >
-        {/* Logo */}
-        <Link href="/">
+        <Link href="/" aria-label="Orbis">
           <Image
             src="/Orbis.svg"
             alt="Orbis"
@@ -80,7 +81,6 @@ export default function Header() {
           />
         </Link>
 
-        {/* Nav — desktop */}
         <nav className="hidden md:flex items-center gap-0.5 bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.08] dark:border-white/[0.07] rounded-[10px] p-1 ms-4">
           {navLinks.map(({ label, href }) => (
             <Link
@@ -94,11 +94,34 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* Actions */}
         <div className="flex items-center gap-2 justify-end">
+          <div className="hidden sm:flex h-9 items-center gap-1 rounded-[10px] border border-black/[0.08] px-2 text-black/70 transition-all duration-150 hover:border-[#5e17eb]/20 hover:text-[#5e17eb] dark:border-white/[0.08] dark:text-white/70">
+            <Globe2Icon size={15} aria-hidden="true" />
+            <label htmlFor="landing-language-select" className="sr-only">
+              {copy.header.languageSelectLabel}
+            </label>
+            <select
+              id="landing-language-select"
+              value={locale}
+              onChange={handleLanguageChange}
+              aria-label={copy.header.languageSelectLabel}
+              className="h-8 cursor-pointer bg-transparent text-[12.5px] font-medium outline-none"
+            >
+              {languages.map((language) => (
+                <option
+                  key={language.code}
+                  value={language.code}
+                  lang={language.htmlLang}
+                >
+                  {language.nativeName}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button
             onClick={() => setTheme(isDark ? 'light' : 'dark')}
-            aria-label={mounted ? (isDark ? 'Ativar tema claro' : 'Ativar tema escuro') : 'Alternar tema'}
+            aria-label={mounted ? (isDark ? copy.header.theme.light : copy.header.theme.dark) : copy.header.theme.toggle}
             className="cursor-pointer w-9 h-9 flex items-center justify-center rounded-[10px] border border-black/[0.08] dark:border-white/[0.08] text-black/70 dark:text-white/70 hover:bg-[#5e17eb]/[0.08] hover:border-[#5e17eb]/20 hover:text-[#5e17eb] transition-all duration-150"
           >
             {mounted ? (
@@ -113,12 +136,12 @@ export default function Header() {
             prefetch={false}
             className="hidden md:flex items-center text-[13.5px] px-4 py-[7px] rounded-[10px] border border-[#5e17eb] text-[#5e17eb] hover:bg-[#5e17eb] hover:text-gray-200 dark:bg-[#5e17eb]/30 dark:hover:bg-[#5e17eb] dark:text-gray-300 transition-all duration-150"
           >
-            Entrar
+            {copy.header.login}
           </Link>
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-label={menuOpen ? copy.header.menu.close : copy.header.menu.open}
             aria-expanded={menuOpen}
             aria-controls="site-mobile-nav"
             className="md:hidden w-9 h-9 flex items-center justify-center rounded-[10px] border border-black/[0.08] dark:border-white/[0.08] text-black/70 dark:text-white/70 transition-all duration-150"
@@ -128,7 +151,6 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Menu mobile */}
       {menuOpen && (
         <div
           id="site-mobile-nav"
@@ -145,12 +167,37 @@ export default function Header() {
               {label}
             </Link>
           ))}
+          <div className="mt-2 flex items-center justify-between gap-3 rounded-[10px] border border-black/[0.08] px-3.5 py-2.5 dark:border-white/[0.08]">
+            <label
+              htmlFor="landing-mobile-language-select"
+              className="text-[15px] text-black/70 dark:text-white/70"
+            >
+              {copy.header.languageLabel}
+            </label>
+            <select
+              id="landing-mobile-language-select"
+              value={locale}
+              onChange={handleLanguageChange}
+              aria-label={copy.header.languageSelectLabel}
+              className="min-w-28 rounded-[8px] border border-black/[0.08] bg-transparent px-2 py-1.5 text-[14px] text-black outline-none dark:border-white/[0.08] dark:text-white"
+            >
+              {languages.map((language) => (
+                <option
+                  key={language.code}
+                  value={language.code}
+                  lang={language.htmlLang}
+                >
+                  {language.nativeName}
+                </option>
+              ))}
+            </select>
+          </div>
           <Link
             href="/login"
             prefetch={false}
             className="mt-2 flex justify-center text-[16px] px-4 py-2.5 rounded-[10px] border-2 border-[#5e17eb] text-[#5e17eb] hover:bg-[#5e17eb] hover:text-white transition-all duration-150"
           >
-            Entrar
+            {copy.header.login}
           </Link>
         </div>
       )}
