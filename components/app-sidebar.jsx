@@ -65,11 +65,13 @@ const data = {
     },
     {
       title: "Ajuda",
+      style: "text-muted-foreground dark:text-white!",
       url: "#",
       icon: <CircleHelpIcon className="dark:text-white" />,
     },
     {
       title: "Pesquisar",
+      style: "text-muted-foreground dark:text-white!",
       url: "#",
       icon: <SearchIcon className="dark:text-white" />,
     },
