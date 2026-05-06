@@ -24,8 +24,6 @@ import {
   RouteIcon,
 } from "lucide-react"
 
-
-
 const MOCK_NOTIFICACOES = [
   {
     id: 1,
@@ -55,7 +53,7 @@ const MOCK_NOTIFICACOES = [
     id: 4,
     tipo: "sucesso",
     titulo: "Alerta resolvido",
-    descricao: "Prensa G4 — instabilidade normalizada com sucesso.",
+    descricao: "Prensa G4 - instabilidade normalizada com sucesso.",
     tempo: "2h atrás",
     lida: true,
   },
@@ -94,7 +92,8 @@ export function SiteHeader() {
   const [notificacoes, setNotificacoes] = React.useState(MOCK_NOTIFICACOES)
   const panelRef = React.useRef(null)
   const [mounted, setMounted] = React.useState(false)
-  const [nomeUsuario, setNomeUsuario] = React.useState("usuario")
+  const [nomeUsuario, setNomeUsuario] = React.useState("usuário")
+  const pathname = usePathname()
 
   React.useEffect(() => {
     setMounted(true)
@@ -102,7 +101,7 @@ export function SiteHeader() {
 
   React.useEffect(() => {
     function syncUserName() {
-      setNomeUsuario(getAuthSessionUser()?.nome || "usuario")
+      setNomeUsuario(getAuthSessionUser()?.nome || "usuário")
     }
 
     syncUserName()
@@ -151,20 +150,16 @@ export function SiteHeader() {
   function removerNotificacao(id) {
     setNotificacoes((prev) => prev.filter((n) => n.id !== id))
   }
- 
-  const pathname = usePathname() // isso é usado para definir em que rota tal objeto deve aparecer
-  console.log("pathname atual:", pathname) // ← adiciona isso
+
   return (
     <header className="flex h-[90px] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex min-w-0 w-full items-center gap-1 px-3 sm:px-4 lg:gap-2 lg:px-6">
-
-    {/* Botão de expansão/colapso da sidebar */}
         <Tooltip>
           <TooltipTrigger asChild>
             <SidebarTrigger className="cursor-pointer shrink-0 dark:text-white dark:hover:bg-gray-200/10!" />
           </TooltipTrigger>
           <TooltipContent>
-            <span>Expandir/Contrair Sidebar</span>
+            <span>Expandir/contrair menu</span>
           </TooltipContent>
         </Tooltip>
 
@@ -186,9 +181,7 @@ export function SiteHeader() {
         <div className="flex-1" />
 
         <div className="flex shrink-0 items-center gap-1">
-
-          {/* Tour */}
-          {pathname === "/dashboard" && ( // aqui eu aviso que esse conteudo aparece somente em /dashboard
+          {pathname === "/dashboard" && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -207,7 +200,6 @@ export function SiteHeader() {
             </Tooltip>
           )}
 
-          {/* Tema */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -228,11 +220,10 @@ export function SiteHeader() {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {isDark ? <span>Light mode</span> : <span>Dark mode</span>}
+              {isDark ? <span>Modo claro</span> : <span>Modo escuro</span>}
             </TooltipContent>
           </Tooltip>
 
-          {/* Notificações */}
           <div className="relative" ref={panelRef}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -347,7 +338,6 @@ export function SiteHeader() {
               </div>
             )}
           </div>
-
         </div>
       </div>
     </header>

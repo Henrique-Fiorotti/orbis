@@ -50,11 +50,11 @@ function normalizeResumo(data) {
 
 function getErrorMessage(statusCode, payload) {
   if (statusCode === 401) {
-    return "Sua sessao expirou. Faca login novamente."
+    return "Sua sessão expirou. Faça login novamente."
   }
 
   if (statusCode === 403) {
-    return "Seu usuario nao tem permissao para visualizar o resumo do dashboard."
+    return "Seu usuário não tem permissão para visualizar o resumo do dashboard."
   }
 
   return payload?.mensagem || payload?.message || `Erro ${statusCode} ao carregar o dashboard.`
@@ -74,7 +74,7 @@ export function SectionCards() {
 
     if (!session?.accessToken) {
       setStatus("error")
-      setMensagem("Faca login para carregar os indicadores do dashboard.")
+      setMensagem("Faça login para carregar os indicadores do dashboard.")
       return
     }
 
@@ -117,7 +117,7 @@ export function SectionCards() {
 
         setResumo(EMPTY_RESUMO)
         setStatus("error")
-        setMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar o resumo do dashboard.")
+        setMensagem(error instanceof Error ? error.message : "Não foi possível carregar o resumo do dashboard.")
       }
     }
 
@@ -151,7 +151,7 @@ export function SectionCards() {
       <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
         <Card className="@container/card border-[#5E17EB]! border-2 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
           <CardHeader>
-            <CardDescription>Maquinas ativas</CardDescription>
+            <CardDescription>Máquinas ativas</CardDescription>
             <CardTitle className="text-[#5E17EB]! text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
               {formatMetric(resumo.totalMaquinas, loading)}
             </CardTitle>
@@ -164,11 +164,11 @@ export function SectionCards() {
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex gap-2 font-medium">
-              {loading ? "Atualizando operacao das maquinas" : `${maquinasOk} operando normalmente`}
+              {loading ? "Atualizando operação das máquinas" : `${maquinasOk} operando normalmente`}
               {loading || resumo.maquinasEmAlerta > 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
             </div>
             <div className="text-muted-foreground">
-              {loading ? "Sincronizando resumo com a API" : `${resumo.maquinasEmAlerta} requerem atencao imediata`}
+              {loading ? "Sincronizando resumo com a API" : `${resumo.maquinasEmAlerta} requerem atenção imediata`}
             </div>
           </CardFooter>
         </Card>
@@ -192,7 +192,7 @@ export function SectionCards() {
               {loading || resumo.alertaSemAtendimento > 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
             </div>
             <div className="text-muted-foreground">
-              {loading ? "Resumo diario em sincronizacao" : `${resumo.alertasAtendidosHoje} ja atendidos hoje`}
+              {loading ? "Resumo diário em sincronização" : `${resumo.alertasAtendidosHoje} já atendidos hoje`}
             </div>
           </CardFooter>
         </Card>
@@ -223,24 +223,24 @@ export function SectionCards() {
 
         <Card className="@container/card hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
           <CardHeader>
-            <CardDescription className="text-black! dark:text-white!">Integridade media</CardDescription>
+            <CardDescription className="text-black! dark:text-white!">Integridade média</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
               {integridadeFormatada}
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
                 {loading ? null : resumo.integridadeMedia >= 70 ? <TrendingUpIcon /> : <TrendingDownIcon />}
-                {loading ? "Atualizando" : resumo.integridadeMedia >= 70 ? "Estavel" : "Atencao"}
+                {loading ? "Atualizando" : resumo.integridadeMedia >= 70 ? "Estável" : "Atenção"}
               </Badge>
             </CardAction>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex gap-2 font-medium">
-              {loading ? "Conferindo equipe ativa" : `${resumo.tecnicosAtivos} tecnicos ativos`}
+              {loading ? "Conferindo equipe ativa" : `${resumo.tecnicosAtivos} técnicos ativos`}
               {loading || resumo.tecnicosAtivos === 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
             </div>
             <div className="text-muted-foreground">
-              {loading ? "Calculando media de integridade" : "Media de integridade da frota"}
+              {loading ? "Calculando média de integridade" : "Média de integridade da frota"}
             </div>
           </CardFooter>
         </Card>

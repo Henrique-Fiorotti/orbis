@@ -8,6 +8,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -16,16 +17,17 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { ChartHelp } from "@/components/ui/chart-help"
 import { getIntegridadePorSetor } from "@/lib/orbis-dashboard"
 
 /** @typedef {import("@/lib/orbis-types").ChartConfig} ChartConfig */
 
-export const description = "Radar de integridade media por setor monitorado"
+export const description = "Radar de integridade média por setor monitorado"
 
 /** @type {ChartConfig} */
 const chartConfig = {
   integridade: {
-    label: "Integridade media",
+    label: "Integridade média",
     color: "var(--chart-1)",
   },
 }
@@ -64,11 +66,11 @@ export function ChartRadarDots() {
       </CardHeader>
       <CardContent className="pb-0">
         {loading ? (
-          <EmptyState message="Sincronizando setores e niveis de integridade..." />
+          <EmptyState message="Sincronizando setores e níveis de integridade..." />
         ) : errorMessage ? (
           <EmptyState message={errorMessage} tone="error" />
         ) : chartData.length === 0 ? (
-          <EmptyState message="Nenhuma maquina sincronizada para compor o radar." />
+          <EmptyState message="Nenhuma máquina sincronizada para compor o radar." />
         ) : (
           <ChartContainer
             config={chartConfig}
@@ -100,6 +102,11 @@ export function ChartRadarDots() {
           </ChartContainer>
         )}
       </CardContent>
+      <CardFooter className="justify-end border-t-0 bg-transparent pt-0">
+        <ChartHelp>
+          Quanto mais perto da borda, melhor a integridade média do setor.
+        </ChartHelp>
+      </CardFooter>
     </Card>
   )
 }

@@ -57,7 +57,7 @@ export function DashboardChartsProvider({ children }) {
       setState({
         ...INITIAL_STATE,
         status: "error",
-        mensagem: "Faca login para carregar os dados do dashboard.",
+        mensagem: "Faça login para carregar os dados do dashboard.",
       })
       return
     }
@@ -68,12 +68,12 @@ export function DashboardChartsProvider({ children }) {
       setState(INITIAL_STATE)
 
       const [maquinasResult, sensoresResult, alertTrendResult] = await Promise.allSettled([
-        fetchDashboardJson("/maquinas", session.accessToken, "as maquinas do dashboard"),
+        fetchDashboardJson("/maquinas", session.accessToken, "as máquinas do dashboard"),
         fetchDashboardJson("/sensores", session.accessToken, "os sensores do dashboard"),
         fetchFirstAvailableDashboardJson(
           OPTIONAL_ALERT_TREND_ENDPOINTS,
           session.accessToken,
-          "a tendencia de alertas do dashboard"
+          "a tendência de alertas do dashboard"
         ),
       ])
 
@@ -94,7 +94,7 @@ export function DashboardChartsProvider({ children }) {
           mensagem:
             authError instanceof Error
               ? authError.message
-              : "Sua sessao expirou. Faca login novamente.",
+              : "Sua sessão expirou. Faça login novamente.",
         })
         return
       }
@@ -133,15 +133,15 @@ export function DashboardChartsProvider({ children }) {
         alertTrend:
           !alertTrendPayload && (sensores.length > 0 || maquinas.length > 0)
             ? errors.alertTrend
-              ? `${errors.alertTrend} Exibindo tendencia derivada das ultimas leituras sincronizadas.`
-              : "Tendencia derivada das ultimas leituras sincronizadas."
+              ? `${errors.alertTrend} Exibindo tendência derivada das últimas leituras sincronizadas.`
+              : "Tendência derivada das últimas leituras sincronizadas."
             : "",
       }
 
       const hasResolvedCoreData =
         maquinasResult.status === "fulfilled" || sensoresResult.status === "fulfilled"
       const firstError =
-        errors.maquinas || errors.sensores || errors.alertTrend || "Nao foi possivel carregar os dados do dashboard."
+        errors.maquinas || errors.sensores || errors.alertTrend || "Não foi possível carregar os dados do dashboard."
 
       setState({
         status: hasResolvedCoreData ? "success" : "error",
@@ -162,7 +162,7 @@ export function DashboardChartsProvider({ children }) {
       const message =
         error instanceof Error
           ? error.message
-          : "Nao foi possivel carregar os dados do dashboard."
+          : "Não foi possível carregar os dados do dashboard."
 
       if (getHttpErrorStatus(error) === 401) {
         clearAuthSession()

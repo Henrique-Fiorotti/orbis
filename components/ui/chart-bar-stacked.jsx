@@ -8,6 +8,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -18,11 +19,12 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { ChartHelp } from "@/components/ui/chart-help"
 import { getMaquinasPorCriticidade } from "@/lib/orbis-dashboard"
 
 /** @typedef {import("@/lib/orbis-types").ChartConfig} ChartConfig */
 
-export const description = "Distribuicao de maquinas por criticidade e status"
+export const description = "Distribuição de máquinas por criticidade e status"
 
 /** @type {ChartConfig} */
 const chartConfig = {
@@ -64,24 +66,24 @@ export function ChartBarStacked() {
   return (
     <Card className="flex w-full xl:w-1/2">
       <CardHeader>
-        <CardTitle>Maquinas por criticidade</CardTitle>
+        <CardTitle>Máquinas por criticidade</CardTitle>
         <CardDescription>
           {loading
-            ? "Carregando distribuicao por criticidade..."
+            ? "Carregando distribuição por criticidade..."
             : maquinas.length === 0
-              ? "Nenhuma maquina sincronizada no momento"
+              ? "Nenhuma máquina sincronizada no momento"
               : totalEmAlerta > 0
-                ? `${totalEmAlerta} ativos exigem atencao imediata`
+                ? `${totalEmAlerta} ativos exigem atenção imediata`
                 : "Nenhum ativo em alerta no momento"}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <EmptyState message="Sincronizando criticidade das maquinas com a API..." />
+          <EmptyState message="Sincronizando criticidade das máquinas com a API..." />
         ) : errorMessage ? (
           <EmptyState message={errorMessage} tone="error" />
         ) : maquinas.length === 0 ? (
-          <EmptyState message="Nao ha maquinas disponiveis para compor o grafico." />
+          <EmptyState message="Não há máquinas disponíveis para compor o gráfico." />
         ) : (
           <ChartContainer config={chartConfig}>
             <BarChart accessibilityLayer data={chartData}>
@@ -112,6 +114,11 @@ export function ChartBarStacked() {
           </ChartContainer>
         )}
       </CardContent>
+      <CardFooter className="justify-end border-t-0 bg-transparent pt-0">
+        <ChartHelp>
+          Mostra onde há mais máquinas em alerta por criticidade.
+        </ChartHelp>
+      </CardFooter>
     </Card>
   )
 }

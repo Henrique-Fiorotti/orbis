@@ -31,10 +31,15 @@ function CriticidadeBadge({ value }) {
     MEDIA: "w-[55px] bg-yellow-100 text-yellow-700 dark:bg-transparent! dark:text-white",
     BAIXA: "w-[55px] bg-green-100 text-green-700 dark:bg-transparent! dark:text-white",
   }
+  const labels = {
+    ALTA: "Alta",
+    MEDIA: "Média",
+    BAIXA: "Baixa",
+  }
 
   return (
     <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>
-      {value.charAt(0) + value.slice(1).toLowerCase()}
+      {labels[value] ?? value}
     </Badge>
   )
 }
@@ -155,7 +160,7 @@ function getTableColumns(sensores, sensorError, canManageMaquinas) {
     },
     {
       accessorKey: "nome",
-      header: "Maquina",
+      header: "Máquina",
       cell: ({ row }) => (
         <TableCellViewer item={row.original} sensores={sensores} sensorError={sensorError} />
       ),
@@ -168,7 +173,7 @@ function getTableColumns(sensores, sensorError, canManageMaquinas) {
     },
     {
       accessorKey: "criticidade",
-      header: "Importancia",
+      header: "Importância",
       cell: ({ row }) => <CriticidadeBadge value={row.original.criticidade} />,
     },
     {
@@ -183,7 +188,7 @@ function getTableColumns(sensores, sensorError, canManageMaquinas) {
     },
     {
       accessorKey: "ultimaLeituraEm",
-      header: "Ultimo sinal",
+      header: "Último sinal",
       cell: ({ row }) => (
         <span className="text-muted-foreground text-sm">{tempoRelativo(row.original.ultimaLeituraEm)}</span>
       ),
@@ -218,7 +223,7 @@ function MaquinasTable({
   data,
   sensores = [],
   sensorError = "",
-  emptyMessage = "Nenhuma maquina encontrada.",
+  emptyMessage = "Nenhuma máquina encontrada.",
   className = "",
 }) {
   const [orderedData, setOrderedData] = React.useState(data)
@@ -316,11 +321,11 @@ function MaquinasTable({
       </div>
       <div className="flex items-center justify-between px-4">
         <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-          {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} maquina(s) selecionada(s).
+          {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} máquina(s) selecionada(s).
         </div>
         <div className="flex w-full items-center gap-4 sm:gap-8 lg:w-fit">
           <div className="hidden items-center gap-2 lg:flex">
-            <Label htmlFor="rows-pp" className="text-sm font-medium">Por pagina</Label>
+            <Label htmlFor="rows-pp" className="text-sm font-medium">Por página</Label>
             <Select value={`${table.getState().pagination.pageSize}`} onValueChange={(value) => table.setPageSize(Number(value))}>
               <SelectTrigger size="sm" className="w-20" id="rows-pp">
                 <SelectValue />
@@ -335,7 +340,7 @@ function MaquinasTable({
             </Select>
           </div>
           <div className="flex w-fit items-center justify-center text-sm font-medium">
-            Pag. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}
+            Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}
           </div>
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <Button variant="outline" className="hidden h-8 w-8 p-0 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
@@ -365,14 +370,14 @@ export function DataTable() {
   const loading = status === "loading" && maquinas.length === 0
   const machineError = errors.maquinas || (status === "error" && maquinas.length === 0 ? mensagem : "")
   const sensorNotice = errors.sensores && maquinas.length > 0
-    ? `${errors.sensores} Os detalhes dos sensores podem ficar indisponiveis temporariamente.`
+    ? `${errors.sensores} Os detalhes dos sensores podem ficar indisponíveis temporariamente.`
     : ""
 
   return (
     <Tabs defaultValue="outline" className="w-full flex-col justify-start gap-6">
       <div className="rounded-[8px]! flex flex-wrap items-center justify-between gap-2 px-4 lg:px-6">
         <TabsList className="rounded-[8px]! hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full! **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger className="rounded-[8px]! dark:border-gray-600!" value="outline">Maquinas</TabsTrigger>
+          <TabsTrigger className="rounded-[8px]! dark:border-gray-600!" value="outline">Máquinas</TabsTrigger>
           <TabsTrigger className="rounded-[8px]! dark:border-gray-600!" value="alertas">
             Em Alerta
             {emAlerta.length > 0 && (
@@ -401,7 +406,7 @@ export function DataTable() {
           {permissions.canManageMaquinas ? (
             <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/maquinas?action=new")}>
               <PlusIcon />
-              <span className="hidden lg:inline">Nova maquina</span>
+              <span className="hidden lg:inline">Nova máquina</span>
             </Button>
           ) : null}
 
@@ -422,7 +427,7 @@ export function DataTable() {
 
       <TabsContent value="outline" className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
         {loading ? (
-          <StatePanel message="Sincronizando maquinas do dashboard com a API..." />
+          <StatePanel message="Sincronizando máquinas do dashboard com a API..." />
         ) : machineError ? (
           <StatePanel message={machineError} tone="error" />
         ) : (
@@ -432,21 +437,21 @@ export function DataTable() {
 
       <TabsContent value="alertas" className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
         {loading ? (
-          <StatePanel message="Conferindo maquinas em alerta..." />
+          <StatePanel message="Conferindo máquinas em alerta..." />
         ) : machineError ? (
           <StatePanel message={machineError} tone="error" />
         ) : emAlerta.length === 0 ? (
           <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-lg border border-dashed text-muted-foreground">
             <CircleCheckIcon className="size-8 text-green-500" />
-            <p className="text-sm font-medium">Nenhuma maquina em alerta no momento.</p>
-            <p className="text-xs">Todas as maquinas estao operando normalmente.</p>
+            <p className="text-sm font-medium">Nenhuma máquina em alerta no momento.</p>
+            <p className="text-xs">Todas as máquinas estão operando normalmente.</p>
           </div>
         ) : (
           <MaquinasTable
             data={emAlerta}
             sensores={sensores}
             sensorError={errors.sensores}
-            emptyMessage="Nenhuma maquina em alerta encontrada."
+            emptyMessage="Nenhuma máquina em alerta encontrada."
           />
         )}
       </TabsContent>
@@ -455,8 +460,8 @@ export function DataTable() {
 }
 
 const chartConfig = {
-  temperatura: { label: "Temperatura (C)", color: "var(--primary)" },
-  vibracao: { label: "Vibracao", color: "var(--chart-3)" },
+  temperatura: { label: "Temperatura (°C)", color: "var(--primary)" },
+  vibracao: { label: "Vibração", color: "var(--chart-3)" },
 }
 
 function TableCellViewer({ item, sensores, sensorError = "" }) {
@@ -535,7 +540,7 @@ function TableCellViewer({ item, sensores, sensorError = "" }) {
               <span className="font-medium">{totalSensores}</span>
             </div>
             <div className="flex flex-col gap-1">
-              <Label>Ultimo sinal</Label>
+              <Label>Último sinal</Label>
               <span className="font-medium">{tempoRelativo(item.ultimaLeituraEm)}</span>
             </div>
           </div>
@@ -545,7 +550,7 @@ function TableCellViewer({ item, sensores, sensorError = "" }) {
           <div className="flex flex-col gap-3">
             <Label>Sensores sincronizados</Label>
             {sensoresDaMaquina.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Nenhum sensor vinculado foi retornado pela API para esta maquina.</p>
+              <p className="text-xs text-muted-foreground">Nenhum sensor vinculado foi retornado pela API para esta máquina.</p>
             ) : (
               sensoresDaMaquina.map((sensor, index) => (
                 <div key={sensor.id ?? `${sensor.nome}-${index}`} className="rounded-lg border p-3">
@@ -560,11 +565,11 @@ function TableCellViewer({ item, sensores, sensorError = "" }) {
                     <div className="rounded-md bg-muted/40 p-2">
                       <span className="block text-[11px] uppercase tracking-wide">Temperatura</span>
                       <span className="mt-1 block text-sm font-medium text-foreground">
-                        {formatMetric(sensor.temperatura?.valorAtual, " C")}
+                        {formatMetric(sensor.temperatura?.valorAtual, " °C")}
                       </span>
                     </div>
                     <div className="rounded-md bg-muted/40 p-2">
-                      <span className="block text-[11px] uppercase tracking-wide">Vibracao</span>
+                      <span className="block text-[11px] uppercase tracking-wide">Vibração</span>
                       <span className="mt-1 block text-sm font-medium text-foreground">
                         {formatMetric(sensor.vibracao?.valorAtual, "", 2)}
                       </span>
@@ -576,7 +581,7 @@ function TableCellViewer({ item, sensores, sensorError = "" }) {
           </div>
         </div>
         <DrawerFooter>
-          <Button>Ver alertas desta maquina</Button>
+          <Button>Ver alertas desta máquina</Button>
           <DrawerClose asChild><Button variant="outline">Fechar</Button></DrawerClose>
         </DrawerFooter>
       </DrawerContent>

@@ -23,49 +23,49 @@ import { useSidebar } from "@/components/ui/sidebar"
 const TOUR_STEPS = [
   {
     target: "#tour-header",
-    title: "Cabeçalho do Dashboard",
+    title: "Cabeçalho do dashboard",
     description:
-      "Aqui ficam os controles principais: expandir a sidebar, notificações, alternar o tema e iniciar este tour a qualquer momento.",
+      "Aqui ficam os atalhos principais: menu, notificações, tema e tour guiado.",
     side: "bottom",
     align: "start",
   },
   {
     target: "#tour-sidebar",
-    title: "Sidebar de Navegação",
+    title: "Menu de navegação",
     description:
-      "Aqui fica a navegação principal da plataforma. Use a sidebar para alternar rapidamente entre dashboard, máquinas, sensores, alertas e técnicos.",
+      "Use o menu para alternar entre dashboard, máquinas, sensores, alertas e técnicos.",
     side: "right",
     align: "start",
   },
   {
     target: "#tour-section-cards",
-    title: "Métricas Gerais",
+    title: "Métricas gerais",
     description:
-      "Cards com os indicadores mais críticos da ForjaTech: máquinas ativas, alertas do dia, sensores online e integridade média do parque.",
+      "Resumo rápido de máquinas, alertas, sensores online e integridade média.",
     side: "bottom",
     align: "center",
   },
   {
     target: "#tour-charts-main",
-    title: "Tendência de Alertas e Distribuição",
+    title: "Alertas e status",
     description:
-      "O gráfico de área mostra a evolução dos alertas ao longo do tempo. O gráfico de rosca exibe a distribuição de status das máquinas no dia.",
+      "A tendência mostra quando os alertas aumentam. A rosquinha mostra a condição atual das máquinas.",
     side: "top",
     align: "center",
   },
   {
     target: "#tour-charts-secondary",
-    title: "Radar e Histórico por Categoria",
+    title: "Setores e criticidade",
     description:
-      "O radar compara múltiplas dimensões de desempenho das máquinas. O gráfico de barras empilhadas detalha alertas por tipo ao longo dos meses.",
+      "O radar mostra a integridade por setor. As barras mostram alertas por criticidade.",
     side: "top",
     align: "center",
   },
   {
     target: "#tour-data-table",
-    title: "Tabela de Máquinas",
+    title: "Tabela de máquinas",
     description:
-      "Lista completa com status, integridade e último sinal de cada equipamento. Clique no nome de uma máquina para ver os detalhes e leituras dos sensores.",
+      "Lista as máquinas, status, integridade e último sinal. Clique no nome para ver detalhes.",
     side: "top",
     align: "start",
   },
@@ -159,7 +159,6 @@ export function DashboardTour() {
               target={step.target}
               side={step.side}
               align={step.align}
-
               className="overflow-y-hidden mt-5"
             >
               <TourArrow />
