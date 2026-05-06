@@ -49,6 +49,7 @@ import {
 } from "@tanstack/react-table"
 
 import { tempoRelativo } from "@/lib/utils"
+import { parseDecimalInput, sanitizeDecimalInput } from "@/lib/form-formatters"
 
 const SEM_MAQUINA_VALUE = "__sem_maquina__"
 
@@ -118,20 +119,6 @@ function StatePanel({ message, tone = "muted" }) {
   )
 }
 
-function isFilledNumber(value) {
-  return Number.isFinite(parseFormNumber(value))
-}
-
-function parseFormNumber(value) {
-  const normalized = String(value).trim().replace(",", ".")
-
-  if (!normalized) {
-    return NaN
-  }
-
-  return Number(normalized)
-}
-
 function formatValue(value, suffix) {
   const parsed = Number(value)
 
@@ -149,6 +136,27 @@ function getSelectedMaquinaId(value) {
 
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : null
+}
+
+function UnitInput({ id, value, onChange, unit, placeholder, decimalPlaces = 2 }) {
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        pattern="[0-9]+([.,][0-9]+)?"
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => onChange(sanitizeDecimalInput(event.target.value, { decimalPlaces }))}
+        className="pr-14 tabular-nums"
+      />
+      <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-xs font-medium text-muted-foreground">
+        {unit}
+      </span>
+    </div>
+  )
 }
 
 export default function SensoresPage() {
@@ -262,18 +270,38 @@ export default function SensoresPage() {
       return false
     }
 
+    if (!getSelectedMaquinaId(form.maquinaId)) {
+      toast.error("Selecione a maquina vinculada ao sensor.")
+      return false
+    }
+
     const requiredFields = [
-      ["limiteTemperatura", "Informe o limite de temperatura."],
-      ["idealTemperatura", "Informe a temperatura ideal."],
-      ["limiteVibracao", "Informe o limite de vibracao."],
-      ["idealVibracao", "Informe a vibracao ideal."],
+      ["limiteTemperatura", "Informe o limite de temperatura em °C."],
+      ["idealTemperatura", "Informe a temperatura ideal em °C."],
+      ["limiteVibracao", "Informe o limite de vibracao em mm/s."],
+      ["idealVibracao", "Informe a vibracao ideal em mm/s."],
     ]
 
     for (const [field, message] of requiredFields) {
-      if (!isFilledNumber(form[field])) {
+      if (!Number.isFinite(parseDecimalInput(form[field]))) {
         toast.error(message)
         return false
       }
+    }
+
+    const idealTemperatura = parseDecimalInput(form.idealTemperatura)
+    const limiteTemperatura = parseDecimalInput(form.limiteTemperatura)
+    const idealVibracao = parseDecimalInput(form.idealVibracao)
+    const limiteVibracao = parseDecimalInput(form.limiteVibracao)
+
+    if (limiteTemperatura <= idealTemperatura) {
+      toast.error("O limite de temperatura deve ser maior que a temperatura ideal.")
+      return false
+    }
+
+    if (limiteVibracao <= idealVibracao) {
+      toast.error("O limite de vibracao deve ser maior que a vibracao ideal.")
+      return false
     }
 
     return true
@@ -281,17 +309,16 @@ export default function SensoresPage() {
 
   function criarPayloadSensor() {
     const maquinaId = getSelectedMaquinaId(form.maquinaId)
-    const vinculado = maquinaId !== null
 
     return {
       maquinaId,
       tipo: form.tipo.trim(),
-      status: vinculado ? "ONLINE" : "OFFLINE",
-      active: vinculado,
-      limiteTemperatura: parseFormNumber(form.limiteTemperatura),
-      idealTemperatura: parseFormNumber(form.idealTemperatura),
-      limiteVibracao: parseFormNumber(form.limiteVibracao),
-      idealVibracao: parseFormNumber(form.idealVibracao),
+      status: "ONLINE",
+      active: true,
+      limiteTemperatura: parseDecimalInput(form.limiteTemperatura),
+      idealTemperatura: parseDecimalInput(form.idealTemperatura),
+      limiteVibracao: parseDecimalInput(form.limiteVibracao),
+      idealVibracao: parseDecimalInput(form.idealVibracao),
     }
   }
 
@@ -305,7 +332,7 @@ export default function SensoresPage() {
     try {
       if (modoSheet === "criar") {
         await adicionarSensor(payload)
-        toast.success(payload.maquinaId ? "Sensor cadastrado com sucesso!" : "Sensor cadastrado inativo, sem maquina vinculada.")
+        toast.success("Sensor cadastrado com sucesso!")
       } else {
         await editarSensor(sensorSelecionado.id, payload)
         toast.success("Sensor atualizado com sucesso!")
@@ -405,7 +432,7 @@ export default function SensoresPage() {
           return <span className="text-sm text-muted-foreground">N/A - Sensor Inativo</span>
         }
 
-        return <LeituraCell valor={temperatura.valorAtual} unidade="C" limiteMin={temperatura.limiteMin} limiteMax={temperatura.limiteMax} />
+        return <LeituraCell valor={temperatura.valorAtual} unidade="°C" limiteMin={temperatura.limiteMin} limiteMax={temperatura.limiteMax} />
       },
     },
     {
@@ -680,15 +707,15 @@ export default function SensoresPage() {
                     <div className="grid grid-cols-3 gap-3">
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Leitura</Label>
-                        <span className="text-sm font-semibold">{formatValue(sensorSelecionado.temperatura?.valorAtual, " C")}</span>
+                        <span className="text-sm font-semibold">{formatValue(sensorSelecionado.temperatura?.valorAtual, " °C")}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Ideal</Label>
-                        <span className="text-sm">{formatValue(sensorSelecionado.idealTemperatura, " C")}</span>
+                        <span className="text-sm">{formatValue(sensorSelecionado.idealTemperatura, " °C")}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Limite</Label>
-                        <span className="text-sm">{formatValue(sensorSelecionado.limiteTemperatura, " C")}</span>
+                        <span className="text-sm">{formatValue(sensorSelecionado.limiteTemperatura, " °C")}</span>
                       </div>
                     </div>
                   </div>
@@ -744,7 +771,7 @@ export default function SensoresPage() {
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="maquina">Maquina vinculada</Label>
+                    <Label htmlFor="maquina">Maquina vinculada <span className="text-red-500">*</span></Label>
                     <Select value={form.maquinaId || SEM_MAQUINA_VALUE} onValueChange={handleMaquinaChange}>
                       <SelectTrigger id="maquina" className="w-full">
                         <SelectValue />
@@ -762,8 +789,8 @@ export default function SensoresPage() {
                     </Select>
                     <span className={`text-xs ${form.maquinaId ? "text-muted-foreground" : "font-medium text-red-600 dark:text-red-300"}`}>
                       {form.maquinaId
-                        ? "Sensor sera vinculado a maquina selecionada."
-                        : "Sem maquina vinculada: selecione uma maquina antes de salvar se quiser atribuir este sensor."}
+                        ? "Sensor sera vinculado a maquina selecionada no cadastro da API."
+                        : "Obrigatorio: o back-end exige uma maquina para criar ou atualizar sensores."}
                     </span>
                   </div>
                   <Separator />
@@ -772,55 +799,58 @@ export default function SensoresPage() {
                       <Label htmlFor="ideal-temperatura" className="text-xs text-muted-foreground">
                         Temperatura ideal <span className="text-red-500">*</span>
                       </Label>
-                      <Input
+                      <UnitInput
                         id="ideal-temperatura"
-                        type="text"
-                        inputMode="decimal"
+                        unit="°C"
                         placeholder="60"
                         value={form.idealTemperatura}
-                        onChange={(event) => setFormField("idealTemperatura", event.target.value)}
+                        decimalPlaces={2}
+                        onChange={(value) => setFormField("idealTemperatura", value)}
                       />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="limite-temperatura" className="text-xs text-muted-foreground">
                         Limite temperatura <span className="text-red-500">*</span>
                       </Label>
-                      <Input
+                      <UnitInput
                         id="limite-temperatura"
-                        type="text"
-                        inputMode="decimal"
+                        unit="°C"
                         placeholder="80"
                         value={form.limiteTemperatura}
-                        onChange={(event) => setFormField("limiteTemperatura", event.target.value)}
+                        decimalPlaces={2}
+                        onChange={(value) => setFormField("limiteTemperatura", value)}
                       />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="ideal-vibracao" className="text-xs text-muted-foreground">
                         Vibracao ideal <span className="text-red-500">*</span>
                       </Label>
-                      <Input
+                      <UnitInput
                         id="ideal-vibracao"
-                        type="text"
-                        inputMode="decimal"
+                        unit="mm/s"
                         placeholder="0.4"
                         value={form.idealVibracao}
-                        onChange={(event) => setFormField("idealVibracao", event.target.value)}
+                        decimalPlaces={2}
+                        onChange={(value) => setFormField("idealVibracao", value)}
                       />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="limite-vibracao" className="text-xs text-muted-foreground">
                         Limite vibracao <span className="text-red-500">*</span>
                       </Label>
-                      <Input
+                      <UnitInput
                         id="limite-vibracao"
-                        type="text"
-                        inputMode="decimal"
+                        unit="mm/s"
                         placeholder="0.8"
                         value={form.limiteVibracao}
-                        onChange={(event) => setFormField("limiteVibracao", event.target.value)}
+                        decimalPlaces={2}
+                        onChange={(value) => setFormField("limiteVibracao", value)}
                       />
                     </div>
                   </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Temperatura em Celsius (°C) e vibracao em milimetros por segundo (mm/s). O limite deve ser maior que o valor ideal.
+                  </p>
                 </>
               )}
             </div>

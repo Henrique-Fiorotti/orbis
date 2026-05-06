@@ -30,6 +30,12 @@ import {
   getSortedRowModel, useReactTable,
 } from "@tanstack/react-table"
 import { tempoRelativo } from "@/lib/utils"
+import {
+  formatBrazilianPhoneInput,
+  isValidBackendPassword,
+  isValidBrazilianPhone,
+  isValidEmail,
+} from "@/lib/form-formatters"
 
 const ESPECIALIDADES = [
   "Elétrica Industrial",
@@ -249,32 +255,45 @@ export default function TecnicosPage() {
   }
 
   async function salvar() {
-    if (!form.nome.trim() || !form.email.trim()) {
-      toast.error("Preencha todos os campos obrigatórios.")
+    const nome = form.nome.trim()
+    const email = form.email.trim()
+    const telefone = form.telefone.trim()
+
+    if (nome.length < 3) {
+      toast.error("Informe o nome completo com pelo menos 3 caracteres.")
       return
     }
-    if (modoSheet === "criar" && !form.senha.trim()) {
-      toast.error("Informe a senha inicial do tecnico.")
+
+    if (!isValidEmail(email)) {
+      toast.error("Informe um e-mail valido para o tecnico.")
+      return
+    }
+
+    if (modoSheet === "criar" && !isValidBackendPassword(form.senha)) {
+      toast.error("A senha precisa ter 7+ caracteres, letra maiuscula, minuscula e numero.")
+      return
+    }
+
+    if (modoSheet === "editar" && telefone && !isValidBrazilianPhone(telefone)) {
+      toast.error("Informe o telefone no formato (11) 99999-9999.")
       return
     }
 
     try {
       if (modoSheet === "criar") {
         await adicionarTecnico({
-          nome: form.nome.trim(),
-          email: form.email.trim(),
-          senha: form.senha,
+          nome,
+          email,
+          senha: form.senha.trim(),
           role: "TECNICO",
         })
         toast.success("Técnico cadastrado com sucesso!")
       } else {
         await editarTecnico(tecnicoSelecionado.id, {
-          nome: form.nome.trim(),
-          //email: form.email.trim(),
-          telefone: form.telefone.trim(),
+          nome,
+          ...(telefone ? { telefone } : {}),
           especialidade: form.especialidade,
           ativo: form.status === "ATIVO",
-          ...(form.foto && { foto: form.foto.trim() || null }),
         })
         toast.success("Técnico atualizado com sucesso!")
       }
@@ -688,7 +707,21 @@ export default function TecnicosPage() {
 
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="email">E-mail <span className="text-red-500">*</span></Label>
-                    <Input id="email" type="email" placeholder="carlos@orbis.com" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
+                    <Input
+                      id="email"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="carlos@orbis.com"
+                      value={form.email}
+                      disabled={modoSheet === "editar"}
+                      onChange={e => setForm(p => ({ ...p, email: e.target.value.trim() }))}
+                    />
+                    {modoSheet === "editar" ? (
+                      <p className="text-xs text-muted-foreground">
+                        O back-end deste fluxo nao altera e-mail na edicao do tecnico.
+                      </p>
+                    ) : null}
                   </div>
 
                   {modoSheet === "criar" ? (
@@ -698,10 +731,13 @@ export default function TecnicosPage() {
                         id="senha"
                         type="password"
                         autoComplete="new-password"
-                        placeholder="Senha do acesso"
+                        placeholder="Minimo 7 caracteres"
                         value={form.senha}
                         onChange={e => setForm(p => ({ ...p, senha: e.target.value }))}
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Use letra maiuscula, letra minuscula e numero, sem espacos.
+                      </p>
                     </div>
                   ) : null}
 
@@ -709,7 +745,18 @@ export default function TecnicosPage() {
                     <>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="telefone">Telefone</Label>
-                    <Input id="telefone" placeholder="(11) 99900-0000" value={form.telefone} onChange={e => setForm(p => ({ ...p, telefone: e.target.value }))} />
+                    <Input
+                      id="telefone"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      placeholder="(11) 99999-9999"
+                      value={form.telefone}
+                      onChange={e => setForm(p => ({ ...p, telefone: formatBrazilianPhoneInput(e.target.value) }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Formato aceito pela API: DDD + 8 ou 9 digitos.
+                    </p>
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -737,16 +784,9 @@ export default function TecnicosPage() {
                     </Select>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="foto">URL da foto <span className="text-muted-foreground text-xs font-normal">(opcional)</span></Label>
-                    <Input
-                      id="foto"
-                      placeholder="https://exemplo.com/foto.jpg"
-                      value={form.foto}
-                      onChange={e => setForm(p => ({ ...p, foto: e.target.value }))}
-                    />
-                    <p className="text-xs text-muted-foreground">Deixe em branco para usar as iniciais do nome.</p>
-                  </div>
+                  <p className="rounded-lg border bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                    Foto de perfil nao e atualizada por URL neste endpoint. Use o fluxo de upload de foto do perfil.
+                  </p>
                     </>
                   ) : null}
                 </>
