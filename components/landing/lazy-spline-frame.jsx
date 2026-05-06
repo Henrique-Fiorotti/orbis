@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
 
 function requestIdle(callback, timeout) {
   if (typeof window === "undefined") return 0;
@@ -36,14 +37,25 @@ export default function LazySplineFrame({
   overlayClassName,
   src,
   title,
+  ...props
 }) {
+  const { resolvedTheme } = useTheme();
   const ref = useRef(null);
   const [loaded, setLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    setLoaded(false);
+  }, [resolvedTheme]);
+
+  useEffect(() => {
     const node = ref.current;
-    if (!node) return;
+    if (!mounted || !node) return;
 
     const connection = navigator.connection;
     const slowConnection =
@@ -83,19 +95,24 @@ export default function LazySplineFrame({
       observer?.disconnect();
       cancelIdle(idleId);
     };
-  }, [shouldRender]);
+  }, [mounted, shouldRender]);
 
   return (
-    <div ref={ref} className={className}>
-      {shouldRender ? (
+    <div ref={ref} className={className} {...props}>
+      {mounted && shouldRender ? (
         <iframe
+          key={resolvedTheme ?? "system"}
           src={src}
           title={title}
           loading="lazy"
           frameBorder="0"
           referrerPolicy="strict-origin-when-cross-origin"
           className={frameClassName}
-          style={{ opacity: loaded ? 1 : 0 }}
+          style={{
+            opacity: loaded ? 1 : 0,
+            colorScheme: "light",
+            background: "transparent",
+          }}
           onLoad={() => setLoaded(true)}
         />
       ) : null}
