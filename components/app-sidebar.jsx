@@ -94,7 +94,7 @@ function getUserDataFromSession() {
   return {
     name: usuario?.nome || "Orbis Admin",
     email: usuario?.email || "carregando...",
-    avatar: "/Orbis.svg",
+    avatar: usuario?.fotoPerfil || "/Orbis.svg"
   }
 }
 
