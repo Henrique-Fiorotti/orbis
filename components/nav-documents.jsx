@@ -16,7 +16,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { MoreHorizontalIcon, FolderIcon, ShareIcon, Trash2Icon } from "lucide-react"
+import { MoreHorizontalIcon, FolderIcon, ShareIcon, Trash2Icon, FileTextIcon } from "lucide-react"
 
 export function NavDocuments({
   items
@@ -64,9 +64,11 @@ export function NavDocuments({
           </SidebarMenuItem>
         ))}
         <SidebarMenuItem>
-          <SidebarMenuButton className="text-sidebar-foreground/70">
-            <MoreHorizontalIcon className="text-sidebar-foreground/70" />
-            <span>Mais</span>
+          <SidebarMenuButton asChild className="text-sidebar-foreground/70">
+            <a className="no-underline! text-black dark:text-white" href="/dashboard/relatorios">
+              <FileTextIcon className="text-sidebar-foreground/70" />
+              <span>Relatório</span>
+            </a>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
