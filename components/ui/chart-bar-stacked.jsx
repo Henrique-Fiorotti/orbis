@@ -66,7 +66,7 @@ export function ChartBarStacked() {
   return (
     <Card className="flex w-full xl:w-1/2">
       <CardHeader>
-        <CardTitle>Máquinas por criticidade</CardTitle>
+        <CardTitle>Máquinas por Importância</CardTitle>
         <CardDescription>
           {loading
             ? "Carregando distribuição por criticidade..."

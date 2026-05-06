@@ -6,6 +6,7 @@ import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
+import { DashboardSettingsDialog } from "@/components/dashboard-settings-dialog"
 import {
   Sidebar,
   SidebarContent,
@@ -99,11 +100,25 @@ function getUserDataFromSession() {
 
 export function AppSidebar({ ...props }) {
   const [navMainItems, setNavMainItems] = React.useState(() => getNavMainItems(getAuthSessionUser()))
+  const [settingsOpen, setSettingsOpen] = React.useState(false)
   const [userData, setUserData] = React.useState({
     name: "Orbis Admin",
     email: "carregando...",
     avatar: "/Orbis.svg",
   })
+
+  const navSecondaryItems = React.useMemo(
+    () =>
+      data.navSecondary.map((item) =>
+        item.title === "Configurações"
+          ? {
+              ...item,
+              onClick: () => setSettingsOpen(true),
+            }
+          : item
+      ),
+    []
+  )
 
   React.useEffect(() => {
     function syncUserData() {
@@ -124,25 +139,28 @@ export function AppSidebar({ ...props }) {
   }, [])
 
   return (
-    <Sidebar tourId="tour-sidebar" collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <img src="/Orbis.svg" alt="Orbis" className="size-9! dark:hidden" />
-            <img src="/Orbis-dark.svg" alt="Orbis" className="hidden size-8.5! dark:block" />
-            <span className="text-base font-semibold no-underline! font-poppins! text-black dark:text-white" />
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={navMainItems} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto dark:text-white" />
-      </SidebarContent>
-      
-      <SidebarFooter>
-        <NavUser user={userData} />
-      </SidebarFooter>
-    </Sidebar>
+    <>
+      <Sidebar tourId="tour-sidebar" collapsible="offcanvas" {...props}>
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <img src="/Orbis.svg" alt="Orbis" className="size-9! dark:hidden" />
+              <img src="/Orbis-dark.svg" alt="Orbis" className="hidden size-8.5! dark:block" />
+              <span className="text-base font-semibold no-underline! font-poppins! text-black dark:text-white" />
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          <NavMain items={navMainItems} />
+          <NavDocuments items={data.documents} />
+          <NavSecondary items={navSecondaryItems} className="mt-auto dark:text-white" />
+        </SidebarContent>
+
+        <SidebarFooter>
+          <NavUser user={userData} />
+        </SidebarFooter>
+      </Sidebar>
+      <DashboardSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+    </>
   )
 }
