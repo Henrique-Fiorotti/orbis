@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { useMaquinas } from "@/components/context/maquinas-context"
+import { useSensores } from "@/components/context/sensores-context"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 
 import { Badge } from "@/components/ui/badge"
@@ -22,7 +23,7 @@ import {
   CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, PlusIcon,
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
   ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon,
-  WashingMachineIcon, ShieldAlertIcon, RefreshCcwIcon,
+  WashingMachineIcon, ShieldAlertIcon, RefreshCcwIcon, WifiOffIcon,
 } from "lucide-react"
 import {
   flexRender, getCoreRowModel, getFilteredRowModel,
@@ -48,6 +49,47 @@ function StatusBadge({ value }) {
       {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]! dark:fill-primary!" /> : <AlertTriangleIcon className="text-red-500 dark:text-red-300" />}
       {value}
     </Badge>
+  )
+}
+
+function SensorEstadoBadges({ sensor }) {
+  if (!sensor) {
+    return (
+      <Badge variant="outline" className="px-1.5 text-muted-foreground">
+        <WifiOffIcon className="size-3.5" />
+        Sem sensor
+      </Badge>
+    )
+  }
+
+  const online = sensor.status === "ONLINE"
+  const ativo = sensor.active
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Badge
+        variant="outline"
+        className={`px-1.5 ${
+          ativo
+            ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
+            : "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+        }`}
+      >
+        {ativo ? <CircleCheckIcon className="fill-green-600!" /> : <WifiOffIcon className="size-3.5" />}
+        {ativo ? "Ativo" : "Inativo"}
+      </Badge>
+      <Badge
+        variant="outline"
+        className={`px-1.5 ${
+          online
+            ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
+            : "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+        }`}
+      >
+        {online ? <CircleCheckIcon className="fill-green-600!" /> : <WifiOffIcon className="size-3.5" />}
+        {online ? "Online" : "Offline"}
+      </Badge>
+    </div>
   )
 }
 
@@ -103,6 +145,7 @@ export default function MaquinasPage() {
     excluirMaquina,
     recarregarMaquinas,
   } = useMaquinas()
+  const { sensores } = useSensores()
 
   const [busca, setBusca] = React.useState("")
   const [sheetAberto, setSheetAberto] = React.useState(false)
@@ -117,7 +160,23 @@ export default function MaquinasPage() {
   const loadingInicial = carregando && maquinas.length === 0
   const errorSemDados = status === "error" && maquinas.length === 0
   const canManageMaquinas = permissions.canManageMaquinas
-  const sensoresVinculadosExclusao = Math.max(Number(maquinaExcluir?.sensores ?? 0), 0)
+  const sensoresPorMaquina = React.useMemo(() => {
+    const sensoresMap = new Map()
+
+    for (const sensor of sensores) {
+      if (sensor.maquinaId !== null && sensor.maquinaId !== undefined) {
+        sensoresMap.set(Number(sensor.maquinaId), sensor)
+      }
+    }
+
+    return sensoresMap
+  }, [sensores])
+  const sensorMaquinaSelecionada = maquinaSelecionada
+    ? sensoresPorMaquina.get(Number(maquinaSelecionada.id))
+    : null
+  const sensorVinculadoExclusao = maquinaExcluir
+    ? sensoresPorMaquina.get(Number(maquinaExcluir.id))
+    : null
   const podeExcluirMaquina =
     Boolean(maquinaExcluir) &&
     confirmacaoExclusao === maquinaExcluir?.nome &&
@@ -182,17 +241,24 @@ export default function MaquinasPage() {
   }
 
   async function salvar() {
-    if (!form.nome.trim() || !form.setor.trim() || !form.tipo.trim()) {
+    const dadosMaquina = {
+      nome: form.nome.trim(),
+      setor: form.setor.trim(),
+      tipo: form.tipo.trim(),
+      criticidade: form.criticidade,
+    }
+
+    if (!dadosMaquina.nome || !dadosMaquina.setor || !dadosMaquina.tipo) {
       toast.error("Preencha todos os campos obrigatorios.")
       return
     }
 
     try {
       if (modoSheet === "criar") {
-        await adicionarMaquina(form)
+        await adicionarMaquina(dadosMaquina)
         toast.success("Maquina cadastrada com sucesso!")
       } else {
-        await editarMaquina(maquinaSelecionada.id, form)
+        await editarMaquina(maquinaSelecionada.id, dadosMaquina)
         toast.success("Maquina atualizada com sucesso!")
       }
 
@@ -507,7 +573,7 @@ export default function MaquinasPage() {
                     : "Informacoes completas da maquina."}
               </SheetDescription>
             </SheetHeader>
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
               {modoSheet === "ver" && maquinaSelecionada ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
@@ -515,13 +581,35 @@ export default function MaquinasPage() {
                       ["Nome", maquinaSelecionada.nome],
                       ["Setor", maquinaSelecionada.setor],
                       ["Tipo", maquinaSelecionada.tipo],
-                      ["Sensores", maquinaSelecionada.sensores],
                     ].map(([label, value]) => (
                       <div key={label} className="flex flex-col gap-1">
                         <Label className="text-muted-foreground text-xs">{label}</Label>
                         <span className="text-sm font-medium">{value}</span>
                       </div>
                     ))}
+                  </div>
+                  <Separator />
+                  <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <Label className="text-muted-foreground text-xs">Sensor vinculado</Label>
+                      <SensorEstadoBadges sensor={sensorMaquinaSelecionada} />
+                    </div>
+                    {sensorMaquinaSelecionada ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1">
+                          <Label className="text-muted-foreground text-xs">Tipo</Label>
+                          <span className="text-sm font-medium">{sensorMaquinaSelecionada.tipo}</span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Label className="text-muted-foreground text-xs">Ultimo sinal</Label>
+                          <span className="text-sm font-medium">{tempoRelativo(sensorMaquinaSelecionada.ultimaLeituraEm)}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        Nenhum sensor foi vinculado a esta maquina.
+                      </span>
+                    )}
                   </div>
                   <Separator />
                   <div className="grid grid-cols-2 gap-4">
@@ -598,22 +686,27 @@ export default function MaquinasPage() {
             <DialogHeader>
               <DialogTitle>Confirmar exclusao</DialogTitle>
               <DialogDescription>
-                A maquina <strong>{maquinaExcluir?.nome}</strong> ficara inativa no banco de dados (active: false). Os sensores vinculados tambem ficarao inativos. Tem certeza que deseja excluir?
+                A maquina <strong>{maquinaExcluir?.nome}</strong> ficara inativa no banco de dados. Tem certeza que deseja excluir?
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
               <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
               <div className="flex flex-col gap-1">
                 <span className="font-medium">
-                  {sensoresVinculadosExclusao > 0
-                    ? `${sensoresVinculadosExclusao} sensor(es) vinculado(s) serao inativados.`
-                    : "Nenhum sensor vinculado foi informado pela API."}
+                  {sensorVinculadoExclusao
+                    ? `Sensor vinculado: ${sensorVinculadoExclusao.tipo}.`
+                    : "Nenhum sensor vinculado foi encontrado para esta maquina."}
                 </span>
-                <span>
-                  {sensoresVinculadosExclusao > 0
-                    ? "A exclusao sera enviada para a API. O backend deve aplicar soft delete na maquina e inativar os sensores relacionados."
-                    : "A exclusao sera enviada para a API e a maquina deve sair das listagens ativas."}
-                </span>
+                {sensorVinculadoExclusao ? (
+                  <div className="flex flex-col gap-2 text-foreground">
+                    <SensorEstadoBadges sensor={sensorVinculadoExclusao} />
+                    <span className="text-xs text-muted-foreground">
+                      Se precisar desligar o sensor tambem, use a acao Inativar na aba Sensores.
+                    </span>
+                  </div>
+                ) : (
+                  <span>A exclusao sera enviada para a API e a maquina deve sair das listagens ativas.</span>
+                )}
               </div>
             </div>
             <div className="flex flex-col gap-2">

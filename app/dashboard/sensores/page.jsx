@@ -36,7 +36,6 @@ import {
   RefreshCcwIcon,
   SearchIcon,
   ThermometerIcon,
-  Trash2Icon,
   WifiOffIcon,
 } from "lucide-react"
 import {
@@ -163,7 +162,6 @@ export default function SensoresPage() {
     salvando,
     adicionarSensor,
     editarSensor,
-    excluirSensor,
     recarregarSensores,
   } = useSensores()
   const { maquinas } = useMaquinas()
@@ -181,9 +179,31 @@ export default function SensoresPage() {
   const errorSemDados = status === "error" && sensores.length === 0
   const canManageSensores = permissions.canManageSensores
 
+  const maquinaIdsComSensor = React.useMemo(() => {
+    const ids = new Set()
+
+    for (const sensor of sensores) {
+      if (sensor.maquinaId !== null && sensor.maquinaId !== undefined) {
+        ids.add(Number(sensor.maquinaId))
+      }
+    }
+
+    return ids
+  }, [sensores])
+  const maquinaIdSelecionada = getSelectedMaquinaId(form.maquinaId)
+  const maquinasSemSensor = React.useMemo(
+    () => maquinas.filter((maquina) => !maquinaIdsComSensor.has(Number(maquina.id))).length,
+    [maquinas, maquinaIdsComSensor]
+  )
+  const maquinasDisponiveisParaFormulario = React.useMemo(
+    () => maquinas.filter((maquina) => {
+      const maquinaId = Number(maquina.id)
+      return !maquinaIdsComSensor.has(maquinaId) || maquinaIdSelecionada === maquinaId
+    }),
+    [maquinas, maquinaIdsComSensor, maquinaIdSelecionada]
+  )
   const totalOnline = React.useMemo(() => sensores.filter((sensor) => sensor.status === "ONLINE").length, [sensores])
   const totalOffline = React.useMemo(() => sensores.filter((sensor) => sensor.status !== "ONLINE").length, [sensores])
-  const semMaquina = React.useMemo(() => sensores.filter((sensor) => !sensor.maquinaId).length, [sensores])
   const foraDoLimite = React.useMemo(() => sensores.filter((sensor) => {
     const tempFora =
       sensor.temperatura &&
@@ -262,6 +282,20 @@ export default function SensoresPage() {
       return false
     }
 
+    const maquinaId = getSelectedMaquinaId(form.maquinaId)
+
+    if (!maquinaId) {
+      toast.error("Selecione uma maquina para vincular o sensor.")
+      return false
+    }
+
+    const maquinaAtualDoSensor = sensorSelecionado?.maquinaId ? Number(sensorSelecionado.maquinaId) : null
+
+    if (maquinaIdsComSensor.has(maquinaId) && maquinaAtualDoSensor !== maquinaId) {
+      toast.error("Esta maquina ja possui um sensor vinculado.")
+      return false
+    }
+
     const requiredFields = [
       ["limiteTemperatura", "Informe o limite de temperatura."],
       ["idealTemperatura", "Informe a temperatura ideal."],
@@ -281,13 +315,12 @@ export default function SensoresPage() {
 
   function criarPayloadSensor() {
     const maquinaId = getSelectedMaquinaId(form.maquinaId)
-    const vinculado = maquinaId !== null
 
     return {
       maquinaId,
       tipo: form.tipo.trim(),
-      status: vinculado ? "ONLINE" : "OFFLINE",
-      active: vinculado,
+      status: "ONLINE",
+      active: true,
       limiteTemperatura: parseFormNumber(form.limiteTemperatura),
       idealTemperatura: parseFormNumber(form.idealTemperatura),
       limiteVibracao: parseFormNumber(form.limiteVibracao),
@@ -305,7 +338,7 @@ export default function SensoresPage() {
     try {
       if (modoSheet === "criar") {
         await adicionarSensor(payload)
-        toast.success(payload.maquinaId ? "Sensor cadastrado com sucesso!" : "Sensor cadastrado inativo, sem maquina vinculada.")
+        toast.success("Sensor cadastrado com sucesso!")
       } else {
         await editarSensor(sensorSelecionado.id, payload)
         toast.success("Sensor atualizado com sucesso!")
@@ -341,14 +374,28 @@ export default function SensoresPage() {
       return
     }
 
+    if (!sensorExcluir.maquinaId) {
+      toast.error("Nao foi possivel inativar um sensor sem maquina vinculada.")
+      return
+    }
+
     try {
-      await excluirSensor(sensorExcluir.id)
-      toast.success("Sensor removido.")
+      await editarSensor(sensorExcluir.id, {
+        maquinaId: sensorExcluir.maquinaId,
+        tipo: sensorExcluir.tipo,
+        status: "INATIVO",
+        active: false,
+        limiteTemperatura: sensorExcluir.limiteTemperatura,
+        idealTemperatura: sensorExcluir.idealTemperatura,
+        limiteVibracao: sensorExcluir.limiteVibracao,
+        idealVibracao: sensorExcluir.idealVibracao,
+      })
+      toast.success("Sensor inativado.")
       setDialogExcluir(false)
       setSheetAberto(false)
       setSensorExcluir(null)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel remover o sensor.")
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel inativar o sensor.")
     }
   }
 
@@ -456,7 +503,7 @@ export default function SensoresPage() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}>
-                  <Trash2Icon className="mr-1 size-4" /> Excluir
+                  <WifiOffIcon className="mr-1 size-4" /> Inativar
                 </DropdownMenuItem>
               </>
             ) : null}
@@ -558,14 +605,14 @@ export default function SensoresPage() {
 
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Sem maquina vinculada</span>
-              <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
-                inativos
+              <span className="text-sm font-medium text-muted-foreground">Maquinas sem sensor</span>
+              <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
+                disponiveis
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{loadingInicial ? "--" : semMaquina}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{loadingInicial ? "--" : maquinasSemSensor}</span>
             <span className="text-sm text-muted-foreground">
-              {loadingInicial ? "Conferindo vinculos..." : "Sensores sem maquina sao cadastrados como OFFLINE."}
+              {loadingInicial ? "Conferindo vinculos..." : "Cada maquina aceita um sensor Orbis com temperatura e vibracao."}
             </span>
           </div>
         </div>
@@ -654,7 +701,7 @@ export default function SensoresPage() {
                     : "Leituras e configuracoes do sensor."}
               </SheetDescription>
             </SheetHeader>
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
               {modoSheet === "ver" && sensorSelecionado ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
@@ -724,8 +771,8 @@ export default function SensoresPage() {
                         Editar
                       </Button>
                       <Button variant="destructive" onClick={() => confirmarExcluir(sensorSelecionado)} disabled={salvando}>
-                        <Trash2Icon className="mr-1 size-4" />
-                        Excluir
+                        <WifiOffIcon className="mr-1 size-4" />
+                        Inativar
                       </Button>
                     </div>
                   ) : null}
@@ -744,26 +791,42 @@ export default function SensoresPage() {
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="maquina">Maquina vinculada</Label>
+                    <Label htmlFor="maquina">
+                      Maquina vinculada <span className="text-red-500">*</span>
+                    </Label>
                     <Select value={form.maquinaId || SEM_MAQUINA_VALUE} onValueChange={handleMaquinaChange}>
                       <SelectTrigger id="maquina" className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectItem value={SEM_MAQUINA_VALUE}>Sem maquina vinculada</SelectItem>
-                          {maquinas.map((maquina) => (
-                            <SelectItem key={maquina.id} value={String(maquina.id)}>
-                              {maquina.nome}
+                          <SelectItem value={SEM_MAQUINA_VALUE} disabled>
+                            {maquinas.length ? "Selecione uma maquina" : "Nenhuma maquina disponivel"}
+                          </SelectItem>
+                          {maquinas.map((maquina) => {
+                            const maquinaId = Number(maquina.id)
+                            const jaPossuiSensor = maquinaIdsComSensor.has(maquinaId)
+                            const maquinaAtualDoSensor = sensorSelecionado?.maquinaId ? Number(sensorSelecionado.maquinaId) : null
+                            const bloqueada = jaPossuiSensor && maquinaAtualDoSensor !== maquinaId
+
+                            return (
+                              <SelectItem key={maquina.id} value={String(maquina.id)} disabled={bloqueada}>
+                                {bloqueada ? `${maquina.nome} - ja possui sensor` : maquina.nome}
+                              </SelectItem>
+                            )
+                          })}
+                          {!maquinasDisponiveisParaFormulario.length ? (
+                            <SelectItem value="__sem_maquinas_disponiveis__" disabled>
+                              Todas as maquinas ja possuem sensor
                             </SelectItem>
-                          ))}
+                          ) : null}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
                     <span className={`text-xs ${form.maquinaId ? "text-muted-foreground" : "font-medium text-red-600 dark:text-red-300"}`}>
                       {form.maquinaId
                         ? "Sensor sera vinculado a maquina selecionada."
-                        : "Sem maquina vinculada: selecione uma maquina antes de salvar se quiser atribuir este sensor."}
+                        : "Escolha uma maquina sem sensor. O sensor Orbis ja cobre temperatura e vibracao."}
                     </span>
                   </div>
                   <Separator />
@@ -840,9 +903,9 @@ export default function SensoresPage() {
         <Dialog open={dialogExcluir} onOpenChange={alternarDialogExcluir}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirmar exclusao</DialogTitle>
+              <DialogTitle>Inativar sensor</DialogTitle>
               <DialogDescription>
-                Tem certeza que deseja excluir o sensor <strong>{sensorExcluir?.tipo}</strong>? Esta acao sera enviada para a API e nao usa mais dados locais do navegador.
+                Tem certeza que deseja inativar o sensor <strong>{sensorExcluir?.tipo}</strong>? O historico de leituras e alertas permanece preservado no banco.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -850,7 +913,7 @@ export default function SensoresPage() {
                 Cancelar
               </Button>
               <Button variant="destructive" onClick={excluir} disabled={salvando}>
-                {salvando ? "Excluindo..." : "Excluir"}
+                {salvando ? "Inativando..." : "Inativar"}
               </Button>
             </DialogFooter>
           </DialogContent>
