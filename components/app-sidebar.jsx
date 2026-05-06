@@ -65,11 +65,13 @@ const data = {
     },
     {
       title: "Ajuda",
+      style: "text-muted-foreground dark:text-white!",
       url: "#",
       icon: <CircleHelpIcon className="dark:text-white" />,
     },
     {
       title: "Pesquisar",
+      style: "text-muted-foreground dark:text-white!",
       url: "#",
       icon: <SearchIcon className="dark:text-white" />,
     },
@@ -94,7 +96,7 @@ function getUserDataFromSession() {
   return {
     name: usuario?.nome || "Orbis Admin",
     email: usuario?.email || "carregando...",
-    avatar: "/Orbis.svg",
+    avatar: usuario?.fotoPerfil || "/Orbis.svg"
   }
 }
 
@@ -160,7 +162,7 @@ export function AppSidebar({ ...props }) {
           <NavUser user={userData} />
         </SidebarFooter>
       </Sidebar>
-      <DashboardSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <DashboardSettingsDialog  open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   )
 }

@@ -45,6 +45,8 @@ const EMPTY_PERFIL = {
   ativo: true,
   telefone: "",
   especialidade: "",
+  fotoPerfil: "",
+  caminhoFoto: "",
   criadoEm: null,
   atualizadoEm: null,
 }
@@ -85,6 +87,8 @@ function normalizePerfil(raw) {
     ativo: typeof source.ativo === "boolean" ? source.ativo : true,
     telefone: normalizeString(source.telefone),
     especialidade: normalizeString(source.especialidade),
+    fotoPerfil: normalizeString(source.fotoPerfil ?? source.foto ?? source.avatar ?? source.imagem),
+    caminhoFoto: normalizeString(source.caminhoFoto ?? source.caminhoImagem),
     criadoEm: normalizeString(source.criadoEm, null),
     atualizadoEm: normalizeString(source.atualizadoEm, null),
   }
@@ -196,7 +200,9 @@ export default function PerfilPage() {
   const [status, setStatus] = React.useState("loading")
   const [mensagem, setMensagem] = React.useState("Carregando perfil...")
   const [salvandoDados, setSalvandoDados] = React.useState(false)
+  const [salvandoFoto, setSalvandoFoto] = React.useState(false)
   const [salvandoSenha, setSalvandoSenha] = React.useState(false)
+  const inputFotoRef = React.useRef(null)
   const [senhas, setSenhas] = React.useState({
     atual: "",
     nova: "",
@@ -373,6 +379,62 @@ export default function PerfilPage() {
     }
   }
 
+  async function salvarFoto(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+
+    if (!file) {
+      return
+    }
+
+    if (!["image/png", "image/jpg", "image/jpeg", "image/webp"].includes(file.type)) {
+      toast.error("Use uma imagem PNG, JPG, JPEG ou WEBP.")
+      return
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("A imagem deve ter no maximo 15 MB.")
+      return
+    }
+
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      toast.error("Faca login para atualizar a foto.")
+      return
+    }
+
+    const formData = new FormData()
+    formData.append("imagem", file)
+
+    setSalvandoFoto(true)
+
+    try {
+      const payload = await requestDashboardJson("/perfil/foto", session.accessToken, "o upload da foto do perfil", {
+        method: "PUT",
+        body: formData,
+      })
+      const nextPerfil = normalizePerfil({ ...perfil, ...payload })
+
+      setPerfil(nextPerfil)
+      setForm(getFormFromPerfil(nextPerfil))
+      updateAuthSessionUser(nextPerfil)
+      setStatus("success")
+      setMensagem("")
+      toast.success("Foto atualizada com sucesso!")
+    } catch (error) {
+      if (getHttpErrorStatus(error) === 401) {
+        clearAuthSession()
+        router.replace("/")
+        return
+      }
+
+      toast.error(getErrorMessage(error, "Nao foi possivel atualizar a foto."))
+    } finally {
+      setSalvandoFoto(false)
+    }
+  }
+
   async function salvarSenha() {
     if (!senhas.atual || !senhas.nova || !senhas.confirmar) {
       toast.error("Preencha todos os campos de senha.")
@@ -449,15 +511,28 @@ export default function PerfilPage() {
         <div className="flex flex-col sm:flex-row items-center sm:items-center gap-10 sm:gap-10 rounded-xl border bg-card p-5">
           <div className="relative shrink-0 w-20 h-20 sm:w-24 sm:h-24 lg:w-30 lg:h-30">
             <Avatar className="size-full! text-lg font-bold">
-              <AvatarImage src={undefined} />
+              <AvatarImage
+                src={perfil.fotoPerfil || undefined}
+                alt={form.nome || "Foto do perfil"}
+                className="p-0 dark:invert-0"
+              />
               <AvatarFallback className="bg-[#5E17EB] text-white text-xl sm:text-2xl lg:text-3xl font-bold">
                 {getIniciais(form.nome)}
               </AvatarFallback>
             </Avatar>
+            <input
+              ref={inputFotoRef}
+              type="file"
+              accept="image/png,image/jpg,image/jpeg,image/webp"
+              className="hidden"
+              onChange={salvarFoto}
+            />
             <button
               type="button"
-              onClick={() => toast.info("Upload de foto em breve.")}
+              onClick={() => inputFotoRef.current?.click()}
+              disabled={loading || salvandoFoto}
               className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-[#5E17EB] text-white border-2 border-background hover:bg-[#4c11cc] transition-colors"
+              aria-label={salvandoFoto ? "Enviando foto" : "Alterar foto"}
             >
               <CameraIcon className="size-3" />
             </button>
