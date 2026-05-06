@@ -160,7 +160,7 @@ export function AppSidebar({ ...props }) {
           <NavUser user={userData} />
         </SidebarFooter>
       </Sidebar>
-      <DashboardSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <DashboardSettingsDialog  open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   )
 }
