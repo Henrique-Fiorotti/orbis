@@ -39,6 +39,8 @@ export interface Maquina {
   status: StatusMaquina;
   ultimaLeituraEm: string;
   sensores: number;
+  imagem: string | null;
+  caminhoImagem: string | null;
 }
 
 export interface NovaMaquinaInput {
@@ -165,6 +167,7 @@ export interface MaquinasContextValue {
   adicionarMaquina: (dados: NovaMaquinaInput) => Promise<void>;
   editarMaquina: (id: number, dados: AtualizacaoMaquinaInput) => Promise<void>;
   excluirMaquina: (id: number) => Promise<void>;
+  atualizarImagemMaquina: (id: number, imagem: File) => Promise<void>;
   recarregarMaquinas: () => Promise<void>;
   resetarDados: () => Promise<void>;
 }

@@ -90,12 +90,13 @@ export function MaquinasProvider({ children }) {
     setSalvando(true)
 
     try {
-      await requestDashboardJson(endpoint, session.accessToken, params.contextLabel, {
+      const payload = await requestDashboardJson(endpoint, session.accessToken, params.contextLabel, {
         method: params.method,
         body: params.body,
       })
 
       await carregarMaquinas({ silent: true })
+      return payload
     } catch (error) {
       if (getHttpErrorStatus(error) === 401) {
         clearAuthSession()
@@ -115,7 +116,7 @@ export function MaquinasProvider({ children }) {
    * @param {NovaMaquinaInput} dados
    */
   const adicionarMaquina = React.useCallback(async (dados) => {
-    await executarMutacao("/maquinas", {
+    return await executarMutacao("/maquinas", {
       method: "POST",
       body: dados,
       contextLabel: "o cadastro da maquina",
@@ -127,7 +128,7 @@ export function MaquinasProvider({ children }) {
    * @param {AtualizacaoMaquinaInput} dados
    */
   const editarMaquina = React.useCallback(async (id, dados) => {
-    await executarMutacao(`/maquinas/${id}`, {
+    return await executarMutacao(`/maquinas/${id}`, {
       method: "PUT",
       body: dados,
       contextLabel: "a atualizacao da maquina",
@@ -141,6 +142,21 @@ export function MaquinasProvider({ children }) {
     await executarMutacao(`/maquinas/${id}`, {
       method: "DELETE",
       contextLabel: "a exclusao da maquina",
+    })
+  }, [executarMutacao])
+
+  /**
+   * @param {number} id
+   * @param {File} imagem
+   */
+  const atualizarImagemMaquina = React.useCallback(async (id, imagem) => {
+    const formData = new FormData()
+    formData.append("imagem", imagem)
+
+    await executarMutacao(`/maquinas/${id}/foto`, {
+      method: "PUT",
+      body: formData,
+      contextLabel: "o upload da imagem da maquina",
     })
   }, [executarMutacao])
 
@@ -161,9 +177,10 @@ export function MaquinasProvider({ children }) {
     adicionarMaquina,
     editarMaquina,
     excluirMaquina,
+    atualizarImagemMaquina,
     recarregarMaquinas,
     resetarDados,
-  }), [maquinas, status, mensagem, salvando, adicionarMaquina, editarMaquina, excluirMaquina, recarregarMaquinas, resetarDados])
+  }), [maquinas, status, mensagem, salvando, adicionarMaquina, editarMaquina, excluirMaquina, atualizarImagemMaquina, recarregarMaquinas, resetarDados])
 
   return (
     <MaquinasContext.Provider value={value}>

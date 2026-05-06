@@ -22,7 +22,7 @@ import {
   CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, PlusIcon,
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
   ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon,
-  WashingMachineIcon, ShieldAlertIcon, RefreshCcwIcon,
+  WashingMachineIcon, ShieldAlertIcon, RefreshCcwIcon, ImageIcon, UploadIcon,
 } from "lucide-react"
 import {
   flexRender, getCoreRowModel, getFilteredRowModel,
@@ -101,6 +101,7 @@ export default function MaquinasPage() {
     adicionarMaquina,
     editarMaquina,
     excluirMaquina,
+    atualizarImagemMaquina,
     recarregarMaquinas,
   } = useMaquinas()
 
@@ -109,6 +110,8 @@ export default function MaquinasPage() {
   const [modoSheet, setModoSheet] = React.useState("criar")
   const [maquinaSelecionada, setMaquinaSelecionada] = React.useState(null)
   const [form, setForm] = React.useState(formVazio)
+  const [imagemArquivo, setImagemArquivo] = React.useState(null)
+  const [imagemPreview, setImagemPreview] = React.useState("")
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [maquinaExcluir, setMaquinaExcluir] = React.useState(null)
   const [confirmacaoExclusao, setConfirmacaoExclusao] = React.useState("")
@@ -138,6 +141,18 @@ export default function MaquinasPage() {
   )
 
   React.useEffect(() => {
+    if (!imagemArquivo) {
+      setImagemPreview("")
+      return
+    }
+
+    const objectUrl = URL.createObjectURL(imagemArquivo)
+    setImagemPreview(objectUrl)
+
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [imagemArquivo])
+
+  React.useEffect(() => {
     if (searchParams.get("action") === "new") {
       if (!canManageMaquinas) {
         router.replace("/dashboard/maquinas")
@@ -155,6 +170,7 @@ export default function MaquinasPage() {
 
     setModoSheet("criar")
     setForm(formVazio)
+    setImagemArquivo(null)
     setMaquinaSelecionada(null)
     setSheetAberto(true)
   }
@@ -171,14 +187,37 @@ export default function MaquinasPage() {
       tipo: maquina.tipo,
       criticidade: maquina.criticidade,
     })
+    setImagemArquivo(null)
     setMaquinaSelecionada(maquina)
     setSheetAberto(true)
   }
 
   function abrirVer(maquina) {
     setModoSheet("ver")
+    setImagemArquivo(null)
     setMaquinaSelecionada(maquina)
     setSheetAberto(true)
+  }
+
+  function selecionarImagem(event) {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+
+    if (!file) {
+      return
+    }
+
+    if (!["image/png", "image/jpg", "image/jpeg", "image/webp"].includes(file.type)) {
+      toast.error("Use uma imagem PNG, JPG, JPEG ou WEBP.")
+      return
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("A imagem deve ter no maximo 15 MB.")
+      return
+    }
+
+    setImagemArquivo(file)
   }
 
   async function salvar() {
@@ -188,16 +227,30 @@ export default function MaquinasPage() {
     }
 
     try {
+      let maquinaId = maquinaSelecionada?.id
+
       if (modoSheet === "criar") {
-        await adicionarMaquina(form)
+        const payload = await adicionarMaquina(form)
+        maquinaId = payload?.id ?? payload?.data?.id ?? payload?.dados?.id
+
+        if (imagemArquivo && maquinaId) {
+          await atualizarImagemMaquina(maquinaId, imagemArquivo)
+        }
+
         toast.success("Maquina cadastrada com sucesso!")
       } else {
         await editarMaquina(maquinaSelecionada.id, form)
+
+        if (imagemArquivo && maquinaId) {
+          await atualizarImagemMaquina(maquinaId, imagemArquivo)
+        }
+
         toast.success("Maquina atualizada com sucesso!")
       }
 
       setSheetAberto(false)
       setForm(formVazio)
+      setImagemArquivo(null)
       setMaquinaSelecionada(null)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar a maquina.")
@@ -253,12 +306,25 @@ export default function MaquinasPage() {
       accessorKey: "nome",
       header: "Maquina",
       cell: ({ row }) => (
-        <button
-          onClick={() => abrirVer(row.original)}
-          className="text-left text-sm font-medium transition-colors hover:text-primary hover:underline"
-        >
-          {row.original.nome}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => abrirVer(row.original)}
+            className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted text-muted-foreground"
+          >
+            {row.original.imagem ? (
+              <img src={row.original.imagem} alt="" className="size-full object-cover" />
+            ) : (
+              <ImageIcon className="size-4" />
+            )}
+          </button>
+          <button
+            onClick={() => abrirVer(row.original)}
+            className="text-left text-sm font-medium transition-colors hover:text-primary hover:underline"
+          >
+            {row.original.nome}
+          </button>
+        </div>
       ),
     },
     { accessorKey: "setor", header: "Setor", cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.setor}</span> },
@@ -510,6 +576,15 @@ export default function MaquinasPage() {
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
               {modoSheet === "ver" && maquinaSelecionada ? (
                 <>
+                  <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
+                    {maquinaSelecionada.imagem ? (
+                      <img src={maquinaSelecionada.imagem} alt="" className="size-full object-cover" />
+                    ) : (
+                      <div className="flex size-full items-center justify-center text-muted-foreground">
+                        <ImageIcon className="size-8" />
+                      </div>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     {[
                       ["Nome", maquinaSelecionada.nome],
@@ -552,6 +627,34 @@ export default function MaquinasPage() {
                 </>
               ) : (
                 <>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="imagem-maquina">Imagem da maquina</Label>
+                    <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
+                      {imagemPreview || maquinaSelecionada?.imagem ? (
+                        <img src={imagemPreview || maquinaSelecionada?.imagem} alt="" className="size-full object-cover" />
+                      ) : (
+                        <div className="flex size-full items-center justify-center text-muted-foreground">
+                          <ImageIcon className="size-8" />
+                        </div>
+                      )}
+                    </div>
+                    <Input
+                      id="imagem-maquina"
+                      type="file"
+                      accept="image/png,image/jpg,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={selecionarImagem}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById("imagem-maquina")?.click()}
+                      disabled={salvando}
+                    >
+                      <UploadIcon className="mr-1 size-4" />
+                      {imagemArquivo ? imagemArquivo.name : "Selecionar imagem"}
+                    </Button>
+                  </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="nome">Nome <span className="text-red-500">*</span></Label>
                     <Input id="nome" placeholder="Ex: Motor Esteira A1" value={form.nome} onChange={(event) => setForm((prev) => ({ ...prev, nome: event.target.value }))} />
