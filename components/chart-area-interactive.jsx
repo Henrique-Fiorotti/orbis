@@ -10,6 +10,7 @@ import {
   CardAction,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -25,6 +26,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
+import { ChartHelp } from "@/components/ui/chart-help"
 
 const chartConfig = {
   limite: {
@@ -32,7 +34,7 @@ const chartConfig = {
     color: "var(--primary)",
   },
   tendencia: {
-    label: "Tendencia / degradacao",
+    label: "Tendência / degradação",
     color: "var(--chart-3)",
   },
 }
@@ -51,14 +53,14 @@ function getRangeDays(timeRange) {
 
 function getRangeLabel(timeRange) {
   if (timeRange === "30d") {
-    return "Ultimos 30 dias"
+    return "Últimos 30 dias"
   }
 
   if (timeRange === "7d") {
-    return "Ultimos 7 dias"
+    return "Últimos 7 dias"
   }
 
-  return "Ultimos 3 meses"
+  return "Últimos 3 meses"
 }
 
 function parseChartDate(value) {
@@ -108,8 +110,8 @@ export function ChartAreaInteractive() {
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Tendencia de alertas</CardTitle>
-        <CardDescription>{loading ? "Carregando serie temporal..." : getRangeLabel(timeRange)}</CardDescription>
+        <CardTitle>Tendência de alertas</CardTitle>
+        <CardDescription>{loading ? "Carregando série temporal..." : getRangeLabel(timeRange)}</CardDescription>
         <CardAction>
           <ToggleGroup
             type="single"
@@ -122,9 +124,9 @@ export function ChartAreaInteractive() {
             variant="outline"
             className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
           >
-            <ToggleGroupItem value="90d">Ultimos 3 meses</ToggleGroupItem>
-            <ToggleGroupItem value="30d">Ultimos 30 dias</ToggleGroupItem>
-            <ToggleGroupItem value="7d">Ultimos 7 dias</ToggleGroupItem>
+            <ToggleGroupItem value="90d">Últimos 3 meses</ToggleGroupItem>
+            <ToggleGroupItem value="30d">Últimos 30 dias</ToggleGroupItem>
+            <ToggleGroupItem value="7d">Últimos 7 dias</ToggleGroupItem>
           </ToggleGroup>
           <Select
             value={timeRange}
@@ -142,9 +144,9 @@ export function ChartAreaInteractive() {
               <SelectValue placeholder="Filtrar" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              <SelectItem value="90d" className="rounded-lg">Ultimos 3 meses</SelectItem>
-              <SelectItem value="30d" className="rounded-lg">Ultimos 30 dias</SelectItem>
-              <SelectItem value="7d" className="rounded-lg">Ultimos 7 dias</SelectItem>
+              <SelectItem value="90d" className="rounded-lg">Últimos 3 meses</SelectItem>
+              <SelectItem value="30d" className="rounded-lg">Últimos 30 dias</SelectItem>
+              <SelectItem value="7d" className="rounded-lg">Últimos 7 dias</SelectItem>
             </SelectContent>
           </Select>
         </CardAction>
@@ -155,7 +157,7 @@ export function ChartAreaInteractive() {
         ) : chartError && filteredData.length === 0 ? (
           <ChartMessage message={chartError} tone="error" />
         ) : filteredData.length === 0 ? (
-          <ChartMessage message="Nao ha dados suficientes para montar a tendencia de alertas." />
+          <ChartMessage message="Não há dados suficientes para montar a tendência de alertas." />
         ) : (
           <>
             <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
@@ -215,12 +217,15 @@ export function ChartAreaInteractive() {
               </AreaChart>
             </ChartContainer>
 
-            {notices.alertTrend ? (
-              <p className="mt-3 text-xs text-muted-foreground">{notices.alertTrend}</p>
-            ) : null}
           </>
         )}
       </CardContent>
+      <CardFooter className="justify-end border-t-0 bg-transparent px-4 pt-0 sm:px-6">
+        <ChartHelp>
+          <span>Picos indicam dias com mais alertas. Use para investigar máquinas e setores que pioraram.</span>
+          {notices.alertTrend ? <span className="mt-2 block text-muted-foreground">{notices.alertTrend}</span> : null}
+        </ChartHelp>
+      </CardFooter>
     </Card>
   )
 }

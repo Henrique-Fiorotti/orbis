@@ -19,13 +19,14 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { ChartHelp } from "@/components/ui/chart-help"
 import { getDistribuicaoStatusMaquinas } from "@/lib/orbis-dashboard"
 
-export const description = "Distribuicao operacional das maquinas"
+export const description = "Distribuição operacional das máquinas"
 
 const chartConfig = {
   Estavel: {
-    label: "Estavel",
+    label: "Estável",
     color: "var(--chart-1)",
   },
   Alerta: {
@@ -33,7 +34,7 @@ const chartConfig = {
     color: "var(--chart-2)",
   },
   Critico: {
-    label: "Critico",
+    label: "Crítico",
     color: "#ef4444",
   },
 }
@@ -74,16 +75,16 @@ export function ChartPieDonut() {
   return (
     <Card className="mx-4 flex w-auto flex-col lg:mx-6 xl:mx-0 xl:mr-6 xl:w-2/6">
       <CardHeader className="items-center pb-0">
-        <CardTitle>Status das maquinas</CardTitle>
-        <CardDescription>{loading ? "Carregando distribuicao..." : `Atualizado em ${hoje}`}</CardDescription>
+        <CardTitle>Status das máquinas</CardTitle>
+        <CardDescription>{loading ? "Carregando distribuição..." : `Atualizado em ${hoje}`}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         {loading ? (
-          <EmptyState message="Sincronizando distribuicao operacional com a API..." />
+          <EmptyState message="Sincronizando distribuição operacional com a API..." />
         ) : errorMessage ? (
           <EmptyState message={errorMessage} tone="error" />
         ) : total === 0 ? (
-          <EmptyState message="Nenhuma maquina sincronizada para compor a distribuicao." />
+          <EmptyState message="Nenhuma máquina sincronizada para compor a distribuição." />
         ) : (
           <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px]">
             <PieChart>
@@ -108,15 +109,12 @@ export function ChartPieDonut() {
           </ChartContainer>
         )}
       </CardContent>
-      <CardFooter className="flex-col items-start gap-1.5 text-sm">
-        <div className="font-medium">
-          {loading ? "Lendo status operacionais..." : `${total} maquinas consideradas na visao atual`}
-        </div>
-        <div className="text-muted-foreground">
+      <CardFooter className="justify-end border-t-0 bg-transparent pt-0">
+        <ChartHelp>
           {loading
-            ? "A distribuicao sera atualizada assim que a API responder."
-            : "Critico considera maquinas em alerta com alta criticidade ou baixa integridade."}
-        </div>
+            ? "A distribuição será atualizada assim que a API responder."
+            : "Mostra quantas máquinas estão estáveis, em alerta ou críticas."}
+        </ChartHelp>
       </CardFooter>
     </Card>
   )
