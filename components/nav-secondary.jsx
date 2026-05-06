@@ -2,6 +2,7 @@
 
 import * as React from "react"
 
+import { cn } from "@/lib/utils"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -20,12 +21,32 @@ export function NavSecondary({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a className="no-underline! text-black dark:text-white" href={item.url}>
-                  {item.icon}
-                  <span>{item.title}</span>
-                </a>
-              </SidebarMenuButton>
+              {item.onClick ? (
+                <SidebarMenuButton asChild>
+                  <button
+                    type="button"
+                    onClick={item.onClick}
+                    aria-label={item.title}
+                    className={cn(
+                      "w-full bg-transparent no-underline! text-black dark:text-white",
+                      item.style
+                    )}
+                  >
+                    {item.icon}
+                    <span>{item.title}</span>
+                  </button>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton asChild>
+                  <a
+                    className={cn("no-underline! text-black dark:text-white", item.style)}
+                    href={item.url}
+                  >
+                    {item.icon}
+                    <span>{item.title}</span>
+                  </a>
+                </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
           ))}
         </SidebarMenu>

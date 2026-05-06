@@ -3,10 +3,19 @@
 import { useEffect } from 'react'
 import Lenis from 'lenis'
 
+import { useOptionalDashboardPreferences } from '@/components/context/dashboard-preferences-context'
+
 const TOUR_SCROLL_LOCK_CHANGE = 'tour.scrollLockChange'
 
 export default function SmoothScroll({ children }) {
+  const dashboardPreferences = useOptionalDashboardPreferences()
+  const smoothScrollEnabled = dashboardPreferences?.preferences.smoothScrollEnabled ?? true
+
   useEffect(() => {
+    if (!smoothScrollEnabled) {
+      return
+    }
+
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const connection = navigator.connection
 
@@ -97,7 +106,7 @@ export default function SmoothScroll({ children }) {
 
       lenis?.destroy()
     }
-  }, [])
+  }, [smoothScrollEnabled])
 
   return <>{children}</>
 }
