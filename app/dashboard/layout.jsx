@@ -6,6 +6,7 @@ import { Toaster } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { AlertasProvider } from "@/components/context/alertas-context"
+import { DashboardAuthSkeleton } from "@/components/dashboard-skeletons"
 import { DashboardPreferencesProvider } from "@/components/context/dashboard-preferences-context"
 import { MaquinasProvider } from "@/components/context/maquinas-context"
 import { SensoresProvider } from "@/components/context/sensores-context"
@@ -55,11 +56,7 @@ export default function DashboardLayout({ children }) {
   }, [router])
 
   if (authStatus !== "authenticated") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-6 text-center text-sm text-muted-foreground">
-        Verificando sua sessão...
-      </div>
-    )
+    return <DashboardAuthSkeleton />
   }
 
   return (

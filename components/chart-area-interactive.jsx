@@ -5,6 +5,7 @@ import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
 import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { DashboardChartSkeleton } from "@/components/dashboard-skeletons"
 import {
   Card,
   CardAction,
@@ -106,6 +107,10 @@ export function ChartAreaInteractive() {
 
   const loading = status === "loading" && alertTrendData.length === 0
   const chartError = errors.alertTrend || (status === "error" && alertTrendData.length === 0 ? mensagem : "")
+
+  if (loading) {
+    return <DashboardChartSkeleton />
+  }
 
   return (
     <Card className="@container/card">

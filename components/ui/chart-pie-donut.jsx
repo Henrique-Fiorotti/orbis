@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Pie, PieChart, Cell } from "recharts"
 
+import { DashboardChartSkeleton } from "@/components/dashboard-skeletons"
 import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
 import {
   Card,
@@ -71,6 +72,16 @@ export function ChartPieDonut() {
       }).format(new Date()),
     []
   )
+
+  if (loading) {
+    return (
+      <DashboardChartSkeleton
+        variant="donut"
+        centeredHeader
+        className="mx-4 flex w-auto flex-col lg:mx-6 xl:mx-0 xl:mr-6 xl:w-2/6"
+      />
+    )
+  }
 
   return (
     <Card className="mx-4 flex w-auto flex-col lg:mx-6 xl:mx-0 xl:mr-6 xl:w-2/6">

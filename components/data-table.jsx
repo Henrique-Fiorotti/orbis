@@ -8,6 +8,7 @@ import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } 
 import { flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 
 import { useDashboardCharts } from "./context/dashboard-charts-context"
+import { DashboardTableSkeleton } from "@/components/dashboard-skeletons"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
@@ -458,7 +459,7 @@ export function DataTable() {
 
       <TabsContent value="outline" className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
         {loading ? (
-          <StatePanel message="Sincronizando máquinas do dashboard com a API..." />
+          <DashboardTableSkeleton />
         ) : machineError ? (
           <StatePanel message={machineError} tone="error" />
         ) : (
@@ -468,7 +469,7 @@ export function DataTable() {
 
       <TabsContent value="alertas" className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
         {loading ? (
-          <StatePanel message="Conferindo máquinas em alerta..." />
+          <DashboardTableSkeleton />
         ) : machineError ? (
           <StatePanel message={machineError} tone="error" />
         ) : emAlerta.length === 0 ? (

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
+import { DashboardChartSkeleton } from "@/components/dashboard-skeletons"
 import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
 import {
   Card,
@@ -62,6 +63,10 @@ export function ChartBarStacked() {
 
   const loading = status === "loading" && maquinas.length === 0
   const errorMessage = errors.maquinas || (status === "error" && maquinas.length === 0 ? mensagem : "")
+
+  if (loading) {
+    return <DashboardChartSkeleton variant="bar" className="w-full xl:w-1/2" height="h-[280px]" />
+  }
 
   return (
     <Card className="flex w-full xl:w-1/2">

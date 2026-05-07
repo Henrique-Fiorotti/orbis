@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
+import { ProfilePageSkeleton } from "@/components/dashboard-skeletons"
 import { SiteHeader } from "@/components/site-header"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -480,6 +481,15 @@ export default function PerfilPage() {
     } finally {
       setSalvandoSenha(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <>
+        <SiteHeader />
+        <ProfilePageSkeleton />
+      </>
+    )
   }
 
   return (
