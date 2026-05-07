@@ -4,11 +4,42 @@ import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/lib/utils"
+import { setSmoothScrollLock } from "@/lib/scroll-lock"
 
 function Drawer({
+  open,
+  defaultOpen,
+  onOpenChange,
   ...props
 }) {
-  return <DrawerPrimitive.Root data-slot="drawer" {...props} />;
+  const lockId = React.useId()
+  const isControlled = open !== undefined
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(Boolean(defaultOpen))
+  const currentOpen = isControlled ? open : uncontrolledOpen
+
+  React.useEffect(() => {
+    setSmoothScrollLock(lockId, Boolean(currentOpen))
+
+    return () => setSmoothScrollLock(lockId, false)
+  }, [lockId, currentOpen])
+
+  function handleOpenChange(nextOpen) {
+    if (!isControlled) {
+      setUncontrolledOpen(nextOpen)
+    }
+
+    onOpenChange?.(nextOpen)
+  }
+
+  return (
+    <DrawerPrimitive.Root
+      data-slot="drawer"
+      open={open}
+      defaultOpen={defaultOpen}
+      onOpenChange={handleOpenChange}
+      {...props}
+    />
+  );
 }
 
 function DrawerTrigger({
@@ -47,8 +78,20 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
+  onWheel,
+  onTouchMove,
   ...props
 }) {
+  function handleWheel(event) {
+    onWheel?.(event)
+    event.stopPropagation()
+  }
+
+  function handleTouchMove(event) {
+    onTouchMove?.(event)
+    event.stopPropagation()
+  }
+
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
@@ -58,6 +101,8 @@ function DrawerContent({
           "group/drawer-content fixed z-50 flex h-auto flex-col bg-background text-sm data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:max-h-[80vh] data-[vaul-drawer-direction=bottom]:rounded-t-xl data-[vaul-drawer-direction=bottom]:border-t data-[vaul-drawer-direction=left]:w-[75%]! max-w-md! inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-[75%]! max-w-md! w-3/4 data-[vaul-drawer-direction=left]:rounded-r-xl data-[vaul-drawer-direction=left]:w-[75%]! max-w-md! border-r data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:w-[75%]! max-w-md! right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:w-[75%]! max-w-md! rounded-l-xl data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-xl data-[vaul-drawer-direction=top]:border-b data-[vaul-drawer-direction=left]:w-[75%]! max-w-md! sm:max-w-sm data-[vaul-drawer-direction=right]:sm:max-w-sm",
           
         )}
+        onWheel={handleWheel}
+        onTouchMove={handleTouchMove}
         {...props}>
         <div
           className="mx-auto mt-4 hidden h-1 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
