@@ -6,24 +6,35 @@ import { closestCenter, DndContext, KeyboardSensor, MouseSensor, TouchSensor, us
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
 import { useDashboardCharts } from "./context/dashboard-charts-context"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { GripVerticalIcon, CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, PlusIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, TrendingUpIcon, ArrowRightIcon } from "lucide-react"
+import { MaquinaDetailsPanel, MaquinaImagePreview } from "@/components/maquina-details-panel"
+import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
+import { GripVerticalIcon, CircleCheckIcon, AlertTriangleIcon, ImageIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, PlusIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, ArrowRightIcon } from "lucide-react"
 import { cn, tempoRelativo } from "@/lib/utils"
+import {
+  MAQUINA_IMPORTANCIA_FILTER_OPTIONS as IMPORTANCIA_FILTER_OPTIONS,
+  MAQUINA_IMPORTANCIA_SORT_OPTIONS as IMPORTANCIA_SORT_OPTIONS,
+  MAQUINA_INTEGRIDADE_FILTER_OPTIONS as INTEGRIDADE_FILTER_OPTIONS,
+  MAQUINA_INTEGRIDADE_SORT_OPTIONS as INTEGRIDADE_SORT_OPTIONS,
+  MAQUINA_STATUS_FILTER_OPTIONS as STATUS_FILTER_OPTIONS,
+  MAQUINA_STATUS_SORT_OPTIONS as STATUS_SORT_OPTIONS,
+  importanciaMaquinaSortFn,
+  integridadeMaquinaFilterFn as integridadeFilterFn,
+  selectMaquinaFilterFn as selectFilterFn,
+  statusMaquinaSortFn,
+} from "@/lib/maquinas-table"
 
 function CriticidadeBadge({ value }) {
   const styles = {
@@ -48,24 +59,6 @@ function StatusBadge({ value }) {
   return (
     <Badge variant="outline" className="w-[55px] px-1.5 text-muted-foreground">
       {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]!" /> : <AlertTriangleIcon className="text-red-500" />}
-      {value}
-    </Badge>
-  )
-}
-
-function SensorStatusBadge({ value }) {
-  const isOnline = value === "ONLINE"
-
-  return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "px-2 text-xs",
-        isOnline
-          ? "border-green-200 bg-green-50 text-green-700"
-          : "border-red-200 bg-red-50 text-red-700"
-      )}
-    >
       {value}
     </Badge>
   )
@@ -112,27 +105,7 @@ function StatePanel({ message, tone = "muted", className = "" }) {
   )
 }
 
-function formatSensorLabel(nome, index) {
-  if (typeof nome !== "string" || !nome.trim()) {
-    return `Sensor ${index + 1}`
-  }
-
-  return nome.replace(/^Orbis\s+/i, "")
-}
-
-function formatMetric(value, suffix = "", digits = 1) {
-  if (!Number.isFinite(value)) {
-    return "N/A"
-  }
-
-  return `${Number(value).toFixed(digits)}${suffix}`
-}
-
-function getMachineSensors(maquina, sensores) {
-  return sensores.filter((sensor) => sensor.maquinaId === maquina.id || sensor.maquinaNome === maquina.nome)
-}
-
-function getTableColumns(sensores, sensorError, canManageMaquinas) {
+function getTableColumns(sensores, sensorError, canManageMaquinas, actions) {
   return [
     { id: "drag", header: () => null, cell: ({ row }) => <DragHandle id={row.original.id} /> },
     {
@@ -162,7 +135,12 @@ function getTableColumns(sensores, sensorError, canManageMaquinas) {
       accessorKey: "nome",
       header: "Máquina",
       cell: ({ row }) => (
-        <TableCellViewer item={row.original} sensores={sensores} sensorError={sensorError} />
+        <TableCellViewer
+          item={row.original}
+          sensores={sensores}
+          sensorError={sensorError}
+          onViewAlerts={actions.onViewAlerts}
+        />
       ),
       enableHiding: false,
     },
@@ -173,18 +151,44 @@ function getTableColumns(sensores, sensorError, canManageMaquinas) {
     },
     {
       accessorKey: "criticidade",
-      header: "Importância",
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Importancia"
+          filterOptions={IMPORTANCIA_FILTER_OPTIONS}
+          sortOptions={IMPORTANCIA_SORT_OPTIONS}
+        />
+      ),
       cell: ({ row }) => <CriticidadeBadge value={row.original.criticidade} />,
+      filterFn: selectFilterFn,
+      sortingFn: importanciaMaquinaSortFn,
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Status"
+          filterOptions={STATUS_FILTER_OPTIONS}
+          sortOptions={STATUS_SORT_OPTIONS}
+        />
+      ),
       cell: ({ row }) => <StatusBadge value={row.original.status} />,
+      filterFn: selectFilterFn,
+      sortingFn: statusMaquinaSortFn,
     },
     {
       accessorKey: "integridade",
-      header: () => <div>Integridade</div>,
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Integridade"
+          filterOptions={INTEGRIDADE_FILTER_OPTIONS}
+          sortOptions={INTEGRIDADE_SORT_OPTIONS}
+        />
+      ),
       cell: ({ row }) => <IntegridadeBar value={row.original.integridade} />,
+      filterFn: integridadeFilterFn,
     },
     {
       accessorKey: "ultimaLeituraEm",
@@ -195,7 +199,7 @@ function getTableColumns(sensores, sensorError, canManageMaquinas) {
     },
     {
       id: "actions",
-      cell: () => (
+      cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
@@ -204,12 +208,18 @@ function getTableColumns(sensores, sensorError, canManageMaquinas) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-32">
-            <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-            <DropdownMenuItem>Ver alertas</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => actions.onViewDetails(row.original)}>
+              Ver detalhes
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => actions.onViewAlerts(row.original)}>
+              Ver alertas
+            </DropdownMenuItem>
             {canManageMaquinas ? (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive">Remover</DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onClick={() => actions.onManageMachine(row.original)}>
+                  Remover
+                </DropdownMenuItem>
               </>
             ) : null}
           </DropdownMenuContent>
@@ -226,7 +236,9 @@ function MaquinasTable({
   emptyMessage = "Nenhuma máquina encontrada.",
   className = "",
 }) {
+  const router = useRouter()
   const [orderedData, setOrderedData] = React.useState(data)
+  const [maquinaDetalhe, setMaquinaDetalhe] = React.useState(null)
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState({})
   const [columnFilters, setColumnFilters] = React.useState([])
@@ -234,9 +246,14 @@ function MaquinasTable({
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const sortableId = React.useId()
   const permissions = useDashboardPermissions()
+  const actions = React.useMemo(() => ({
+    onViewDetails: (maquina) => setMaquinaDetalhe(maquina),
+    onViewAlerts: (maquina) => router.push(`/dashboard/alertas?maquina=${encodeURIComponent(maquina.nome)}`),
+    onManageMachine: (maquina) => router.push(`/dashboard/maquinas?machineId=${encodeURIComponent(maquina.id)}`),
+  }), [router])
   const columns = React.useMemo(
-    () => getTableColumns(sensores, sensorError, permissions.canManageMaquinas),
-    [sensores, sensorError, permissions.canManageMaquinas]
+    () => getTableColumns(sensores, sensorError, permissions.canManageMaquinas, actions),
+    [sensores, sensorError, permissions.canManageMaquinas, actions]
   )
   const dndSensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -358,6 +375,20 @@ function MaquinasTable({
           </div>
         </div>
       </div>
+      {maquinaDetalhe ? (
+        <MachineDetailsDrawer
+          item={maquinaDetalhe}
+          sensores={sensores}
+          sensorError={sensorError}
+          open={Boolean(maquinaDetalhe)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setMaquinaDetalhe(null)
+            }
+          }}
+          onViewAlerts={actions.onViewAlerts}
+        />
+      ) : null}
     </>
   )
 }
@@ -459,129 +490,67 @@ export function DataTable() {
   )
 }
 
-const chartConfig = {
-  temperatura: { label: "Temperatura (°C)", color: "var(--primary)" },
-  vibracao: { label: "Vibração", color: "var(--chart-3)" },
+function TableCellViewer({ item, sensores, sensorError = "", onViewAlerts }) {
+  return (
+    <MachineDetailsDrawer
+      item={item}
+      sensores={sensores}
+      sensorError={sensorError}
+      onViewAlerts={onViewAlerts}
+      trigger={(
+        <Button
+          variant="ghost"
+          className="h-auto w-fit justify-start gap-3 px-0 py-0 text-left text-foreground hover:bg-transparent hover:text-primary"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted text-muted-foreground">
+            {item.imagem ? (
+              <img src={item.imagem} alt="" className="size-full object-cover" />
+            ) : (
+              <ImageIcon className="size-4" />
+            )}
+          </span>
+          <span className="text-sm font-medium hover:underline">{item.nome}</span>
+        </Button>
+      )}
+    />
+  )
 }
 
-function TableCellViewer({ item, sensores, sensorError = "" }) {
+function MachineDetailsDrawer({
+  item,
+  sensores,
+  sensorError = "",
+  trigger = null,
+  open,
+  onOpenChange,
+  onViewAlerts,
+}) {
   const isMobile = useIsMobile()
-  const sensoresDaMaquina = React.useMemo(
-    () => getMachineSensors(item, sensores),
-    [item, sensores]
-  )
-  const leiturasAtuais = React.useMemo(
-    () =>
-      sensoresDaMaquina.map((sensor, index) => ({
-        sensor: formatSensorLabel(sensor.nome, index),
-        temperatura: sensor.temperatura?.valorAtual ?? null,
-        vibracao: sensor.vibracao?.valorAtual ?? null,
-      })),
-    [sensoresDaMaquina]
-  )
-  const possuiLeituras = React.useMemo(
-    () => leiturasAtuais.some((itemLeitura) => itemLeitura.temperatura !== null || itemLeitura.vibracao !== null),
-    [leiturasAtuais]
-  )
-  const totalSensores = sensoresDaMaquina.length > 0 ? sensoresDaMaquina.length : item.sensores
+  const drawerProps = {
+    direction: isMobile ? "bottom" : "right",
+  }
+
+  if (open !== undefined) {
+    drawerProps.open = open
+    drawerProps.onOpenChange = onOpenChange
+  }
 
   return (
-    <Drawer direction={isMobile ? "bottom" : "right"}>
-      <DrawerTrigger asChild>
-        <Button variant="link" className="w-fit px-0 text-left text-foreground">{item.nome}</Button>
-      </DrawerTrigger>
+    <Drawer {...drawerProps}>
+      {trigger ? <DrawerTrigger asChild>{trigger}</DrawerTrigger> : null}
       <DrawerContent className="w-[80%]! max-w-none!">
+        <div className="px-4 pt-4">
+          <MaquinaImagePreview maquina={item} />
+        </div>
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.nome}</DrawerTitle>
           <DrawerDescription>{item.setor} - {item.tipo}</DrawerDescription>
         </DrawerHeader>
-        <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-          {!isMobile && !sensorError && sensoresDaMaquina.length > 0 && possuiLeituras ? (
-            <>
-              <ChartContainer config={chartConfig}>
-                <AreaChart accessibilityLayer data={leiturasAtuais} margin={{ left: 0, right: 10 }}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="sensor" tickLine={false} axisLine={false} tickMargin={8} />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                  <Area dataKey="vibracao" type="natural" fill="var(--color-vibracao)" fillOpacity={0.35} stroke="var(--color-vibracao)" />
-                  <Area dataKey="temperatura" type="natural" fill="var(--color-temperatura)" fillOpacity={0.5} stroke="var(--color-temperatura)" />
-                </AreaChart>
-              </ChartContainer>
-              <Separator />
-              <div className="flex gap-2 leading-none font-medium">
-                Integridade: {item.integridade}% - Estabilidade: {item.scoreEstabilidade}%
-                <TrendingUpIcon className="size-4" />
-              </div>
-              <Separator />
-            </>
-          ) : null}
-
-          {sensorError ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-              {sensorError}
-            </div>
-          ) : null}
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <Label>Criticidade</Label>
-              <CriticidadeBadge value={item.criticidade} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label>Status</Label>
-              <StatusBadge value={item.status} />
-            </div>
-            <div className="col-span-2 flex flex-col gap-2">
-              <Label>Integridade</Label>
-              <IntegridadeBar value={item.integridade} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label>Sensores vinculados</Label>
-              <span className="font-medium">{totalSensores}</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label>Último sinal</Label>
-              <span className="font-medium">{tempoRelativo(item.ultimaLeituraEm)}</span>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="flex flex-col gap-3">
-            <Label>Sensores sincronizados</Label>
-            {sensoresDaMaquina.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Nenhum sensor vinculado foi retornado pela API para esta máquina.</p>
-            ) : (
-              sensoresDaMaquina.map((sensor, index) => (
-                <div key={sensor.id ?? `${sensor.nome}-${index}`} className="rounded-lg border p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium">{sensor.nome}</p>
-                      <p className="text-xs text-muted-foreground">{tempoRelativo(sensor.ultimaLeituraEm)}</p>
-                    </div>
-                    <SensorStatusBadge value={sensor.status} />
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
-                    <div className="rounded-md bg-muted/40 p-2">
-                      <span className="block text-[11px] uppercase tracking-wide">Temperatura</span>
-                      <span className="mt-1 block text-sm font-medium text-foreground">
-                        {formatMetric(sensor.temperatura?.valorAtual, " °C")}
-                      </span>
-                    </div>
-                    <div className="rounded-md bg-muted/40 p-2">
-                      <span className="block text-[11px] uppercase tracking-wide">Vibração</span>
-                      <span className="mt-1 block text-sm font-medium text-foreground">
-                        {formatMetric(sensor.vibracao?.valorAtual, "", 2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 text-sm">
+          <MaquinaDetailsPanel maquina={item} sensores={sensores} sensorError={sensorError} />
         </div>
         <DrawerFooter>
-          <Button>Ver alertas desta máquina</Button>
+          <Button onClick={() => onViewAlerts?.(item)}>Ver alertas desta maquina</Button>
           <DrawerClose asChild><Button variant="outline">Fechar</Button></DrawerClose>
         </DrawerFooter>
       </DrawerContent>
