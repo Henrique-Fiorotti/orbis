@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
 
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
+import { DashboardMetricCardsSkeleton } from "@/components/dashboard-skeletons"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -131,6 +132,10 @@ export function SectionCards() {
   const loading = status === "loading"
   const maquinasOk = formatMetric(resumo.maquinasFuncionando, loading)
   const integridadeFormatada = loading ? "--" : `${resumo.integridadeMedia.toFixed(1)}%`
+
+  if (loading) {
+    return <DashboardMetricCardsSkeleton />
+  }
 
   return (
     <>

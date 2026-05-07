@@ -3,6 +3,7 @@
 import * as React from "react"
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart } from "recharts"
 
+import { DashboardChartSkeleton } from "@/components/dashboard-skeletons"
 import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
 import {
   Card,
@@ -51,6 +52,10 @@ export function ChartRadarDots() {
   const chartData = React.useMemo(() => getIntegridadePorSetor(maquinas), [maquinas])
   const loading = status === "loading" && maquinas.length === 0
   const errorMessage = errors.maquinas || (status === "error" && maquinas.length === 0 ? mensagem : "")
+
+  if (loading) {
+    return <DashboardChartSkeleton variant="radar" centeredHeader className="w-full xl:w-1/2" height="h-[280px]" />
+  }
 
   return (
     <Card className="w-full xl:w-1/2">
