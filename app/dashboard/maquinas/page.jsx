@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { useMaquinas } from "@/components/context/maquinas-context"
+import { useSensores } from "@/components/context/sensores-context"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +18,9 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { MaquinaDetailsPanel, MaquinaImagePreview } from "@/components/maquina-details-panel"
 import { SiteHeader } from "@/components/site-header"
+import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import {
   CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, PlusIcon,
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
@@ -30,6 +33,18 @@ import {
 } from "@tanstack/react-table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { tempoRelativo } from "@/lib/utils"
+import {
+  MAQUINA_IMPORTANCIA_FILTER_OPTIONS as IMPORTANCIA_FILTER_OPTIONS,
+  MAQUINA_IMPORTANCIA_SORT_OPTIONS as IMPORTANCIA_SORT_OPTIONS,
+  MAQUINA_INTEGRIDADE_FILTER_OPTIONS as INTEGRIDADE_FILTER_OPTIONS,
+  MAQUINA_INTEGRIDADE_SORT_OPTIONS as INTEGRIDADE_SORT_OPTIONS,
+  MAQUINA_STATUS_FILTER_OPTIONS as STATUS_FILTER_OPTIONS,
+  MAQUINA_STATUS_SORT_OPTIONS as STATUS_SORT_OPTIONS,
+  importanciaMaquinaSortFn,
+  integridadeMaquinaFilterFn as integridadeFilterFn,
+  selectMaquinaFilterFn as selectFilterFn,
+  statusMaquinaSortFn,
+} from "@/lib/maquinas-table"
 
 const formVazio = { nome: "", setor: "", tipo: "", criticidade: "MEDIA" }
 
@@ -104,6 +119,11 @@ export default function MaquinasPage() {
     atualizarImagemMaquina,
     recarregarMaquinas,
   } = useMaquinas()
+  const {
+    sensores,
+    status: sensoresStatus,
+    mensagem: sensoresMensagem,
+  } = useSensores()
 
   const [busca, setBusca] = React.useState("")
   const [sheetAberto, setSheetAberto] = React.useState(false)
@@ -115,11 +135,14 @@ export default function MaquinasPage() {
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [maquinaExcluir, setMaquinaExcluir] = React.useState(null)
   const [confirmacaoExclusao, setConfirmacaoExclusao] = React.useState("")
+  const [sorting, setSorting] = React.useState([])
+  const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
 
   const loadingInicial = carregando && maquinas.length === 0
   const errorSemDados = status === "error" && maquinas.length === 0
   const canManageMaquinas = permissions.canManageMaquinas
+  const sensorError = sensoresStatus === "error" ? sensoresMensagem : ""
   const sensoresVinculadosExclusao = Math.max(Number(maquinaExcluir?.sensores ?? 0), 0)
   const podeExcluirMaquina =
     Boolean(maquinaExcluir) &&
@@ -162,6 +185,20 @@ export default function MaquinasPage() {
       abrirCriar()
     }
   }, [canManageMaquinas, router, searchParams])
+
+  React.useEffect(() => {
+    const machineIdParam = searchParams.get("machineId")
+
+    if (!machineIdParam || maquinas.length === 0) {
+      return
+    }
+
+    const maquina = maquinas.find((item) => String(item.id) === String(machineIdParam))
+
+    if (maquina) {
+      abrirVer(maquina)
+    }
+  }, [maquinas, searchParams])
 
   function abrirCriar() {
     if (!canManageMaquinas) {
@@ -328,9 +365,47 @@ export default function MaquinasPage() {
       ),
     },
     { accessorKey: "setor", header: "Setor", cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.setor}</span> },
-    { accessorKey: "criticidade", header: "Importância", cell: ({ row }) => <CriticidadeBadge value={row.original.criticidade} /> }, //troquei o header pra importancia ass:Gui
-    { accessorKey: "status", header: "Status", cell: ({ row }) => <StatusBadge value={row.original.status} /> },
-    { accessorKey: "integridade", header: "Integridade", cell: ({ row }) => <IntegridadeBar value={row.original.integridade} /> },
+    {
+      accessorKey: "criticidade",
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Importancia"
+          filterOptions={IMPORTANCIA_FILTER_OPTIONS}
+          sortOptions={IMPORTANCIA_SORT_OPTIONS}
+        />
+      ),
+      cell: ({ row }) => <CriticidadeBadge value={row.original.criticidade} />,
+      filterFn: selectFilterFn,
+      sortingFn: importanciaMaquinaSortFn,
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Status"
+          filterOptions={STATUS_FILTER_OPTIONS}
+          sortOptions={STATUS_SORT_OPTIONS}
+        />
+      ),
+      cell: ({ row }) => <StatusBadge value={row.original.status} />,
+      filterFn: selectFilterFn,
+      sortingFn: statusMaquinaSortFn,
+    },
+    {
+      accessorKey: "integridade",
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Integridade"
+          filterOptions={INTEGRIDADE_FILTER_OPTIONS}
+          sortOptions={INTEGRIDADE_SORT_OPTIONS}
+        />
+      ),
+      cell: ({ row }) => <IntegridadeBar value={row.original.integridade} />,
+      filterFn: integridadeFilterFn,
+    },
     { accessorKey: "ultimaLeituraEm", header: "Ultimo sinal", cell: ({ row }) => <span className="text-muted-foreground text-sm">{tempoRelativo(row.original.ultimaLeituraEm)}</span> },
     {
       id: "actions",
@@ -365,7 +440,9 @@ export default function MaquinasPage() {
   const table = useReactTable({
     data: dadosFiltrados,
     columns,
-    state: { pagination },
+    state: { sorting, columnFilters, pagination },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -539,7 +616,7 @@ export default function MaquinasPage() {
             </div>
 
             <div className="flex items-center justify-between px-4">
-              <span className="text-sm text-muted-foreground">{dadosFiltrados.length} resultado(s)</span>
+              <span className="text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} resultado(s)</span>
               <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
                 <Button variant="outline" size="icon" className="hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
                   <ChevronsLeftIcon className="size-4" />
@@ -561,59 +638,23 @@ export default function MaquinasPage() {
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
           <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
-            <SheetHeader>
-              <SheetTitle>
-                {modoSheet === "criar" ? "Nova maquina" : modoSheet === "editar" ? "Editar maquina" : "Detalhes da maquina"}
-              </SheetTitle>
-              <SheetDescription>
-                {modoSheet === "criar"
-                  ? "Preencha os dados para cadastrar uma nova maquina."
-                  : modoSheet === "editar"
-                    ? "Altere os dados e clique em salvar."
-                    : "Informacoes completas da maquina."}
-              </SheetDescription>
-            </SheetHeader>
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
-              {modoSheet === "ver" && maquinaSelecionada ? (
-                <>
-                  <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
-                    {maquinaSelecionada.imagem ? (
-                      <img src={maquinaSelecionada.imagem} alt="" className="size-full object-cover" />
-                    ) : (
-                      <div className="flex size-full items-center justify-center text-muted-foreground">
-                        <ImageIcon className="size-8" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      ["Nome", maquinaSelecionada.nome],
-                      ["Setor", maquinaSelecionada.setor],
-                      ["Tipo", maquinaSelecionada.tipo],
-                      ["Sensores", maquinaSelecionada.sensores],
-                    ].map(([label, value]) => (
-                      <div key={label} className="flex flex-col gap-1">
-                        <Label className="text-muted-foreground text-xs">{label}</Label>
-                        <span className="text-sm font-medium">{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <Separator />
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-muted-foreground text-xs">Importância</Label>
-                      <CriticidadeBadge value={maquinaSelecionada.criticidade} />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-muted-foreground text-xs">Status</Label>
-                      <StatusBadge value={maquinaSelecionada.status} />
-                    </div>
-                  </div>
-                  <Separator />
-                  <div className="flex flex-col gap-2"><Label className="text-muted-foreground text-xs">Integridade</Label><IntegridadeBar value={maquinaSelecionada.integridade} /></div>
-                  <div className="flex flex-col gap-2"><Label className="text-muted-foreground text-xs">Score de estabilidade</Label><IntegridadeBar value={maquinaSelecionada.scoreEstabilidade} /></div>
-                  <div className="flex flex-col gap-1"><Label className="text-muted-foreground text-xs  text-right!">Último sinal</Label><span className="text-sm ">{tempoRelativo(maquinaSelecionada.ultimaLeituraEm)}</span></div>
-                  <Separator />
+            {modoSheet === "ver" && maquinaSelecionada ? (
+              <>
+                <div className="px-4 pt-4">
+                  <MaquinaImagePreview maquina={maquinaSelecionada} />
+                </div>
+                <SheetHeader>
+                  <SheetTitle>Detalhes da maquina</SheetTitle>
+                  <SheetDescription>{maquinaSelecionada.setor} - {maquinaSelecionada.tipo}</SheetDescription>
+                </SheetHeader>
+                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
+                  <MaquinaDetailsPanel maquina={maquinaSelecionada} sensores={sensores} sensorError={sensorError} />
+                  <Button
+                    type="button"
+                    onClick={() => router.push(`/dashboard/alertas?maquina=${encodeURIComponent(maquinaSelecionada.nome)}`)}
+                  >
+                    Ver alertas desta maquina
+                  </Button>
                   {canManageMaquinas ? (
                     <div className="flex gap-2">
                       <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(maquinaSelecionada), 100) }} disabled={salvando}>
@@ -624,9 +665,15 @@ export default function MaquinasPage() {
                       </Button>
                     </div>
                   ) : null}
-                </>
-              ) : (
-                <>
+                </div>
+              </>
+            ) : (
+              <>
+                <SheetHeader>
+                  <SheetTitle>{modoSheet === "criar" ? "Nova maquina" : "Editar maquina"}</SheetTitle>
+                  <SheetDescription>{modoSheet === "criar" ? "Preencha os dados para cadastrar uma nova maquina." : "Altere os dados e clique em salvar."}</SheetDescription>
+                </SheetHeader>
+                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="imagem-maquina">Imagem da maquina</Label>
                     <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
@@ -682,17 +729,15 @@ export default function MaquinasPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                </>
-              )}
-            </div>
-            {modoSheet !== "ver" ? (
-              <SheetFooter className="px-4 pb-4">
-                <Button variant="outline" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
-                <Button onClick={salvar} disabled={salvando}>
-                  {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alteracoes"}
-                </Button>
-              </SheetFooter>
-            ) : null}
+                </div>
+                <SheetFooter className="px-4 pb-4">
+                  <Button variant="outline" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
+                  <Button onClick={salvar} disabled={salvando}>
+                    {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alteracoes"}
+                  </Button>
+                </SheetFooter>
+              </>
+            )}
           </SheetContent>
         </Sheet>
 

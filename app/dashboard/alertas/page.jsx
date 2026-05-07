@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
 import { useAlertas } from "@/components/context/alertas-context"
@@ -256,6 +256,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
 
 export default function AlertasPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const permissions = useDashboardPermissions()
   const { alertas, adicionarAlerta, atualizarStatus, cancelarAlerta } = useAlertas()
 
@@ -276,6 +277,14 @@ export default function AlertasPage() {
   const totalCancelados = alertas.filter((a) => a.status === "CANCELADO").length
   const altaSeveridadeAtivos = alertas.filter((a) => a.status === "ATIVO" && a.severidade === "ALTA").length
   const taxaResolucao = alertas.length ? Math.round((totalResolvidos / alertas.length) * 100) : 0
+
+  React.useEffect(() => {
+    const maquinaParam = searchParams.get("maquina")
+
+    if (maquinaParam) {
+      setBusca(maquinaParam)
+    }
+  }, [searchParams])
 
   function abrirCriar() {
     if (!canCreateAlertas) {
