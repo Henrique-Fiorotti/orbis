@@ -65,6 +65,61 @@ function formatMetric(value, loading) {
   return loading ? "--" : value
 }
 
+function useAnimatedNumber(target, { duration = 1400, decimals = 0 } = {}) {
+  const [value, setValue] = useState(0)
+
+  useEffect(() => {
+    const numericTarget = toNumber(target)
+
+    if (typeof window === "undefined") {
+      setValue(numericTarget)
+      return
+    }
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+    if (prefersReducedMotion || numericTarget === 0) {
+      setValue(numericTarget)
+      return
+    }
+
+    let frameId = 0
+    let startTime = 0
+
+    function animate(timestamp) {
+      if (!startTime) {
+        startTime = timestamp
+      }
+
+      const progress = Math.min((timestamp - startTime) / duration, 1)
+      const easedProgress = 1 - Math.pow(1 - progress, 3)
+      const nextValue = numericTarget * easedProgress
+
+      setValue(decimals > 0 ? Number(nextValue.toFixed(decimals)) : Math.round(nextValue))
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate)
+      } else {
+        setValue(numericTarget)
+      }
+    }
+
+    setValue(0)
+    frameId = requestAnimationFrame(animate)
+
+    return () => cancelAnimationFrame(frameId)
+  }, [target, duration, decimals])
+
+  return value
+}
+
+function AnimatedMetric({ value, suffix = "", decimals = 0 }) {
+  const animatedValue = useAnimatedNumber(value, { decimals })
+  const formattedValue = decimals > 0 ? animatedValue.toFixed(decimals) : animatedValue
+
+  return `${formattedValue}${suffix}`
+}
+
 export function SectionCards() {
   const [resumo, setResumo] = useState(EMPTY_RESUMO)
   const [status, setStatus] = useState("loading")
@@ -131,7 +186,6 @@ export function SectionCards() {
 
   const loading = status === "loading"
   const maquinasOk = formatMetric(resumo.maquinasFuncionando, loading)
-  const integridadeFormatada = loading ? "--" : `${resumo.integridadeMedia.toFixed(1)}%`
 
   if (loading) {
     return <DashboardMetricCardsSkeleton />
@@ -158,7 +212,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription>Máquinas ativas</CardDescription>
             <CardTitle className="text-[#5E17EB]! text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {formatMetric(resumo.totalMaquinas, loading)}
+              <AnimatedMetric value={resumo.totalMaquinas} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
@@ -182,7 +236,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Alertas hoje</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {formatMetric(resumo.alertasHoje, loading)}
+              <AnimatedMetric value={resumo.alertasHoje} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
@@ -206,7 +260,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Sensores online</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {formatMetric(resumo.sensoresOnline, loading)}
+              <AnimatedMetric value={resumo.sensoresOnline} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
@@ -230,7 +284,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Integridade média</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {integridadeFormatada}
+              <AnimatedMetric value={resumo.integridadeMedia} suffix="%" decimals={1} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
