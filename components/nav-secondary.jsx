@@ -22,7 +22,7 @@ export function NavSecondary({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               {item.onClick ? (
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild tooltip={item.title}>
                   <button
                     type="button"
                     onClick={item.onClick}
@@ -37,7 +37,7 @@ export function NavSecondary({
                   </button>
                 </SidebarMenuButton>
               ) : (
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild tooltip={item.title}>
                   <a
                     className={cn("no-underline! text-black dark:text-white", item.style)}
                     href={item.url}

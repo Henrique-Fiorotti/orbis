@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,16 +25,16 @@ export function NavDocuments({
   const { isMobile } = useSidebar()
 
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+    <SidebarGroup>
       <SidebarGroupLabel>Documentos</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <a className="no-underline! text-black dark:text-white" href={item.url}>
+            <SidebarMenuButton asChild tooltip={item.name}>
+              <Link className="no-underline! text-black dark:text-white" href={item.url}>
                 {item.icon}
                 <span>{item.name}</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -64,11 +65,11 @@ export function NavDocuments({
           </SidebarMenuItem>
         ))}
         <SidebarMenuItem>
-          <SidebarMenuButton asChild className="text-sidebar-foreground/70">
-            <a className="no-underline! text-black dark:text-white" href="/dashboard/relatorios">
+          <SidebarMenuButton asChild tooltip="Relatório" className="text-sidebar-foreground/70">
+            <Link className="no-underline! text-black dark:text-white" href="/dashboard/relatorios">
               <FileTextIcon className="text-sidebar-foreground/70" />
               <span>Relatório</span>
-            </a>
+            </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>

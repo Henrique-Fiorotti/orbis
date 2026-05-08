@@ -1,12 +1,21 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { useTheme } from "next-themes"
 import { Separator } from "@/components/ui/separator"
 import { usePathname } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import { AUTH_SESSION_UPDATED_EVENT, getAuthSessionUser } from "@/lib/auth-session"
 import {
   Tooltip,
@@ -86,6 +95,20 @@ function getSaudacao() {
   return "Boa noite"
 }
 
+const BREADCRUMB_LABELS = {
+  dashboard: "Dashboard",
+  maquinas: "Máquinas",
+  sensores: "Sensores",
+  alertas: "Alertas",
+  tecnicos: "Técnicos",
+  relatorios: "Relatórios",
+  perfil: "Perfil",
+}
+
+function formatBreadcrumbLabel(segment) {
+  return BREADCRUMB_LABELS[segment] || decodeURIComponent(segment).replaceAll("-", " ")
+}
+
 export function SiteHeader() {
   const { resolvedTheme, setTheme } = useTheme()
   const [painelAberto, setPainelAberto] = React.useState(false)
@@ -117,6 +140,18 @@ export function SiteHeader() {
 
   const isDark = resolvedTheme === "dark"
   const naoLidas = notificacoes.filter((n) => !n.lida).length
+  const breadcrumbItems = React.useMemo(() => {
+    const segments = pathname.split("/").filter(Boolean)
+
+    return segments.map((segment, index) => {
+      const href = `/${segments.slice(0, index + 1).join("/")}`
+
+      return {
+        href,
+        label: formatBreadcrumbLabel(segment),
+      }
+    })
+  }, [pathname])
 
   React.useEffect(() => {
     document.title = `${naoLidas > 0 ? `(${naoLidas}) ` : ""}Orbis`
@@ -152,7 +187,7 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="flex h-[90px] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+    <header className="flex h-[90px] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
       <div className="flex min-w-0 w-full items-center gap-1 px-3 sm:px-4 lg:gap-2 lg:px-6">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -169,9 +204,34 @@ export function SiteHeader() {
         />
 
         <div className="min-w-0">
-          <h1 className="truncate text-gray-500! text-[10pt]! m-0! dark:text-gray-300!">
-            Dashboard Orbis
-          </h1>
+          <Breadcrumb>
+            <BreadcrumbList className="gap-1 text-[10pt] text-gray-500 dark:text-gray-300">
+              {breadcrumbItems.map((item, index) => {
+                const isCurrent = index === breadcrumbItems.length - 1
+
+                return (
+                  <React.Fragment key={item.href}>
+                    <BreadcrumbItem className="min-w-0">
+                      {isCurrent ? (
+                        <BreadcrumbPage className="truncate text-gray-500 dark:text-gray-300">
+                          {item.label}
+                        </BreadcrumbPage>
+                      ) : (
+                        <BreadcrumbLink asChild className="truncate no-underline hover:underline hover:text-[#5E17EB]">
+                          <Link href={item.href}>{item.label}</Link>
+                        </BreadcrumbLink>
+                      )}
+                    </BreadcrumbItem>
+                    {!isCurrent && (
+                      <BreadcrumbSeparator className="text-gray-400 dark:text-gray-500">
+                        <span>＞</span>
+                      </BreadcrumbSeparator>
+                    )}
+                  </React.Fragment>
+                )
+              })}
+            </BreadcrumbList>
+          </Breadcrumb>
 
           <h2 className="truncate text-sm text-muted-foreground font-normal m-0! dark:text-white!">
             {getSaudacao()}, {nomeUsuario}!
