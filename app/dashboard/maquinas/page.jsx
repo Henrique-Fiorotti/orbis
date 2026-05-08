@@ -21,7 +21,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { MaquinaDetailsPanel, MaquinaImagePreview } from "@/components/maquina-details-panel"
 import { SiteHeader } from "@/components/site-header"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
-import { MetricValue } from "@/components/animated-metric"
+import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import {
   CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, PlusIcon,
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
@@ -140,7 +140,7 @@ export default function MaquinasPage() {
   const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
 
-  const loadingInicial = carregando && maquinas.length === 0
+  const loadingInicial = useDashboardMetricsLoading(carregando && maquinas.length === 0)
   const errorSemDados = status === "error" && maquinas.length === 0
   const canManageMaquinas = permissions.canManageMaquinas
   const sensorError = sensoresStatus === "error" ? sensoresMensagem : ""

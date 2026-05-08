@@ -2,10 +2,31 @@
 
 import * as React from "react"
 
+import { useAlertas } from "@/components/context/alertas-context"
+import { useMaquinas } from "@/components/context/maquinas-context"
+import { useSensores } from "@/components/context/sensores-context"
+import { useTecnicos } from "@/components/context/tecnicos-context"
+
 function toNumber(value) {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : 0
 }
+
+export function useDashboardMetricsLoading(localLoading = false) {
+  const { status: maquinasStatus } = useMaquinas()
+  const { status: sensoresStatus } = useSensores()
+  const { status: alertasStatus } = useAlertas()
+  const { status: tecnicosStatus } = useTecnicos()
+
+  return (
+    Boolean(localLoading) ||
+    maquinasStatus === "loading" ||
+    sensoresStatus === "loading" ||
+    alertasStatus === "loading" ||
+    tecnicosStatus === "loading"
+  )
+}
+
 /* Atualiza o valor animado aos poucos */
 export function useAnimatedNumber(target, { duration = 1400, decimals = 0 } = {}) {
   const [value, setValue] = React.useState(0)

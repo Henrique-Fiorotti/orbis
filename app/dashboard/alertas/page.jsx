@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MetricValue } from "@/components/animated-metric"
+import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import { SiteHeader } from "@/components/site-header"
 import {
   AlertTriangleIcon,
@@ -273,7 +273,17 @@ export default function AlertasPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const permissions = useDashboardPermissions()
-  const { alertas, carregando: carregandoAlertas = false, adicionarAlerta, atualizarStatus, cancelarAlerta } = useAlertas()
+  const {
+    alertas,
+    status,
+    mensagem,
+    carregando = false,
+    salvando,
+    adicionarAlerta,
+    atualizarStatus,
+    cancelarAlerta,
+    recarregarAlertas,
+  } = useAlertas()
 
   const [busca, setBusca] = React.useState("")
   const [sheetAberto, setSheetAberto] = React.useState(false)
@@ -285,7 +295,7 @@ export default function AlertasPage() {
   const canCancelAlertas = false
   const canStartAlertStatus = permissions.isTecnico
   const canResolveAlertStatus = permissions.isTecnico
-  const loadingInicial = carregando && alertas.length === 0
+  const loadingInicial = useDashboardMetricsLoading(carregando && alertas.length === 0)
   const errorSemDados = status === "error" && alertas.length === 0
 
   const totalAtivos = alertas.filter((a) => a.status === "ATIVO").length
@@ -465,7 +475,7 @@ export default function AlertasPage() {
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Todos os chamados</span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={alertas.length} loading={carregandoAlertas} />
+              <MetricValue value={alertas.length} loading={loadingInicial} />
             </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className={`flex items-center gap-1 ${taxaResolucao >= 75 ? "text-green-700 dark:text-green-300" : taxaResolucao >= 40 ? "text-yellow-700 dark:text-yellow-300" : "text-red-700 dark:text-red-300"}`}>
@@ -490,7 +500,7 @@ export default function AlertasPage() {
               </span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={totalAtivos} loading={carregandoAlertas} />
+              <MetricValue value={totalAtivos} loading={loadingInicial} />
             </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="flex items-center gap-1 text-red-600 dark:text-red-300">
@@ -510,7 +520,7 @@ export default function AlertasPage() {
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Total</span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={totalResolvidos} loading={carregandoAlertas} />
+              <MetricValue value={totalResolvidos} loading={loadingInicial} />
             </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className={`flex items-center gap-1 ${totalResolvidos > 0 ? "text-green-700 dark:text-green-300" : "text-gray-400 dark:text-muted-foreground"}`}>
