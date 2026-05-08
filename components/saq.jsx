@@ -187,14 +187,15 @@ function ContactCard({ href, icon, label, value, delay = 0 }) {
             style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
+                gap: "12px",
                 flex: "1 1 0",
+                minWidth: 0,
                 border: hovered
                     ? "2px solid #7c3aed"
                     : "2px solid var(--contact-card-border)",
                 borderRadius: "16px",
                 width: "100%",
-                padding: "10px",
+                padding: "12px 14px",
                 textDecoration: "none",
                 background: hovered
                     ? "var(--contact-card-bg-hover)"
@@ -207,7 +208,7 @@ function ContactCard({ href, icon, label, value, delay = 0 }) {
             }}
         >
             <div style={{ flexShrink: 0 }}>{icon}</div>
-            <div>
+            <div style={{ minWidth: 0 }}>
                 <p
                     style={{
                         fontSize: "0.85rem",
@@ -215,6 +216,7 @@ function ContactCard({ href, icon, label, value, delay = 0 }) {
                         color: "#7c3aed",
                         margin: 0,
                         lineHeight: 1.3,
+                        wordBreak: "break-all",
                     }}
                 >
                     {value}
@@ -357,7 +359,8 @@ export default function ContatoPage() {
                 "--contact-card-border": colors.cardBorder,
                 "--contact-card-shadow": colors.cardShadow,
                 "--contact-card-shadow-hover": colors.cardShadowHover,
-                padding: "60px 0",
+                paddingTop: "60px",
+                paddingBottom: "60px",
 
                 fontFamily: "'Inter', 'Segoe UI', sans-serif",
                 transition: "background-color 0.25s ease",
@@ -382,7 +385,7 @@ export default function ContatoPage() {
                             "background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease",
                     }}
                 >
-                    <div style={{ padding: "36px 32px 28px" }}>
+                    <div className="px-6 pt-8 pb-6 sm:px-8 sm:pt-9 sm:pb-7">
                         <img
                             style={{ width: "70px", height: "70px" }}
                             src="/connect_icon_contact.svg"
@@ -399,10 +402,10 @@ export default function ContatoPage() {
                         }}
                     />
 
-                    <div style={{ padding: "26px 30px 34px" }}>
+                    <div className="px-5 pt-6 pb-8 sm:px-8 sm:pt-7 sm:pb-9">
                         <h2
                             style={{
-                                fontSize: "2.5rem",
+                                fontSize: "clamp(1.6rem, 4vw, 2.5rem)",
                                 fontWeight: 300,
                                 color: "#7c3aed",
                                 margin: "0 0 20px",
@@ -423,7 +426,7 @@ export default function ContatoPage() {
                             ))}
                         </div>
 
-                        <div className="flex justify-center items-center gap-6 pt-8 lg:gap-10">
+                        <div className="flex flex-col sm:flex-row justify-center items-stretch gap-4 pt-8 sm:gap-6 lg:gap-8">
                             <ContactCard
                                 href="https://wa.me/5511900000000"
                                 icon={<WhatsAppIcon isDark={isDark} />}
