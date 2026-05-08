@@ -230,9 +230,8 @@ function StatusBadge({ value }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 border px-2 py-0.5 text-xs font-medium ${
-        isOk ? "border-stone-300 bg-white text-stone-700" : "border-stone-300 bg-stone-50 text-stone-800"
-      }`}
+      className={`inline-flex items-center gap-1 border px-2 py-0.5 text-xs font-medium ${isOk ? "border-stone-300 bg-white text-stone-700" : "border-stone-300 bg-stone-50 text-stone-800"
+        }`}
     >
       {isOk ? <CircleCheckIcon className="size-3" /> : <AlertTriangleIcon className="size-3" />}
       {value}
@@ -264,11 +263,18 @@ function SectionTitle({ children }) {
 function Estado({ msg, tone = "muted" }) {
   return (
     <div
-      className={`flex min-h-[120px] items-center justify-center border border-dashed px-4 text-center text-sm ${
-        tone === "error" ? "border-stone-300 bg-stone-50 text-stone-700" : "border-stone-300 bg-stone-50 text-stone-500"
-      }`}
+      className={`flex min-h-[120px] items-center justify-center border border-dashed px-4 text-center text-sm ${tone === "error" ? "border-stone-300 bg-stone-50 text-stone-700" : "border-stone-300 bg-stone-50 text-stone-500"
+        }`}
     >
       {msg}
+    </div>
+  )
+}
+
+function ReportPreviewPage({ children }) {
+  return (
+    <div className="report-preview-page mx-auto w-full max-w-[210mm] bg-white px-4 py-6 shadow-sm ring-1 ring-border/70 sm:px-6 sm:py-8 print:mx-0 print:max-w-none print:bg-white print:px-0 print:py-0 print:shadow-none print:ring-0">
+      {children}
     </div>
   )
 }
@@ -307,17 +313,17 @@ function ConfigPanel({
   onToggleSecao,
 }) {
   return (
-    <div className="print:hidden mx-4 mt-4 w-full max-w-[210mm] border border-stone-200 bg-white px-4 py-4 sm:mx-auto sm:px-6">
+    <div className="print:hidden rounded-xl border bg-card p-4 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
-        <SlidersHorizontalIcon className="size-4 text-stone-600" />
-        <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-stone-800 sm:tracking-[0.16em]">Configurar relatorio</h2>
+        <SlidersHorizontalIcon className="size-4 text-[#3B2867] dark:text-white" />
+        <h2 className="text-sm font-medium text-[#3B2867] dark:text-white">Configurar relatorio</h2>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1.5fr_1fr]">
-        <label className="flex flex-col gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-500">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
           Tipo
           <Select value={tipoRelatorio} onValueChange={setTipoRelatorio}>
-            <SelectTrigger className="w-full rounded-none">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Tipo de relatorio" />
             </SelectTrigger>
             <SelectContent>
@@ -327,10 +333,10 @@ function ConfigPanel({
           </Select>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-500">
+        <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
           Maquina
           <Select value={maquinaId} onValueChange={setMaquinaId} disabled={tipoRelatorio !== "maquina" || maquinas.length === 0}>
-            <SelectTrigger className="w-full rounded-none">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione uma maquina" />
             </SelectTrigger>
             <SelectContent>
@@ -343,10 +349,10 @@ function ConfigPanel({
           </Select>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-500">
+        <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
           Periodo
           <Select value={periodo} onValueChange={setPeriodo}>
-            <SelectTrigger className="w-full rounded-none">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Periodo" />
             </SelectTrigger>
             <SelectContent>
@@ -360,9 +366,9 @@ function ConfigPanel({
         </label>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:flex sm:flex-wrap">
+      <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:flex sm:flex-wrap">
         {SECTION_OPTIONS.map((secao) => (
-          <label key={secao.id} className="flex items-center gap-2 text-sm text-stone-700">
+          <label key={secao.id} className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm text-foreground">
             <Checkbox
               checked={secoes[secao.id]}
               onCheckedChange={(checked) => onToggleSecao(secao.id, checked === true)}
@@ -387,48 +393,48 @@ function EmailAutomationPanel({
   const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
 
   return (
-    <div className="print:hidden mx-4 mt-4 w-full max-w-[210mm] border border-stone-200 bg-white px-4 py-4 sm:mx-auto sm:px-6">
+    <div className="print:hidden rounded-xl border bg-card p-4 shadow-sm">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-center gap-2">
-          <MailIcon className="size-4 text-stone-600" />
+          <MailIcon className="size-4 text-[#3B2867] dark:text-white" />
           <div className="min-w-0">
-            <h2 className="m-0 text-sm font-semibold uppercase tracking-[0.12em] text-stone-800 sm:tracking-[0.16em]">
+            <h2 className="m-0 text-sm font-medium text-[#3B2867] dark:text-white">
               Envio por e-mail
             </h2>
-            <p className="m-0 mt-1 text-xs text-stone-500">
-              Relatorios recorrentes enviados automaticamente pela integracao Resend.
+            <p className="m-0 mt-1 text-xs text-muted-foreground">
+              Relatórios recorrentes enviados automaticamente pela integracao Resend.
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2 text-xs">
-          <span className="border border-green-200 bg-green-50 px-2 py-1 font-medium text-green-700">
+          <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 font-medium text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
             Resend ativo
           </span>
-          <span className="border border-stone-200 bg-stone-50 px-2 py-1 text-stone-600">
+          <span className="rounded-full border bg-muted px-2 py-0.5 text-muted-foreground">
             {periodoLabel}
           </span>
-          <span className="border border-purple-200 bg-purple-50 px-2 py-1 text-purple-700">
+          <span className="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/30 dark:text-purple-300">
             Agendamento sincronizado
           </span>
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[1fr_220px_auto] lg:items-end">
-        <label className="flex flex-col gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-500">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
           Destinatarios deste envio
           <Input
             value={destinatarios}
             onChange={(event) => onDestinatariosChange(event.target.value)}
             placeholder="email@empresa.com, equipe@empresa.com"
-            className="h-9 rounded-none border-stone-300 bg-white text-stone-900"
+            className="h-9"
           />
         </label>
 
-        <label className="flex flex-col gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-500">
+        <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
           Recorrencia sugerida
           <Select value={frequencia} onValueChange={onFrequenciaChange}>
-            <SelectTrigger className="h-9 w-full rounded-none border-stone-300 bg-white text-stone-900">
+            <SelectTrigger className="h-9 w-full">
               <SelectValue placeholder="Recorrencia" />
             </SelectTrigger>
             <SelectContent>
@@ -441,13 +447,13 @@ function EmailAutomationPanel({
           </Select>
         </label>
 
-        <div className="grid grid-cols-2 gap-2 lg:flex">
-          <Button type="button" variant="outline" className="h-9 rounded-none" onClick={onSaveDraft}>
+        <div className="grid grid-cols-2 gap-2 sm:col-span-2">
+          <Button type="button" variant="outline" className="h-9" onClick={onSaveDraft}>
             Salvar agendamento
           </Button>
           <Button
             type="button"
-            className="h-9 bg-stone-800 text-white hover:bg-stone-700"
+            className="h-9 bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={onSendNow}
           >
             <SendIcon className="mr-1 size-4" />
@@ -456,7 +462,7 @@ function EmailAutomationPanel({
         </div>
       </div>
 
-      <div className="mt-3 border border-dashed border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-600">
+      <div className="mt-3 rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
         Proximo envio: {selectedFrequency?.detail ?? "recorrencia nao definida"}. O relatorio considera as secoes e filtros selecionados acima.
       </div>
     </div>
@@ -761,126 +767,178 @@ export default function RelatoriosPage() {
         <SiteHeader />
       </div>
 
-      <div className="print:hidden sticky top-0 z-20 flex flex-col gap-3 border-b bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="flex min-w-0 items-center gap-3">
-          <UITooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
-                <ArrowLeftIcon className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="mb-0!">Voltar ao dashboard</p>
-            </TooltipContent>
-          </UITooltip>
-          <div className="flex min-w-0 items-center gap-2">
-            <PrinterIcon size={18} className="text-stone-600" />
-            <h1 className="truncate text-base font-semibold text-stone-800">Relatorio Operacional</h1>
+      <main className="flex flex-col gap-6 p-6 print:block print:p-0">
+        <div className="print:hidden flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
+                  <ArrowLeftIcon className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="mb-0!">Voltar ao dashboard</p>
+              </TooltipContent>
+            </UITooltip>
+            <div className="flex min-w-0 items-center gap-2">
+              <PrinterIcon size={22} className="text-[#3B2867] dark:text-white" />
+              <h1 className="truncate text-[18pt]! font-medium text-[#3B2867] dark:text-white">Relatórios</h1>
+            </div>
+            {carregandoTudo && <span className="animate-pulse text-xs text-muted-foreground">Carregando dados...</span>}
           </div>
-          {carregandoTudo && <span className="animate-pulse text-xs text-stone-500">Carregando dados...</span>}
+
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+            <Button variant="outline" size="sm" onClick={recarregar} disabled={carregandoTudo} className="w-full sm:w-auto">
+              <RefreshCcwIcon className="mr-1 size-4" />
+              Atualizar
+            </Button>
+            <Button
+              size="sm"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
+              onClick={() => window.print()}
+              disabled={carregandoTudo || (tipoRelatorio === "maquina" && !selectedMaquina)}
+            >
+              <PrinterIcon className="mr-1 size-4" />
+              Imprimir / PDF
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-          <Button variant="outline" size="sm" onClick={recarregar} disabled={carregandoTudo} className="w-full sm:w-auto">
-            <RefreshCcwIcon className="mr-1 size-4" />
-            Atualizar
-          </Button>
-          <Button
-            size="sm"
-            className="w-full bg-stone-800 text-white hover:bg-stone-700 sm:w-auto"
-            onClick={() => window.print()}
-            disabled={carregandoTudo || (tipoRelatorio === "maquina" && !selectedMaquina)}
+        <Separator className="print:hidden" />
+
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(320px,480px)_minmax(0,1fr)] print:block">
+          <aside className="print:hidden flex min-h-0 flex-col gap-4 lg:sticky lg:top-6">
+            <ConfigPanel
+              tipoRelatorio={tipoRelatorio}
+              setTipoRelatorio={setTipoRelatorio}
+              maquinaId={maquinaId}
+              setMaquinaId={setMaquinaId}
+              maquinas={maquinas}
+              periodo={periodo}
+              setPeriodo={setPeriodo}
+              secoes={secoes}
+              onToggleSecao={onToggleSecao}
+            />
+
+            <EmailAutomationPanel
+              destinatarios={emailDestinatarios}
+              onDestinatariosChange={setEmailDestinatarios}
+              frequencia={emailFrequencia}
+              onFrequenciaChange={setEmailFrequencia}
+              periodoLabel={periodoLabel}
+              onSaveDraft={salvarRascunhoEmail}
+              onSendNow={enviarRelatorioAgora}
+            />
+
+            {errorMsg && (
+              <div className="flex flex-col gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-start">
+                <span>{errorMsg}</span>
+                <Button variant="outline" size="sm" onClick={recarregar}>
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
+          </aside>
+           
+          <section className="min-w-0 print:block print:p-0">
+          <div
+            id="relatorio-conteudo"
+            className="report-preview-stack flex w-full flex-col gap-6 pb-6 print:block print:gap-0 print:pb-0 print:px-[1.2cm] print:py-[1cm] print:text-black"
+            style={{ fontFamily: "'Inter', sans-serif" }}
           >
-            <PrinterIcon className="mr-1 size-4" />
-            Imprimir / PDF
-          </Button>
-        </div>
+            {isRelatorioMaquina ? (
+              <RelatorioMaquina
+                maquina={selectedMaquina}
+                periodoLabel={periodoLabel}
+                geradoEm={geradoEm}
+                secoes={secoes}
+                metricas={metricasMaquina}
+                sensores={sensoresMaquina}
+                chamados={chamadosMaquina}
+                historico={historico}
+                historicoStatus={historicoStatus}
+                historicoMensagem={historicoMensagem}
+              />
+            ) : (
+              <RelatorioGeral
+                geradoEm={geradoEm}
+                periodoLabel={periodoLabel}
+                secoes={secoes}
+                loadingMaquinas={loadingMaquinas}
+                totalMaquinas={totalMaquinas}
+                totalOk={totalOk}
+                totalAlerta={totalAlerta}
+                criticasAlta={criticasAlta}
+                integridadeMedia={integridadeMedia}
+                chamados={chamados}
+                chamadosAbertos={chamadosAbertos}
+                chamadosResolvidos={chamadosResolvidos}
+                maquinas={maquinas}
+                pieStatus={pieStatus}
+                barCriticidade={barCriticidade}
+                tendencia={tendencia}
+                radarData={radarData}
+              />
+            )}
+          </div>
+        </section>
       </div>
-
-      <ConfigPanel
-        tipoRelatorio={tipoRelatorio}
-        setTipoRelatorio={setTipoRelatorio}
-        maquinaId={maquinaId}
-        setMaquinaId={setMaquinaId}
-        maquinas={maquinas}
-        periodo={periodo}
-        setPeriodo={setPeriodo}
-        secoes={secoes}
-        onToggleSecao={onToggleSecao}
-      />
-
-      <EmailAutomationPanel
-        destinatarios={emailDestinatarios}
-        onDestinatariosChange={setEmailDestinatarios}
-        frequencia={emailFrequencia}
-        onFrequenciaChange={setEmailFrequencia}
-        periodoLabel={periodoLabel}
-        onSaveDraft={salvarRascunhoEmail}
-        onSendNow={enviarRelatorioAgora}
-      />
-
-      {errorMsg && (
-        <div className="print:hidden mx-4 mt-4 flex flex-col gap-3 border border-stone-300 bg-stone-50 px-4 py-3 text-sm text-stone-800 sm:mx-6 sm:flex-row sm:items-center sm:justify-between">
-          <span>{errorMsg}</span>
-          <Button variant="outline" size="sm" onClick={recarregar}>
-            Tentar novamente
-          </Button>
-        </div>
-      )}
-
-      <div
-        id="relatorio-conteudo"
-        className="mx-auto w-full max-w-[210mm] px-4 py-6 sm:px-6 sm:py-8 print:mx-0 print:max-w-none print:px-[1.2cm] print:py-[1cm] print:text-black"
-        style={{ fontFamily: "'Inter', sans-serif" }}
-      >
-        {isRelatorioMaquina ? (
-          <RelatorioMaquina
-            maquina={selectedMaquina}
-            periodoLabel={periodoLabel}
-            geradoEm={geradoEm}
-            secoes={secoes}
-            metricas={metricasMaquina}
-            sensores={sensoresMaquina}
-            chamados={chamadosMaquina}
-            historico={historico}
-            historicoStatus={historicoStatus}
-            historicoMensagem={historicoMensagem}
-          />
-        ) : (
-          <RelatorioGeral
-            geradoEm={geradoEm}
-            periodoLabel={periodoLabel}
-            secoes={secoes}
-            loadingMaquinas={loadingMaquinas}
-            totalMaquinas={totalMaquinas}
-            totalOk={totalOk}
-            totalAlerta={totalAlerta}
-            criticasAlta={criticasAlta}
-            integridadeMedia={integridadeMedia}
-            chamados={chamados}
-            chamadosAbertos={chamadosAbertos}
-            chamadosResolvidos={chamadosResolvidos}
-            maquinas={maquinas}
-            pieStatus={pieStatus}
-            barCriticidade={barCriticidade}
-            tendencia={tendencia}
-            radarData={radarData}
-          />
-        )}
-
-        <Separator className="my-6 print:my-4" />
-        <div className="flex flex-col gap-1 text-[10px] text-stone-400 sm:flex-row sm:items-center sm:justify-between print:text-stone-500">
-          <span>Orbis - Sistema de Monitoramento Industrial</span>
-          <span>Gerado em {geradoEm}</span>
-          <span className="print:hidden">© {new Date().getFullYear()} Orbis</span>
-        </div>
-      </div>
+    </main >
 
       <style jsx global>{`
+        .report-preview-stack {
+          counter-reset: report-page;
+        }
+
+        .report-preview-page {
+          counter-increment: report-page;
+          position: relative;
+        }
+
+        .report-preview-page::after {
+          bottom: 10px;
+          color: #78716c;
+          content: "Pagina " counter(report-page);
+          font-size: 10px;
+          position: absolute;
+          right: 14px;
+        }
+
+        @media (min-width: 1024px) {
+          .report-preview-page {
+            min-height: 297mm;
+          }
+        }
+
         @media print {
           @page {
             size: A4 portrait;
             margin: 1cm 1.2cm;
+          }
+
+          html,
+          body,
+          main,
+          section,
+          #relatorio-conteudo,
+          .report-preview-stack,
+          .report-preview-page {
+            background: #ffffff !important;
+            color: #111827 !important;
+            color-scheme: light !important;
+          }
+
+          .report-preview-stack,
+          .report-preview-page {
+            display: block !important;
+          }
+
+          .report-preview-page {
+            min-height: 0 !important;
+          }
+
+          .report-preview-page::after {
+            display: none !important;
           }
 
           header,
@@ -896,6 +954,10 @@ export default function RelatoriosPage() {
             background: white !important;
             color: black !important;
             font-size: 10pt !important;
+          }
+
+          #relatorio-conteudo :is(h1, h2, h3, h4, h5, h6, p, span, td, th, label) {
+            color: inherit;
           }
 
           * {
@@ -951,116 +1013,122 @@ function RelatorioGeral({
 }) {
   return (
     <>
-      <ReportHeader
-        title="Relatorio Operacional"
-        meta={[`Gerado em ${geradoEm}`, `Frota de ${totalMaquinas} maquinas monitoradas - Periodo: ${periodoLabel}`]}
-        statusLabel={integridadeMedia >= 75 ? "Frota Estavel" : integridadeMedia >= 50 ? "Atencao Necessaria" : "Estado Critico"}
-        statusSub={`Integridade media: ${integridadeMedia}%`}
-      />
+      <ReportPreviewPage>
+        <ReportHeader
+          title="Relatorio Operacional"
+          meta={[`Gerado em ${geradoEm}`, `Frota de ${totalMaquinas} maquinas monitoradas - Periodo: ${periodoLabel}`]}
+          statusLabel={integridadeMedia >= 75 ? "Frota Estavel" : integridadeMedia >= 50 ? "Atencao Necessaria" : "Estado Critico"}
+          statusSub={`Integridade media: ${integridadeMedia}%`}
+        />
 
-      {secoes.resumo && (
-        <div className="mb-6 print:mb-4">
-          <SectionTitle>Visao Geral da Frota</SectionTitle>
-          <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
-            <MetricCard icon={WashingMachineIcon} label="Maquinas ativas" value={loadingMaquinas ? "--" : totalMaquinas} sub={`${totalOk} OK - ${totalAlerta} em alerta`} />
-            <MetricCard icon={ShieldAlertIcon} label="Alta importancia" value={loadingMaquinas ? "--" : criticasAlta} sub="Maquinas criticas" color={COLORS.alerta} />
-            <MetricCard icon={ActivityIcon} label="Integridade media" value={loadingMaquinas ? "--" : `${integridadeMedia}%`} sub="Media de toda a frota" color={integridadeMedia >= 75 ? COLORS.ok : integridadeMedia >= 50 ? COLORS.medio : COLORS.alerta} />
-            <MetricCard icon={ZapIcon} label="Chamados abertos" value={chamadosAbertos} sub={`${chamadosResolvidos} resolvidos no periodo`} color={chamadosAbertos > 0 ? COLORS.medio : COLORS.ok} />
+        {secoes.resumo && (
+          <div className="mb-6 print:mb-4">
+            <SectionTitle>Visao Geral da Frota</SectionTitle>
+            <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
+              <MetricCard icon={WashingMachineIcon} label="Maquinas ativas" value={loadingMaquinas ? "--" : totalMaquinas} sub={`${totalOk} OK - ${totalAlerta} em alerta`} />
+              <MetricCard icon={ShieldAlertIcon} label="Alta importancia" value={loadingMaquinas ? "--" : criticasAlta} sub="Maquinas criticas" color={COLORS.alerta} />
+              <MetricCard icon={ActivityIcon} label="Integridade media" value={loadingMaquinas ? "--" : `${integridadeMedia}%`} sub="Media de toda a frota" color={integridadeMedia >= 75 ? COLORS.ok : integridadeMedia >= 50 ? COLORS.medio : COLORS.alerta} />
+              <MetricCard icon={ZapIcon} label="Chamados abertos" value={chamadosAbertos} sub={`${chamadosResolvidos} resolvidos no periodo`} color={chamadosAbertos > 0 ? COLORS.medio : COLORS.ok} />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {(secoes.desempenho || secoes.historico) && (
-        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 print:mb-4 print:grid-cols-2 print:gap-3">
-          {secoes.desempenho && (
-            <>
-              <div className="break-inside-avoid border  border-stone-200 bg-white p-5 sm:p-4 print:border-stone-300 print:p-3">
-                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-stone-500">Status das maquinas</p>
-                {loadingMaquinas ? (
-                  <Estado msg="Carregando..." />
-                ) : pieStatus.length === 0 ? (
-                  <Estado msg="Sem dados de status" />
+        {(secoes.desempenho || secoes.historico) && (
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 print:mb-4 print:grid-cols-2 print:gap-3">
+            {secoes.desempenho && (
+              <>
+                <div className="break-inside-avoid border  border-stone-200 bg-white p-5 sm:p-4 print:border-stone-300 print:p-3">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-stone-500">Status das maquinas</p>
+                  {loadingMaquinas ? (
+                    <Estado msg="Carregando..." />
+                  ) : pieStatus.length === 0 ? (
+                    <Estado msg="Sem dados de status" />
+                  ) : (
+                    <ResponsiveContainer width="100%" height={180}>
+                      <PieChart margin={{ top: 8, right: 8, bottom: 18, left: 8 }}>
+                        <Pie data={pieStatus} cx="50%" cy="45%" innerRadius={42} outerRadius={66} dataKey="value" labelLine={false}>
+                          {pieStatus.map((_, index) => <Cell key={index} fill={PIE_COLORS[index]} />)}
+                        </Pie>
+                        <Tooltip formatter={(value, name) => [value, name]} />
+                        <Legend verticalAlign="bottom" iconType="circle" iconSize={8} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+                <div className="break-inside-avoid border border-stone-200 bg-white p-3 sm:p-4 print:border-stone-300 print:p-3">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-stone-500">Maquinas por criticidade</p>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={barCriticidade} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                      <Tooltip />
+                      <Bar dataKey="Operando" fill={COLORS.primary} radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="Em alerta" fill={COLORS.alerta} radius={[0, 0, 0, 0]} />
+                      <Legend iconType="square" iconSize={8} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            )}
+
+            {secoes.historico && (
+              <div className="break-inside-avoid border border-stone-200 bg-white p-3 sm:col-span-2 sm:p-4 print:border-stone-300 print:p-3">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-stone-500">Tendencia de alertas - {periodoLabel}</p>
+                {tendencia.length === 0 ? (
+                  <Estado msg="Sem dados de tendencia disponiveis" />
                 ) : (
-                  <ResponsiveContainer width="100%"  height={180}>
-                    <PieChart margin={{ top: 8, right: 8, bottom: 18, left: 8 }}>
-                      <Pie data={pieStatus} cx="50%" cy="45%" innerRadius={42} outerRadius={66} dataKey="value" labelLine={false}>
-                        {pieStatus.map((_, index) => <Cell key={index} fill={PIE_COLORS[index]} />)}
-                      </Pie>
-                      <Tooltip  formatter={(value, name) => [value, name]} />
-                      <Legend verticalAlign="bottom"  iconType="circle" iconSize={8} />
-                    </PieChart>
+                  <ResponsiveContainer width="100%" height={130}>
+                    <AreaChart data={tendencia} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
+                      <XAxis dataKey="data" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                      <Tooltip />
+                      <Area type="monotone" dataKey="alertas" stroke={COLORS.primary} strokeWidth={2} fill={COLORS.primary} fillOpacity={0.08} dot={false} />
+                    </AreaChart>
                   </ResponsiveContainer>
                 )}
               </div>
+            )}
 
-              <div className="break-inside-avoid border border-stone-200 bg-white p-3 sm:p-4 print:border-stone-300 print:p-3">
-                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-stone-500">Maquinas por criticidade</p>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={barCriticidade} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="Operando" fill={COLORS.primary} radius={[0, 0, 0, 0]} />
-                    <Bar dataKey="Em alerta" fill={COLORS.alerta} radius={[0, 0, 0, 0]} />
-                    <Legend iconType="square" iconSize={8} />
-                  </BarChart>
+            {secoes.desempenho && radarData.length > 0 && (
+              <div className="break-inside-avoid border border-stone-200 bg-white p-3 sm:col-span-2 sm:p-4 print:border-stone-300 print:p-3">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-stone-500">Integridade por setor</p>
+                <ResponsiveContainer width="100%" height={150}>
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke="#E5E7EB" />
+                    <PolarAngleAxis dataKey="setor" tick={{ fontSize: 11 }} />
+                    <Radar dataKey="integridade" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.08} />
+                    <Tooltip formatter={(value) => [`${value}%`, "Integridade"]} />
+                  </RadarChart>
                 </ResponsiveContainer>
               </div>
-            </>
-          )}
+            )}
+          </div>
+        )}
+      </ReportPreviewPage>
 
-          {secoes.historico && (
-            <div className="break-inside-avoid border border-stone-200 bg-white p-3 sm:col-span-2 sm:p-4 print:border-stone-300 print:p-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-stone-500">Tendencia de alertas - {periodoLabel}</p>
-              {tendencia.length === 0 ? (
-                <Estado msg="Sem dados de tendencia disponiveis" />
-              ) : (
-                <ResponsiveContainer width="100%" height={130}>
-                  <AreaChart data={tendencia} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                    <XAxis dataKey="data" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="alertas" stroke={COLORS.primary} strokeWidth={2} fill={COLORS.primary} fillOpacity={0.08} dot={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              )}
+      {(secoes.desempenho || secoes.chamados) && (
+        <ReportPreviewPage>
+          {secoes.desempenho && (
+            <div className="mb-6 print:mb-4 print:break-before-page">
+              <SectionTitle>Inventario de Maquinas</SectionTitle>
+              <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
+                {loadingMaquinas ? <Estado msg="Carregando maquinas..." /> : <MaquinasTable maquinas={maquinas} totalMaquinas={totalMaquinas} totalOk={totalOk} totalAlerta={totalAlerta} integridadeMedia={integridadeMedia} />}
+              </div>
             </div>
           )}
 
-          {secoes.desempenho && radarData.length > 0 && (
-            <div className="break-inside-avoid border border-stone-200 bg-white p-3 sm:col-span-2 sm:p-4 print:border-stone-300 print:p-3">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-stone-500">Integridade por setor</p>
-              <ResponsiveContainer width="100%" height={150}>
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="#E5E7EB" />
-                  <PolarAngleAxis dataKey="setor" tick={{ fontSize: 11 }} />
-                  <Radar dataKey="integridade" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.08} />
-                  <Tooltip formatter={(value) => [`${value}%`, "Integridade"]} />
-                </RadarChart>
-              </ResponsiveContainer>
+          {secoes.chamados && (
+            <div className="mb-6 print:mb-4">
+              <SectionTitle>Chamados Tecnicos</SectionTitle>
+              <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
+                <ChamadosTable chamados={chamados} />
+              </div>
             </div>
           )}
-        </div>
-      )}
-
-      {secoes.desempenho && (
-        <div className="mb-6 print:mb-4 print:break-before-page">
-          <SectionTitle>Inventario de Maquinas</SectionTitle>
-          <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
-            {loadingMaquinas ? <Estado msg="Carregando maquinas..." /> : <MaquinasTable maquinas={maquinas} totalMaquinas={totalMaquinas} totalOk={totalOk} totalAlerta={totalAlerta} integridadeMedia={integridadeMedia} />}
-          </div>
-        </div>
-      )}
-
-      {secoes.chamados && (
-        <div className="mb-6 print:mb-4">
-          <SectionTitle>Chamados Tecnicos</SectionTitle>
-          <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
-            <ChamadosTable chamados={chamados} />
-          </div>
-        </div>
+        </ReportPreviewPage>
       )}
     </>
   )
@@ -1080,94 +1148,100 @@ function RelatorioMaquina({
 }) {
   return (
     <>
-      <ReportHeader
-        title={`Relatorio de Maquina - ${maquina.nome}`}
-        meta={[
-          `Gerado em ${geradoEm}`,
-          `${maquina.setor} - ${maquina.tipo} - Periodo: ${periodoLabel}`,
-          `Criticidade: ${maquina.criticidade} - Ultimo sinal: ${tempoRelativo(maquina.ultimaLeituraEm)}`,
-        ]}
-        statusLabel={maquina.status === "OK" ? "Operando" : "Em alerta"}
-        statusSub={`Integridade atual: ${maquina.integridade}%`}
-      />
+      <ReportPreviewPage>
+        <ReportHeader
+          title={`Relatorio de Maquina - ${maquina.nome}`}
+          meta={[
+            `Gerado em ${geradoEm}`,
+            `${maquina.setor} - ${maquina.tipo} - Periodo: ${periodoLabel}`,
+            `Criticidade: ${maquina.criticidade} - Ultimo sinal: ${tempoRelativo(maquina.ultimaLeituraEm)}`,
+          ]}
+          statusLabel={maquina.status === "OK" ? "Operando" : "Em alerta"}
+          statusSub={`Integridade atual: ${maquina.integridade}%`}
+        />
 
-      {secoes.resumo && (
-        <div className="mb-6 print:mb-4">
-          <SectionTitle>Resumo da Maquina</SectionTitle>
-          <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
-            <MetricCard icon={GaugeIcon} label="Integridade" value={`${metricas.integridade}%`} sub="Valor atual" color={metricas.integridade >= 75 ? COLORS.ok : metricas.integridade >= 50 ? COLORS.medio : COLORS.alerta} />
-            <MetricCard icon={ActivityIcon} label="Estabilidade" value={`${metricas.estabilidade}%`} sub="Score operacional" color={metricas.estabilidade >= 75 ? COLORS.ok : metricas.estabilidade >= 50 ? COLORS.medio : COLORS.alerta} />
-            <MetricCard icon={WashingMachineIcon} label="Sensores" value={metricas.sensoresTotal} sub={`${metricas.sensoresOnline} online`} />
-            <MetricCard icon={ZapIcon} label="Chamados abertos" value={metricas.chamadosAbertos} sub={`${metricas.chamadosResolvidos} resolvidos`} color={metricas.chamadosAbertos > 0 ? COLORS.medio : COLORS.ok} />
+        {secoes.resumo && (
+          <div className="mb-6 print:mb-4">
+            <SectionTitle>Resumo da Maquina</SectionTitle>
+            <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
+              <MetricCard icon={GaugeIcon} label="Integridade" value={`${metricas.integridade}%`} sub="Valor atual" color={metricas.integridade >= 75 ? COLORS.ok : metricas.integridade >= 50 ? COLORS.medio : COLORS.alerta} />
+              <MetricCard icon={ActivityIcon} label="Estabilidade" value={`${metricas.estabilidade}%`} sub="Score operacional" color={metricas.estabilidade >= 75 ? COLORS.ok : metricas.estabilidade >= 50 ? COLORS.medio : COLORS.alerta} />
+              <MetricCard icon={WashingMachineIcon} label="Sensores" value={metricas.sensoresTotal} sub={`${metricas.sensoresOnline} online`} />
+              <MetricCard icon={ZapIcon} label="Chamados abertos" value={metricas.chamadosAbertos} sub={`${metricas.chamadosResolvidos} resolvidos`} color={metricas.chamadosAbertos > 0 ? COLORS.medio : COLORS.ok} />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {secoes.desempenho && (
-        <div className="mb-6 print:mb-4">
-          <SectionTitle>Desempenho e Integridade</SectionTitle>
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="border border-stone-200 bg-white p-3 sm:p-4 print:border-stone-300">
-              <p className="text-xs font-medium uppercase tracking-wide text-stone-500">Status atual</p>
-              <div className="mt-3">
-                <StatusBadge value={maquina.status} />
+        {secoes.desempenho && (
+          <div className="mb-6 print:mb-4">
+            <SectionTitle>Desempenho e Integridade</SectionTitle>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="border border-stone-200 bg-white p-3 sm:p-4 print:border-stone-300">
+                <p className="text-xs font-medium uppercase tracking-wide text-stone-500">Status atual</p>
+                <div className="mt-3">
+                  <StatusBadge value={maquina.status} />
+                </div>
+              </div>
+              <div className="border border-stone-200 bg-white p-3 sm:p-4 print:border-stone-300">
+                <p className="text-xs font-medium uppercase tracking-wide text-stone-500">Importancia</p>
+                <div className="mt-3">
+                  <CriticidadeBadge value={maquina.criticidade} />
+                </div>
+              </div>
+              <div className="border border-stone-200 bg-white p-3 sm:p-4 print:border-stone-300">
+                <p className="text-xs font-medium uppercase tracking-wide text-stone-500">Ultimo sinal</p>
+                <p className="mt-3 text-sm font-semibold text-stone-900">{tempoRelativo(maquina.ultimaLeituraEm)}</p>
               </div>
             </div>
-            <div className="border border-stone-200 bg-white p-3 sm:p-4 print:border-stone-300">
-              <p className="text-xs font-medium uppercase tracking-wide text-stone-500">Importancia</p>
-              <div className="mt-3">
-                <CriticidadeBadge value={maquina.criticidade} />
+          </div>
+        )}
+
+        {secoes.historico && (
+          <div className="mb-6 print:mb-4">
+            <SectionTitle>Historico de Integridade - {periodoLabel}</SectionTitle>
+            <div className="mt-3 break-inside-avoid border border-stone-200 bg-white p-3 sm:p-4 print:border-stone-300 print:p-3">
+              {historicoStatus === "loading" ? (
+                <Estado msg="Carregando historico..." />
+              ) : historico.length === 0 ? (
+                <Estado msg={historicoMensagem || "Sem historico disponivel para o periodo"} />
+              ) : (
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart data={historico} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
+                    <XAxis dataKey="data" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="integridade" name="Integridade" stroke={COLORS.primary} strokeWidth={2} fill={COLORS.primary} fillOpacity={0.08} dot={false} />
+                    <Area type="monotone" dataKey="scoreEstabilidade" name="Estabilidade" stroke={COLORS.medio} strokeWidth={2} fill={COLORS.medio} fillOpacity={0.05} dot={false} />
+                    <Legend iconType="square" iconSize={8} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        )}
+      </ReportPreviewPage>
+
+      {(secoes.sensores || secoes.chamados) && (
+        <ReportPreviewPage>
+          {secoes.sensores && (
+            <div className="mb-6 print:mb-4">
+              <SectionTitle>Sensores Vinculados</SectionTitle>
+              <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
+                <SensoresTable sensores={sensores} />
               </div>
             </div>
-            <div className="border border-stone-200 bg-white p-3 sm:p-4 print:border-stone-300">
-              <p className="text-xs font-medium uppercase tracking-wide text-stone-500">Ultimo sinal</p>
-              <p className="mt-3 text-sm font-semibold text-stone-900">{tempoRelativo(maquina.ultimaLeituraEm)}</p>
+          )}
+
+          {secoes.chamados && (
+            <div className="mb-6 print:mb-4">
+              <SectionTitle>Chamados da Maquina</SectionTitle>
+              <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
+                <ChamadosTable chamados={chamados} />
+              </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {secoes.historico && (
-        <div className="mb-6 print:mb-4">
-          <SectionTitle>Historico de Integridade - {periodoLabel}</SectionTitle>
-          <div className="mt-3 break-inside-avoid border border-stone-200 bg-white p-3 sm:p-4 print:border-stone-300 print:p-3">
-            {historicoStatus === "loading" ? (
-              <Estado msg="Carregando historico..." />
-            ) : historico.length === 0 ? (
-              <Estado msg={historicoMensagem || "Sem historico disponivel para o periodo"} />
-            ) : (
-              <ResponsiveContainer width="100%" height={180}>
-                <AreaChart data={historico} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
-                  <XAxis dataKey="data" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="integridade" name="Integridade" stroke={COLORS.primary} strokeWidth={2} fill={COLORS.primary} fillOpacity={0.08} dot={false} />
-                  <Area type="monotone" dataKey="scoreEstabilidade" name="Estabilidade" stroke={COLORS.medio} strokeWidth={2} fill={COLORS.medio} fillOpacity={0.05} dot={false} />
-                  <Legend iconType="square" iconSize={8} />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-      )}
-
-      {secoes.sensores && (
-        <div className="mb-6 print:mb-4">
-          <SectionTitle>Sensores Vinculados</SectionTitle>
-          <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
-            <SensoresTable sensores={sensores} />
-          </div>
-        </div>
-      )}
-
-      {secoes.chamados && (
-        <div className="mb-6 print:mb-4">
-          <SectionTitle>Chamados da Maquina</SectionTitle>
-          <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
-            <ChamadosTable chamados={chamados} />
-          </div>
-        </div>
+          )}
+        </ReportPreviewPage>
       )}
     </>
   )
