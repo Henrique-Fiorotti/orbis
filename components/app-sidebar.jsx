@@ -24,6 +24,7 @@ import {
   NfcIcon,
   SearchIcon,
   Settings2Icon,
+  ShieldCheckIcon,
   UsersIcon,
   WashingMachineIcon,
 } from "lucide-react"
@@ -55,6 +56,11 @@ const data = {
       url: "/dashboard/tecnicos",
       icon: <UsersIcon />,
     },
+    {
+      title: "Admins",
+      url: "/dashboard/admins",
+      icon: <ShieldCheckIcon />,
+    },
   ],
   navSecondary: [
     {
@@ -85,6 +91,9 @@ function getNavMainItems(usuario) {
   return data.navMain.filter((item) => {
     if (item.url === "/dashboard/tecnicos") {
       return permissions.canViewTecnicos
+    }
+    if (item.url === "/dashboard/admins") {
+      return permissions.isAdmin
     }
     return true
   })
