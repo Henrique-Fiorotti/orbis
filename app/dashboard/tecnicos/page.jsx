@@ -18,7 +18,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MetricValue } from "@/components/animated-metric"
+import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import { SiteHeader } from "@/components/site-header"
 import {
   UsersIcon, EllipsisVerticalIcon, PlusIcon,
@@ -153,7 +153,7 @@ export default function TecnicosPage() {
     }
   }, [permissions.canViewTecnicos, router])
 
-  const loadingInicial = carregando && tecnicos.length === 0
+  const loadingInicial = useDashboardMetricsLoading(carregando && tecnicos.length === 0)
   const errorSemDados = status === "error" && tecnicos.length === 0
   const canManageTecnicos = permissions.canManageTecnicos
   const totalAtivos = React.useMemo(() => tecnicos.filter((tecnico) => tecnico.status === "ATIVO").length, [tecnicos])

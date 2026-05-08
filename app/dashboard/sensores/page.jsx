@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { MetricValue } from "@/components/animated-metric"
+import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import { SiteHeader } from "@/components/site-header"
 import {
   ActivityIcon,
@@ -186,7 +186,7 @@ export default function SensoresPage() {
   const [sensorExcluir, setSensorExcluir] = React.useState(null)
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
 
-  const loadingInicial = carregando && sensores.length === 0
+  const loadingInicial = useDashboardMetricsLoading(carregando && sensores.length === 0)
   const errorSemDados = status === "error" && sensores.length === 0
   const canManageSensores = permissions.canManageSensores
 
