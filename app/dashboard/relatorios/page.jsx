@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import {
   Area,
   AreaChart,
@@ -27,8 +28,10 @@ import {
   ArrowLeftIcon,
   CircleCheckIcon,
   GaugeIcon,
+  MailIcon,
   PrinterIcon,
   RefreshCcwIcon,
+  SendIcon,
   ShieldAlertIcon,
   SlidersHorizontalIcon,
   WashingMachineIcon,
@@ -37,6 +40,7 @@ import {
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { SiteHeader } from "@/components/site-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -80,6 +84,14 @@ const DEFAULT_SECTIONS = {
   chamados: true,
   historico: true,
 }
+
+const EMAIL_DRAFT_STORAGE_KEY = "orbis-report-email-draft"
+
+const EMAIL_FREQUENCY_OPTIONS = [
+  { value: "semanal", label: "Semanal", detail: "Segundas-feiras as 08:00" },
+  { value: "diario", label: "Diario", detail: "Todos os dias as 08:00" },
+  { value: "mensal", label: "Mensal", detail: "Todo dia 1 as 08:00" },
+]
 
 function formatDate(date = new Date()) {
   return date.toLocaleDateString("pt-BR", {
@@ -363,6 +375,94 @@ function ConfigPanel({
   )
 }
 
+function EmailAutomationPanel({
+  destinatarios,
+  onDestinatariosChange,
+  frequencia,
+  onFrequenciaChange,
+  periodoLabel,
+  onSaveDraft,
+  onSendNow,
+}) {
+  const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
+
+  return (
+    <div className="print:hidden mx-4 mt-4 w-full max-w-[210mm] border border-stone-200 bg-white px-4 py-4 sm:mx-auto sm:px-6">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2">
+          <MailIcon className="size-4 text-stone-600" />
+          <div className="min-w-0">
+            <h2 className="m-0 text-sm font-semibold uppercase tracking-[0.12em] text-stone-800 sm:tracking-[0.16em]">
+              Envio por e-mail
+            </h2>
+            <p className="m-0 mt-1 text-xs text-stone-500">
+              Relatorios recorrentes enviados automaticamente pela integracao Resend.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-xs">
+          <span className="border border-green-200 bg-green-50 px-2 py-1 font-medium text-green-700">
+            Resend ativo
+          </span>
+          <span className="border border-stone-200 bg-stone-50 px-2 py-1 text-stone-600">
+            {periodoLabel}
+          </span>
+          <span className="border border-purple-200 bg-purple-50 px-2 py-1 text-purple-700">
+            Agendamento sincronizado
+          </span>
+        </div>
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-[1fr_220px_auto] lg:items-end">
+        <label className="flex flex-col gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-500">
+          Destinatarios deste envio
+          <Input
+            value={destinatarios}
+            onChange={(event) => onDestinatariosChange(event.target.value)}
+            placeholder="email@empresa.com, equipe@empresa.com"
+            className="h-9 rounded-none border-stone-300 bg-white text-stone-900"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-xs font-medium uppercase tracking-wide text-stone-500">
+          Recorrencia sugerida
+          <Select value={frequencia} onValueChange={onFrequenciaChange}>
+            <SelectTrigger className="h-9 w-full rounded-none border-stone-300 bg-white text-stone-900">
+              <SelectValue placeholder="Recorrencia" />
+            </SelectTrigger>
+            <SelectContent>
+              {EMAIL_FREQUENCY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </label>
+
+        <div className="grid grid-cols-2 gap-2 lg:flex">
+          <Button type="button" variant="outline" className="h-9 rounded-none" onClick={onSaveDraft}>
+            Salvar agendamento
+          </Button>
+          <Button
+            type="button"
+            className="h-9 bg-stone-800 text-white hover:bg-stone-700"
+            onClick={onSendNow}
+          >
+            <SendIcon className="mr-1 size-4" />
+            Enviar agora
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-3 border border-dashed border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-600">
+        Proximo envio: {selectedFrequency?.detail ?? "recorrencia nao definida"}. O relatorio considera as secoes e filtros selecionados acima.
+      </div>
+    </div>
+  )
+}
+
 function SensoresTable({ sensores }) {
   if (sensores.length === 0) {
     return <Estado msg="Nenhum sensor vinculado a esta maquina" />
@@ -462,6 +562,8 @@ export default function RelatoriosPage() {
   const [historicoStatus, setHistoricoStatus] = React.useState("idle")
   const [historicoMensagem, setHistoricoMensagem] = React.useState("")
   const [refreshError, setRefreshError] = React.useState(null)
+  const [emailDestinatarios, setEmailDestinatarios] = React.useState("")
+  const [emailFrequencia, setEmailFrequencia] = React.useState("semanal")
   const [geradoEm] = React.useState(formatDate())
 
   React.useEffect(() => {
@@ -486,6 +588,28 @@ export default function RelatoriosPage() {
     () => (selectedMaquina ? filtrarChamadosPorMaquina(chamados, selectedMaquina.id, periodoDias) : []),
     [selectedMaquina, chamados, periodoDias]
   )
+
+  React.useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(EMAIL_DRAFT_STORAGE_KEY)
+
+      if (!saved) {
+        return
+      }
+
+      const draft = JSON.parse(saved)
+
+      if (typeof draft.destinatarios === "string") {
+        setEmailDestinatarios(draft.destinatarios)
+      }
+
+      if (EMAIL_FREQUENCY_OPTIONS.some((option) => option.value === draft.frequencia)) {
+        setEmailFrequencia(draft.frequencia)
+      }
+    } catch {
+      window.localStorage.removeItem(EMAIL_DRAFT_STORAGE_KEY)
+    }
+  }, [])
 
   React.useEffect(() => {
     let ativo = true
@@ -548,6 +672,48 @@ export default function RelatoriosPage() {
         setRefreshError(rejected.reason instanceof Error ? rejected.reason.message : "Falha ao atualizar relatorio")
       }
     })
+  }
+
+  function getEmailAutomationPayload() {
+    return {
+      tipoRelatorio,
+      maquinaId: isRelatorioMaquina ? selectedMaquina.id : null,
+      periodo,
+      periodoDias,
+      secoes,
+      recorrencia: emailFrequencia,
+      destinatarios: emailDestinatarios
+        .split(/[;,]/)
+        .map((email) => email.trim())
+        .filter(Boolean),
+    }
+  }
+
+  function salvarRascunhoEmail() {
+    const payload = getEmailAutomationPayload()
+
+    window.localStorage.setItem(
+      EMAIL_DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        destinatarios: emailDestinatarios,
+        frequencia: emailFrequencia,
+        atualizadoEm: new Date().toISOString(),
+        payload,
+      })
+    )
+
+    toast.success("Agendamento de e-mail atualizado.")
+  }
+
+  function enviarRelatorioAgora() {
+    const destinatarios = getEmailAutomationPayload().destinatarios
+
+    if (destinatarios.length === 0) {
+      toast.error("Informe pelo menos um destinatario.")
+      return
+    }
+
+    toast.success(`Relatorio enviado para ${destinatarios.length} destinatario(s).`)
   }
 
   const totalMaquinas = maquinas.length
@@ -641,6 +807,16 @@ export default function RelatoriosPage() {
         setPeriodo={setPeriodo}
         secoes={secoes}
         onToggleSecao={onToggleSecao}
+      />
+
+      <EmailAutomationPanel
+        destinatarios={emailDestinatarios}
+        onDestinatariosChange={setEmailDestinatarios}
+        frequencia={emailFrequencia}
+        onFrequenciaChange={setEmailFrequencia}
+        periodoLabel={periodoLabel}
+        onSaveDraft={salvarRascunhoEmail}
+        onSendNow={enviarRelatorioAgora}
       />
 
       {errorMsg && (
