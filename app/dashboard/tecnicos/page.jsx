@@ -215,6 +215,24 @@ export default function TecnicosPage() {
       return
     }
 
+    const tecnicoIdParam = searchParams.get("tecnicoId")
+
+    if (!tecnicoIdParam || tecnicos.length === 0) {
+      return
+    }
+
+    const tecnico = tecnicos.find((item) => String(item.id) === String(tecnicoIdParam))
+
+    if (tecnico) {
+      abrirVer(tecnico)
+    }
+  }, [permissions.canViewTecnicos, searchParams, tecnicos])
+
+  React.useEffect(() => {
+    if (!permissions.canViewTecnicos) {
+      return
+    }
+
     recarregarTecnicos(1, limiteItems)
   }, [limiteItems, permissions.canViewTecnicos, recarregarTecnicos])
 

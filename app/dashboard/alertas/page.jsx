@@ -287,6 +287,20 @@ export default function AlertasPage() {
     }
   }, [searchParams])
 
+  React.useEffect(() => {
+    const alertaIdParam = searchParams.get("alertaId")
+
+    if (!alertaIdParam || alertas.length === 0) {
+      return
+    }
+
+    const alerta = alertas.find((item) => String(item.id) === String(alertaIdParam))
+
+    if (alerta) {
+      abrirVer(alerta)
+    }
+  }, [alertas, searchParams])
+
   function abrirCriar() {
     if (!canCreateAlertas) {
       return

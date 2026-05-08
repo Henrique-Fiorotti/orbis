@@ -217,6 +217,20 @@ export default function SensoresPage() {
     }
   }, [canManageSensores, router, searchParams])
 
+  React.useEffect(() => {
+    const sensorIdParam = searchParams.get("sensorId")
+
+    if (!sensorIdParam || sensores.length === 0) {
+      return
+    }
+
+    const sensor = sensores.find((item) => String(item.id) === String(sensorIdParam))
+
+    if (sensor) {
+      abrirVer(sensor)
+    }
+  }, [searchParams, sensores])
+
   function abrirCriar() {
     if (!canManageSensores) {
       return
