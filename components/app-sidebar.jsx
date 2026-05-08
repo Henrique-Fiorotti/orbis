@@ -142,7 +142,7 @@ export function AppSidebar({ ...props }) {
 
   return (
     <>
-      <Sidebar tourId="tour-sidebar" collapsible="offcanvas" {...props}>
+      <Sidebar tourId="tour-sidebar" collapsible="icon" {...props}>
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>

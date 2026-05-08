@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import {
   SidebarGroup,
@@ -21,12 +21,14 @@ export function NavMain({ items }) {
           <SidebarMenu>
             <SidebarMenuItem className="flex items-center gap-2">
               <SidebarMenuButton
-                onClick={() => (window.location.href = "/dashboard/maquinas?action=new")}
+                asChild
                 tooltip="Adicionar"
                 className="cursor-pointer transition-colors min-w-8 bg-primary text-primary-foreground duration-200 ease-out transform hover:bg-primary/90 hover:text-gray-600 active:translate-y-0 active:scale-95 active:bg-primary/90 active:text-primary-foreground"
               >
-                <CirclePlusIcon />
-                <span>Adicionar</span>
+                <Link href="/dashboard/maquinas?action=new">
+                  <CirclePlusIcon />
+                  <span>Adicionar</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -35,11 +37,13 @@ export function NavMain({ items }) {
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
+                asChild
                 tooltip={item.title}
-                onClick={() => (window.location.href = item.url)}
               >
-                {item.icon}
-                <span>{item.title}</span>
+                <Link href={item.url}>
+                  {item.icon}
+                  <span>{item.title}</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
