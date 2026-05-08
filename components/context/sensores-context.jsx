@@ -20,6 +20,8 @@ import {
 /** @typedef {import("@/lib/orbis-types").NovoSensorInput} NovoSensorInput */
 /** @typedef {import("@/lib/orbis-types").AtualizacaoSensorInput} AtualizacaoSensorInput */
 
+export const SENSOR_READING_EVENT = "orbis-sensor-reading"
+
 /** @type {React.Context<SensoresContextValue | null>} */
 const SensoresContext = React.createContext(null)
 
@@ -95,6 +97,7 @@ export function SensoresProvider({ children }) {
 
     function handleNovaLeitura(payload) {
       setSensores((current) => mergeSensorLeitura(current, payload))
+      window.dispatchEvent(new CustomEvent(SENSOR_READING_EVENT, { detail: payload }))
     }
 
     socket.on("novaLeitura", handleNovaLeitura)

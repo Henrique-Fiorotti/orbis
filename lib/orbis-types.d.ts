@@ -209,11 +209,15 @@ export interface TecnicosContextValue {
 
 export interface AlertasContextValue {
   alertas: Alerta[];
-  adicionarAlerta: (dados: NovoAlertaInput) => Alerta;
-  editarAlerta: (id: number, dados: AtualizacaoAlertaInput) => void;
-  atualizarStatus: (id: number, novoStatus: StatusAlerta) => void;
-  cancelarAlerta: (id: number) => void;
-  resetarDados: () => void;
+  status: "loading" | "success" | "error";
+  mensagem: string;
+  carregando: boolean;
+  salvando: boolean;
+  adicionarAlerta: (dados: NovoAlertaInput) => Promise<void>;
+  atualizarStatus: (id: number, novoStatus: StatusAlerta) => Promise<void>;
+  cancelarAlerta: (id: number) => Promise<void>;
+  recarregarAlertas: () => Promise<void>;
+  resetarDados: () => Promise<void>;
 }
 
 export interface ChartConfigItem {
