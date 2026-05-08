@@ -58,6 +58,14 @@ export interface SensorLeitura {
   limiteMax: number;
 }
 
+export interface SensorLeituraApi {
+  id: number | null;
+  sensorId: number;
+  temperatura: number | null;
+  vibracao: number | null;
+  criadoEm: string;
+}
+
 export type StatusSensor = "ONLINE" | "OFFLINE";
 
 export interface Sensor {
@@ -81,7 +89,6 @@ export interface NovoSensorInput {
   tipo: string;
   maquinaId: number | null;
   status: StatusSensor;
-  active: boolean;
   limiteTemperatura: number;
   idealTemperatura: number;
   limiteVibracao: number;
