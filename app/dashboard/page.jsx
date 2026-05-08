@@ -20,12 +20,16 @@ export default function Page() {
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="@container/main flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-            {/* id adicionado */}
-            <div id="tour-section-cards">
-              <SectionCards />
-            </div>
+
+
 
             <DashboardChartsProvider>
+
+              {/* id adicionado */}
+              <div id="tour-section-cards">
+                <SectionCards />
+              </div>
+
               {/* id adicionado */}
               <div id="tour-charts-main" className="flex min-w-0 flex-col gap-4 lg:gap-6 xl:flex-row xl:gap-0">
                 <div className="w-full min-w-0 px-4 lg:px-6 xl:w-4/6">
@@ -48,6 +52,7 @@ export default function Page() {
                 <DataTable />
               </div>
             </DashboardChartsProvider>
+
           </div>
         </div>
       </div>

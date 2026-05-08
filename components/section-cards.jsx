@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react"
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
 
+import { useAlertas } from "@/components/context/alertas-context"
+import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
+import { useMaquinas } from "@/components/context/maquinas-context"
+import { useSensores } from "@/components/context/sensores-context"
+import { useTecnicos } from "@/components/context/tecnicos-context"
+import { MetricValue } from "@/components/animated-metric"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { DashboardMetricCardsSkeleton } from "@/components/dashboard-skeletons"
 import { useAlertas } from "@/components/context/alertas-context"
@@ -63,24 +69,12 @@ function getErrorMessage(statusCode, payload) {
   return payload?.mensagem || payload?.message || `Erro ${statusCode} ao carregar o dashboard.`
 }
 
-function formatMetric(value, loading) {
-  return loading ? "--" : value
-}
-
-function isToday(value) {
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return false
-  }
-
-  const today = new Date()
-  return date.toDateString() === today.toDateString()
-}
-
 export function SectionCards() {
-  const { alertas, status: alertasStatus } = useAlertas()
-  const { sensores } = useSensores()
+  const { status: maquinasStatus } = useMaquinas()
+  const { status: sensoresStatus } = useSensores()
+  const { status: tecnicosStatus } = useTecnicos()
+  const { status: alertasStatus = "success" } = useAlertas()
+  const { status: dashboardStatus } = useDashboardCharts()
   const [resumo, setResumo] = useState(EMPTY_RESUMO)
   const [status, setStatus] = useState("loading")
   const [mensagem, setMensagem] = useState("Carregando indicadores do dashboard...")
@@ -144,25 +138,14 @@ export function SectionCards() {
     }
   }, [])
 
-  const loading = status === "loading"
-  const maquinasOk = formatMetric(resumo.maquinasFuncionando, loading)
-  const integridadeFormatada = loading ? "--" : `${resumo.integridadeMedia.toFixed(1)}%`
-  const sensoresOnline = sensores.length > 0
-    ? sensores.filter((sensor) => sensor.status === "ONLINE").length
-    : resumo.sensoresOnline
-  const alertasSincronizados = alertasStatus !== "loading" ? alertas : null
-  const alertasAtivos = alertasSincronizados
-    ? alertasSincronizados.filter((alerta) => alerta.status === "ATIVO").length
-    : resumo.alertasAtivos
-  const alertasHoje = alertasSincronizados
-    ? alertasSincronizados.filter((alerta) => isToday(alerta.criadoEm)).length
-    : resumo.alertasHoje
-  const alertaSemAtendimento = alertasSincronizados
-    ? alertasSincronizados.filter((alerta) => alerta.status === "ATIVO" && !alerta.tecnicoId).length
-    : resumo.alertaSemAtendimento
-  const alertasAtendidosHoje = alertasSincronizados
-    ? alertasSincronizados.filter((alerta) => alerta.status === "EM_ANDAMENTO" && isToday(alerta.criadoEm)).length
-    : resumo.alertasAtendidosHoje
+  const loading =
+    status === "loading" ||
+    dashboardStatus === "loading" ||
+    maquinasStatus === "loading" ||
+    sensoresStatus === "loading" ||
+    alertasStatus === "loading" ||
+    tecnicosStatus === "loading"
+  const maquinasOk = resumo.maquinasFuncionando
 
   if (loading) {
     return <DashboardMetricCardsSkeleton />
@@ -189,7 +172,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription>Máquinas ativas</CardDescription>
             <CardTitle className="text-[#5E17EB]! text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {formatMetric(resumo.totalMaquinas, loading)}
+              <MetricValue value={resumo.totalMaquinas} loading={loading} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
@@ -213,7 +196,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Alertas hoje</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {formatMetric(alertasHoje, loading)}
+              <MetricValue value={resumo.alertasHoje} loading={loading} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
@@ -237,7 +220,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Sensores online</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {formatMetric(sensoresOnline, loading)}
+              <MetricValue value={resumo.sensoresOnline} loading={loading} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
@@ -261,7 +244,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Integridade média</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {integridadeFormatada}
+              <MetricValue value={resumo.integridadeMedia} loading={loading} suffix="%" decimals={1} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">

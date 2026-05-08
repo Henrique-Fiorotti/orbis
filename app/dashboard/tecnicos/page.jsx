@@ -18,6 +18,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { MetricValue } from "@/components/animated-metric"
 import { SiteHeader } from "@/components/site-header"
 import {
   UsersIcon, EllipsisVerticalIcon, PlusIcon,
@@ -208,6 +209,24 @@ export default function TecnicosPage() {
       abrirCriar()
     }
   }, [canManageTecnicos, permissions.canViewTecnicos, router, searchParams])
+
+  React.useEffect(() => {
+    if (!permissions.canViewTecnicos) {
+      return
+    }
+
+    const tecnicoIdParam = searchParams.get("tecnicoId")
+
+    if (!tecnicoIdParam || tecnicos.length === 0) {
+      return
+    }
+
+    const tecnico = tecnicos.find((item) => String(item.id) === String(tecnicoIdParam))
+
+    if (tecnico) {
+      abrirVer(tecnico)
+    }
+  }, [permissions.canViewTecnicos, searchParams, tecnicos])
 
   React.useEffect(() => {
     if (!permissions.canViewTecnicos) {
@@ -475,7 +494,9 @@ export default function TecnicosPage() {
                 {loadingInicial ? "Sincronizando" : `${totalAtivos} ativos`}
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(tecnicos.length, loadingInicial)}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
+              <MetricValue value={tecnicos.length} loading={loadingInicial} />
+            </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
@@ -493,7 +514,9 @@ export default function TecnicosPage() {
               <span className="text-sm text-muted-foreground font-medium">Técnicos ativos</span>
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">operando</span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(totalAtivos, loadingInicial)}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
+              <MetricValue value={totalAtivos} loading={loadingInicial} />
+            </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
@@ -508,7 +531,9 @@ export default function TecnicosPage() {
               <span className="text-sm text-muted-foreground font-medium">Técnicos inativos</span>
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">fora da escala</span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(totalInativos, loadingInicial)}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
+              <MetricValue value={totalInativos} loading={loadingInicial} />
+            </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-muted-foreground flex items-center gap-1">
                 <CircleMinusIcon className="size-3.5 text-gray-400 dark:text-muted-foreground" />
@@ -523,7 +548,9 @@ export default function TecnicosPage() {
               <span className="text-sm text-muted-foreground font-medium">Com alertas ativos</span>
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">hoje</span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(tecnicosComAlertas, loadingInicial)}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
+              <MetricValue value={tecnicosComAlertas} loading={loadingInicial} />
+            </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-muted-foreground">
                 {loadingInicial ? "Sincronizando disponibilidade" : `${Math.max(totalAtivos - tecnicosComAlertas, 0)} disponiveis`}
