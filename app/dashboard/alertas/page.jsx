@@ -23,7 +23,6 @@ import { SiteHeader } from "@/components/site-header"
 import {
   AlertTriangleIcon,
   EllipsisVerticalIcon,
-  PlusIcon,
   ArrowLeftIcon,
   EyeIcon,
   SearchIcon,
@@ -33,6 +32,7 @@ import {
   ChevronsRightIcon,
   CircleCheckIcon,
   CircleXIcon,
+  RefreshCcwIcon,
   ShieldAlertIcon,
 } from "lucide-react"
 import {
@@ -126,7 +126,21 @@ function isStatusCancelavel(status) {
   return status === "ATIVO" || status === "EM_ANDAMENTO"
 }
 
-function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, canUpdateAlertStatus }) {
+function StatePanel({ message, tone = "muted" }) {
+  return (
+    <div
+      className={`flex min-h-[420px] items-center justify-center rounded-lg border border-dashed px-4 text-center text-sm ${
+        tone === "error"
+          ? "border-destructive/30 bg-destructive/5 text-destructive"
+          : "border-border/60 bg-muted/20 text-muted-foreground"
+      }`}
+    >
+      {message}
+    </div>
+  )
+}
+
+function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, canStartAlertStatus, canResolveAlertStatus }) {
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const columns = React.useMemo(() => [
     {
@@ -150,8 +164,8 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
       id: "actions",
       cell: ({ row }) => {
         const chamado = row.original
-        const canIniciar = canUpdateAlertStatus && chamado.status === "ATIVO"
-        const canResolver = canUpdateAlertStatus && chamado.status === "EM_ANDAMENTO"
+        const canIniciar = canStartAlertStatus && chamado.status === "ATIVO"
+        const canResolver = canResolveAlertStatus && chamado.status === "EM_ANDAMENTO"
         const canCancelar = canCancelAlertas && isStatusCancelavel(chamado.status)
 
         return (
@@ -186,7 +200,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
         )
       },
     },
-  ], [canCancelAlertas, canUpdateAlertStatus, onVer, onCancelar, onStatus])
+  ], [canCancelAlertas, canResolveAlertStatus, canStartAlertStatus, onVer, onCancelar, onStatus])
 
   const table = useReactTable({
     data,
@@ -268,9 +282,11 @@ export default function AlertasPage() {
   const [form, setForm] = React.useState(formVazio)
   const [dialogCancelar, setDialogCancelar] = React.useState(false)
   const [alertaCancelar, setAlertaCancelar] = React.useState(null)
-  const canCreateAlertas = permissions.canCreateAlertas
-  const canCancelAlertas = permissions.canDeleteAlertas
-  const canUpdateAlertStatus = permissions.canUpdateAlertStatus
+  const canCancelAlertas = false
+  const canStartAlertStatus = permissions.isTecnico
+  const canResolveAlertStatus = permissions.isTecnico
+  const loadingInicial = carregando && alertas.length === 0
+  const errorSemDados = status === "error" && alertas.length === 0
 
   const totalAtivos = alertas.filter((a) => a.status === "ATIVO").length
   const totalEmAndamento = alertas.filter((a) => a.status === "EM_ANDAMENTO").length
@@ -302,10 +318,6 @@ export default function AlertasPage() {
   }, [alertas, searchParams])
 
   function abrirCriar() {
-    if (!canCreateAlertas) {
-      return
-    }
-
     setModoSheet("criar")
     setForm(formVazio)
     setAlertaSelecionado(null)
@@ -327,13 +339,13 @@ export default function AlertasPage() {
     setDialogCancelar(true)
   }
 
-  function cancelar() {
+  async function cancelar() {
     if (!alertaCancelar) {
       return
     }
 
     try {
-      cancelarAlerta(alertaCancelar.id)
+      await cancelarAlerta(alertaCancelar.id)
       toast.success("Chamado cancelado.")
       setDialogCancelar(false)
       setSheetAberto(false)
@@ -343,9 +355,9 @@ export default function AlertasPage() {
     }
   }
 
-  function handleStatus(id, status) {
+  async function handleStatus(id, status) {
     try {
-      atualizarStatus(id, status)
+      await atualizarStatus(id, status)
       const labels = {
         EM_ANDAMENTO: "atendimento iniciado",
         RESOLVIDO: "resolvido",
@@ -357,14 +369,14 @@ export default function AlertasPage() {
     }
   }
 
-  function salvar() {
+  async function salvar() {
     if (!form.maquinaNome.trim() || !form.sensorNome.trim() || !form.mensagem.trim()) {
       toast.error("Preencha todos os campos obrigatorios.")
       return
     }
 
     try {
-      adicionarAlerta({
+      await adicionarAlerta({
         ...form,
         maquinaId: form.maquinaId ? Number(form.maquinaId) : null,
         sensorId: form.sensorId ? Number(form.sensorId) : null,
@@ -400,7 +412,8 @@ export default function AlertasPage() {
     onCancelar: confirmarCancelar,
     onStatus: handleStatus,
     canCancelAlertas,
-    canUpdateAlertStatus,
+    canStartAlertStatus,
+    canResolveAlertStatus,
   }
 
   return (
@@ -419,15 +432,31 @@ export default function AlertasPage() {
               </div>
             </div>
           </div>
-          {canCreateAlertas ? (
-            <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <PlusIcon className="mr-1 size-4" />
-              Novo chamado
-            </Button>
-          ) : null}
+          <Button variant="outline" onClick={() => recarregarAlertas()} disabled={carregando || salvando}>
+            <RefreshCcwIcon className="mr-1 size-4" />
+            Atualizar
+          </Button>
         </div>
 
         <Separator />
+
+        {mensagem ? (
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm ${
+              status === "error"
+                ? "border-destructive/25 bg-destructive/5 text-destructive"
+                : "border-border/60 bg-muted/30 text-muted-foreground"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span>{mensagem}</span>
+              <Button variant="outline" size="sm" onClick={() => recarregarAlertas()} disabled={carregando || salvando}>
+                <RefreshCcwIcon className="mr-1 size-4" />
+                Atualizar
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
@@ -498,34 +527,40 @@ export default function AlertasPage() {
           <Input placeholder="Buscar por maquina, sensor, tipo ou status..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-8" />
         </div>
 
-        <Tabs defaultValue="ativos" className="w-full flex-col gap-4">
-          <TabsList>
-            <TabsTrigger value="ativos">
-              Disponiveis{ativos.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{ativos.length}</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="em-andamento">
-              Em andamento{emAndamento.length > 0 && <Badge variant="secondary" className="ml-1.5 border-yellow-200! bg-yellow-100! text-yellow-700! dark:border-yellow-900/60! dark:bg-yellow-950/30! dark:text-yellow-300!">{emAndamento.length}</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="resolvidos">
-              Resolvidos{resolvidos.length > 0 && <Badge variant="secondary" className="ml-1.5">{resolvidos.length}</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="cancelados">
-              Cancelados{cancelados.length > 0 && <Badge variant="secondary" className="ml-1.5">{cancelados.length}</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="todos">Todos ({dadosFiltrados.length})</TabsTrigger>
-          </TabsList>
-          {[
-            { value: "ativos", data: ativos },
-            { value: "em-andamento", data: emAndamento },
-            { value: "resolvidos", data: resolvidos },
-            { value: "cancelados", data: cancelados },
-            { value: "todos", data: dadosFiltrados },
-          ].map(({ value, data }) => (
-            <TabsContent key={value} value={value} className="flex flex-col gap-4">
-              <AlertasTable data={data} {...tableProps} />
-            </TabsContent>
-          ))}
-        </Tabs>
+        {loadingInicial ? (
+          <StatePanel message="Sincronizando chamados gerados pelos sensores..." />
+        ) : errorSemDados ? (
+          <StatePanel message={mensagem || "Nao foi possivel carregar os chamados."} tone="error" />
+        ) : (
+          <Tabs defaultValue="ativos" className="w-full flex-col gap-4">
+            <TabsList>
+              <TabsTrigger value="ativos">
+                Disponiveis{ativos.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{ativos.length}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="em-andamento">
+                Em andamento{emAndamento.length > 0 && <Badge variant="secondary" className="ml-1.5 border-yellow-200! bg-yellow-100! text-yellow-700! dark:border-yellow-900/60! dark:bg-yellow-950/30! dark:text-yellow-300!">{emAndamento.length}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="resolvidos">
+                Resolvidos{resolvidos.length > 0 && <Badge variant="secondary" className="ml-1.5">{resolvidos.length}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="cancelados">
+                Cancelados{cancelados.length > 0 && <Badge variant="secondary" className="ml-1.5">{cancelados.length}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="todos">Todos ({dadosFiltrados.length})</TabsTrigger>
+            </TabsList>
+            {[
+              { value: "ativos", data: ativos },
+              { value: "em-andamento", data: emAndamento },
+              { value: "resolvidos", data: resolvidos },
+              { value: "cancelados", data: cancelados },
+              { value: "todos", data: dadosFiltrados },
+            ].map(({ value, data }) => (
+              <TabsContent key={value} value={value} className="flex flex-col gap-4">
+                <AlertasTable data={data} {...tableProps} />
+              </TabsContent>
+            ))}
+          </Tabs>
+        )}
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
           <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
@@ -577,12 +612,12 @@ export default function AlertasPage() {
                   </div>
                   <Separator />
                   <div className="flex flex-col gap-2">
-                    {canUpdateAlertStatus && alertaSelecionado.status === "ATIVO" ? (
+                    {canStartAlertStatus && alertaSelecionado.status === "ATIVO" ? (
                       <Button className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "EM_ANDAMENTO"); setSheetAberto(false) }}>
                         <AlertTriangleIcon className="mr-1 size-4" /> Iniciar atendimento
                       </Button>
                     ) : null}
-                    {canUpdateAlertStatus && alertaSelecionado.status === "EM_ANDAMENTO" ? (
+                    {canResolveAlertStatus && alertaSelecionado.status === "EM_ANDAMENTO" ? (
                       <Button className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "RESOLVIDO"); setSheetAberto(false) }}>
                         <CircleCheckIcon className="mr-1 size-4" /> Resolver chamado
                       </Button>

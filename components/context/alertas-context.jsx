@@ -1,253 +1,195 @@
 "use client"
 
 import * as React from "react"
-import dadosIniciais from "@/app/dashboard/alertas/data.json"
-import { getAuthSession } from "@/lib/auth-session"
-import { getDashboardPermissions } from "@/lib/dashboard-permissions"
+
+import { SENSOR_READING_EVENT } from "@/components/context/sensores-context"
+import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
+import {
+  extractCollection,
+  fetchDashboardJson,
+  getHttpErrorStatus,
+  normalizeAlertaCollection,
+  requestDashboardJson,
+} from "@/lib/dashboard-api"
 
 /** @typedef {import("@/lib/orbis-types").WithChildrenProps} WithChildrenProps */
-/** @typedef {import("@/lib/orbis-types").Alerta} Alerta */
 /** @typedef {import("@/lib/orbis-types").NovoAlertaInput} NovoAlertaInput */
-/** @typedef {import("@/lib/orbis-types").AtualizacaoAlertaInput} AtualizacaoAlertaInput */
 /** @typedef {import("@/lib/orbis-types").StatusAlerta} StatusAlerta */
 /** @typedef {import("@/lib/orbis-types").AlertasContextValue} AlertasContextValue */
-
-const STORAGE_KEY = "orbis-alertas"
-
-const STATUS_ALIASES = {
-  ABERTO: "ATIVO",
-  ATENDIDO: "RESOLVIDO",
-  IGNORADO: "CANCELADO",
-}
-
-const STATUS_VALIDOS = new Set(["ATIVO", "EM_ANDAMENTO", "RESOLVIDO", "CANCELADO"])
-
-const TRANSICOES_TECNICO = {
-  ATIVO: new Set(["EM_ANDAMENTO"]),
-  EM_ANDAMENTO: new Set(["RESOLVIDO"]),
-}
-
-const STATUS_CANCELAVEIS = new Set(["ATIVO", "EM_ANDAMENTO"])
-
-function normalizeString(value, fallback = "") {
-  return typeof value === "string" && value.trim() ? value.trim() : fallback
-}
-
-/**
- * @param {unknown} value
- * @returns {StatusAlerta}
- */
-function normalizeAlertaStatus(value) {
-  const normalized = normalizeString(value)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "_")
-    .toUpperCase()
-
-  const mapped = STATUS_ALIASES[normalized] ?? normalized
-
-  return STATUS_VALIDOS.has(mapped) ? /** @type {StatusAlerta} */ (mapped) : "ATIVO"
-}
-
-/**
- * @param {StatusAlerta} statusAtual
- * @param {StatusAlerta} novoStatus
- * @returns {boolean}
- */
-function canAtualizarStatus(statusAtual, novoStatus) {
-  return TRANSICOES_TECNICO[statusAtual]?.has(novoStatus) ?? false
-}
-
-/**
- * @param {any} raw
- * @returns {Alerta}
- */
-function normalizeAlerta(raw) {
-  const { descricao, mensagem, status, ...rest } = raw && typeof raw === "object" ? raw : {}
-
-  return {
-    ...rest,
-    maquinaId: rest.maquinaId ?? null,
-    sensorId: rest.sensorId ?? null,
-    tecnicoId: rest.tecnicoId ?? null,
-    tecnicoNome: rest.tecnicoNome ?? null,
-    status: normalizeAlertaStatus(status),
-    mensagem: normalizeString(mensagem ?? descricao, "Chamado sem mensagem registrada."),
-  }
-}
-
-/**
- * @param {unknown} value
- * @returns {Alerta[]}
- */
-function normalizeAlertaCollection(value) {
-  return Array.isArray(value) ? value.map((item) => normalizeAlerta(item)) : []
-}
-
-/** @type {Alerta[]} */
-const ALERTAS_INICIAIS = normalizeAlertaCollection(dadosIniciais)
 
 /** @type {React.Context<AlertasContextValue | null>} */
 const AlertasContext = React.createContext(null)
 
-/**
- * @returns {Alerta[]}
- */
-function carregarAlertas() {
-  if (typeof window === "undefined") return ALERTAS_INICIAIS
-
-  try {
-    const salvo = localStorage.getItem(STORAGE_KEY)
-    return salvo ? normalizeAlertaCollection(JSON.parse(salvo)) : ALERTAS_INICIAIS
-  } catch {
-    return ALERTAS_INICIAIS
-  }
-}
-
-function getAlertasMutationSession() {
-  const session = getAuthSession()
-
-  if (!session?.accessToken) {
-    throw new Error("Faca login para gerenciar os chamados.")
-  }
-
-  return {
-    session,
-    permissions: getDashboardPermissions(session.usuario),
-  }
+function getOpenMaintenance(payload) {
+  return extractCollection(payload).find((item) => item?.status === "EM_ANDAMENTO") ?? null
 }
 
 /**
  * @param {WithChildrenProps} props
  */
 export function AlertasProvider({ children }) {
-  const [alertas, setAlertas] = React.useState(() => carregarAlertas())
+  const [alertas, setAlertas] = React.useState([])
+  const [status, setStatus] = React.useState("loading")
+  const [mensagem, setMensagem] = React.useState("Carregando chamados...")
+  const [salvando, setSalvando] = React.useState(false)
 
-  React.useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(alertas))
-    } catch {}
-  }, [alertas])
+  const carregarAlertas = React.useCallback(async ({ silent = false } = {}) => {
+    const session = getAuthSession()
 
-  /**
-   * @param {NovoAlertaInput} dados
-   * @returns {Alerta}
-   */
-  function adicionarAlerta(dados) {
-    const { permissions } = getAlertasMutationSession()
-
-    if (!permissions.canCreateAlertas) {
-      throw new Error("Seu perfil pode apenas atualizar o status dos chamados.")
+    if (!session?.accessToken) {
+      setAlertas([])
+      setStatus("error")
+      setMensagem("Faca login para carregar os chamados.")
+      return
     }
 
-    const novo = normalizeAlerta({
-      ...dados,
-      id: alertas.length > 0 ? Math.max(...alertas.map((alerta) => alerta.id)) + 1 : 1,
-      maquinaId: dados.maquinaId ?? null,
-      sensorId: dados.sensorId ?? null,
-      status: "ATIVO",
-      criadoEm: new Date().toISOString(),
-      atualizadoEm: null,
-    })
+    if (!silent) {
+      setStatus("loading")
+      setMensagem("Carregando chamados...")
+    }
 
-    setAlertas((prev) => [novo, ...prev])
-    return novo
+    try {
+      const payload = await fetchDashboardJson("/alertas", session.accessToken, "os chamados")
+      setAlertas(normalizeAlertaCollection(payload))
+      setStatus("success")
+      setMensagem("")
+    } catch (error) {
+      if (getHttpErrorStatus(error) === 401) {
+        clearAuthSession()
+      }
+
+      setStatus("error")
+      setMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar os chamados.")
+      setAlertas((current) => (silent ? current : []))
+      throw error
+    }
+  }, [])
+
+  React.useEffect(() => {
+    carregarAlertas().catch(() => {})
+  }, [carregarAlertas])
+
+  React.useEffect(() => {
+    let reloadTimer = null
+
+    function handleSensorReading() {
+      window.clearTimeout(reloadTimer)
+      reloadTimer = window.setTimeout(() => {
+        carregarAlertas({ silent: true }).catch(() => {})
+      }, 600)
+    }
+
+    window.addEventListener(SENSOR_READING_EVENT, handleSensorReading)
+
+    return () => {
+      window.clearTimeout(reloadTimer)
+      window.removeEventListener(SENSOR_READING_EVENT, handleSensorReading)
+    }
+  }, [carregarAlertas])
+
+  async function executarMutacao(callback) {
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      const error = new Error("Faca login para gerenciar os chamados.")
+      setStatus("error")
+      setMensagem(error.message)
+      throw error
+    }
+
+    setSalvando(true)
+
+    try {
+      const result = await callback(session.accessToken)
+      await carregarAlertas({ silent: true })
+      return result
+    } catch (error) {
+      if (getHttpErrorStatus(error) === 401) {
+        clearAuthSession()
+      }
+
+      const message = error instanceof Error ? error.message : "Nao foi possivel atualizar o chamado."
+      setStatus((current) => (current === "loading" ? "error" : current))
+      setMensagem(message)
+      throw error instanceof Error ? error : new Error(message)
+    } finally {
+      setSalvando(false)
+    }
   }
 
   /**
-   * @param {number} id
-   * @param {AtualizacaoAlertaInput} dados
+   * @param {NovoAlertaInput} _dados
    */
-  function editarAlerta(id, dados) {
-    const { permissions } = getAlertasMutationSession()
-
-    if (!permissions.canCreateAlertas) {
-      throw new Error("Seu perfil pode apenas atualizar o status dos chamados.")
-    }
-
-    setAlertas((prev) => prev.map((alerta) => (alerta.id === id ? normalizeAlerta({ ...alerta, ...dados }) : alerta)))
+  async function adicionarAlerta(_dados) {
+    throw new Error("Os chamados sao gerados automaticamente pelas leituras dos sensores.")
   }
 
   /**
    * @param {number} id
    * @param {StatusAlerta} novoStatus
    */
-  function atualizarStatus(id, novoStatus) {
-    const { session, permissions } = getAlertasMutationSession()
-
-    if (!permissions.canUpdateAlertStatus) {
-      throw new Error("Seu perfil nao pode alterar chamados.")
-    }
-
-    const statusDestino = normalizeAlertaStatus(novoStatus)
-    const chamadoAtual = alertas.find((alerta) => alerta.id === id)
-
-    if (!chamadoAtual) {
-      throw new Error("Chamado nao encontrado.")
-    }
-
-    if (!canAtualizarStatus(chamadoAtual.status, statusDestino)) {
-      throw new Error("Este chamado nao pode seguir para o status selecionado.")
-    }
-
-    const usuario = session.usuario
-
-    setAlertas((prev) =>
-      prev.map((alerta) =>
-        alerta.id === id
-          ? {
-              ...alerta,
-              status: statusDestino,
-              atualizadoEm: new Date().toISOString(),
-              ...(statusDestino === "EM_ANDAMENTO"
-                ? {
-                    tecnicoId: usuario?.id ?? alerta.tecnicoId ?? null,
-                    tecnicoNome: usuario?.nome || alerta.tecnicoNome || null,
-                  }
-                : {}),
-            }
-          : alerta
+  async function atualizarStatus(id, novoStatus) {
+    if (novoStatus === "EM_ANDAMENTO") {
+      return await executarMutacao((accessToken) =>
+        requestDashboardJson("/manutencoes", accessToken, "o inicio do atendimento", {
+          method: "POST",
+          body: {
+            alertaId: id,
+            observacao: "Atendimento iniciado pelo dashboard.",
+          },
+        })
       )
-    )
+    }
+
+    if (novoStatus === "RESOLVIDO") {
+      return await executarMutacao(async (accessToken) => {
+        const manutencoes = await fetchDashboardJson(`/manutencoes/alerta/${id}`, accessToken, "as manutencoes do chamado")
+        const manutencao = getOpenMaintenance(manutencoes)
+
+        if (!manutencao?.id) {
+          throw new Error("Nao foi encontrada uma manutencao em andamento para este chamado.")
+        }
+
+        return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "a resolucao do chamado", {
+          method: "PUT",
+          body: {
+            status: "RESOLVIDO",
+            observacao: manutencao.observacao || "Chamado resolvido pelo dashboard.",
+          },
+        })
+      })
+    }
+
+    throw new Error("Este status nao pode ser aplicado pelo fluxo atual do backend.")
   }
 
   /**
-   * @param {number} id
+   * @param {number} _id
    */
-  function cancelarAlerta(id) {
-    const { permissions } = getAlertasMutationSession()
-
-    if (!permissions.canDeleteAlertas) {
-      throw new Error("Apenas administradores podem cancelar chamados.")
-    }
-
-    const chamadoAtual = alertas.find((alerta) => alerta.id === id)
-
-    if (!chamadoAtual) {
-      throw new Error("Chamado nao encontrado.")
-    }
-
-    if (!STATUS_CANCELAVEIS.has(chamadoAtual.status)) {
-      throw new Error("Apenas chamados ativos ou em andamento podem ser cancelados.")
-    }
-
-    setAlertas((prev) =>
-      prev.map((alerta) =>
-        alerta.id === id
-          ? {
-              ...alerta,
-              status: "CANCELADO",
-              atualizadoEm: new Date().toISOString(),
-            }
-          : alerta
-      )
-    )
+  async function cancelarAlerta(_id) {
+    throw new Error("O backend atual nao possui rota para cancelar chamados.")
   }
 
-  function resetarDados() {
-    setAlertas(ALERTAS_INICIAIS)
-    localStorage.removeItem(STORAGE_KEY)
-  }
+  const recarregarAlertas = React.useCallback(async () => {
+    await carregarAlertas()
+  }, [carregarAlertas])
+
+  const resetarDados = React.useCallback(async () => {
+    await carregarAlertas()
+  }, [carregarAlertas])
+
+  const value = React.useMemo(() => ({
+    alertas,
+    status,
+    mensagem,
+    carregando: status === "loading",
+    salvando,
+    adicionarAlerta,
+    atualizarStatus,
+    cancelarAlerta,
+    recarregarAlertas,
+    resetarDados,
+  }), [alertas, status, mensagem, salvando, recarregarAlertas, resetarDados])
 
   return (
     <AlertasContext.Provider

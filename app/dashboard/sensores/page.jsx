@@ -83,7 +83,7 @@ function StatusBadge({ value }) {
 
 function LeituraCell({ valor, unidade, limiteMin, limiteMax }) {
   if (valor === undefined || valor === null) {
-    return <span className="text-sm text-muted-foreground">--</span>
+    return <span className="text-sm text-muted-foreground">N/A</span>
   }
 
   const overLimit = valor > limiteMax || valor < limiteMin
@@ -329,7 +329,6 @@ export default function SensoresPage() {
       maquinaId,
       tipo: form.tipo.trim(),
       status: "ONLINE",
-      active: true,
       limiteTemperatura: parseDecimalInput(form.limiteTemperatura),
       idealTemperatura: parseDecimalInput(form.idealTemperatura),
       limiteVibracao: parseDecimalInput(form.limiteVibracao),
@@ -440,7 +439,7 @@ export default function SensoresPage() {
         const temperatura = row.original.temperatura
 
         if (!temperatura) {
-          return <span className="text-sm text-muted-foreground">--</span>
+          return <span className="text-sm text-muted-foreground">N/A</span>
         }
 
         if (!sensorAtivo) {
@@ -463,7 +462,7 @@ export default function SensoresPage() {
         const vibracao = row.original.vibracao
 
         if (!vibracao) {
-          return <span className="text-sm text-muted-foreground">--</span>
+          return <span className="text-sm text-muted-foreground">N/A</span>
         }
 
         if (!sensorAtivo) {

@@ -1,12 +1,16 @@
 "use client"
 
 import * as React from "react"
+import { io } from "socket.io-client"
 
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import {
+  API_URL,
   fetchDashboardJson,
   getHttpErrorStatus,
+  mergeSensorLeitura,
+  mergeSensorLeituras,
   normalizeSensorCollection,
   requestDashboardJson,
 } from "@/lib/dashboard-api"
@@ -15,6 +19,8 @@ import {
 /** @typedef {import("@/lib/orbis-types").SensoresContextValue} SensoresContextValue */
 /** @typedef {import("@/lib/orbis-types").NovoSensorInput} NovoSensorInput */
 /** @typedef {import("@/lib/orbis-types").AtualizacaoSensorInput} AtualizacaoSensorInput */
+
+export const SENSOR_READING_EVENT = "orbis-sensor-reading"
 
 /** @type {React.Context<SensoresContextValue | null>} */
 const SensoresContext = React.createContext(null)
@@ -45,7 +51,14 @@ export function SensoresProvider({ children }) {
 
     try {
       const payload = await fetchDashboardJson("/sensores", session.accessToken, "os sensores")
-      setSensores(normalizeSensorCollection(payload))
+      let sensoresNormalizados = normalizeSensorCollection(payload)
+
+      try {
+        const leiturasPayload = await fetchDashboardJson("/leituras", session.accessToken, "as leituras dos sensores")
+        sensoresNormalizados = mergeSensorLeituras(sensoresNormalizados, leiturasPayload)
+      } catch {}
+
+      setSensores(sensoresNormalizados)
       setStatus("success")
       setMensagem("")
     } catch (error) {
@@ -63,6 +76,39 @@ export function SensoresProvider({ children }) {
   React.useEffect(() => {
     carregarSensores().catch(() => {})
   }, [carregarSensores])
+
+  React.useEffect(() => {
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      return
+    }
+
+    const socket = io(API_URL, {
+      auth: {
+        token: session.accessToken,
+        accessToken: session.accessToken,
+      },
+      query: {
+        token: session.accessToken,
+      },
+      transports: ["websocket", "polling"],
+    })
+
+    function handleNovaLeitura(payload) {
+      setSensores((current) => mergeSensorLeitura(current, payload))
+      window.dispatchEvent(new CustomEvent(SENSOR_READING_EVENT, { detail: payload }))
+    }
+
+    socket.on("novaLeitura", handleNovaLeitura)
+    socket.on("nova-leitura", handleNovaLeitura)
+
+    return () => {
+      socket.off("novaLeitura", handleNovaLeitura)
+      socket.off("nova-leitura", handleNovaLeitura)
+      socket.disconnect()
+    }
+  }, [])
 
   /**
    * @param {string} endpoint

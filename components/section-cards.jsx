@@ -11,6 +11,8 @@ import { useTecnicos } from "@/components/context/tecnicos-context"
 import { MetricValue } from "@/components/animated-metric"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { DashboardMetricCardsSkeleton } from "@/components/dashboard-skeletons"
+import { useAlertas } from "@/components/context/alertas-context"
+import { useSensores } from "@/components/context/sensores-context"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -198,18 +200,18 @@ export function SectionCards() {
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
-                {loading ? null : resumo.alertasAtivos > 0 ? <TrendingDownIcon /> : <TrendingUpIcon />}
-                {loading ? "Atualizando" : `${resumo.alertasAtivos} ativos`}
+                {loading ? null : alertasAtivos > 0 ? <TrendingDownIcon /> : <TrendingUpIcon />}
+                {loading ? "Atualizando" : `${alertasAtivos} ativos`}
               </Badge>
             </CardAction>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex gap-2 font-medium">
-              {loading ? "Conferindo alertas em aberto" : `${resumo.alertaSemAtendimento} sem atendimento`}
-              {loading || resumo.alertaSemAtendimento > 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
+              {loading ? "Conferindo alertas em aberto" : `${alertaSemAtendimento} sem atendimento`}
+              {loading || alertaSemAtendimento > 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
             </div>
             <div className="text-muted-foreground">
-              {loading ? "Resumo diário em sincronização" : `${resumo.alertasAtendidosHoje} já atendidos hoje`}
+              {loading ? "Resumo diário em sincronização" : `${alertasAtendidosHoje} já atendidos hoje`}
             </div>
           </CardFooter>
         </Card>
@@ -222,15 +224,15 @@ export function SectionCards() {
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
-                {loading ? null : resumo.sensoresOnline > 0 ? <TrendingUpIcon /> : <TrendingDownIcon />}
-                {loading ? "Atualizando" : resumo.sensoresOnline > 0 ? "Monitorando" : "Sem sinal"}
+                {loading ? null : sensoresOnline > 0 ? <TrendingUpIcon /> : <TrendingDownIcon />}
+                {loading ? "Atualizando" : sensoresOnline > 0 ? "Monitorando" : "Sem sinal"}
               </Badge>
             </CardAction>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex gap-2 font-medium">
-              {loading ? "Sincronizando status dos sensores" : `${resumo.sensoresOnline} sensores transmitindo agora`}
-              {loading || resumo.sensoresOnline === 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
+              {loading ? "Sincronizando status dos sensores" : `${sensoresOnline} sensores transmitindo agora`}
+              {loading || sensoresOnline === 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
             </div>
             <div className="text-muted-foreground">
               {loading ? "Lendo dados mais recentes da API" : "Total considera apenas sensores com status ONLINE"}

@@ -58,6 +58,14 @@ export interface SensorLeitura {
   limiteMax: number;
 }
 
+export interface SensorLeituraApi {
+  id: number | null;
+  sensorId: number;
+  temperatura: number | null;
+  vibracao: number | null;
+  criadoEm: string;
+}
+
 export type StatusSensor = "ONLINE" | "OFFLINE";
 
 export interface Sensor {
@@ -81,7 +89,6 @@ export interface NovoSensorInput {
   tipo: string;
   maquinaId: number | null;
   status: StatusSensor;
-  active: boolean;
   limiteTemperatura: number;
   idealTemperatura: number;
   limiteVibracao: number;
@@ -202,11 +209,15 @@ export interface TecnicosContextValue {
 
 export interface AlertasContextValue {
   alertas: Alerta[];
-  adicionarAlerta: (dados: NovoAlertaInput) => Alerta;
-  editarAlerta: (id: number, dados: AtualizacaoAlertaInput) => void;
-  atualizarStatus: (id: number, novoStatus: StatusAlerta) => void;
-  cancelarAlerta: (id: number) => void;
-  resetarDados: () => void;
+  status: "loading" | "success" | "error";
+  mensagem: string;
+  carregando: boolean;
+  salvando: boolean;
+  adicionarAlerta: (dados: NovoAlertaInput) => Promise<void>;
+  atualizarStatus: (id: number, novoStatus: StatusAlerta) => Promise<void>;
+  cancelarAlerta: (id: number) => Promise<void>;
+  recarregarAlertas: () => Promise<void>;
+  resetarDados: () => Promise<void>;
 }
 
 export interface ChartConfigItem {
