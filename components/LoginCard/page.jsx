@@ -281,7 +281,7 @@ export default function LoginCard({isDark}) {
         }
       `}</style>
 
-      <div className="orbis-card" style={cardStyles}>
+      <div className="orbis-card !border-none" style={cardStyles}>
         <div className="orbis-top">
           <img style={{ height: "55px" }} src="LogoBrancaGrande.svg" alt="" />
           <h2 className="orbis-greeting">Bem-vindo de volta</h2>
