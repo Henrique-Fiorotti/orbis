@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react"
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
 
+import { useAlertas } from "@/components/context/alertas-context"
 import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
+import { useMaquinas } from "@/components/context/maquinas-context"
+import { useSensores } from "@/components/context/sensores-context"
+import { useTecnicos } from "@/components/context/tecnicos-context"
+import { MetricValue } from "@/components/animated-metric"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { DashboardMetricCardsSkeleton } from "@/components/dashboard-skeletons"
 import { Badge } from "@/components/ui/badge"
@@ -62,71 +67,15 @@ function getErrorMessage(statusCode, payload) {
   return payload?.mensagem || payload?.message || `Erro ${statusCode} ao carregar o dashboard.`
 }
 
-function formatMetric(value, loading) {
-  return loading ? "--" : value
-}
-
-function useAnimatedNumber(target, { duration = 1400, decimals = 0 } = {}) {
-  const [value, setValue] = useState(0)
-
-  useEffect(() => {
-    const numericTarget = toNumber(target)
-
-    if (typeof window === "undefined") {
-      setValue(numericTarget)
-      return
-    }
-
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-
-    if (prefersReducedMotion || numericTarget === 0) {
-      setValue(numericTarget)
-      return
-    }
-
-    let frameId = 0
-    let startTime = 0
-
-    function animate(timestamp) {
-      if (!startTime) {
-        startTime = timestamp
-      }
-
-      const progress = Math.min((timestamp - startTime) / duration, 1)
-      const easedProgress = 1 - Math.pow(1 - progress, 3)
-      const nextValue = numericTarget * easedProgress
-
-      setValue(decimals > 0 ? Number(nextValue.toFixed(decimals)) : Math.round(nextValue))
-
-      if (progress < 1) {
-        frameId = requestAnimationFrame(animate)
-      } else {
-        setValue(numericTarget)
-      }
-    }
-
-    setValue(0)
-    frameId = requestAnimationFrame(animate)
-
-    return () => cancelAnimationFrame(frameId)
-  }, [target, duration, decimals])
-
-  return value
-}
-
-function AnimatedMetric({ value, suffix = "", decimals = 0 }) {
-  const animatedValue = useAnimatedNumber(value, { decimals })
-  const formattedValue = decimals > 0 ? animatedValue.toFixed(decimals) : animatedValue
-
-  return `${formattedValue}${suffix}`
-}
-
 export function SectionCards() {
+  const { status: maquinasStatus } = useMaquinas()
+  const { status: sensoresStatus } = useSensores()
+  const { status: tecnicosStatus } = useTecnicos()
+  const { status: alertasStatus = "success" } = useAlertas()
+  const { status: dashboardStatus } = useDashboardCharts()
   const [resumo, setResumo] = useState(EMPTY_RESUMO)
   const [status, setStatus] = useState("loading")
   const [mensagem, setMensagem] = useState("Carregando indicadores do dashboard...")
-  const { status: dashboardStatus } = useDashboardCharts()
-  
 
   useEffect(() => {
     const session = getAuthSession()
@@ -187,8 +136,14 @@ export function SectionCards() {
     }
   }, [])
 
-  const loading = status === "loading" || dashboardStatus === "loading"
-  const maquinasOk = formatMetric(resumo.maquinasFuncionando, loading)
+  const loading =
+    status === "loading" ||
+    dashboardStatus === "loading" ||
+    maquinasStatus === "loading" ||
+    sensoresStatus === "loading" ||
+    alertasStatus === "loading" ||
+    tecnicosStatus === "loading"
+  const maquinasOk = resumo.maquinasFuncionando
 
   if (loading) {
     return <DashboardMetricCardsSkeleton />
@@ -215,7 +170,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription>Máquinas ativas</CardDescription>
             <CardTitle className="text-[#5E17EB]! text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              <AnimatedMetric value={resumo.totalMaquinas} />
+              <MetricValue value={resumo.totalMaquinas} loading={loading} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
@@ -239,7 +194,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Alertas hoje</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              <AnimatedMetric value={resumo.alertasHoje} />
+              <MetricValue value={resumo.alertasHoje} loading={loading} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
@@ -263,7 +218,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Sensores online</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              <AnimatedMetric value={resumo.sensoresOnline} />
+              <MetricValue value={resumo.sensoresOnline} loading={loading} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
@@ -287,7 +242,7 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Integridade média</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              <AnimatedMetric value={resumo.integridadeMedia} suffix="%" decimals={1} />
+              <MetricValue value={resumo.integridadeMedia} loading={loading} suffix="%" decimals={1} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">

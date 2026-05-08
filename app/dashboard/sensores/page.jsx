@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { MetricValue } from "@/components/animated-metric"
 import { SiteHeader } from "@/components/site-header"
 import {
   ActivityIcon,
@@ -554,7 +555,9 @@ export default function SensoresPage() {
                 {loadingInicial ? "Sincronizando" : `${sensores.length} total`}
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{loadingInicial ? "--" : totalOnline}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
+              <MetricValue value={totalOnline} loading={loadingInicial} />
+            </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="flex items-center gap-1 text-green-700 dark:text-green-300">
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
@@ -574,7 +577,9 @@ export default function SensoresPage() {
                 {loadingInicial ? "..." : foraDoLimite > 0 ? "alerta" : "normal"}
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{loadingInicial ? "--" : foraDoLimite}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
+              <MetricValue value={foraDoLimite} loading={loadingInicial} />
+            </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-muted-foreground">
                 {loadingInicial ? "Verificando limites..." : `${Math.max(sensores.length - foraDoLimite, 0)} dentro dos limites`}
@@ -590,7 +595,9 @@ export default function SensoresPage() {
                 inativos
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{loadingInicial ? "--" : semMaquina}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
+              <MetricValue value={semMaquina} loading={loadingInicial} />
+            </span>
             <span className="text-sm text-muted-foreground">
               {loadingInicial ? "Conferindo vinculos..." : "Sensores sem maquina sao cadastrados como OFFLINE."}
             </span>

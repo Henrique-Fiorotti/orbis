@@ -21,6 +21,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { MaquinaDetailsPanel, MaquinaImagePreview } from "@/components/maquina-details-panel"
 import { SiteHeader } from "@/components/site-header"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
+import { MetricValue } from "@/components/animated-metric"
 import {
   CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, PlusIcon,
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
@@ -510,7 +511,9 @@ export default function MaquinasPage() {
                 {loadingInicial ? "Sincronizando" : `${maquinas.length} cadastradas`}
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(maquinas.length, loadingInicial)}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
+              <MetricValue value={maquinas.length} loading={loadingInicial} />
+            </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
@@ -530,7 +533,9 @@ export default function MaquinasPage() {
                 atencao
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(criticasAlta, loadingInicial)}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
+              <MetricValue value={criticasAlta} loading={loadingInicial} />
+            </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-red-600 dark:text-red-300 flex items-center gap-1">
                 <ShieldAlertIcon className="size-3.5" />
@@ -552,7 +557,9 @@ export default function MaquinasPage() {
                 {integridadeMedia >= 75 ? "Estável" : integridadeMedia >= 50 ? "Atenção" : "Crítico"}
               </span>
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(integridadeMedia, loadingInicial, "%")}</span>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
+              <MetricValue value={integridadeMedia} loading={loadingInicial} suffix="%" />
+            </span>
             <div className="flex flex-col gap-1.5">
               <div className="h-2 w-50 bg-gray-200 dark:bg-muted rounded-full overflow-hidden">
                 <div

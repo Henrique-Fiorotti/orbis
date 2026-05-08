@@ -250,7 +250,19 @@ export function AlertasProvider({ children }) {
   }
 
   return (
-    <AlertasContext.Provider value={{ alertas, adicionarAlerta, editarAlerta, atualizarStatus, cancelarAlerta, resetarDados }}>
+    <AlertasContext.Provider
+      value={{
+        alertas,
+        status: "success",
+        mensagem: "",
+        carregando: false,
+        adicionarAlerta,
+        editarAlerta,
+        atualizarStatus,
+        cancelarAlerta,
+        resetarDados,
+      }}
+    >
       {children}
     </AlertasContext.Provider>
   )
