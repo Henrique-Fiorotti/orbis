@@ -2,6 +2,7 @@
 
 import * as React from "react"
 
+import { useSensores } from "@/components/context/sensores-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import {
   fetchDashboardJson,
@@ -49,6 +50,7 @@ const DashboardChartsContext = React.createContext(null)
  */
 export function DashboardChartsProvider({ children }) {
   const [state, setState] = React.useState(INITIAL_STATE)
+  const sensoresContext = useSensores()
 
   React.useEffect(() => {
     const session = getAuthSession()
@@ -180,7 +182,23 @@ export function DashboardChartsProvider({ children }) {
     }
   }, [])
 
-  const value = React.useMemo(() => state, [state])
+  const value = React.useMemo(() => {
+    const sensoresErro =
+      sensoresContext.status === "error" ? sensoresContext.mensagem : state.errors.sensores
+    const sensoresSincronizados =
+      sensoresContext.sensores.length > 0 || sensoresContext.status !== "loading"
+        ? sensoresContext.sensores
+        : state.sensores
+
+    return {
+      ...state,
+      sensores: sensoresSincronizados,
+      errors: {
+        ...state.errors,
+        sensores: sensoresErro,
+      },
+    }
+  }, [state, sensoresContext.sensores, sensoresContext.status, sensoresContext.mensagem])
 
   return (
     <DashboardChartsContext.Provider value={value}>

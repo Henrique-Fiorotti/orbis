@@ -5,6 +5,7 @@ import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
 
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { DashboardMetricCardsSkeleton } from "@/components/dashboard-skeletons"
+import { useSensores } from "@/components/context/sensores-context"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -66,6 +67,7 @@ function formatMetric(value, loading) {
 }
 
 export function SectionCards() {
+  const { sensores } = useSensores()
   const [resumo, setResumo] = useState(EMPTY_RESUMO)
   const [status, setStatus] = useState("loading")
   const [mensagem, setMensagem] = useState("Carregando indicadores do dashboard...")
@@ -132,6 +134,9 @@ export function SectionCards() {
   const loading = status === "loading"
   const maquinasOk = formatMetric(resumo.maquinasFuncionando, loading)
   const integridadeFormatada = loading ? "--" : `${resumo.integridadeMedia.toFixed(1)}%`
+  const sensoresOnline = sensores.length > 0
+    ? sensores.filter((sensor) => sensor.status === "ONLINE").length
+    : resumo.sensoresOnline
 
   if (loading) {
     return <DashboardMetricCardsSkeleton />
@@ -206,19 +211,19 @@ export function SectionCards() {
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Sensores online</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {formatMetric(resumo.sensoresOnline, loading)}
+              {formatMetric(sensoresOnline, loading)}
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
-                {loading ? null : resumo.sensoresOnline > 0 ? <TrendingUpIcon /> : <TrendingDownIcon />}
-                {loading ? "Atualizando" : resumo.sensoresOnline > 0 ? "Monitorando" : "Sem sinal"}
+                {loading ? null : sensoresOnline > 0 ? <TrendingUpIcon /> : <TrendingDownIcon />}
+                {loading ? "Atualizando" : sensoresOnline > 0 ? "Monitorando" : "Sem sinal"}
               </Badge>
             </CardAction>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex gap-2 font-medium">
-              {loading ? "Sincronizando status dos sensores" : `${resumo.sensoresOnline} sensores transmitindo agora`}
-              {loading || resumo.sensoresOnline === 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
+              {loading ? "Sincronizando status dos sensores" : `${sensoresOnline} sensores transmitindo agora`}
+              {loading || sensoresOnline === 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
             </div>
             <div className="text-muted-foreground">
               {loading ? "Lendo dados mais recentes da API" : "Total considera apenas sensores com status ONLINE"}
