@@ -1,0 +1,300 @@
+"use client"
+
+import * as React from "react"
+import { useRouter } from "next/navigation"
+import {
+  AlertTriangleIcon,
+  NfcIcon,
+  SearchIcon,
+  UsersIcon,
+  WashingMachineIcon,
+  XIcon,
+} from "lucide-react"
+
+import { useAlertas } from "@/components/context/alertas-context"
+import { useMaquinas } from "@/components/context/maquinas-context"
+import { useSensores } from "@/components/context/sensores-context"
+import { useTecnicos } from "@/components/context/tecnicos-context"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
+
+const GROUP_LABELS = {
+  maquina: "Maquinas",
+  tecnico: "Tecnicos",
+  sensor: "Sensores",
+  alerta: "Alertas",
+}
+
+const GROUP_ICONS = {
+  maquina: WashingMachineIcon,
+  tecnico: UsersIcon,
+  sensor: NfcIcon,
+  alerta: AlertTriangleIcon,
+}
+
+function normalizeSearch(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+}
+
+function matchesSearch(item, query) {
+  const normalizedQuery = normalizeSearch(query)
+
+  if (!normalizedQuery) {
+    return true
+  }
+
+  return item.searchText.includes(normalizedQuery)
+}
+
+function buildSearchText(values) {
+  return normalizeSearch(values.filter(Boolean).join(" "))
+}
+
+function getInitials(value) {
+  return String(value ?? "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("")
+}
+
+function ResultIcon({ item }) {
+  const { type, title, image } = item
+  const Icon = GROUP_ICONS[type] ?? SearchIcon
+
+  if (image) {
+    return (
+      <span className="flex size-9 shrink-0 overflow-hidden rounded-lg border bg-muted">
+        <img src={image} alt="" className="size-full object-cover" />
+      </span>
+    )
+  }
+
+  if (type === "tecnico") {
+    return (
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-purple-100 text-xs font-semibold text-purple-700 dark:bg-primary/20 dark:text-primary-foreground">
+        {getInitials(title) || <UsersIcon className="size-4" />}
+      </span>
+    )
+  }
+
+  return (
+    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/50 text-[#3B2867] dark:text-white">
+      <Icon className="size-4" />
+    </span>
+  )
+}
+
+export function GlobalSearch({ open, onOpenChange }) {
+  const router = useRouter()
+  const inputRef = React.useRef(null)
+  const [query, setQuery] = React.useState("")
+  const { maquinas, carregando: carregandoMaquinas } = useMaquinas()
+  const { sensores, carregando: carregandoSensores } = useSensores()
+  const { tecnicos, carregando: carregandoTecnicos } = useTecnicos()
+  const { alertas, carregando: carregandoAlertas = false } = useAlertas()
+
+  const loading = carregandoMaquinas || carregandoSensores || carregandoTecnicos || carregandoAlertas
+
+  React.useEffect(() => {
+    if (!open) {
+      setQuery("")
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => inputRef.current?.focus(), 80)
+    return () => window.clearTimeout(timeoutId)
+  }, [open])
+
+  const items = React.useMemo(() => {
+    const machineItems = maquinas.map((maquina) => ({
+      id: `maquina-${maquina.id}`,
+      type: "maquina",
+      title: maquina.nome,
+      subtitle: [maquina.setor, maquina.tipo].filter(Boolean).join(" - "),
+      meta: maquina.status,
+      image: maquina.imagem,
+      href: `/dashboard/maquinas?machineId=${encodeURIComponent(maquina.id)}`,
+      searchText: buildSearchText([
+        maquina.nome,
+        maquina.setor,
+        maquina.tipo,
+        maquina.status,
+        maquina.criticidade,
+      ]),
+    }))
+
+    const tecnicoItems = tecnicos.map((tecnico) => ({
+      id: `tecnico-${tecnico.id}`,
+      type: "tecnico",
+      title: tecnico.nome,
+      subtitle: tecnico.email,
+      meta: tecnico.status,
+      image: tecnico.foto,
+      href: `/dashboard/tecnicos?tecnicoId=${encodeURIComponent(tecnico.id)}`,
+      searchText: buildSearchText([
+        tecnico.nome,
+        tecnico.email,
+        tecnico.telefone,
+        tecnico.especialidade,
+        tecnico.status,
+      ]),
+    }))
+
+    const sensorItems = sensores.map((sensor) => ({
+      id: `sensor-${sensor.id}`,
+      type: "sensor",
+      title: sensor.tipo || `Sensor #${sensor.id}`,
+      subtitle: sensor.maquinaId ? sensor.maquinaNome : "Sem maquina vinculada",
+      meta: sensor.status,
+      href: `/dashboard/sensores?sensorId=${encodeURIComponent(sensor.id)}`,
+      searchText: buildSearchText([
+        sensor.tipo,
+        sensor.maquinaNome,
+        sensor.status,
+        sensor.id,
+      ]),
+    }))
+
+    const alertaItems = alertas.map((alerta) => ({
+      id: `alerta-${alerta.id}`,
+      type: "alerta",
+      title: alerta.maquinaNome || `Chamado #${alerta.id}`,
+      subtitle: alerta.mensagem,
+      meta: alerta.status,
+      href: `/dashboard/alertas?alertaId=${encodeURIComponent(alerta.id)}`,
+      searchText: buildSearchText([
+        alerta.maquinaNome,
+        alerta.sensorNome,
+        alerta.mensagem,
+        alerta.tipo,
+        alerta.status,
+        alerta.severidade,
+        alerta.tecnicoNome,
+      ]),
+    }))
+
+    return [...machineItems, ...tecnicoItems, ...sensorItems, ...alertaItems]
+  }, [alertas, maquinas, sensores, tecnicos])
+
+  const results = React.useMemo(() => {
+    if (!query.trim()) {
+      return []
+    }
+
+    return items.filter((item) => matchesSearch(item, query)).slice(0, 24)
+  }, [items, query])
+
+  const groupedResults = React.useMemo(
+    () =>
+      results.reduce((acc, item) => {
+        if (!acc[item.type]) {
+          acc[item.type] = []
+        }
+
+        acc[item.type].push(item)
+        return acc
+      }, {}),
+    [results]
+  )
+
+  function handleSelect(item) {
+    onOpenChange(false)
+    router.push(item.href)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        showCloseButton={false}
+        className="top-6 w-[min(900px,calc(100vw-2rem))]! max-h-[min(820px,calc(100vh-2rem))] max-w-none! translate-y-0 overflow-hidden rounded-[28px]! border bg-background/95 p-0 shadow-2xl backdrop-blur-xl transition-all duration-300 ease-out data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-top-8 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-top-6 data-closed:zoom-out-95"
+      >
+        <DialogTitle className="sr-only ">Pesquisar</DialogTitle>
+        <div className="flex items-center gap-3 px-5 py-1.5">
+          <SearchIcon className="size-5 shrink-0 text-muted-foreground " />
+          <Input
+            ref={inputRef}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Pesquisar maquinas, tecnicos, sensores e alertas..."
+            className="h-12 border-0 bg-transparent px-0 text-[17px] shadow-none focus-visible:ring-0 md:text-[17px]"
+          />
+          <Button variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
+            <XIcon className="size-4" />
+            <span className="sr-only">Fechar</span>
+          </Button>
+        </div>
+
+        <div className={cn("max-h-[260px] overflow-y-auto px-2 py-2", query.trim() || loading ? "border-t" : "")}>
+          {loading ? (
+            <div className="grid gap-2 p-2">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="flex items-center gap-3 rounded-lg px-3 py-2">
+                  <span className="size-9 animate-pulse rounded-lg bg-muted" />
+                  <span className="flex flex-1 flex-col gap-2">
+                    <span className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+                    <span className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : !query.trim() ? (
+            <div className="flex min-h-28 items-center justify-center px-4 text-center text-sm text-muted-foreground">
+              Digite para encontrar maquinas, tecnicos, sensores ou alertas.
+            </div>
+          ) : results.length === 0 ? (
+            <div className="flex min-h-32 items-center justify-center px-4 text-center text-sm text-muted-foreground">
+              Nenhum resultado encontrado.
+            </div>
+          ) : (
+            Object.entries(groupedResults).map(([type, group]) => (
+              <div key={type} className="py-1">
+                <div className="px-3 py-2 text-xs font-semibold uppercase text-muted-foreground">
+                  {GROUP_LABELS[type] ?? type}
+                </div>
+                <div className="grid gap-1">
+                  {group.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleSelect(item)}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+                    >
+                      <ResultIcon item={item} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-foreground">{item.title}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{item.subtitle}</span>
+                      </span>
+                      {item.meta ? (
+                        <span
+                          className={cn(
+                            "hidden shrink-0 rounded-full border px-2 py-0.5 text-xs text-muted-foreground sm:inline-flex",
+                            item.type === "alerta" && item.meta === "ATIVO"
+                              ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+                              : ""
+                          )}
+                        >
+                          {item.meta}
+                        </span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

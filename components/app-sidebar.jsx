@@ -7,6 +7,7 @@ import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import { DashboardSettingsDialog } from "@/components/dashboard-settings-dialog"
+import { GlobalSearch } from "@/components/GlobalSearch"
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +25,7 @@ import {
   NfcIcon,
   SearchIcon,
   Settings2Icon,
+  ShieldCheckIcon,
   UsersIcon,
   WashingMachineIcon,
 } from "lucide-react"
@@ -54,6 +56,11 @@ const data = {
       title: "Tecnicos",
       url: "/dashboard/tecnicos",
       icon: <UsersIcon />,
+    },
+    {
+      title: "Admins",
+      url: "/dashboard/admins",
+      icon: <ShieldCheckIcon />,
     },
   ],
   navSecondary: [
@@ -86,6 +93,9 @@ function getNavMainItems(usuario) {
     if (item.url === "/dashboard/tecnicos") {
       return permissions.canViewTecnicos
     }
+    if (item.url === "/dashboard/admins") {
+      return permissions.isAdmin
+    }
     return true
   })
 }
@@ -103,6 +113,7 @@ function getUserDataFromSession() {
 export function AppSidebar({ ...props }) {
   const [navMainItems, setNavMainItems] = React.useState(() => getNavMainItems(getAuthSessionUser()))
   const [settingsOpen, setSettingsOpen] = React.useState(false)
+  const [searchOpen, setSearchOpen] = React.useState(false)
   const [userData, setUserData] = React.useState({
     name: "Orbis Admin",
     email: "carregando...",
@@ -117,7 +128,12 @@ export function AppSidebar({ ...props }) {
               ...item,
               onClick: () => setSettingsOpen(true),
             }
-          : item
+          : item.title === "Pesquisar"
+            ? {
+                ...item,
+                onClick: () => setSearchOpen(true),
+              }
+            : item
       ),
     []
   )
@@ -163,6 +179,7 @@ export function AppSidebar({ ...props }) {
         </SidebarFooter>
       </Sidebar>
       <DashboardSettingsDialog  open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </>
   )
 }
