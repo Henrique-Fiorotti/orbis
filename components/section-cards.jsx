@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
 
+import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { DashboardMetricCardsSkeleton } from "@/components/dashboard-skeletons"
 import { Badge } from "@/components/ui/badge"
@@ -124,6 +125,8 @@ export function SectionCards() {
   const [resumo, setResumo] = useState(EMPTY_RESUMO)
   const [status, setStatus] = useState("loading")
   const [mensagem, setMensagem] = useState("Carregando indicadores do dashboard...")
+  const { status: dashboardStatus } = useDashboardCharts()
+  
 
   useEffect(() => {
     const session = getAuthSession()
@@ -184,7 +187,7 @@ export function SectionCards() {
     }
   }, [])
 
-  const loading = status === "loading"
+  const loading = status === "loading" || dashboardStatus === "loading"
   const maquinasOk = formatMetric(resumo.maquinasFuncionando, loading)
 
   if (loading) {
