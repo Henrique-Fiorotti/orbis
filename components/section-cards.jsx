@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react"
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
 
+import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
+import { getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
+import { DashboardMetricCardsSkeleton } from "@/components/dashboard-skeletons"
 import { useAlertas } from "@/components/context/alertas-context"
 import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
@@ -13,8 +16,6 @@ import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { DashboardMetricCardsSkeleton } from "@/components/dashboard-skeletons"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://orbis-5hnm.onrender.com"
 
 const EMPTY_RESUMO = {
   totalMaquinas: 0,
@@ -55,16 +56,19 @@ function normalizeResumo(data) {
   }
 }
 
-function getErrorMessage(statusCode, payload) {
-  if (statusCode === 401) {
-    return "Sua sessão expirou. Faça login novamente."
+function formatMetric(value, loading) {
+  return loading ? "--" : value
+}
+
+function isToday(value) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return false
   }
 
-  if (statusCode === 403) {
-    return "Seu usuário não tem permissão para visualizar o resumo do dashboard."
-  }
-
-  return payload?.mensagem || payload?.message || `Erro ${statusCode} ao carregar o dashboard.`
+  const today = new Date()
+  return date.toDateString() === today.toDateString()
 }
 
 export function SectionCards() {
@@ -93,23 +97,7 @@ export function SectionCards() {
       setMensagem("Carregando indicadores do dashboard...")
 
       try {
-        const response = await fetch(`${API_URL}/dashboard/resumo`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-          cache: "no-store",
-        })
-
-        const payload = await response.json().catch(() => ({}))
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            clearAuthSession()
-          }
-
-          throw new Error(getErrorMessage(response.status, payload))
-        }
+        const payload = await requestDashboardJson("/dashboard/resumo", session.accessToken, "o resumo do dashboard")
 
         if (!isActive) {
           return
@@ -125,6 +113,9 @@ export function SectionCards() {
 
         setResumo(EMPTY_RESUMO)
         setStatus("error")
+        if (getHttpErrorStatus(error) === 401) {
+          clearAuthSession()
+        }
         setMensagem(error instanceof Error ? error.message : "Não foi possível carregar o resumo do dashboard.")
       }
     }
