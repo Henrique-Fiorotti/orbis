@@ -236,10 +236,6 @@ export default function TecnicosPage() {
     recarregarTecnicos(1, limiteItems)
   }, [limiteItems, permissions.canViewTecnicos, recarregarTecnicos])
 
-  if (!permissions.canViewTecnicos) {
-    return null
-  }
-
   function abrirCriar() {
     if (!canManageTecnicos) {
       return
@@ -431,6 +427,10 @@ export default function TecnicosPage() {
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
+
+  if (!permissions.canViewTecnicos) {
+    return null
+  }
 
   function getResumoCardClass(filtro) {
     return `${cardResumoBaseClass} ${

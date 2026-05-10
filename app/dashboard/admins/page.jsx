@@ -350,10 +350,6 @@ export default function AdminsPage() {
     }
   }, [permissions.isAdmin, searchParams])
 
-  if (!permissions.isAdmin) {
-    return null
-  }
-
   function abrirCriar() {
     setModoSheet("criar")
     setForm(formVazio)
@@ -589,6 +585,10 @@ export default function AdminsPage() {
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
+
+  if (!permissions.isAdmin) {
+    return null
+  }
 
   function getResumoCardClass(filtro) {
     return `${cardResumoBaseClass} ${
