@@ -16,9 +16,11 @@ export interface DashboardPermissions {
   isTecnico: boolean;
   canViewDashboard: boolean;
   canViewTecnicos: boolean;
+  canViewAdmins: boolean;
   canManageMaquinas: boolean;
   canManageSensores: boolean;
   canManageTecnicos: boolean;
+  canManageAdmins: boolean;
   canCreateAlertas: boolean;
   canDeleteAlertas: boolean;
   canUpdateAlertStatus: boolean;
