@@ -127,6 +127,19 @@ export interface AtualizacaoTecnicoInput {
   foto?: string | null;
 }
 
+export type StatusAdmin = "ATIVO" | "INATIVO";
+
+export interface Admin {
+  id: number;
+  nome: string;
+  email: string;
+  telefone: string;
+  role: "ADMIN";
+  status: StatusAdmin;
+  criadoEm: string;
+  foto: string | null;
+}
+
 export type TipoAlerta =
   | "LIMITE_ULTRAPASSADO"
   | "TENDENCIA_CURTA"
@@ -204,6 +217,17 @@ export interface TecnicosContextValue {
   editarTecnico: (id: number, dados: AtualizacaoTecnicoInput) => Promise<void>;
   excluirTecnico: (id: number) => Promise<void>;
   recarregarTecnicos: (page?: number, limit?: number) => Promise<void>;
+  resetarDados: () => Promise<void>;
+}
+
+export interface AdminsContextValue {
+  admins: Admin[];
+  status: "loading" | "success" | "error";
+  mensagem: string;
+  carregando: boolean;
+  totalPaginas: number;
+  paginaAtual: number;
+  recarregarAdmins: (page?: number, limit?: number) => Promise<void>;
   resetarDados: () => Promise<void>;
 }
 

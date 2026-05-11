@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Toaster } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { AdminsProvider } from "@/components/context/admins-context"
 import { AlertasProvider } from "@/components/context/alertas-context"
 import { DashboardAiAssistant } from "@/components/dashboard-ai-assistant"
 import { DashboardAuthSkeleton } from "@/components/dashboard-skeletons"
@@ -64,23 +65,25 @@ export default function DashboardLayout({ children }) {
     <MaquinasProvider>
       <SensoresProvider>
         <AlertasProvider>
-          <TecnicosProvider>
-            <DashboardPreferencesProvider>
-              <TooltipProvider>
-                <SidebarProvider
-                  style={{ "--sidebar-width": "calc(var(--spacing) * 72)", "--header-height": "calc(var(--spacing) * 12)",  }}>
-                  <AppSidebar variant="inset" />
-                  <SidebarInset>
-                    <SmoothScroll>
-                      <TooltipProvider>{children}</TooltipProvider>
-                    </SmoothScroll>
-                    <Toaster position="top-left" />
-                  </SidebarInset>
-                  <DashboardAiAssistant />
-                </SidebarProvider>
-              </TooltipProvider>
-            </DashboardPreferencesProvider>
-          </TecnicosProvider>
+          <AdminsProvider>
+            <TecnicosProvider>
+              <DashboardPreferencesProvider>
+                <TooltipProvider>
+                  <SidebarProvider
+                    style={{ "--sidebar-width": "calc(var(--spacing) * 72)", "--header-height": "calc(var(--spacing) * 12)",  }}>
+                    <AppSidebar variant="inset" />
+                    <SidebarInset>
+                      <SmoothScroll>
+                        <TooltipProvider>{children}</TooltipProvider>
+                      </SmoothScroll>
+                      <Toaster position="top-left" />
+                    </SidebarInset>
+                    <DashboardAiAssistant />
+                  </SidebarProvider>
+                </TooltipProvider>
+              </DashboardPreferencesProvider>
+            </TecnicosProvider>
+          </AdminsProvider>
         </AlertasProvider>
       </SensoresProvider>
     </MaquinasProvider>
