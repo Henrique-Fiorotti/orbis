@@ -6,6 +6,7 @@ import { Toaster } from "sonner"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import { AlertasProvider } from "@/components/context/alertas-context"
+import { DashboardAiAssistant } from "@/components/dashboard-ai-assistant"
 import { DashboardAuthSkeleton } from "@/components/dashboard-skeletons"
 import { DashboardPreferencesProvider } from "@/components/context/dashboard-preferences-context"
 import { MaquinasProvider } from "@/components/context/maquinas-context"
@@ -75,6 +76,7 @@ export default function DashboardLayout({ children }) {
                     </SmoothScroll>
                     <Toaster position="top-left" />
                   </SidebarInset>
+                  <DashboardAiAssistant />
                 </SidebarProvider>
               </TooltipProvider>
             </DashboardPreferencesProvider>
