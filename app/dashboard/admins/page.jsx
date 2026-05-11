@@ -43,7 +43,7 @@ import { SiteHeader } from "@/components/site-header"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
-import { extractCollection, getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
+import { fetchDashboardJson, getHttpErrorStatus, normalizeAdminCollection, requestDashboardJson } from "@/lib/dashboard-api"
 import {
   formatBrazilianPhoneInput,
   isValidBackendPassword,
@@ -80,96 +80,6 @@ function getAdminsEndpoints(page, limit) {
 
 function normalizeString(value, fallback = "") {
   return typeof value === "string" && value.trim() ? value.trim() : fallback
-}
-
-function toNumber(value, fallback = 0) {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : fallback
-}
-
-function normalizeBoolean(value, fallback = true) {
-  if (typeof value === "boolean") return value
-
-  if (typeof value === "string") {
-    const normalized = value.trim().toUpperCase()
-    if (["TRUE", "ATIVO", "ACTIVE", "ONLINE", "1"].includes(normalized)) return true
-    if (["FALSE", "INATIVO", "INACTIVE", "OFFLINE", "0"].includes(normalized)) return false
-  }
-
-  return fallback
-}
-
-function getRoleValue(item) {
-  return normalizeString(
-    item?.role ??
-      item?.usuario?.role ??
-      item?.usuarioSemSenha?.role ??
-      item?.perfil?.role ??
-      item?.tipoUsuario
-  ).toUpperCase()
-}
-
-function isAdminRecord(item, assumeAdminWhenRoleMissing = false) {
-  if (!item || typeof item !== "object") return false
-
-  const role = getRoleValue(item)
-  return role ? role === "ADMIN" : assumeAdminWhenRoleMissing
-}
-
-function getAdminRecordId(item) {
-  if (!item || typeof item !== "object") return null
-
-  const id = Number(item.id ?? item.adminId ?? item.usuarioId ?? item.usuario?.id)
-  return Number.isFinite(id) ? id : null
-}
-
-function normalizeAdmin(raw, index) {
-  if (!raw || typeof raw !== "object") return null
-
-  const usuario = raw.usuario && typeof raw.usuario === "object" ? raw.usuario : null
-  const usuarioSemSenha = raw.usuarioSemSenha && typeof raw.usuarioSemSenha === "object" ? raw.usuarioSemSenha : null
-  const perfil = raw.perfil && typeof raw.perfil === "object" ? raw.perfil : null
-  const ativo = normalizeBoolean(raw.ativo ?? raw.active ?? usuario?.ativo, true)
-  const foto = normalizeString(
-    raw.foto ??
-      raw.fotoPerfil ??
-      raw.fotoUrl ??
-      raw.urlFoto ??
-      raw.avatar ??
-      raw.imagem ??
-      raw.profileImage ??
-      usuario?.fotoPerfil ??
-      usuario?.foto ??
-      usuarioSemSenha?.fotoPerfil ??
-      usuarioSemSenha?.foto ??
-      perfil?.fotoPerfil ??
-      perfil?.foto,
-    ""
-  )
-
-  return {
-    id: toNumber(raw.id ?? raw.adminId ?? raw.usuarioId ?? usuario?.id, index + 1),
-    nome: normalizeString(raw.nome ?? raw.nomeCompleto ?? raw.name ?? usuario?.nome, `Administrador ${index + 1}`),
-    email: normalizeString(raw.email ?? raw.emailUsuario ?? usuario?.email, ""),
-    telefone: normalizeString(raw.telefone ?? raw.celular ?? raw.whatsapp ?? raw.phone ?? usuario?.telefone, ""),
-    role: "ADMIN",
-    status: ativo ? "ATIVO" : "INATIVO",
-    // criadoEm: normalizeString(
-    //   raw.criadoEm ?? raw.createdAt ?? raw.dataCriacao ?? raw.cadastradoEm ?? usuario?.createdAt,
-    //   new Date().toISOString()
-    // ),
-    foto: foto || null,
-  }
-}
-
-function normalizeAdminCollection(payload, source) {
-  const collection = extractCollection(payload)
-  const assumeAdminWhenRoleMissing = source !== "usuarios"
-
-  return collection
-    .filter((item) => isAdminRecord(item, assumeAdminWhenRoleMissing))
-    .map((item, index) => normalizeAdmin(item, index))
-    .filter(Boolean)
 }
 
 function getPayloadTotal(payload, fallback) {
@@ -283,6 +193,8 @@ export default function AdminsPage() {
   const [paginaAtual, setPaginaAtual] = React.useState(1)
   const [totalPaginas, setTotalPaginas] = React.useState(1)
   const [filtroResumo, setFiltroResumo] = React.useState("TODOS")
+  const adminIdParam = searchParams.get("adminId")
+  const adminAbertoPelaUrlRef = React.useRef(null)
 
   const canManageAdmins = permissions.isAdmin
   const loadingInicial = status === "loading" && admins.length === 0
@@ -305,7 +217,9 @@ export default function AdminsPage() {
 
     try {
       const resolved = await fetchAdminsPayload(session.accessToken, page, limit)
-      const normalizedAdmins = normalizeAdminCollection(resolved.payload, resolved.source)
+      const normalizedAdmins = normalizeAdminCollection(resolved.payload, {
+        assumeAdminWhenRoleMissing: resolved.source !== "usuarios",
+      })
       const totalAdmins = resolved.source === "usuarios" ? normalizedAdmins.length : getPayloadTotal(resolved.payload, normalizedAdmins.length)
 
       setAdmins(normalizedAdmins)
@@ -349,6 +263,75 @@ export default function AdminsPage() {
       abrirCriar()
     }
   }, [permissions.isAdmin, searchParams])
+
+  React.useEffect(() => {
+    if (!permissions.isAdmin) return
+
+    if (!adminIdParam) {
+      adminAbertoPelaUrlRef.current = null
+      return
+    }
+
+    const adminId = Number(adminIdParam)
+
+    if (!Number.isFinite(adminId)) return
+
+    const adminIdKey = String(adminId)
+
+    if (adminAbertoPelaUrlRef.current === adminIdKey) return
+
+    const adminEncontrado = admins.find((admin) => admin.id === adminId)
+
+    if (adminEncontrado) {
+      adminAbertoPelaUrlRef.current = adminIdKey
+      abrirVer(adminEncontrado)
+      return
+    }
+
+    if (status === "loading") return
+
+    let cancelado = false
+
+    async function carregarAdminPorId() {
+      const session = getAuthSession()
+
+      if (!session?.accessToken) {
+        toast.error("Faca login para visualizar o administrador.")
+        return
+      }
+
+      try {
+        const payload = await fetchDashboardJson(`/usuarios/${adminId}`, session.accessToken, "o administrador")
+        const [adminNormalizado] = normalizeAdminCollection({ dados: [payload] })
+
+        if (cancelado) return
+
+        if (!adminNormalizado) {
+          toast.error("Administrador nao encontrado.")
+          return
+        }
+
+        adminAbertoPelaUrlRef.current = adminIdKey
+        abrirVer(adminNormalizado)
+      } catch (error) {
+        if (getHttpErrorStatus(error) === 401) {
+          clearAuthSession()
+          router.replace("/")
+          return
+        }
+
+        if (!cancelado) {
+          toast.error(error instanceof Error ? error.message : "Nao foi possivel carregar o administrador.")
+        }
+      }
+    }
+
+    carregarAdminPorId()
+
+    return () => {
+      cancelado = true
+    }
+  }, [adminIdParam, admins, permissions.isAdmin, router, status])
 
   function abrirCriar() {
     setModoSheet("criar")
@@ -807,7 +790,7 @@ export default function AdminsPage() {
                   <Separator />
 
                   <div className="flex gap-2">
-                    <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(adminSelecionado), 100) }} disabled={salvando}>
+                    <Button className="flex-1" onClick={() => abrirEditar(adminSelecionado)} disabled={salvando}>
                       <PencilIcon className="size-4 mr-1" /> Editar
                     </Button>
                     <Button variant="destructive" onClick={() => confirmarExcluir(adminSelecionado)} disabled={salvando}>

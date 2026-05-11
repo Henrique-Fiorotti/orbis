@@ -6,11 +6,13 @@ import {
   AlertTriangleIcon,
   NfcIcon,
   SearchIcon,
+  ShieldCheckIcon,
   UsersIcon,
   WashingMachineIcon,
   XIcon,
 } from "lucide-react"
 
+import { useAdmins } from "@/components/context/admins-context"
 import { useAlertas } from "@/components/context/alertas-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
 import { useSensores } from "@/components/context/sensores-context"
@@ -27,6 +29,7 @@ import { cn } from "@/lib/utils"
 const GROUP_LABELS = {
   maquina: "Maquinas",
   tecnico: "Tecnicos",
+  admin: "Administradores",
   sensor: "Sensores",
   alerta: "Alertas",
 }
@@ -34,6 +37,7 @@ const GROUP_LABELS = {
 const GROUP_ICONS = {
   maquina: WashingMachineIcon,
   tecnico: UsersIcon,
+  admin: ShieldCheckIcon,
   sensor: NfcIcon,
   alerta: AlertTriangleIcon,
 }
@@ -80,10 +84,10 @@ function ResultIcon({ item }) {
     )
   }
 
-  if (type === "tecnico") {
+  if (type === "tecnico" || type === "admin") {
     return (
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-purple-100 text-xs font-semibold text-purple-700 dark:bg-primary/20 dark:text-primary-foreground">
-        {getInitials(title) || <UsersIcon className="size-4" />}
+        {getInitials(title) || <Icon className="size-4" />}
       </span>
     )
   }
@@ -99,12 +103,13 @@ export function GlobalSearch({ open, onOpenChange }) {
   const router = useRouter()
   const inputRef = React.useRef(null)
   const [query, setQuery] = React.useState("")
+  const { admins, carregando: carregandoAdmins } = useAdmins()
   const { maquinas, carregando: carregandoMaquinas } = useMaquinas()
   const { sensores, carregando: carregandoSensores } = useSensores()
   const { tecnicos, carregando: carregandoTecnicos } = useTecnicos()
   const { alertas, carregando: carregandoAlertas = false } = useAlertas()
 
-  const loading = carregandoMaquinas || carregandoSensores || carregandoTecnicos || carregandoAlertas
+  const loading = carregandoMaquinas || carregandoSensores || carregandoTecnicos || carregandoAlertas || carregandoAdmins
 
   React.useEffect(() => {
     if (!open) {
@@ -151,6 +156,25 @@ export function GlobalSearch({ open, onOpenChange }) {
       ]),
     }))
 
+    const adminItems = admins.map((admin) => ({
+      id: `admin-${admin.id}`,
+      type: "admin",
+      title: admin.nome,
+      subtitle: admin.email,
+      meta: admin.status,
+      image: admin.foto,
+      href: `/dashboard/admins?adminId=${encodeURIComponent(admin.id)}`,
+      searchText: buildSearchText([
+        admin.nome,
+        admin.email,
+        admin.telefone,
+        admin.status,
+        "admin",
+        "administrador",
+        "administradores",
+      ]),
+    }))
+
     const sensorItems = sensores.map((sensor) => ({
       id: `sensor-${sensor.id}`,
       type: "sensor",
@@ -184,8 +208,8 @@ export function GlobalSearch({ open, onOpenChange }) {
       ]),
     }))
 
-    return [...machineItems, ...tecnicoItems, ...sensorItems, ...alertaItems]
-  }, [alertas, maquinas, sensores, tecnicos])
+    return [...machineItems, ...tecnicoItems, ...adminItems, ...sensorItems, ...alertaItems]
+  }, [admins, alertas, maquinas, sensores, tecnicos])
 
   const results = React.useMemo(() => {
     if (!query.trim()) {
@@ -226,7 +250,7 @@ export function GlobalSearch({ open, onOpenChange }) {
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Pesquisar maquinas, tecnicos, sensores e alertas..."
+            placeholder="Pesquisar maquinas, tecnicos, administradores, sensores e alertas..."
             className="h-12 border-0 bg-transparent px-0 text-[17px] shadow-none focus-visible:ring-0 md:text-[17px]"
           />
           <Button variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
@@ -250,7 +274,7 @@ export function GlobalSearch({ open, onOpenChange }) {
             </div>
           ) : !query.trim() ? (
             <div className="flex min-h-28 items-center justify-center px-4 text-center text-sm text-muted-foreground">
-              Digite para encontrar maquinas, tecnicos, sensores ou alertas.
+              Digite para encontrar maquinas, tecnicos, administradores, sensores ou alertas.
             </div>
           ) : results.length === 0 ? (
             <div className="flex min-h-32 items-center justify-center px-4 text-center text-sm text-muted-foreground">
