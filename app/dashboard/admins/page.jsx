@@ -196,7 +196,8 @@ export default function AdminsPage() {
   const adminIdParam = searchParams.get("adminId")
   const adminAbertoPelaUrlRef = React.useRef(null)
 
-  const canManageAdmins = permissions.isAdmin
+  const canViewAdmins = permissions.canViewAdmins
+  const canManageAdmins = permissions.canManageAdmins
   const loadingInicial = status === "loading" && admins.length === 0
   const errorSemDados = status === "error" && admins.length === 0
   const totalAtivos = React.useMemo(() => admins.filter((admin) => admin.status === "ATIVO").length, [admins])
@@ -232,7 +233,9 @@ export default function AdminsPage() {
       setStatus("success")
       setMensagem("")
     } catch (error) {
-      if (getHttpErrorStatus(error) === 401) {
+      const statusCode = getHttpErrorStatus(error)
+
+      if (statusCode === 401) {
         clearAuthSession()
         router.replace("/")
         return
@@ -240,32 +243,38 @@ export default function AdminsPage() {
 
       setAdmins([])
       setStatus("error")
-      setMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar os administradores.")
+      setMensagem(
+        statusCode === 403 && permissions.isTecnico
+          ? "A API bloqueou a leitura de administradores para este tecnico."
+          : error instanceof Error
+            ? error.message
+            : "Nao foi possivel carregar os administradores."
+      )
     }
-  }, [router])
+  }, [permissions.isTecnico, router])
 
   React.useEffect(() => {
-    if (!permissions.isAdmin) {
+    if (!canViewAdmins) {
       router.replace("/dashboard")
     }
-  }, [permissions.isAdmin, router])
+  }, [canViewAdmins, router])
 
   React.useEffect(() => {
-    if (!permissions.isAdmin) return
+    if (!canViewAdmins) return
 
     carregarAdmins(1, limiteItems)
-  }, [carregarAdmins, limiteItems, permissions.isAdmin])
+  }, [canViewAdmins, carregarAdmins, limiteItems])
 
   React.useEffect(() => {
-    if (!permissions.isAdmin) return
+    if (!canManageAdmins) return
 
     if (searchParams.get("action") === "new") {
       abrirCriar()
     }
-  }, [permissions.isAdmin, searchParams])
+  }, [canManageAdmins, searchParams])
 
   React.useEffect(() => {
-    if (!permissions.isAdmin) return
+    if (!canViewAdmins) return
 
     if (!adminIdParam) {
       adminAbertoPelaUrlRef.current = null
@@ -331,7 +340,7 @@ export default function AdminsPage() {
     return () => {
       cancelado = true
     }
-  }, [adminIdParam, admins, permissions.isAdmin, router, status])
+  }, [adminIdParam, admins, canViewAdmins, router, status])
 
   function abrirCriar() {
     setModoSheet("criar")
@@ -541,24 +550,28 @@ export default function AdminsPage() {
     //   header: "Cadastrado",
     //   cell: ({ row }) => <span className="text-muted-foreground text-sm">{tempoRelativo(row.original.criadoEm)}</span>,
     // },
-    {
-      id: "actions",
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
-              <EllipsisVerticalIcon />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
+    ...(canManageAdmins
+      ? [
+          {
+            id: "actions",
+            cell: ({ row }) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+                    <EllipsisVerticalIcon />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-36">
+                  <DropdownMenuItem onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ),
+          },
+        ]
+      : []),
   ]
 
   const table = useReactTable({
@@ -569,7 +582,7 @@ export default function AdminsPage() {
     getSortedRowModel: getSortedRowModel(),
   })
 
-  if (!permissions.isAdmin) {
+  if (!canViewAdmins) {
     return null
   }
 
@@ -789,14 +802,16 @@ export default function AdminsPage() {
 
                   <Separator />
 
-                  <div className="flex gap-2">
-                    <Button className="flex-1" onClick={() => abrirEditar(adminSelecionado)} disabled={salvando}>
-                      <PencilIcon className="size-4 mr-1" /> Editar
-                    </Button>
-                    <Button variant="destructive" onClick={() => confirmarExcluir(adminSelecionado)} disabled={salvando}>
-                      <Trash2Icon className="size-4 mr-1" /> Excluir
-                    </Button>
-                  </div>
+                  {canManageAdmins ? (
+                    <div className="flex gap-2">
+                      <Button className="flex-1" onClick={() => abrirEditar(adminSelecionado)} disabled={salvando}>
+                        <PencilIcon className="size-4 mr-1" /> Editar
+                      </Button>
+                      <Button variant="destructive" onClick={() => confirmarExcluir(adminSelecionado)} disabled={salvando}>
+                        <Trash2Icon className="size-4 mr-1" /> Excluir
+                      </Button>
+                    </div>
+                  ) : null}
                 </>
               ) : (
                 <>

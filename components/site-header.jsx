@@ -101,6 +101,7 @@ const BREADCRUMB_LABELS = {
   sensores: "Sensores",
   alertas: "Alertas",
   tecnicos: "Técnicos",
+  admins: "Administradores",
   relatorios: "Relatórios",
   perfil: "Perfil",
 }

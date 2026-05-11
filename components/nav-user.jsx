@@ -42,7 +42,7 @@ export function NavUser({user}){
               size="xl"
               tooltip={user.name}
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:bg-gray-200 dark:data-[state=open]:bg-gray-700">
-              <Avatar className="size-8 rounded-lg">
+              <Avatar className="size-13 rounded-lg group-data-[collapsible=icon]:size-4">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg">OA</AvatarFallback>
               </Avatar>

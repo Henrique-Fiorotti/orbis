@@ -58,7 +58,7 @@ const data = {
       icon: <UsersIcon />,
     },
     {
-      title: "Admins",
+      title: "Administradores",
       url: "/dashboard/admins",
       icon: <ShieldCheckIcon />,
     },
@@ -94,7 +94,7 @@ function getNavMainItems(usuario) {
       return permissions.canViewTecnicos
     }
     if (item.url === "/dashboard/admins") {
-      return permissions.isAdmin
+      return permissions.canViewAdmins
     }
     return true
   })
