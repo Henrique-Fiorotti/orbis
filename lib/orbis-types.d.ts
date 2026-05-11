@@ -220,6 +220,12 @@ export interface AlertasContextValue {
   resetarDados: () => Promise<void>;
 }
 
+export interface DashboardAiResponse {
+  pergunta: string;
+  resposta: string;
+  contextoGeradoEm: string | null;
+}
+
 export interface ChartConfigItem {
   label?: React.ReactNode;
   icon?: React.ComponentType;
