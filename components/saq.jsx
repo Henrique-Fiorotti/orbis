@@ -2,6 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
+import { AlertCircleIcon, CheckCircle2Icon, Loader2Icon, SendIcon } from "lucide-react";
+
+import { sendContactMessage } from "@/lib/contact-api";
+
+const INITIAL_CONTACT_FORM = {
+    nome: "",
+    email: "",
+    assunto: "",
+    mensagem: "",
+};
+
+const CONTACT_STATUS = {
+    idle: "",
+    success: "success",
+    error: "error",
+};
 
 const faqs = [
     {
@@ -236,19 +252,33 @@ function ContactCard({ href, icon, label, value, delay = 0 }) {
     );
 }
 
-function FloatingInput({ placeholder, type = "text" }) {
+function FloatingInput({
+    id,
+    name,
+    placeholder,
+    type = "text",
+    value,
+    onChange,
+    autoComplete,
+    disabled = false,
+    maxLength,
+}) {
     const [focused, setFocused] = useState(false);
-    const [value, setValue] = useState("");
     const active = focused || value.length > 0;
 
     return (
         <div style={{ position: "relative", width: "100%" }}>
             <input
+                id={id}
+                name={name}
                 type={type}
                 value={value}
-                onChange={(e) => setValue(e.target.value)}
+                onChange={(e) => onChange(e.target.value)}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
+                autoComplete={autoComplete}
+                disabled={disabled}
+                maxLength={maxLength}
                 style={{
                     width: "100%",
                     border: focused ? "1.5px solid #7c3aed" : "1.5px solid var(--contact-card-border)",
@@ -261,9 +291,11 @@ function FloatingInput({ placeholder, type = "text" }) {
                     transition: "border-color 0.25s ease, box-shadow 0.25s ease",
                     boxSizing: "border-box",
                     boxShadow: focused ? "0 0 0 3px rgba(124,58,237,0.1)" : "none",
+                    opacity: disabled ? 0.72 : 1,
                 }}
             />
             <label
+                htmlFor={id}
                 style={{
                     position: "absolute",
                     left: "14px",
@@ -282,19 +314,30 @@ function FloatingInput({ placeholder, type = "text" }) {
     );
 }
 
-function FloatingTextarea({ placeholder }) {
+function FloatingTextarea({
+    id,
+    name,
+    placeholder,
+    value,
+    onChange,
+    disabled = false,
+    maxLength,
+}) {
     const [focused, setFocused] = useState(false);
-    const [value, setValue] = useState("");
     const active = focused || value.length > 0;
 
     return (
         <div style={{ position: "relative", width: "100%" }}>
             <textarea
+                id={id}
+                name={name}
                 rows={5}
                 value={value}
-                onChange={(e) => setValue(e.target.value)}
+                onChange={(e) => onChange(e.target.value)}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
+                disabled={disabled}
+                maxLength={maxLength}
                 style={{
                     width: "100%",
                     border: focused ? "1.5px solid #7c3aed" : "1.5px solid var(--contact-card-border)",
@@ -309,9 +352,11 @@ function FloatingTextarea({ placeholder }) {
                     boxSizing: "border-box",
                     boxShadow: focused ? "0 0 0 3px rgba(124,58,237,0.1)" : "none",
                     fontFamily: "inherit",
+                    opacity: disabled ? 0.72 : 1,
                 }}
             />
             <label
+                htmlFor={id}
                 style={{
                     position: "absolute",
                     left: "14px",
@@ -329,10 +374,39 @@ function FloatingTextarea({ placeholder }) {
     );
 }
 
+function getContactValidationMessage(values) {
+    const nome = values.nome.trim();
+    const email = values.email.trim();
+    const assunto = values.assunto.trim();
+    const mensagem = values.mensagem.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (nome.length < 2 || nome.length > 80) {
+        return "Informe um nome entre 2 e 80 caracteres.";
+    }
+
+    if (!emailRegex.test(email) || email.length > 120) {
+        return "Informe um e-mail valido.";
+    }
+
+    if (assunto.length < 3 || assunto.length > 120) {
+        return "Informe um assunto entre 3 e 120 caracteres.";
+    }
+
+    if (mensagem.length < 10 || mensagem.length > 2000) {
+        return "A mensagem precisa ter entre 10 e 2000 caracteres.";
+    }
+
+    return "";
+}
+
 export default function ContatoPage() {
     const { resolvedTheme } = useTheme();
     const [openFaq, setOpenFaq] = useState(null);
     const [mounted, setMounted] = useState(false);
+    const [form, setForm] = useState(INITIAL_CONTACT_FORM);
+    const [sending, setSending] = useState(false);
+    const [status, setStatus] = useState({ type: CONTACT_STATUS.idle, message: "" });
 
     useEffect(() => {
         setMounted(true);
@@ -341,6 +415,48 @@ export default function ContatoPage() {
     const colors =
         mounted && resolvedTheme === "dark" ? themeColors.dark : themeColors.light;
     const isDark = mounted && resolvedTheme === "dark";
+
+    function updateField(field, value) {
+        setForm((current) => ({ ...current, [field]: value }));
+
+        if (status.type === CONTACT_STATUS.error) {
+            setStatus({ type: CONTACT_STATUS.idle, message: "" });
+        }
+    }
+
+    async function handleSubmit(event) {
+        event.preventDefault();
+
+        if (sending) {
+            return;
+        }
+
+        const validationMessage = getContactValidationMessage(form);
+
+        if (validationMessage) {
+            setStatus({ type: CONTACT_STATUS.error, message: validationMessage });
+            return;
+        }
+
+        setSending(true);
+        setStatus({ type: CONTACT_STATUS.idle, message: "" });
+
+        try {
+            await sendContactMessage(form);
+            setForm(INITIAL_CONTACT_FORM);
+            setStatus({
+                type: CONTACT_STATUS.success,
+                message: "Mensagem enviada com sucesso! Em breve entraremos em contato.",
+            });
+        } catch (error) {
+            setStatus({
+                type: CONTACT_STATUS.error,
+                message: error instanceof Error ? error.message : "Nao foi possivel enviar a mensagem agora.",
+            });
+        } finally {
+            setSending(false);
+        }
+    }
 
     return (
         <div
@@ -461,23 +577,91 @@ export default function ContatoPage() {
                         Preencha o formulário e entraremos em contato em breve.
                     </p>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    <form
+                        onSubmit={handleSubmit}
+                        noValidate
+                        style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+                    >
                         {/* Nome */}
-                        <FloatingInput placeholder="Seu nome" />
+                        <FloatingInput
+                            id="contact-name"
+                            name="nome"
+                            placeholder="Seu nome"
+                            value={form.nome}
+                            onChange={(value) => updateField("nome", value)}
+                            autoComplete="name"
+                            disabled={sending}
+                            maxLength={80}
+                        />
 
                         {/* Email */}
-                        <FloatingInput placeholder="Seu e-mail" type="email" />
+                        <FloatingInput
+                            id="contact-email"
+                            name="email"
+                            placeholder="Seu e-mail"
+                            type="email"
+                            value={form.email}
+                            onChange={(value) => updateField("email", value)}
+                            autoComplete="email"
+                            disabled={sending}
+                            maxLength={120}
+                        />
 
                         {/* Assunto */}
-                        <FloatingInput placeholder="Assunto" />
+                        <FloatingInput
+                            id="contact-subject"
+                            name="assunto"
+                            placeholder="Assunto"
+                            value={form.assunto}
+                            onChange={(value) => updateField("assunto", value)}
+                            autoComplete="off"
+                            disabled={sending}
+                            maxLength={120}
+                        />
 
                         {/* Mensagem */}
-                        <FloatingTextarea placeholder="Mensagem" />
+                        <FloatingTextarea
+                            id="contact-message"
+                            name="mensagem"
+                            placeholder="Mensagem"
+                            value={form.mensagem}
+                            onChange={(value) => updateField("mensagem", value)}
+                            disabled={sending}
+                            maxLength={2000}
+                        />
+
+                        {status.message ? (
+                            <p
+                                role={status.type === CONTACT_STATUS.error ? "alert" : "status"}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                    margin: 0,
+                                    color: status.type === CONTACT_STATUS.success ? "#16a34a" : "#dc2626",
+                                    fontSize: "0.82rem",
+                                    lineHeight: 1.45,
+                                }}
+                            >
+                                {status.type === CONTACT_STATUS.success ? (
+                                    <CheckCircle2Icon size={16} />
+                                ) : (
+                                    <AlertCircleIcon size={16} />
+                                )}
+                                {status.message}
+                            </p>
+                        ) : null}
 
                         {/* Botão */}
                         <div className="flex justify-center xl:justify-end">
                             <button
+                                type="submit"
+                                disabled={sending}
                                 style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "8px",
                                     marginTop: "4px",
                                     padding: "13px 24px",
                                     borderRadius: "12px",
@@ -486,23 +670,31 @@ export default function ContatoPage() {
                                     color: "#fff",
                                     fontSize: "0.9rem",
                                     fontWeight: 600,
-                                    cursor: "pointer",
+                                    cursor: sending ? "wait" : "pointer",
                                     transition: "opacity 0.2s ease, transform 0.2s ease",
                                     letterSpacing: "0.02em",
+                                    opacity: sending ? 0.7 : 1,
                                 }}
                                 onMouseEnter={(e) => {
+                                    if (sending) return;
                                     e.currentTarget.style.opacity = "0.85";
                                     e.currentTarget.style.transform = "translateY(-1px)";
                                 }}
                                 onMouseLeave={(e) => {
+                                    if (sending) return;
                                     e.currentTarget.style.opacity = "1";
                                     e.currentTarget.style.transform = "translateY(0)";
                                 }}
                             >
-                                Enviar mensagem →
+                                {sending ? (
+                                    <Loader2Icon className="animate-spin" size={16} />
+                                ) : (
+                                    <SendIcon size={16} />
+                                )}
+                                {sending ? "Enviando..." : "Enviar mensagem"}
                             </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
