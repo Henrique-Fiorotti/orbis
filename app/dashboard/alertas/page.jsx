@@ -429,7 +429,7 @@ export default function AlertasPage() {
   return (
     <>
       <SiteHeader />
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
@@ -542,21 +542,21 @@ export default function AlertasPage() {
         ) : errorSemDados ? (
           <StatePanel message={mensagem || "Nao foi possivel carregar os chamados."} tone="error" />
         ) : (
-          <Tabs defaultValue="ativos" className="w-full flex-col gap-4">
-            <TabsList>
-              <TabsTrigger value="ativos">
+          <Tabs defaultValue="ativos" className="min-w-0 w-full flex-col gap-4">
+            <TabsList className="w-full max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <TabsTrigger value="ativos" className="shrink-0 flex-none">
                 Disponiveis{ativos.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{ativos.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="em-andamento">
+              <TabsTrigger value="em-andamento" className="shrink-0 flex-none">
                 Em andamento{emAndamento.length > 0 && <Badge variant="secondary" className="ml-1.5 border-yellow-200! bg-yellow-100! text-yellow-700! dark:border-yellow-900/60! dark:bg-yellow-950/30! dark:text-yellow-300!">{emAndamento.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="resolvidos">
+              <TabsTrigger value="resolvidos" className="shrink-0 flex-none">
                 Resolvidos{resolvidos.length > 0 && <Badge variant="secondary" className="ml-1.5">{resolvidos.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="cancelados">
+              <TabsTrigger value="cancelados" className="shrink-0 flex-none">
                 Cancelados{cancelados.length > 0 && <Badge variant="secondary" className="ml-1.5">{cancelados.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="todos">Todos ({dadosFiltrados.length})</TabsTrigger>
+              <TabsTrigger value="todos" className="shrink-0 flex-none">Todos ({dadosFiltrados.length})</TabsTrigger>
             </TabsList>
             {[
               { value: "ativos", data: ativos },
