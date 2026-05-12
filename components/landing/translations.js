@@ -221,6 +221,113 @@ export const LANDING_COPY = {
         },
       ],
     },
+    contact: {
+      faqTitle: "Perguntas Frequentes",
+      faqs: [
+        {
+          question: "O que é o Orbis?",
+          answer:
+            "O Orbis é uma plataforma completa de gestão e comunicação para empresas e equipes que buscam mais eficiência no dia a dia.",
+        },
+        {
+          question: "Como o Orbis pode ajudar minha empresa?",
+          answer:
+            "O Orbis centraliza todas as suas comunicações, tarefas e projetos em um só lugar, facilitando a colaboração entre equipes e melhorando a produtividade.",
+        },
+        {
+          question: "O Orbis garante minha privacidade?",
+          answer:
+            "Sim! O Orbis utiliza criptografia avançada e segue as melhores práticas de segurança para proteger seus dados e garantir a privacidade da sua empresa.",
+        },
+        {
+          question: "Como entro em contato com o suporte?",
+          answer:
+            "Você pode entrar em contato pelo WhatsApp ou pelo e-mail suporte.orbis@gmail.com.",
+        },
+        {
+          question: "Preciso ser um expert em tecnologia para usar o Orbis?",
+          answer:
+            "Não, o Orbis foi desenvolvido com uma interface intuitiva e fácil de usar, mesmo para usuários menos experientes em tecnologia.",
+        },
+      ],
+      cards: {
+        whatsapp: "Whatsapp",
+        email: "E-mail",
+      },
+      formTitle: "Fale Conosco",
+      formDescription: "Preencha o formulário e entraremos em contato em breve.",
+      fields: {
+        name: "Seu nome",
+        email: "Seu e-mail",
+        subject: "Assunto",
+        message: "Mensagem",
+      },
+      validation: {
+        name: "Informe um nome entre 2 e 80 caracteres.",
+        email: "Informe um e-mail válido.",
+        subject: "Informe um assunto entre 3 e 120 caracteres.",
+        message: "A mensagem precisa ter entre 10 e 2000 caracteres.",
+      },
+      successMessage: "Mensagem enviada com sucesso! Em breve entraremos em contato.",
+      errorMessage: "Não foi possível enviar a mensagem agora.",
+      submit: "Enviar mensagem",
+      sending: "Enviando...",
+    },
+    login: {
+      greeting: "Bem-vindo de volta",
+      subtitle: "Acesse sua conta para continuar",
+      fields: {
+        email: "Email",
+        password: "Senha",
+      },
+      forgotPassword: "Esqueceu a senha?",
+      submit: "Entrar",
+      sessionError: "Login realizado, mas não foi possível iniciar a sessão.",
+      showPassword: "Mostrar senha",
+      hidePassword: "Ocultar senha",
+      privacy: {
+        agreementBefore: "Ao continuar, você concorda com nossa",
+        linkText: "Política de Privacidade",
+        title: "Política de Privacidade",
+        lastUpdated: "Última atualização: março de 2025",
+        closeLabel: "Fechar política de privacidade",
+        confirm: "Entendi",
+        sections: [
+          {
+            title: "1. Informações que coletamos",
+            text: "Coletamos informações que você nos fornece diretamente, como nome, endereço de e-mail e dados de acesso ao criar uma conta ou entrar em contato conosco.",
+          },
+          {
+            title: "2. Como usamos suas informações",
+            text: "Utilizamos suas informações para fornecer, manter e melhorar nossos serviços, enviar comunicações relacionadas à conta e garantir a segurança da plataforma.",
+          },
+          {
+            title: "3. Armazenamento e segurança",
+            text: "Seus dados são armazenados em servidores seguros com criptografia em trânsito e em repouso.",
+          },
+          {
+            title: "4. Cookies",
+            text: "Utilizamos cookies para manter sua sessão ativa e entender como você interage com a plataforma.",
+          },
+          {
+            title: "5. Seus direitos",
+            text: "Você tem o direito de acessar, corrigir ou excluir suas informações pessoais a qualquer momento pelo e-mail suporte.orbis@gmail.com.",
+          },
+          {
+            title: "6. Retenção de dados",
+            text: "Mantemos seus dados pelo tempo necessário para a prestação dos serviços ou conforme exigido por lei.",
+          },
+          {
+            title: "7. Alterações nesta política",
+            text: "Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre mudanças significativas por e-mail.",
+          },
+          {
+            title: "8. Contato",
+            text: "Dúvidas? Entre em contato pelo e-mail suporte.orbis@gmail.com.",
+          },
+        ],
+      },
+    },
     footer: {
       logoAria: "Orbis - Página inicial",
       brandText:
@@ -444,6 +551,113 @@ export const LANDING_COPY = {
         },
       ],
     },
+    contact: {
+      faqTitle: "Frequently Asked Questions",
+      faqs: [
+        {
+          question: "What is Orbis?",
+          answer:
+            "Orbis is a complete management and communication platform for companies and teams looking for more efficiency in their daily operations.",
+        },
+        {
+          question: "How can Orbis help my company?",
+          answer:
+            "Orbis centralizes your communications, tasks, and projects in one place, making team collaboration easier and improving productivity.",
+        },
+        {
+          question: "Does Orbis protect my privacy?",
+          answer:
+            "Yes. Orbis uses advanced encryption and follows security best practices to protect your data and safeguard your company's privacy.",
+        },
+        {
+          question: "How do I contact support?",
+          answer:
+            "You can contact us through WhatsApp or by email at suporte.orbis@gmail.com.",
+        },
+        {
+          question: "Do I need to be a technology expert to use Orbis?",
+          answer:
+            "No. Orbis was designed with an intuitive, easy-to-use interface, even for users with less technology experience.",
+        },
+      ],
+      cards: {
+        whatsapp: "WhatsApp",
+        email: "Email",
+      },
+      formTitle: "Contact Us",
+      formDescription: "Fill out the form and we will get back to you soon.",
+      fields: {
+        name: "Your name",
+        email: "Your email",
+        subject: "Subject",
+        message: "Message",
+      },
+      validation: {
+        name: "Enter a name between 2 and 80 characters.",
+        email: "Enter a valid email address.",
+        subject: "Enter a subject between 3 and 120 characters.",
+        message: "The message must be between 10 and 2000 characters.",
+      },
+      successMessage: "Message sent successfully! We will contact you soon.",
+      errorMessage: "We could not send the message right now.",
+      submit: "Send message",
+      sending: "Sending...",
+    },
+    login: {
+      greeting: "Welcome back",
+      subtitle: "Access your account to continue",
+      fields: {
+        email: "Email",
+        password: "Password",
+      },
+      forgotPassword: "Forgot password?",
+      submit: "Sign in",
+      sessionError: "Signed in, but we could not start the session.",
+      showPassword: "Show password",
+      hidePassword: "Hide password",
+      privacy: {
+        agreementBefore: "By continuing, you agree to our",
+        linkText: "Privacy Policy",
+        title: "Privacy Policy",
+        lastUpdated: "Last updated: March 2025",
+        closeLabel: "Close privacy policy",
+        confirm: "Got it",
+        sections: [
+          {
+            title: "1. Information we collect",
+            text: "We collect information you provide directly, such as your name, email address, and access data when you create an account or contact us.",
+          },
+          {
+            title: "2. How we use your information",
+            text: "We use your information to provide, maintain, and improve our services, send account-related communications, and keep the platform secure.",
+          },
+          {
+            title: "3. Storage and security",
+            text: "Your data is stored on secure servers with encryption in transit and at rest.",
+          },
+          {
+            title: "4. Cookies",
+            text: "We use cookies to keep your session active and understand how you interact with the platform.",
+          },
+          {
+            title: "5. Your rights",
+            text: "You have the right to access, correct, or delete your personal information at any time by emailing suporte.orbis@gmail.com.",
+          },
+          {
+            title: "6. Data retention",
+            text: "We keep your data for as long as necessary to provide the services or as required by law.",
+          },
+          {
+            title: "7. Changes to this policy",
+            text: "We may update this Privacy Policy periodically. We will notify you of significant changes by email.",
+          },
+          {
+            title: "8. Contact",
+            text: "Questions? Contact us at suporte.orbis@gmail.com.",
+          },
+        ],
+      },
+    },
     footer: {
       logoAria: "Orbis - Home page",
       brandText:
@@ -666,6 +880,113 @@ export const LANDING_COPY = {
           buttonText: "Entrar en contacto",
         },
       ],
+    },
+    contact: {
+      faqTitle: "Preguntas Frecuentes",
+      faqs: [
+        {
+          question: "¿Qué es Orbis?",
+          answer:
+            "Orbis es una plataforma completa de gestión y comunicación para empresas y equipos que buscan más eficiencia en el día a día.",
+        },
+        {
+          question: "¿Cómo puede Orbis ayudar a mi empresa?",
+          answer:
+            "Orbis centraliza tus comunicaciones, tareas y proyectos en un solo lugar, facilitando la colaboración entre equipos y mejorando la productividad.",
+        },
+        {
+          question: "¿Orbis garantiza mi privacidad?",
+          answer:
+            "Sí. Orbis utiliza cifrado avanzado y sigue las mejores prácticas de seguridad para proteger tus datos y garantizar la privacidad de tu empresa.",
+        },
+        {
+          question: "¿Cómo contacto al soporte?",
+          answer:
+            "Puedes contactarnos por WhatsApp o por correo electrónico en suporte.orbis@gmail.com.",
+        },
+        {
+          question: "¿Necesito ser experto en tecnología para usar Orbis?",
+          answer:
+            "No. Orbis fue desarrollado con una interfaz intuitiva y fácil de usar, incluso para usuarios con menos experiencia en tecnología.",
+        },
+      ],
+      cards: {
+        whatsapp: "WhatsApp",
+        email: "Email",
+      },
+      formTitle: "Contáctanos",
+      formDescription: "Completa el formulario y nos pondremos en contacto pronto.",
+      fields: {
+        name: "Tu nombre",
+        email: "Tu email",
+        subject: "Asunto",
+        message: "Mensaje",
+      },
+      validation: {
+        name: "Ingresa un nombre entre 2 y 80 caracteres.",
+        email: "Ingresa un email válido.",
+        subject: "Ingresa un asunto entre 3 y 120 caracteres.",
+        message: "El mensaje debe tener entre 10 y 2000 caracteres.",
+      },
+      successMessage: "¡Mensaje enviado con éxito! Nos pondremos en contacto pronto.",
+      errorMessage: "No fue posible enviar el mensaje ahora.",
+      submit: "Enviar mensaje",
+      sending: "Enviando...",
+    },
+    login: {
+      greeting: "Bienvenido de nuevo",
+      subtitle: "Accede a tu cuenta para continuar",
+      fields: {
+        email: "Email",
+        password: "Contraseña",
+      },
+      forgotPassword: "¿Olvidaste tu contraseña?",
+      submit: "Entrar",
+      sessionError: "Se inició sesión, pero no fue posible abrir la sesión de la plataforma.",
+      showPassword: "Mostrar contraseña",
+      hidePassword: "Ocultar contraseña",
+      privacy: {
+        agreementBefore: "Al continuar, aceptas nuestra",
+        linkText: "Política de Privacidad",
+        title: "Política de Privacidad",
+        lastUpdated: "Última actualización: marzo de 2025",
+        closeLabel: "Cerrar política de privacidad",
+        confirm: "Entendido",
+        sections: [
+          {
+            title: "1. Información que recopilamos",
+            text: "Recopilamos información que nos proporcionas directamente, como nombre, dirección de email y datos de acceso al crear una cuenta o contactarnos.",
+          },
+          {
+            title: "2. Cómo usamos tu información",
+            text: "Utilizamos tu información para proporcionar, mantener y mejorar nuestros servicios, enviar comunicaciones relacionadas con la cuenta y garantizar la seguridad de la plataforma.",
+          },
+          {
+            title: "3. Almacenamiento y seguridad",
+            text: "Tus datos se almacenan en servidores seguros con cifrado en tránsito y en reposo.",
+          },
+          {
+            title: "4. Cookies",
+            text: "Utilizamos cookies para mantener tu sesión activa y entender cómo interactúas con la plataforma.",
+          },
+          {
+            title: "5. Tus derechos",
+            text: "Tienes derecho a acceder, corregir o eliminar tu información personal en cualquier momento por el email suporte.orbis@gmail.com.",
+          },
+          {
+            title: "6. Retención de datos",
+            text: "Mantenemos tus datos durante el tiempo necesario para prestar los servicios o según lo exija la ley.",
+          },
+          {
+            title: "7. Cambios en esta política",
+            text: "Podemos actualizar esta Política de Privacidad periódicamente. Te notificaremos por email sobre cambios significativos.",
+          },
+          {
+            title: "8. Contacto",
+            text: "¿Dudas? Contáctanos por email en suporte.orbis@gmail.com.",
+          },
+        ],
+      },
     },
     footer: {
       logoAria: "Orbis - Página inicial",

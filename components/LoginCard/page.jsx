@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { loginAction } from "@/app/actions/auth.actions";
+import { useLandingLanguage } from "@/components/landing/language-provider";
 import { saveAuthSession } from "@/lib/auth-session";
 import { Eye, EyeOff } from 'lucide-react'
 import { useTheme } from "next-themes";
 import { getValidAuthSession } from "@/lib/auth-session";
 
-function PrivacyModal({ onClose }) {
+function PrivacyModal({ onClose, privacy }) {
   return (
     <div
       onClick={onClose}
@@ -42,11 +43,12 @@ function PrivacyModal({ onClose }) {
       >
         <div style={{ padding: "24px 28px 20px", borderBottom: "1px solid #27272a", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4e4e7" }}>Política de Privacidade</h3>
-            <p style={{ margin: "4px 0 0", fontSize: "0.75rem", color: "#52525b" }}>Última atualização: março de 2025</p>
+            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4e4e7" }}>{privacy.title}</h3>
+            <p style={{ margin: "4px 0 0", fontSize: "0.75rem", color: "#52525b" }}>{privacy.lastUpdated}</p>
           </div>
           <button
             onClick={onClose}
+            aria-label={privacy.closeLabel}
             style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "8px", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#71717a", fontSize: "1rem", transition: "background 0.2s", flexShrink: 0 }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#27272a")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "#18181b")}
@@ -54,16 +56,7 @@ function PrivacyModal({ onClose }) {
         </div>
 
         <div style={{ overflowY: "auto", padding: "24px 28px 28px", fontSize: "0.85rem", color: "#a1a1aa", lineHeight: 1.75, scrollbarWidth: "thin", scrollbarColor: "#27272a transparent" }}>
-          {[
-            { title: "1. Informações que coletamos", text: "Coletamos informações que você nos fornece diretamente, como nome, endereço de e-mail e dados de acesso ao criar uma conta ou entrar em contato conosco." },
-            { title: "2. Como usamos suas informações", text: "Utilizamos suas informações para fornecer, manter e melhorar nossos serviços, enviar comunicações relacionadas à conta e garantir a segurança da plataforma." },
-            { title: "3. Armazenamento e segurança", text: "Seus dados são armazenados em servidores seguros com criptografia em trânsito e em repouso." },
-            { title: "4. Cookies", text: "Utilizamos cookies para manter sua sessão ativa e entender como você interage com a plataforma." },
-            { title: "5. Seus direitos", text: "Você tem o direito de acessar, corrigir ou excluir suas informações pessoais a qualquer momento pelo e-mail suporte.orbis@gmail.com." },
-            { title: "6. Retenção de dados", text: "Mantemos seus dados pelo tempo necessário para a prestação dos serviços ou conforme exigido por lei." },
-            { title: "7. Alterações nesta política", text: "Podemos atualizar esta Política de Privacidade periodicamente. Notificaremos você sobre mudanças significativas por e-mail." },
-            { title: "8. Contato", text: "Dúvidas? Entre em contato pelo e-mail suporte.orbis@gmail.com." },
-          ].map((section, i) => (
+          {privacy.sections.map((section, i) => (
             <div key={i} style={{ marginBottom: "20px" }}>
               <p style={{ fontWeight: 600, color: "#8C52ff", margin: "0 0 6px", fontSize: "0.875rem" }}>{section.title}</p>
               <p style={{ margin: 0 }}>{section.text}</p>
@@ -77,7 +70,7 @@ function PrivacyModal({ onClose }) {
             style={{ width: "100%", background: "#8C52ff", color: "#fff", border: "none", borderRadius: "10px", padding: "12px", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", transition: "opacity 0.2s ease" }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >Entendi</button>
+          >{privacy.confirm}</button>
         </div>
       </div>
 
@@ -90,6 +83,8 @@ function PrivacyModal({ onClose }) {
 }
 
 export default function LoginCard({isDark}) {
+  const { copy } = useLandingLanguage()
+  const login = copy.login
   const { resolvedTheme } = useTheme()
   const [showPassword, setShowPassword] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -131,7 +126,7 @@ export default function LoginCard({isDark}) {
     const session = saveAuthSession(result)
 
     if (!session?.accessToken) {
-      alert("Login realizado, mas nao foi possivel iniciar a sessao.")
+      alert(login.sessionError)
       return
     }
 
@@ -284,14 +279,14 @@ export default function LoginCard({isDark}) {
       <div className="orbis-card !border-none" style={cardStyles}>
         <div className="orbis-top">
           <img style={{ height: "55px" }} src="LogoBrancaGrande.svg" alt="" />
-          <h2 className="orbis-greeting">Bem-vindo de volta</h2>
-          <p className="orbis-sub">Acesse sua conta para continuar</p>
+          <h2 className="orbis-greeting">{login.greeting}</h2>
+          <p className="orbis-sub">{login.subtitle}</p>
         </div>
 
         <form action={handleSubmit}>
           <div className="orbis-body">
             <div style={{ marginBottom: "16px" }}>
-              <p className="orbis-label">Email</p>
+              <p className="orbis-label">{login.fields.email}</p>
               <input type="email" className="orbis-input" placeholder="email@gmail.com"
                 id="email"
                 name="email"
@@ -300,7 +295,7 @@ export default function LoginCard({isDark}) {
             </div>
 
             <div style={{ marginBottom: "4px" }}>
-              <p className="orbis-label">Senha</p>
+              <p className="orbis-label">{login.fields.password}</p>
               <div style={{ position: "relative" }}>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -314,6 +309,7 @@ export default function LoginCard({isDark}) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? login.hidePassword : login.showPassword}
                   style={{
                     position: "absolute",
                     right: "10px",
@@ -332,20 +328,20 @@ export default function LoginCard({isDark}) {
             </div>
 
             <p style={{ fontSize: "12px", color: "#8C52ff", cursor: "pointer", textAlign: "right", marginTop: "6px", fontWeight: 500 }}>
-              Esqueceu a senha?
+              {login.forgotPassword}
             </p>
 
-            <button type="submit" className="orbis-btn" style={{ marginTop: "20px" }}>Entrar</button>
+            <button type="submit" className="orbis-btn" style={{ marginTop: "20px" }}>{login.submit}</button>
           </div>
         </form>
 
         <p className="orbis-footer w-85 m-auto mb-4 text-center justify-center items-center">
-          Ao continuar, você concorda com nossa{" "}
-          <button onClick={() => setShowPrivacy(true)}>Política de Privacidade</button>
+          {login.privacy.agreementBefore}{" "}
+          <button onClick={() => setShowPrivacy(true)}>{login.privacy.linkText}</button>
         </p>
       </div>
 
-      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} privacy={login.privacy} />}
     </>
   );
 }

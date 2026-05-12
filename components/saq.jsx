@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { AlertCircleIcon, CheckCircle2Icon, Loader2Icon, SendIcon } from "lucide-react";
 
+import { useLandingLanguage } from "@/components/landing/language-provider";
 import { sendContactMessage } from "@/lib/contact-api";
 
 const INITIAL_CONTACT_FORM = {
@@ -18,34 +19,6 @@ const CONTACT_STATUS = {
     success: "success",
     error: "error",
 };
-
-const faqs = [
-    {
-        question: "O que é o Orbis?",
-        answer:
-            "O Orbis é uma plataforma completa de gestão e comunicação para empresas e equipes que buscam mais eficiência no dia a dia.",
-    },
-    {
-        question: "Como o Orbis pode ajudar minha empresa?",
-        answer:
-            "O Orbis centraliza todas as suas comunicações, tarefas e projetos em um só lugar, facilitando a colaboração entre equipes e melhorando a produtividade.",
-    },
-    {
-        question: "O Orbis garante minha privacidade?",
-        answer:
-            "Sim! O Orbis utiliza criptografia avançada e segue as melhores práticas de segurança para proteger seus dados e garantir a privacidade da sua empresa.",
-    },
-    {
-        question: "Como entro em contato com o suporte?",
-        answer:
-            "Você pode entrar em contato pelo WhatsApp ou pelo e-mail suporte.orbis@gmail.com",
-    },
-    {
-        question: "Preciso ser um expert em tecnologia para usar o Orbis?",
-        answer:
-            "Não, o Orbis foi desenvolvido com uma interface intuitiva e fácil de usar, mesmo para usuários menos experientes em tecnologia.",
-    },
-];
 
 const themeColors = {
     light: {
@@ -374,7 +347,7 @@ function FloatingTextarea({
     );
 }
 
-function getContactValidationMessage(values) {
+function getContactValidationMessage(values, validationCopy) {
     const nome = values.nome.trim();
     const email = values.email.trim();
     const assunto = values.assunto.trim();
@@ -382,25 +355,27 @@ function getContactValidationMessage(values) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (nome.length < 2 || nome.length > 80) {
-        return "Informe um nome entre 2 e 80 caracteres.";
+        return validationCopy.name;
     }
 
     if (!emailRegex.test(email) || email.length > 120) {
-        return "Informe um e-mail valido.";
+        return validationCopy.email;
     }
 
     if (assunto.length < 3 || assunto.length > 120) {
-        return "Informe um assunto entre 3 e 120 caracteres.";
+        return validationCopy.subject;
     }
 
     if (mensagem.length < 10 || mensagem.length > 2000) {
-        return "A mensagem precisa ter entre 10 e 2000 caracteres.";
+        return validationCopy.message;
     }
 
     return "";
 }
 
 export default function ContatoPage() {
+    const { copy } = useLandingLanguage();
+    const contact = copy.contact;
     const { resolvedTheme } = useTheme();
     const [openFaq, setOpenFaq] = useState(null);
     const [mounted, setMounted] = useState(false);
@@ -431,7 +406,7 @@ export default function ContatoPage() {
             return;
         }
 
-        const validationMessage = getContactValidationMessage(form);
+        const validationMessage = getContactValidationMessage(form, contact.validation);
 
         if (validationMessage) {
             setStatus({ type: CONTACT_STATUS.error, message: validationMessage });
@@ -446,12 +421,12 @@ export default function ContatoPage() {
             setForm(INITIAL_CONTACT_FORM);
             setStatus({
                 type: CONTACT_STATUS.success,
-                message: "Mensagem enviada com sucesso! Em breve entraremos em contato.",
+                message: contact.successMessage,
             });
         } catch (error) {
             setStatus({
                 type: CONTACT_STATUS.error,
-                message: error instanceof Error ? error.message : "Nao foi possivel enviar a mensagem agora.",
+                message: error instanceof Error ? error.message : contact.errorMessage,
             });
         } finally {
             setSending(false);
@@ -527,11 +502,11 @@ export default function ContatoPage() {
                                 margin: "0 0 20px",
                             }}
                         >
-                            Perguntas Frequentes
+                            {contact.faqTitle}
                         </h2>
 
                         <div>
-                            {faqs.map((faq, i) => (
+                            {contact.faqs.map((faq, i) => (
                                 <FaqItem
                                     key={i}
                                     faq={faq}
@@ -546,14 +521,14 @@ export default function ContatoPage() {
                             <ContactCard
                                 href="https://wa.me/5511900000000"
                                 icon={<WhatsAppIcon isDark={isDark} />}
-                                label="Whatsapp"
+                                label={contact.cards.whatsapp}
                                 value="+55 11 9000-0000"
                                 delay={0}
                             />
                             <ContactCard
                                 href="mailto:suporte.orbis@gmail.com"
                                 icon={<EmailIcon isDark={isDark} />}
-                                label="E-mail"
+                                label={contact.cards.email}
                                 value="suporte.orbis@gmail.com"
                                 delay={160}
                             />
@@ -571,10 +546,10 @@ export default function ContatoPage() {
                             margin: "0 0 8px",
                         }}
                     >
-                        Fale Conosco
+                        {contact.formTitle}
                     </h2>
                     <p style={{ fontSize: "0.85rem", color: "var(--contact-muted)", margin: "0 0 28px" }}>
-                        Preencha o formulário e entraremos em contato em breve.
+                        {contact.formDescription}
                     </p>
 
                     <form
@@ -586,7 +561,7 @@ export default function ContatoPage() {
                         <FloatingInput
                             id="contact-name"
                             name="nome"
-                            placeholder="Seu nome"
+                            placeholder={contact.fields.name}
                             value={form.nome}
                             onChange={(value) => updateField("nome", value)}
                             autoComplete="name"
@@ -598,7 +573,7 @@ export default function ContatoPage() {
                         <FloatingInput
                             id="contact-email"
                             name="email"
-                            placeholder="Seu e-mail"
+                            placeholder={contact.fields.email}
                             type="email"
                             value={form.email}
                             onChange={(value) => updateField("email", value)}
@@ -611,7 +586,7 @@ export default function ContatoPage() {
                         <FloatingInput
                             id="contact-subject"
                             name="assunto"
-                            placeholder="Assunto"
+                            placeholder={contact.fields.subject}
                             value={form.assunto}
                             onChange={(value) => updateField("assunto", value)}
                             autoComplete="off"
@@ -623,7 +598,7 @@ export default function ContatoPage() {
                         <FloatingTextarea
                             id="contact-message"
                             name="mensagem"
-                            placeholder="Mensagem"
+                            placeholder={contact.fields.message}
                             value={form.mensagem}
                             onChange={(value) => updateField("mensagem", value)}
                             disabled={sending}
@@ -691,7 +666,7 @@ export default function ContatoPage() {
                                 ) : (
                                     <SendIcon size={16} />
                                 )}
-                                {sending ? "Enviando..." : "Enviar mensagem"}
+                                {sending ? contact.sending : contact.submit}
                             </button>
                         </div>
                     </form>
