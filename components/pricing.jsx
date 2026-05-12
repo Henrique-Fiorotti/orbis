@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CircleCheck } from "lucide-react";
 import { useLandingLanguage } from "@/components/landing/language-provider";
 import { Button } from "@/components/ui/button";
@@ -52,11 +53,14 @@ const Pricing = () => {
             </ul>
             <div>
               <Button
+                asChild
                 className="mt-6 h-12 w-full rounded-[10px]! bg-[#5E17EB] text-[#ffffff]! hover:bg-[#5013ca]!"
                 size="lg"
                 variant={plan.isPopular ? "default" : "outline"}
               >
-                {plan.buttonText}
+                <Link href="/#contact" prefetch={false}>
+                  {plan.buttonText}
+                </Link>
               </Button>
             </div>
           </div>
