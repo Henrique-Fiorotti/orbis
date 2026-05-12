@@ -539,7 +539,14 @@ function MachineDetailsDrawer({
   return (
     <Drawer {...drawerProps}>
       {trigger ? <DrawerTrigger asChild>{trigger}</DrawerTrigger> : null}
-      <DrawerContent className="w-[80%]! max-w-none!">
+      <DrawerContent
+        className={cn(
+          "overflow-hidden",
+          isMobile
+            ? "inset-0! mt-0! h-[100dvh]! max-h-[100dvh]! w-full! max-w-none! rounded-none! border-0!"
+            : "w-[80%]! max-w-none!"
+        )}
+      >
         <div className="px-4 pt-4">
           <MaquinaImagePreview maquina={item} />
         </div>

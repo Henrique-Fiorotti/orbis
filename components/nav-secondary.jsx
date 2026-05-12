@@ -9,12 +9,21 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 export function NavSecondary({
   items,
   ...props
 }) {
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  function closeMobileSidebar() {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
+
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
@@ -25,7 +34,10 @@ export function NavSecondary({
                 <SidebarMenuButton asChild tooltip={item.title}>
                   <button
                     type="button"
-                    onClick={item.onClick}
+                    onClick={() => {
+                      item.onClick()
+                      closeMobileSidebar()
+                    }}
                     aria-label={item.title}
                     className={cn(
                       "w-full bg-transparent no-underline! text-black dark:text-white",
@@ -41,6 +53,7 @@ export function NavSecondary({
                   <a
                     className={cn("no-underline! text-black dark:text-white", item.style)}
                     href={item.url}
+                    onClick={closeMobileSidebar}
                   >
                     {item.icon}
                     <span>{item.title}</span>

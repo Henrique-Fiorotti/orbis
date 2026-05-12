@@ -187,7 +187,7 @@ function buildNotifications(alertas, prefs) {
     .slice(0, MAX_NOTIFICACOES)
 }
 
-export function SiteHeader() {
+export function SiteHeader({ tourId }) {
   const { resolvedTheme, setTheme } = useTheme()
   const router = useRouter()
   const pathname = usePathname()
@@ -350,11 +350,14 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="flex h-[90px] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
+    <header
+      id={tourId}
+      className="sticky top-0 z-40 flex h-[72px] shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur transition-[width,height] ease-linear supports-[backdrop-filter]:bg-background/80 md:h-[90px]"
+    >
       <div className="flex min-w-0 w-full items-center gap-1 px-3 sm:px-4 lg:gap-2 lg:px-6">
         <Tooltip>
           <TooltipTrigger asChild>
-            <SidebarTrigger className="cursor-pointer shrink-0 dark:text-white dark:hover:bg-gray-200/10!" />
+            <SidebarTrigger id="tour-sidebar-trigger" className="cursor-pointer shrink-0 dark:text-white dark:hover:bg-gray-200/10!" />
           </TooltipTrigger>
           <TooltipContent>
             <span>Expandir/contrair menu</span>
@@ -410,7 +413,11 @@ export function SiteHeader() {
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  onClick={() => window.dispatchEvent(new CustomEvent("orbit:start-tour"))}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    window.dispatchEvent(new CustomEvent("orbit:start-tour"))
+                  }}
                   className="cursor-pointer h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                   aria-label="Tour guiado"
                 >

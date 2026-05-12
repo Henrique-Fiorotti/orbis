@@ -8,11 +8,19 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { CirclePlusIcon } from "lucide-react"
 
 export function NavMain({ items }) {
   const permissions = useDashboardPermissions()
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  function closeMobileSidebar() {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
 
   return (
     <SidebarGroup>
@@ -25,7 +33,7 @@ export function NavMain({ items }) {
                 tooltip="Adicionar"
                 className="cursor-pointer transition-colors min-w-8 bg-primary text-primary-foreground duration-200 ease-out transform hover:bg-primary/90 hover:text-gray-600 active:translate-y-0 active:scale-95 active:bg-primary/90 active:text-primary-foreground"
               >
-                <Link href="/dashboard/maquinas?action=new">
+                <Link href="/dashboard/maquinas?action=new" onClick={closeMobileSidebar}>
                   <CirclePlusIcon />
                   <span>Adicionar</span>
                 </Link>
@@ -40,7 +48,7 @@ export function NavMain({ items }) {
                 asChild
                 tooltip={item.title}
               >
-                <Link href={item.url}>
+                <Link href={item.url} onClick={closeMobileSidebar}>
                   {item.icon}
                   <span>{item.title}</span>
                 </Link>

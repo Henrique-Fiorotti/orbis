@@ -12,10 +12,7 @@ import { DashboardTour } from "./dashboard-tour"
 export default function Page() {
   return (
     <>
-      {/* id adicionado */}
-      <div id="tour-header">
-        <SiteHeader />
-      </div>
+      <SiteHeader tourId="tour-header" />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="@container/main flex min-w-0 flex-1 flex-col gap-2">

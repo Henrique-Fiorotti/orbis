@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
@@ -15,6 +16,7 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { AUTH_SESSION_UPDATED_EVENT, getAuthSessionUser } from "@/lib/auth-session"
 import { getDashboardPermissions } from "@/lib/dashboard-permissions"
@@ -111,6 +113,8 @@ function getUserDataFromSession() {
 }
 
 export function AppSidebar({ ...props }) {
+  const pathname = usePathname()
+  const { isMobile, setOpenMobile } = useSidebar()
   const [navMainItems, setNavMainItems] = React.useState(() => getNavMainItems(getAuthSessionUser()))
   const [settingsOpen, setSettingsOpen] = React.useState(false)
   const [searchOpen, setSearchOpen] = React.useState(false)
@@ -155,6 +159,12 @@ export function AppSidebar({ ...props }) {
       window.removeEventListener(AUTH_SESSION_UPDATED_EVENT, syncUserData)
     }
   }, [])
+
+  React.useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }, [isMobile, pathname, setOpenMobile])
 
   return (
     <>

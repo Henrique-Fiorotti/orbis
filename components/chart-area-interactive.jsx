@@ -85,7 +85,7 @@ function ChartMessage({ message, tone = "muted" }) {
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile()
   const { status, mensagem, alertTrendData, errors, notices } = useDashboardCharts()
-  const [timeRange, setTimeRange] = React.useState("90d")
+  const [timeRange, setTimeRange] = React.useState("7d")
 
   React.useEffect(() => {
     if (isMobile) {
