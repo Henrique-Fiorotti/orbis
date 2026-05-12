@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { LandingLanguageProvider } from "@/components/landing/language-provider";
 import LoginCard from "@/components/LoginCard/page";
 import { useEffect, useState } from "react";
 
@@ -52,7 +53,9 @@ export default function LoginModal() {
               : "slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
           }}
         >
-          <LoginCard />
+          <LandingLanguageProvider>
+            <LoginCard />
+          </LandingLanguageProvider>
         </div>
       </div>
     </>

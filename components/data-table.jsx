@@ -474,7 +474,7 @@ export function DataTable() {
           <StatePanel message={machineError} tone="error" />
         ) : emAlerta.length === 0 ? (
           <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-lg border border-dashed text-muted-foreground">
-            <CircleCheckIcon className="size-8 text-green-500" />
+            <CircleCheckIcon className="size-8 text-[#5e17eb]" />
             <p className="text-sm font-medium">Nenhuma máquina em alerta no momento.</p>
             <p className="text-xs">Todas as máquinas estão operando normalmente.</p>
           </div>

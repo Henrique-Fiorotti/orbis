@@ -430,7 +430,7 @@ export default function SensoresPage() {
       id: "temperatura",
       header: () => (
         <div className="flex items-center gap-1">
-          <ThermometerIcon color="#5E17EB" className="size-3.5" />
+          <ThermometerIcon color="#5E17EB" className="size-3.5 text-[#5e17eb]" />
           Temperatura
         </div>
       ),
@@ -719,9 +719,9 @@ export default function SensoresPage() {
                     </div>
                   </div>
                   <Separator />
-                  <div className="flex flex-col gap-3 rounded-lg border border-orange-100 bg-orange-50/40 p-3 dark:border-orange-900/40 dark:bg-orange-950/20">
+                  <div className="flex flex-col gap-3 rounded-lg border border-[#5E17EB] bg-[#5E17EB]/40 p-3 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10">
                     <div className="flex items-center gap-2">
-                      <ThermometerIcon className="size-4 text-orange-500 dark:text-orange-300" />
+                      <ThermometerIcon className="size-4 text-[#5E17EB] dark:text-[#5E17EB]" />
                       <span className="text-sm font-medium">Temperatura</span>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
@@ -739,9 +739,9 @@ export default function SensoresPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-3 rounded-lg border border-blue-100 bg-blue-50/40 p-3 dark:border-blue-900/40 dark:bg-blue-950/20">
+                  <div className="flex flex-col gap-3 rounded-lg border border-[#5E17EB] bg-[#5E17EB]/40 p-3 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10">
                     <div className="flex items-center gap-2">
-                      <ActivityIcon className="size-4 text-blue-500 dark:text-blue-300" />
+                      <ActivityIcon className="size-4 text-[#5E17EB] dark:text-[#5E17EB]" />
                       <span className="text-sm font-medium">Vibracao</span>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
