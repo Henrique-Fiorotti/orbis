@@ -22,7 +22,13 @@ import { MoreHorizontalIcon, FolderIcon, ShareIcon, Trash2Icon, FileTextIcon } f
 export function NavDocuments({
   items
 }) {
-  const { isMobile } = useSidebar()
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  function closeMobileSidebar() {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
 
   return (
     <SidebarGroup>
@@ -31,7 +37,7 @@ export function NavDocuments({
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild tooltip={item.name}>
-              <Link className="no-underline! text-black dark:text-white" href={item.url}>
+              <Link className="no-underline! text-black dark:text-white" href={item.url} onClick={closeMobileSidebar}>
                 {item.icon}
                 <span>{item.name}</span>
               </Link>
@@ -66,7 +72,7 @@ export function NavDocuments({
         ))}
         <SidebarMenuItem>
           <SidebarMenuButton asChild tooltip="Relatório" className="text-sidebar-foreground/70">
-            <Link className="no-underline! text-black dark:text-white" href="/dashboard/relatorios">
+            <Link className="no-underline! text-black dark:text-white" href="/dashboard/relatorios" onClick={closeMobileSidebar}>
               <FileTextIcon className="text-sidebar-foreground/70" />
               <span>Relatório</span>
             </Link>

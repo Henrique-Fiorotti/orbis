@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   Tour,
   TourPortal,
@@ -71,11 +71,25 @@ const TOUR_STEPS = [
   },
 ]
 
+const MOBILE_TOUR_STEPS = TOUR_STEPS.map((step) =>
+  step.target === "#tour-sidebar"
+    ? {
+        ...step,
+        target: "#tour-sidebar-trigger",
+        description:
+          "Toque no menu para alternar entre dashboard, maquinas, sensores, alertas e tecnicos.",
+        side: "bottom",
+        align: "start",
+      }
+    : step
+)
+
 export function DashboardTour() {
   const [open, setOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [tourInstanceKey, setTourInstanceKey] = useState(0)
-  const { open: sidebarOpen, setOpen: setSidebarOpen, openMobile, setOpenMobile } = useSidebar()
+  const { isMobile, open: sidebarOpen, setOpen: setSidebarOpen, openMobile, setOpenMobile } = useSidebar()
+  const tourSteps = useMemo(() => (isMobile ? MOBILE_TOUR_STEPS : TOUR_STEPS), [isMobile])
   const sidebarStateRef = useRef({
     desktopOpen: true,
     mobileOpen: false,
@@ -83,7 +97,7 @@ export function DashboardTour() {
 
   function restoreSidebarState() {
     setSidebarOpen(sidebarStateRef.current.desktopOpen)
-    setOpenMobile(sidebarStateRef.current.mobileOpen)
+    setOpenMobile(isMobile ? false : sidebarStateRef.current.mobileOpen)
   }
 
   useEffect(() => {
@@ -93,15 +107,27 @@ export function DashboardTour() {
         mobileOpen: openMobile,
       }
 
-      setSidebarOpen(true)
-      setOpenMobile(true)
       setCurrentStep(0)
-      setOpen(true)
+      setOpen(false)
+      setTourInstanceKey((currentKey) => currentKey + 1)
+
+      if (isMobile) {
+        setOpenMobile(false)
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" })
+      } else {
+        setSidebarOpen(true)
+      }
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          setOpen(true)
+        })
+      })
     }
 
     window.addEventListener("orbit:start-tour", handleStart)
     return () => window.removeEventListener("orbit:start-tour", handleStart)
-  }, [openMobile, setOpenMobile, setSidebarOpen, sidebarOpen])
+  }, [isMobile, openMobile, setOpenMobile, setSidebarOpen, sidebarOpen])
 
   function resetTour() {
     restoreSidebarState()
@@ -120,7 +146,7 @@ export function DashboardTour() {
   }
 
   function handleValueChange(nextStep) {
-    if (nextStep >= TOUR_STEPS.length) {
+    if (nextStep >= tourSteps.length) {
       resetTour()
       return
     }
@@ -137,6 +163,13 @@ export function DashboardTour() {
     resetTour()
   }
 
+  const scrollOffset = isMobile
+    ? { top: 92, bottom: 180, left: 12, right: 12 }
+    : { top: 110, bottom: 120, left: 0, right: 0 }
+  const collisionPadding = isMobile
+    ? { top: 88, right: 12, bottom: 16, left: 12 }
+    : 16
+
   return (
     <Tour
       key={tourInstanceKey}
@@ -145,13 +178,15 @@ export function DashboardTour() {
       value={currentStep}
       onValueChange={handleValueChange}
       onComplete={resetTour}
+      scrollBehavior="auto"
+      scrollOffset={scrollOffset}
     >
       <TourPortal>
         <TourSpotlight />
         <TourSpotlightRing />
 
-        {TOUR_STEPS.map((step, index) => {
-          const isLastStep = index === TOUR_STEPS.length - 1
+        {tourSteps.map((step, index) => {
+          const isLastStep = index === tourSteps.length - 1
 
           return (
             <TourStep
@@ -159,7 +194,9 @@ export function DashboardTour() {
               target={step.target}
               side={step.side}
               align={step.align}
-              className="overflow-y-hidden mt-5"
+              collisionPadding={collisionPadding}
+              sideOffset={isMobile ? 8 : undefined}
+              className="mt-2 max-h-[calc(100dvh-7rem)] w-[min(360px,calc(100vw-1.5rem))] overflow-y-auto sm:mt-5"
             >
               <TourArrow />
               <TourClose onClick={resetTour} />
