@@ -86,7 +86,7 @@ export default function HomePage() {
   return (
 
     <div className={styles.root}>
-    
+
       <section
         id="inicio"
         className={styles.heroSection}
@@ -283,25 +283,25 @@ export default function HomePage() {
       </section>
 
       {/* Carrossel  */}
-      <RevealOnScroll>
-        <section
-          className={styles.benefitsSection}
-          style={DEFERRED_SECTION_STYLE}
-        >
-          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-            <p
-              style={{
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                letterSpacing: "0.12em",
-                color: "var(--landing-accent-label)",
-                textTransform: "uppercase",
-                marginBottom: "12px",
-              }}
-            >
-              {home.benefits.eyebrow}
-            </p>
 
+      <section
+        className={styles.benefitsSection}
+        style={DEFERRED_SECTION_STYLE}
+      >
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+          <p
+            style={{
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              letterSpacing: "0.12em",
+              color: "var(--landing-accent-label)",
+              textTransform: "uppercase",
+              marginBottom: "12px",
+            }}
+          >
+            {home.benefits.eyebrow}
+          </p>
+          <RevealOnScroll>
             <h2
               style={{
                 fontFamily: "'Syne', sans-serif",
@@ -316,10 +316,12 @@ export default function HomePage() {
             >
               {home.benefits.title}
             </h2>
+
             <SlideOpacity items={home.features} />
-          </div>
-        </section>
-      </RevealOnScroll>
+          </RevealOnScroll>
+        </div>
+      </section>
+
 
       {/* Mostando o Dashboard */}
       <section
@@ -443,7 +445,7 @@ export default function HomePage() {
 
       {/* SAQ */}
       <section id="contact" >
-        <SAQ /> 
+        <SAQ />
       </section>
 
     </div>
