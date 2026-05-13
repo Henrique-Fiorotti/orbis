@@ -119,6 +119,20 @@ function normalizarBusca(value) {
     .toLowerCase()
 }
 
+function getTecnicoWhatsappUrl(telefone) {
+  const digits = String(telefone ?? "Telefone não informado").replace(/\D/g, "")
+
+  if (digits.length === 13 && digits.startsWith("55")) {
+    return `https://wa.me/${digits}`
+  }
+
+  if (digits.length === 10 || digits.length === 11) {
+    return `https://wa.me/55${digits}`
+  }
+
+  return ""
+}
+
 export default function TecnicosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -156,6 +170,7 @@ export default function TecnicosPage() {
   const loadingInicial = useDashboardMetricsLoading(carregando && tecnicos.length === 0)
   const errorSemDados = status === "error" && tecnicos.length === 0
   const canManageTecnicos = permissions.canManageTecnicos
+  const tecnicoWhatsappUrl = getTecnicoWhatsappUrl(tecnicoSelecionado?.telefone)
   const totalAtivos = React.useMemo(() => tecnicos.filter((tecnico) => tecnico.status === "ATIVO").length, [tecnicos])
   const totalInativos = React.useMemo(() => tecnicos.filter((tecnico) => tecnico.status === "INATIVO").length, [tecnicos])
   const tecnicosComAlertas = React.useMemo(
@@ -697,16 +712,35 @@ export default function TecnicosPage() {
 
                   <Separator />
 
-                  {canManageTecnicos ? (
-                    <div className="flex gap-2">
-                      <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
-                        <PencilIcon className="size-4 mr-1" /> Editar
+                  <div className="flex flex-col gap-2">
+                    {tecnicoWhatsappUrl ? (
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="w-full border-green-200 bg-[#5F18EA]/95 text-white hover:bg-[#5F18EA] hover:text-white dark:border-[#5F18EA]60 dark:bg-[#5F18EA]/30 dark:text-white dark:hover:bg-[#5F18EA]/50"
+                      >
+                        <a href={tecnicoWhatsappUrl} target="_blank" rel="noreferrer">
+                          <img src="/whatsapp-128-svgrepo-com.svg" alt="" className="size-4 invert" />
+                          Entrar em contato pelo WhatsApp
+                        </a>
                       </Button>
-                      <Button variant="destructive" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>
-                        <Trash2Icon className="size-4 mr-1" /> Excluir
+                    ) : (
+                      <Button variant="outline" className="w-full text-muted-foreground" disabled>
+                        Técnico precisa registrar um telefone para contato
                       </Button>
-                    </div>
-                  ) : null}
+                    )}
+
+                    {canManageTecnicos ? (
+                      <div className="flex gap-2">
+                        <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
+                          <PencilIcon className="size-4 mr-1" /> Editar
+                        </Button>
+                        <Button variant="destructive" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>
+                          <Trash2Icon className="size-4 mr-1" /> Excluir
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
                 </>
 
               ) : (
