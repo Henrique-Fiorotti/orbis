@@ -110,7 +110,7 @@ export default function Header() {
           visible ? 'translate-y-0' : '-translate-y-full'
         }`} 
       >
-        <Link href="/" aria-label="Orbis">
+        <Link href="/" aria-label="Orbis" className='w-fit'>
           <Image
             src="/Orbis.svg"
             alt="Orbis"
