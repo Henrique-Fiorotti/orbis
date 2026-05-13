@@ -4,7 +4,6 @@ import Link from "next/link";
 
 import HeroDashboard from "@/components/hero-dashboard";
 import { useLandingLanguage } from "@/components/landing/language-provider";
-import LazySplineFrame from "@/components/landing/lazy-spline-frame";
 import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
 import Pricing from "@/components/pricing";
@@ -13,6 +12,7 @@ import SobreInformativo from "@/components/sobre-informativo";
 import SAQ from "@/components/saq";
 
 import styles from "./page.module.css";
+import Image from "next/image";
 
 const DEFERRED_SECTION_STYLE = {
   contentVisibility: "auto",
@@ -137,13 +137,13 @@ export default function HomePage() {
           }}
         />
 
-        <LazySplineFrame
-          src="https://my.spline.design/pixeltextsetcopycopy-FVOpkQ2LEECtjtmYxOWm4Dq9-V1Z/"
-          title={home.hero.splineTitle}
-          className={styles.heroSpline}
-          id="hero-spline"
-          frameClassName={styles.heroSplineFrame}
-          overlayClassName={styles.heroSplineMask}
+        <Image
+          src="/orbis-spline-image.png"
+          alt={home.hero.splineTitle}
+          className={styles.heroImage}
+          width={350}
+          height={350}
+          priority
         />
 
         <div style={{ position: "relative", zIndex: 1, maxWidth: "600px" }}>

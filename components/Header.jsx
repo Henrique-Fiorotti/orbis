@@ -145,13 +145,14 @@ export default function Header() {
               value={locale}
               onChange={handleLanguageChange}
               aria-label={copy.header.languageSelectLabel}
-              className="h-8 cursor-pointer bg-transparent text-[12.5px] font-medium outline-none"
+              className="h-8 cursor-pointer rounded-[8px] bg-white text-[12.5px] font-medium text-black outline-none transition-colors dark:bg-[#09090b] dark:text-white"
             >
               {languages.map((language) => (
                 <option
                   key={language.code}
                   value={language.code}
                   lang={language.htmlLang}
+                  className="bg-white text-black dark:bg-[#09090b] dark:text-white"
                 >
                   {language.nativeName}
                 </option>
@@ -210,7 +211,7 @@ export default function Header() {
           <div className="mt-2 flex items-center justify-between gap-3 rounded-[10px] border border-black/[0.08] px-3.5 py-2.5 dark:border-white/[0.08]">
             <label
               htmlFor="landing-mobile-language-select"
-              className="text-[15px] text-black/70 dark:text-white/70"
+              className="text-[15px] text-black/70 dark:text-white/70 dark:bg-black"
             >
               {copy.header.languageLabel}
             </label>
@@ -219,13 +220,14 @@ export default function Header() {
               value={locale}
               onChange={handleLanguageChange}
               aria-label={copy.header.languageSelectLabel}
-              className="min-w-28 rounded-[8px] border border-black/[0.08] bg-transparent px-2 py-1.5 text-[14px] text-black outline-none dark:border-white/[0.08] dark:text-white"
+              className="min-w-28 rounded-[8px] border border-black/[0.08] bg-white px-2 py-1.5 text-[14px] text-black outline-none transition-colors dark:border-white/[0.08] dark:bg-[#09090b] dark:text-white"
             >
               {languages.map((language) => (
                 <option
                   key={language.code}
                   value={language.code}
                   lang={language.htmlLang}
+                  className="bg-white text-black dark:bg-[#09090b] dark:text-white"
                 >
                   {language.nativeName}
                 </option>
