@@ -2,18 +2,15 @@
 
 import { useRouter } from "next/navigation"
 import * as React from "react"
-import { closestCenter, DndContext, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
-import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 
 import { useDashboardCharts } from "./context/dashboard-charts-context"
+import { useMaquinas } from "@/components/context/maquinas-context"
 import { DashboardTableSkeleton } from "@/components/dashboard-skeletons"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label"
@@ -22,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MaquinaDetailsPanel, MaquinaImagePreview } from "@/components/maquina-details-panel"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
-import { GripVerticalIcon, CircleCheckIcon, AlertTriangleIcon, ImageIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, PlusIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, ArrowRightIcon } from "lucide-react"
+import { CircleCheckIcon, CircleMinusIcon, AlertTriangleIcon, ImageIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, PlusIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, ArrowRightIcon } from "lucide-react"
 import { cn, tempoRelativo } from "@/lib/utils"
 import {
   MAQUINA_IMPORTANCIA_FILTER_OPTIONS as IMPORTANCIA_FILTER_OPTIONS,
@@ -31,6 +28,9 @@ import {
   MAQUINA_INTEGRIDADE_SORT_OPTIONS as INTEGRIDADE_SORT_OPTIONS,
   MAQUINA_STATUS_FILTER_OPTIONS as STATUS_FILTER_OPTIONS,
   MAQUINA_STATUS_SORT_OPTIONS as STATUS_SORT_OPTIONS,
+  getMaquinaIntegridadeExibicao,
+  getMaquinaStatusExibicao,
+  getMaquinaUltimaLeituraExibicao,
   importanciaMaquinaSortFn,
   integridadeMaquinaFilterFn as integridadeFilterFn,
   selectMaquinaFilterFn as selectFilterFn,
@@ -39,54 +39,55 @@ import {
 
 function CriticidadeBadge({ value }) {
   const styles = {
-    ALTA: "w-[55px] bg-red-100 text-red-700 dark:bg-transparent! dark:text-white",
-    MEDIA: "w-[55px] bg-yellow-100 text-yellow-700 dark:bg-transparent! dark:text-white",
-    BAIXA: "w-[55px] bg-green-100 text-green-700 dark:bg-transparent! dark:text-white",
+    ALTA: "bg-white text-gray-700 border-gray-200 dark:border-border dark:bg-muted/30 dark:text-muted-foreground",
+    MEDIA: "bg-white text-gray-700 border-gray-200 dark:border-border dark:bg-muted/30 dark:text-muted-foreground",
+    BAIXA: "bg-white text-gray-700 border-gray-200 dark:border-border dark:bg-muted/30 dark:text-muted-foreground",
   }
-  const labels = {
-    ALTA: "Alta",
-    MEDIA: "Média",
-    BAIXA: "Baixa",
-  }
-
-  return (
-    <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>
-      {labels[value] ?? value}
-    </Badge>
-  )
+  return <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>{value.charAt(0) + value.slice(1).toLowerCase()}</Badge>
 }
 
 function StatusBadge({ value }) {
+  if (value === "SEM_SENSOR") {
+    return (
+      <Badge variant="outline" className="px-1.5 text-muted-foreground">
+        <CircleMinusIcon className="text-muted-foreground" />
+        Sem sensor
+      </Badge>
+    )
+  }
+
   return (
-    <Badge variant="outline" className="w-[55px] px-1.5 text-muted-foreground">
+    <Badge variant="outline" className="px-1.5 text-muted-foreground">
       {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]!" /> : <AlertTriangleIcon className="text-red-500" />}
       {value}
     </Badge>
   )
 }
 
-function IntegridadeBar({ value }) {
-  const cor = value < 50 ? "bg-red-500" : value < 75 ? "bg-yellow-400" : "bg-green-500"
-  const textCor = value < 50 ? "text-red-500" : value < 75 ? "text-yellow-500" : "text-green-600"
+function IntegridadeBar({ value, inactive = false }) {
+  const normalizedValue = Number(value)
+
+  if (inactive || !Number.isFinite(normalizedValue)) {
+    return (
+      <div className="flex flex-row-reverse items-center gap-2 min-w-[110px]">
+        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="h-full w-full rounded-full bg-muted-foreground/20" />
+        </div>
+        <span className="text-sm font-medium w-9 text-right tabular-nums text-muted-foreground">--</span>
+      </div>
+    )
+  }
+
+  const cor = normalizedValue < 50 ? "bg-red-500" : normalizedValue < 75 ? "bg-yellow-400" : "bg-green-500"
+  const textCor = normalizedValue < 50 ? "text-red-500" : normalizedValue < 75 ? "text-yellow-500" : "text-green-600"
 
   return (
     <div className="flex flex-row-reverse items-center gap-2 min-w-[110px]">
       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${value}%` }} />
+        <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${normalizedValue}%` }} />
       </div>
-      <span className={`text-sm font-medium w-9 text-right tabular-nums ${textCor}`}>{value}%</span>
+      <span className={`text-sm font-medium w-9 text-right tabular-nums ${textCor}`}>{normalizedValue}%</span>
     </div>
-  )
-}
-
-function DragHandle({ id }) {
-  const { attributes, listeners } = useSortable({ id })
-
-  return (
-    <Button {...attributes} {...listeners} variant="ghost" size="icon" className="size-7 text-muted-foreground hover:bg-transparent">
-      <GripVerticalIcon className="size-3" />
-      <span className="sr-only">Reordenar</span>
-    </Button>
   )
 }
 
@@ -108,30 +109,6 @@ function StatePanel({ message, tone = "muted", className = "" }) {
 
 function getTableColumns(sensores, sensorError, canManageMaquinas, actions) {
   return [
-    { id: "drag", header: () => null, cell: ({ row }) => <DragHandle id={row.original.id} /> },
-    {
-      id: "select",
-      header: ({ table }) => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Selecionar todos"
-          />
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Selecionar linha"
-          />
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
     {
       accessorKey: "nome",
       header: "Máquina",
@@ -165,7 +142,8 @@ function getTableColumns(sensores, sensorError, canManageMaquinas, actions) {
       sortingFn: importanciaMaquinaSortFn,
     },
     {
-      accessorKey: "status",
+      id: "status",
+      accessorFn: getMaquinaStatusExibicao,
       header: ({ column }) => (
         <TableColumnHeaderMenu
           column={column}
@@ -174,12 +152,13 @@ function getTableColumns(sensores, sensorError, canManageMaquinas, actions) {
           sortOptions={STATUS_SORT_OPTIONS}
         />
       ),
-      cell: ({ row }) => <StatusBadge value={row.original.status} />,
+      cell: ({ row }) => <StatusBadge value={row.getValue("status")} />,
       filterFn: selectFilterFn,
       sortingFn: statusMaquinaSortFn,
     },
     {
-      accessorKey: "integridade",
+      id: "integridade",
+      accessorFn: getMaquinaIntegridadeExibicao,
       header: ({ column }) => (
         <TableColumnHeaderMenu
           column={column}
@@ -188,14 +167,17 @@ function getTableColumns(sensores, sensorError, canManageMaquinas, actions) {
           sortOptions={INTEGRIDADE_SORT_OPTIONS}
         />
       ),
-      cell: ({ row }) => <IntegridadeBar value={row.original.integridade} />,
+      cell: ({ row }) => <IntegridadeBar value={row.getValue("integridade")} inactive={row.getValue("status") === "SEM_SENSOR"} />,
       filterFn: integridadeFilterFn,
     },
     {
-      accessorKey: "ultimaLeituraEm",
+      id: "ultimaLeituraEm",
+      accessorFn: getMaquinaUltimaLeituraExibicao,
       header: "Último sinal",
       cell: ({ row }) => (
-        <span className="text-muted-foreground text-sm">{tempoRelativo(row.original.ultimaLeituraEm)}</span>
+        <span className="text-muted-foreground text-sm">
+          {row.getValue("ultimaLeituraEm") ? tempoRelativo(row.getValue("ultimaLeituraEm")) : "Sem leitura"}
+        </span>
       ),
     },
     {
@@ -238,14 +220,11 @@ function MaquinasTable({
   className = "",
 }) {
   const router = useRouter()
-  const [orderedData, setOrderedData] = React.useState(data)
   const [maquinaDetalhe, setMaquinaDetalhe] = React.useState(null)
-  const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] = React.useState({})
   const [columnFilters, setColumnFilters] = React.useState([])
   const [sorting, setSorting] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
-  const sortableId = React.useId()
   const permissions = useDashboardPermissions()
   const actions = React.useMemo(() => ({
     onViewDetails: (maquina) => setMaquinaDetalhe(maquina),
@@ -256,25 +235,12 @@ function MaquinasTable({
     () => getTableColumns(sensores, sensorError, permissions.canManageMaquinas, actions),
     [sensores, sensorError, permissions.canManageMaquinas, actions]
   )
-  const dndSensors = useSensors(
-    useSensor(MouseSensor, {}),
-    useSensor(TouchSensor, {}),
-    useSensor(KeyboardSensor, {})
-  )
-
-  React.useEffect(() => {
-    setOrderedData(data)
-  }, [data])
-
-  const dataIds = React.useMemo(() => orderedData?.map(({ id }) => id) || [], [orderedData])
 
   const table = useReactTable({
-    data: orderedData,
+    data,
     columns,
-    state: { sorting, columnVisibility, rowSelection, columnFilters, pagination },
+    state: { sorting, columnVisibility, columnFilters, pagination },
     getRowId: (row) => row.id.toString(),
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -290,19 +256,6 @@ function MaquinasTable({
   return (
     <>
       <div className={cn("min-h-[500px] overflow-auto rounded-lg border dark:bg-[#0F172A] dark:border-gray-700!", className)}>
-        <DndContext
-          collisionDetection={closestCenter}
-          modifiers={[restrictToVerticalAxis]}
-          onDragEnd={({ active, over }) => {
-            if (active && over && active.id !== over.id) {
-              setOrderedData((current) =>
-                arrayMove(current, dataIds.indexOf(active.id), dataIds.indexOf(over.id))
-              )
-            }
-          }}
-          sensors={dndSensors}
-          id={sortableId}
-        >
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-muted">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -315,17 +268,15 @@ function MaquinasTable({
                 </TableRow>
               ))}
             </TableHeader>
-            <TableBody className="**:data-[slot=table-cell]:first:w-8">
+            <TableBody>
               {table.getRowModel().rows?.length ? (
-                <SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
-                  {table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className="relative z-0">
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </SortableContext>
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} className="relative z-0 h-14">
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                    ))}
+                  </TableRow>
+                ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
@@ -335,11 +286,10 @@ function MaquinasTable({
               )}
             </TableBody>
           </Table>
-        </DndContext>
       </div>
       <div className="flex items-center justify-between px-4">
         <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-          {table.getFilteredSelectedRowModel().rows.length} de {table.getFilteredRowModel().rows.length} máquina(s) selecionada(s).
+          {table.getFilteredRowModel().rows.length} máquina(s) encontrada(s).
         </div>
         <div className="flex w-full items-center gap-4 sm:gap-8 lg:w-fit">
           <div className="hidden items-center gap-2 lg:flex">
@@ -397,10 +347,30 @@ function MaquinasTable({
 export function DataTable() {
   const router = useRouter()
   const permissions = useDashboardPermissions()
-  const { status, mensagem, maquinas, sensores, errors } = useDashboardCharts()
+  const {
+    status: dashboardStatus,
+    mensagem: dashboardMensagem,
+    maquinas: dashboardMaquinas,
+    sensores,
+    errors,
+  } = useDashboardCharts()
+  const {
+    status: maquinasStatus,
+    mensagem: maquinasMensagem,
+    maquinas: maquinasCadastradas,
+  } = useMaquinas()
+  const maquinas = maquinasCadastradas.length > 0 ? maquinasCadastradas : dashboardMaquinas
   const emAlerta = React.useMemo(() => maquinas.filter((maquina) => maquina.status === "ALERTA"), [maquinas])
-  const loading = status === "loading" && maquinas.length === 0
-  const machineError = errors.maquinas || (status === "error" && maquinas.length === 0 ? mensagem : "")
+  const loading =
+    maquinasStatus === "loading" &&
+    dashboardStatus === "loading" &&
+    maquinas.length === 0
+  const machineError =
+    maquinas.length === 0
+      ? errors.maquinas ||
+        (maquinasStatus === "error" ? maquinasMensagem : "") ||
+        (dashboardStatus === "error" ? dashboardMensagem : "")
+      : ""
   const sensorNotice = errors.sensores && maquinas.length > 0
     ? `${errors.sensores} Os detalhes dos sensores podem ficar indisponíveis temporariamente.`
     : ""
@@ -501,7 +471,7 @@ function TableCellViewer({ item, sensores, sensorError = "", onViewAlerts }) {
       trigger={(
         <Button
           variant="ghost"
-          className="h-auto w-fit justify-start gap-3 px-0 py-0 text-left text-foreground hover:bg-transparent hover:text-primary"
+          className="h-auto w-fit justify-start gap-3 !p-0 text-left text-foreground hover:bg-transparent hover:text-primary"
         >
           <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted text-muted-foreground">
             {item.imagem ? (
@@ -543,8 +513,8 @@ function MachineDetailsDrawer({
         className={cn(
           "overflow-hidden",
           isMobile
-            ? "inset-0! mt-0! h-[100dvh]! max-h-[100dvh]! w-full! max-w-none! rounded-none! border-0!"
-            : "w-[80%]! max-w-none!"
+            ? "!inset-0 !mt-0 !h-[100dvh] !max-h-[100dvh] !w-full !max-w-none !rounded-none !border-0"
+            : "!w-[420px] !max-w-[420px] sm:!max-w-[420px]"
         )}
       >
         <div className="px-4 pt-4">

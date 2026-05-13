@@ -25,7 +25,7 @@ import { getMaquinasPorCriticidade } from "@/lib/orbis-dashboard"
 
 /** @typedef {import("@/lib/orbis-types").ChartConfig} ChartConfig */
 
-export const description = "Distribuição de máquinas por criticidade e status"
+export const description = "Distribuição de máquinas por importância e status"
 
 /** @type {ChartConfig} */
 const chartConfig = {
@@ -36,6 +36,10 @@ const chartConfig = {
   emAlerta: {
     label: "Em alerta",
     color: "var(--chart-2)",
+  },
+  semSensor: {
+    label: "Sem sensor",
+    color: "var(--muted-foreground)",
   },
 }
 
@@ -60,6 +64,10 @@ export function ChartBarStacked() {
     () => chartData.reduce((total, item) => total + item.emAlerta, 0),
     [chartData]
   )
+  const totalSemSensor = React.useMemo(
+    () => chartData.reduce((total, item) => total + item.semSensor, 0),
+    [chartData]
+  )
 
   const loading = status === "loading" && maquinas.length === 0
   const errorMessage = errors.maquinas || (status === "error" && maquinas.length === 0 ? mensagem : "")
@@ -74,17 +82,19 @@ export function ChartBarStacked() {
         <CardTitle>Máquinas por Importância</CardTitle>
         <CardDescription>
           {loading
-            ? "Carregando distribuição por criticidade..."
+            ? "Carregando distribuição por importância..."
             : maquinas.length === 0
               ? "Nenhuma máquina sincronizada no momento"
               : totalEmAlerta > 0
                 ? `${totalEmAlerta} ativos exigem atenção imediata`
-                : "Nenhum ativo em alerta no momento"}
+                : totalSemSensor > 0
+                  ? `${totalSemSensor} ativos aguardam sensores vinculados`
+                  : "Nenhum ativo em alerta no momento"}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <EmptyState message="Sincronizando criticidade das máquinas com a API..." />
+          <EmptyState message="Sincronizando importância das máquinas com a API..." />
         ) : errorMessage ? (
           <EmptyState message={errorMessage} tone="error" />
         ) : maquinas.length === 0 ? (
@@ -113,6 +123,12 @@ export function ChartBarStacked() {
                 dataKey="emAlerta"
                 stackId="criticidade"
                 fill="var(--color-emAlerta)"
+                radius={totalSemSensor > 0 ? [0, 0, 0, 0] : [4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="semSensor"
+                stackId="criticidade"
+                fill="var(--color-semSensor)"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
@@ -121,7 +137,7 @@ export function ChartBarStacked() {
       </CardContent>
       <CardFooter className="justify-end border-t-0 bg-transparent pt-0">
         <ChartHelp>
-          Mostra onde há mais máquinas em alerta por criticidade.
+          Mostra onde há mais máquinas em alerta por importância.
         </ChartHelp>
       </CardFooter>
     </Card>

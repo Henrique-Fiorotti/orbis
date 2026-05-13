@@ -1057,7 +1057,7 @@ function RelatorioGeral({
                 </div>
 
                 <div className="break-inside-avoid border border-stone-200 bg-white p-3 sm:p-4 print:border-stone-300 print:p-3">
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-stone-500">Maquinas por criticidade</p>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-stone-500">Maquinas por importância</p>
                   <ResponsiveContainer width="100%" height={180}>
                     <BarChart data={barCriticidade} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" />
@@ -1154,7 +1154,7 @@ function RelatorioMaquina({
           meta={[
             `Gerado em ${geradoEm}`,
             `${maquina.setor} - ${maquina.tipo} - Periodo: ${periodoLabel}`,
-            `Criticidade: ${maquina.criticidade} - Ultimo sinal: ${tempoRelativo(maquina.ultimaLeituraEm)}`,
+            `Importância: ${maquina.criticidade} - Ultimo sinal: ${tempoRelativo(maquina.ultimaLeituraEm)}`,
           ]}
           statusLabel={maquina.status === "OK" ? "Operando" : "Em alerta"}
           statusSub={`Integridade atual: ${maquina.integridade}%`}

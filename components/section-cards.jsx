@@ -73,7 +73,7 @@ export function SectionCards() {
   const { status: maquinasStatus } = useMaquinas()
   const { status: sensoresStatus } = useSensores()
   const { status: tecnicosStatus } = useTecnicos()
-  const { status: alertasStatus = "success" } = useAlertas()
+  const { alertas, status: alertasStatus = "success" } = useAlertas()
   const { status: dashboardStatus } = useDashboardCharts()
   const [resumo, setResumo] = useState(EMPTY_RESUMO)
   const [status, setStatus] = useState("loading")
@@ -133,6 +133,10 @@ export function SectionCards() {
     alertasStatus === "loading" ||
     tecnicosStatus === "loading"
   const maquinasOk = resumo.maquinasFuncionando
+  const totalAlertasAtivos = alertas.filter((alerta) => alerta.status === "ATIVO").length
+  const totalAlertasEmAndamento = alertas.filter((alerta) => alerta.status === "EM_ANDAMENTO").length
+  const totalAlertasResolvidos = alertas.filter((alerta) => alerta.status === "RESOLVIDO").length
+  const totalAlertasCancelados = alertas.filter((alerta) => alerta.status === "CANCELADO").length
 
   if (loading) {
     return <DashboardMetricCardsSkeleton />
@@ -181,24 +185,27 @@ export function SectionCards() {
 
         <Card className="@container/card hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
           <CardHeader>
-            <CardDescription className="text-black! dark:text-white!">Alertas hoje</CardDescription>
+            <CardDescription className="text-black! dark:text-white!">Alertas ativos</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              <MetricValue value={resumo.alertasHoje} loading={loading} />
+              <MetricValue value={totalAlertasAtivos} loading={loading} />
             </CardTitle>
             <CardAction>
               <Badge variant="outline">
-                {loading ? null : resumo.alertasAtivos > 0 ? <TrendingDownIcon /> : <TrendingUpIcon />}
-                {loading ? "Atualizando" : `${resumo.alertasAtivos} ativos`}
+                {loading ? null : totalAlertasEmAndamento > 0 ? <TrendingDownIcon /> : <TrendingUpIcon />}
+                {loading ? "Atualizando" : `${totalAlertasEmAndamento} em andamento`}
               </Badge>
             </CardAction>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex gap-2 font-medium">
-              {loading ? "Conferindo alertas em aberto" : `${resumo.alertaSemAtendimento} sem atendimento`}
-              {loading || resumo.alertaSemAtendimento > 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
+              {loading ? "Conferindo alertas em andamento" : `${totalAlertasEmAndamento} alertas em andamento`}
+              {loading || totalAlertasEmAndamento > 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
             </div>
             <div className="text-muted-foreground">
-              {loading ? "Resumo diário em sincronização" : `${resumo.alertasAtendidosHoje} já atendidos hoje`}
+              {loading ? "Resumo dos chamados em sincronização" : `${totalAlertasResolvidos} alertas resolvidos no total`}
+            </div>
+            <div className="text-muted-foreground">
+              {loading ? "Conferindo chamados cancelados" : `${totalAlertasCancelados} alertas cancelados no total`}
             </div>
           </CardFooter>
         </Card>

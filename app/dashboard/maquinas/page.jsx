@@ -27,6 +27,7 @@ import {
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
   ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon,
   WashingMachineIcon, ShieldAlertIcon, RefreshCcwIcon, ImageIcon, UploadIcon,
+  CircleMinusIcon,
 } from "lucide-react"
 import {
   flexRender, getCoreRowModel, getFilteredRowModel,
@@ -41,6 +42,9 @@ import {
   MAQUINA_INTEGRIDADE_SORT_OPTIONS as INTEGRIDADE_SORT_OPTIONS,
   MAQUINA_STATUS_FILTER_OPTIONS as STATUS_FILTER_OPTIONS,
   MAQUINA_STATUS_SORT_OPTIONS as STATUS_SORT_OPTIONS,
+  getMaquinaIntegridadeExibicao,
+  getMaquinaStatusExibicao,
+  getMaquinaUltimaLeituraExibicao,
   importanciaMaquinaSortFn,
   integridadeMaquinaFilterFn as integridadeFilterFn,
   selectMaquinaFilterFn as selectFilterFn,
@@ -59,6 +63,15 @@ function CriticidadeBadge({ value }) {
 }
 
 function StatusBadge({ value }) {
+  if (value === "SEM_SENSOR") {
+    return (
+      <Badge variant="outline" className="px-1.5 text-muted-foreground">
+        <CircleMinusIcon className="text-muted-foreground" />
+        Sem sensor
+      </Badge>
+    )
+  }
+
   return (
     <Badge variant="outline" className="px-1.5 text-muted-foreground">
       {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]! dark:fill-primary!" /> : <AlertTriangleIcon className="text-red-500 dark:text-red-300" />}
@@ -67,15 +80,28 @@ function StatusBadge({ value }) {
   )
 }
 
-function IntegridadeBar({ value }) {
-  const cor = value < 50 ? "bg-red-500" : value < 75 ? "bg-yellow-400" : "bg-green-500"
-  const textCor = value < 50 ? "text-red-500 dark:text-red-300" : value < 75 ? "text-yellow-500 dark:text-yellow-300" : "text-green-600 dark:text-green-300"
+function IntegridadeBar({ value, inactive = false }) {
+  const normalizedValue = Number(value)
+
+  if (inactive || !Number.isFinite(normalizedValue)) {
+    return (
+      <div className="flex items-center gap-2 min-w-[110px]">
+        <span className="text-sm font-medium w-9 text-start tabular-nums text-muted-foreground">--</span>
+        <div className="flex-1 h-1.5 w-4 bg-muted rounded-full overflow-hidden">
+          <div className="h-full w-full rounded-full bg-muted-foreground/20" />
+        </div>
+      </div>
+    )
+  }
+
+  const cor = normalizedValue < 50 ? "bg-red-500" : normalizedValue < 75 ? "bg-yellow-400" : "bg-green-500"
+  const textCor = normalizedValue < 50 ? "text-red-500 dark:text-red-300" : normalizedValue < 75 ? "text-yellow-500 dark:text-yellow-300" : "text-green-600 dark:text-green-300"
 
   return (
     <div className="flex items-center gap-2 min-w-[110px]">
-      <span className={`text-sm font-medium w-9 text-start  tabular-nums ${textCor}`}>{value}%</span>
+      <span className={`text-sm font-medium w-9 text-start  tabular-nums ${textCor}`}>{normalizedValue}%</span>
       <div className="flex-1 h-1.5 w-4 bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${value}%` }} />
+        <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${normalizedValue}%` }} />
       </div>
 
     </div>
@@ -381,7 +407,8 @@ export default function MaquinasPage() {
       sortingFn: importanciaMaquinaSortFn,
     },
     {
-      accessorKey: "status",
+      id: "status",
+      accessorFn: getMaquinaStatusExibicao,
       header: ({ column }) => (
         <TableColumnHeaderMenu
           column={column}
@@ -390,12 +417,13 @@ export default function MaquinasPage() {
           sortOptions={STATUS_SORT_OPTIONS}
         />
       ),
-      cell: ({ row }) => <StatusBadge value={row.original.status} />,
+      cell: ({ row }) => <StatusBadge value={row.getValue("status")} />,
       filterFn: selectFilterFn,
       sortingFn: statusMaquinaSortFn,
     },
     {
-      accessorKey: "integridade",
+      id: "integridade",
+      accessorFn: getMaquinaIntegridadeExibicao,
       header: ({ column }) => (
         <TableColumnHeaderMenu
           column={column}
@@ -404,10 +432,19 @@ export default function MaquinasPage() {
           sortOptions={INTEGRIDADE_SORT_OPTIONS}
         />
       ),
-      cell: ({ row }) => <IntegridadeBar value={row.original.integridade} />,
+      cell: ({ row }) => <IntegridadeBar value={row.getValue("integridade")} inactive={row.getValue("status") === "SEM_SENSOR"} />,
       filterFn: integridadeFilterFn,
     },
-    { accessorKey: "ultimaLeituraEm", header: "Ultimo sinal", cell: ({ row }) => <span className="text-muted-foreground text-sm">{tempoRelativo(row.original.ultimaLeituraEm)}</span> },
+    {
+      id: "ultimaLeituraEm",
+      accessorFn: getMaquinaUltimaLeituraExibicao,
+      header: "Ultimo sinal",
+      cell: ({ row }) => (
+        <span className="text-muted-foreground text-sm">
+          {row.getValue("ultimaLeituraEm") ? tempoRelativo(row.getValue("ultimaLeituraEm")) : "Sem leitura"}
+        </span>
+      ),
+    },
     {
       id: "actions",
       cell: ({ row }) => (
@@ -542,7 +579,7 @@ export default function MaquinasPage() {
                 {loadingInicial ? "Verificando status..." : `${criticasAltaAlerta} em alerta agora`}
               </span>
               <span className="text-muted-foreground text-xs">
-                {loadingInicial ? "Classificando criticidade" : `${Math.max(criticasAlta - criticasAltaAlerta, 0)} operando normalmente`}
+                {loadingInicial ? "Classificando importância" : `${Math.max(criticasAlta - criticasAltaAlerta, 0)} operando normalmente`}
               </span>
             </div>
           </div>
@@ -722,7 +759,7 @@ export default function MaquinasPage() {
                     <Input id="tipo" placeholder="Ex: Motor Eletrico, Compressor..." value={form.tipo} onChange={(event) => setForm((prev) => ({ ...prev, tipo: event.target.value }))} />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="criticidade">Criticidade</Label>
+                    <Label htmlFor="criticidade">Importância</Label>
                     <Select value={form.criticidade} onValueChange={(value) => setForm((prev) => ({ ...prev, criticidade: value }))}>
                       <SelectTrigger id="criticidade" className="w-full">
                         <SelectValue />
