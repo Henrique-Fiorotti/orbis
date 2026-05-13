@@ -49,7 +49,8 @@ export default function SlideOpacity({ items = [] }) {
   return (
     <Carousel
       className="relative w-full"
-      opts={{ align: "center", loop: true, dragFree: true }}
+      // Velocidade/comportamento do arraste: altere "dragFree" (true = livre, false = card a card) e "duration" (padrão ~25, quanto maior mais lento)
+      opts={{ align: "center", loop: true, dragFree: true, duration: 60 }}
       setApi={setApi}
     >
       <div className="overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)]">
