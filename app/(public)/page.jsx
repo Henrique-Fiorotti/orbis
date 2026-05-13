@@ -86,6 +86,7 @@ export default function HomePage() {
   return (
 
     <div className={styles.root}>
+    
       <section
         id="inicio"
         className={styles.heroSection}
@@ -276,8 +277,11 @@ export default function HomePage() {
         transition: "background-color 0.25s ease",
         paddingTop: "45px"
       }}>
-        <SobreInformativo />
+        <RevealOnScroll>
+          <SobreInformativo />
+        </RevealOnScroll>
       </section>
+
       {/* Carrossel  */}
       <RevealOnScroll>
         <section
@@ -315,125 +319,132 @@ export default function HomePage() {
             <SlideOpacity items={home.features} />
           </div>
         </section>
-        </RevealOnScroll>
+      </RevealOnScroll>
 
-        <section
-          style={{
-            background: "var(--landing-alt-bg)",
-            transition: "background-color 0.25s ease",
-            ...HERO_DASHBOARD_STYLE,
-          }}
-        >
+      {/* Mostando o Dashboard */}
+      <section
+        style={{
+          background: "var(--landing-alt-bg)",
+          transition: "background-color 0.25s ease",
+          ...HERO_DASHBOARD_STYLE,
+        }}
+      >
+        <RevealOnScroll>
           <HeroDashboard />
-        </section>
+        </RevealOnScroll>
+      </section>
 
-        <section
-          className={styles.processSection}
-          style={DEFERRED_SECTION_STYLE}
-        >
-          <div className={styles.processInner}>
-            <div className={styles.processIntro}>
-              <p
-                style={{
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  letterSpacing: "0.12em",
-                  color: "var(--landing-accent-label)",
-                  textTransform: "uppercase",
-                  marginBottom: "12px",
-                }}
-              >
-                {home.process.eyebrow}
-              </p>
-              <h2
-                style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  color: "var(--landing-heading)",
-                  fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
-                  fontWeight: 200,
-                  letterSpacing: "-1px",
-                  lineHeight: 0.7,
-                  marginBottom: "8px",
-                }}
-              >
-                {home.process.titleLine1}
-              </h2>
-              <h2
-                style={{
-                  fontFamily: "'Poppins', sans-serif",
-                  fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
-                  fontWeight: 500,
-                  letterSpacing: "-1px",
-                  lineHeight: 1.15,
-                  color: "var(--landing-accent-strong)",
-                }}
-              >
-                {home.process.titleLine2}
-              </h2>
-            </div>
-            <div className={styles.stepsList}>
-              {home.steps.map((step) => (
-                <Step key={step.n} {...step} />
-              ))}
-            </div>
+      {/* Como Funciona */}
+      <section
+        className={styles.processSection}
+        style={DEFERRED_SECTION_STYLE}
+      >
+        <div className={styles.processInner}>
+          <div className={styles.processIntro}>
+            <p
+              style={{
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                letterSpacing: "0.12em",
+                color: "var(--landing-accent-label)",
+                textTransform: "uppercase",
+                marginBottom: "12px",
+              }}
+            >
+              {home.process.eyebrow}
+            </p>
+            <h2
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                color: "var(--landing-heading)",
+                fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
+                fontWeight: 200,
+                letterSpacing: "-1px",
+                lineHeight: 0.7,
+                marginBottom: "8px",
+              }}
+            >
+              {home.process.titleLine1}
+            </h2>
+            <h2
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)",
+                fontWeight: 500,
+                letterSpacing: "-1px",
+                lineHeight: 1.15,
+                color: "var(--landing-accent-strong)",
+              }}
+            >
+              {home.process.titleLine2}
+            </h2>
           </div>
-        </section>
-
-        <Separator orientation="horizontal" />
-
-        <div id="planos" style={DEFERRED_SECTION_STYLE}>
-          <Pricing />
+          <div className={styles.stepsList}>
+            {home.steps.map((step) => (
+              <Step key={step.n} {...step} />
+            ))}
+          </div>
         </div>
+      </section>
 
-        {/* Linha roxa de transição */}
-        <section
+      <Separator orientation="horizontal" /> {/* Linha que separa */}
+
+      {/* Planos */}
+      <div id="planos" style={DEFERRED_SECTION_STYLE}>
+        <RevealOnScroll>
+          <Pricing />
+        </RevealOnScroll>
+      </div>
+
+      {/* Linha roxa de transição */}
+      <section
+        style={{
+          background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
+          padding: "40px 8vw",
+          textAlign: "center",
+          ...DEFERRED_SECTION_STYLE,
+        }}
+      >
+        <h2
           style={{
-            background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
-            padding: "40px 8vw",
-            textAlign: "center",
-            ...DEFERRED_SECTION_STYLE,
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
+            fontWeight: 200,
+            color: "#fff",
+            letterSpacing: "-1px",
+            marginBottom: "16px",
           }}
         >
-          <h2
-            style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
-              fontWeight: 200,
-              color: "#fff",
-              letterSpacing: "-1px",
-              marginBottom: "16px",
-            }}
-          >
-            {home.final.title}
-          </h2>
-          <p
-            style={{
-              color: "rgba(255,255,255,0.75)",
-              fontSize: "0.95rem",
-              marginBottom: "36px",
-              lineHeight: 1.6,
-            }}
-          >
-            {home.final.description}
-          </p>
-          <div
-            style={{
-              display: "flex",
-              gap: "14px",
-              justifyContent: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <Link href="/#contact" prefetch={false} className={styles.finalCta}>
-              {home.final.cta}
-            </Link>
-          </div>
-        </section>
+          {home.final.title}
+        </h2>
+        <p
+          style={{
+            color: "rgba(255,255,255,0.75)",
+            fontSize: "0.95rem",
+            marginBottom: "36px",
+            lineHeight: 1.6,
+          }}
+        >
+          {home.final.description}
+        </p>
+        <div
+          style={{
+            display: "flex",
+            gap: "14px",
+            justifyContent: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <Link href="/#contact" prefetch={false} className={styles.finalCta}>
+            {home.final.cta}
+          </Link>
+        </div>
+      </section>
 
-        {/* SAQ */}
-        <section id="contact" >
-          <SAQ />
-        </section>
+      {/* SAQ */}
+      <section id="contact" >
+        <SAQ /> 
+      </section>
 
     </div>
 
