@@ -57,6 +57,7 @@ export const LANDING_COPY = {
       languageSelectLabel: "Selecionar idioma da landing page",
     },
     home: {
+
       hero: {
         splineTitle: "Demonstração 3D da Orbis",
         titleLines: [
@@ -93,7 +94,18 @@ export const LANDING_COPY = {
         description: "Junte-se a centenas de empresas que já confiam no Orbis.",
         cta: "Fale conosco",
       },
+      /* Aqui é onde os cards do carrossel infinito são exibidos */
       features: [
+        {
+          icon: "/orbisIARoxa.svg",
+          title: "IA operacional",
+          desc: "Insights automáticos ajudam sua equipe a priorizar o que exige atenção primeiro.",
+        },
+        {
+          icon: "/connect_icon_contact.svg",
+          title: "Integrações rápidas",
+          desc: "Conecte sensores, equipes e dados em uma experiência única de acompanhamento.",
+        },
         {
           icon: "/visibility.svg",
           title: "Monitoramento em tempo real",
@@ -118,6 +130,13 @@ export const LANDING_COPY = {
           desc: "Relatórios automáticos com informações acionáveis para decisões mais rápidas e assertivas.",
           delay: 240,
         },
+        {
+          icon: "/accessibility.png", /* Falta por o icone de acessibilidade */
+          title: "Acessibilidade total",
+          desc: "Interface adaptada para todos os perfis de usuário, com suporte a leitores de tela e navegação por teclado.",
+          delay: 320,
+        },
+
       ],
       steps: [
         {

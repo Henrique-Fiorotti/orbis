@@ -10,6 +10,7 @@ import Pricing from "@/components/pricing";
 import { Separator } from "@/components/ui/separator";
 import SobreInformativo from "@/components/sobre-informativo";
 import SAQ from "@/components/saq";
+import SlideOpacity from "@/components/carousel-10";
 
 import styles from "./page.module.css";
 import Image from "next/image";
@@ -23,42 +24,6 @@ const HERO_DASHBOARD_STYLE = {
   contentVisibility: "auto",
   containIntrinsicSize: "760px",
 };
-
-function FeatureCard({ icon, title, desc, delay }) {
-  return (
-    <RevealOnScroll delay={delay} style={{ flex: "1 1 220px" }}>
-      <div className={styles.featureCard}>
-        <img
-          src={icon}
-          alt={title}
-          className={styles.featureIcon}
-          loading="lazy"
-          decoding="async"
-        />
-        <p
-          style={{
-            fontWeight: 700,
-            fontSize: "0.95rem",
-            color: "var(--landing-heading)",
-            margin: "0 0 8px",
-          }}
-        >
-          {title}
-        </p>
-        <p
-          style={{
-            fontSize: "0.82rem",
-            color: "var(--landing-muted)",
-            lineHeight: 1.65,
-            margin: 0,
-          }}
-        >
-          {desc}
-        </p>
-      </div>
-    </RevealOnScroll>
-  );
-}
 
 function Step({ n, title, desc, delay }) {
   return (
@@ -119,7 +84,9 @@ export default function HomePage() {
   const { home } = copy;
 
   return (
+
     <div className={styles.root}>
+    
       <section
         id="inicio"
         className={styles.heroSection}
@@ -304,50 +271,57 @@ export default function HomePage() {
         </RevealOnScroll>
       </section>
 
+      {/* SrOrbis */}
       <section id="sobre" style={{
         background: "var(--landing-alt-bg)",
         transition: "background-color 0.25s ease",
-        paddingTop:"45px"
+        paddingTop: "45px"
       }}>
-        <SobreInformativo />
-      </section>
-      <section className={styles.benefitsSection} style={DEFERRED_SECTION_STYLE}
-      >
-        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <p
-            style={{
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              letterSpacing: "0.12em",
-              color: "var(--landing-accent-label)",
-              textTransform: "uppercase",
-              marginBottom: "12px",
-            }}
-          >
-            {home.benefits.eyebrow}
-          </p>
-          <h2
-            style={{
-              fontFamily: "'Syne', sans-serif",
-              color: "var(--landing-heading)",
-              fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
-              fontWeight: 200,
-              letterSpacing: "-1px",
-              marginBottom: "48px",
-              maxWidth: "480px",
-              lineHeight: 1.15,
-            }}
-          >
-            {home.benefits.title}
-          </h2>
-          <div className={styles.benefitsGrid}>
-            {home.features.map((feature) => (
-              <FeatureCard key={feature.title} {...feature} />
-            ))}
-          </div>
-        </div>
+        <RevealOnScroll>
+          <SobreInformativo />
+        </RevealOnScroll>
       </section>
 
+      {/* Carrossel  */}
+      <RevealOnScroll>
+        <section
+          className={styles.benefitsSection}
+          style={DEFERRED_SECTION_STYLE}
+        >
+          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+            <p
+              style={{
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                letterSpacing: "0.12em",
+                color: "var(--landing-accent-label)",
+                textTransform: "uppercase",
+                marginBottom: "12px",
+              }}
+            >
+              {home.benefits.eyebrow}
+            </p>
+
+            <h2
+              style={{
+                fontFamily: "'Syne', sans-serif",
+                color: "var(--landing-heading)",
+                fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
+                fontWeight: 200,
+                letterSpacing: "-1px",
+                marginBottom: "48px",
+                maxWidth: "480px",
+                lineHeight: 1.15,
+              }}
+            >
+              {home.benefits.title}
+            </h2>
+            <SlideOpacity items={home.features} />
+          </div>
+        </section>
+      </RevealOnScroll>
+
+      {/* Mostando o Dashboard */}
       <section
         style={{
           background: "var(--landing-alt-bg)",
@@ -355,9 +329,12 @@ export default function HomePage() {
           ...HERO_DASHBOARD_STYLE,
         }}
       >
-        <HeroDashboard />
+        <RevealOnScroll>
+          <HeroDashboard />
+        </RevealOnScroll>
       </section>
 
+      {/* Como Funciona */}
       <section
         className={styles.processSection}
         style={DEFERRED_SECTION_STYLE}
@@ -410,12 +387,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      <Separator orientation="horizontal" />
+      <Separator orientation="horizontal" /> {/* Linha que separa */}
 
+      {/* Planos */}
       <div id="planos" style={DEFERRED_SECTION_STYLE}>
-        <Pricing />
+        <RevealOnScroll>
+          <Pricing />
+        </RevealOnScroll>
       </div>
 
+      {/* Linha roxa de transição */}
       <section
         style={{
           background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
@@ -459,9 +440,13 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      {/* SAQ */}
       <section id="contact" >
-        <SAQ/>
+        <SAQ /> 
       </section>
+
     </div>
+
   );
 }

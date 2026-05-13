@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { BedIcon } from "lucide-react";
 
 function Card({
   className,
@@ -8,6 +9,7 @@ function Card({
   ...props
 }) {
   return (
+        
     <div
       data-slot="card"
       data-size={size}
