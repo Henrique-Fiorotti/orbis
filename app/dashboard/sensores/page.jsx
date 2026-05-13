@@ -713,13 +713,17 @@ export default function SensoresPage() {
                       <Label className="text-xs text-muted-foreground">Maquina vinculada</Label>
                       <span className="text-sm font-medium">{sensorSelecionado.maquinaId ? sensorSelecionado.maquinaNome : "Sem maquina vinculada"}</span>
                     </div>
-                    <div className="col-span-2 flex flex-col gap-1">
+                    <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Status</Label>
                       <StatusBadge value={sensorSelecionado.status} />
                     </div>
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs text-muted-foreground">ID do sensor</Label>
+                      <span className="text-sm font-semibold">{sensorSelecionado.id ?? "--"}</span>
+                    </div>
                   </div>
                   <Separator />
-                  <div className="flex flex-col gap-3 rounded-lg border border-[#5E17EB] bg-[#5E17EB]/40 p-3 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10">
+                  <div className="flex flex-col gap-3 rounded-lg border border-[#5E17EB] bg-[#5E17EB]/10 p-3 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10">
                     <div className="flex items-center gap-2">
                       <ThermometerIcon className="size-4 text-[#5E17EB] dark:text-[#5E17EB]" />
                       <span className="text-sm font-medium">Temperatura</span>
@@ -739,7 +743,7 @@ export default function SensoresPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-3 rounded-lg border border-[#5E17EB] bg-[#5E17EB]/40 p-3 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10">
+                  <div className="flex flex-col gap-3 rounded-lg border border-[#5E17EB] bg-[#5E17EB]/10 p-3 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10">
                     <div className="flex items-center gap-2">
                       <ActivityIcon className="size-4 text-[#5E17EB] dark:text-[#5E17EB]" />
                       <span className="text-sm font-medium">Vibracao</span>
