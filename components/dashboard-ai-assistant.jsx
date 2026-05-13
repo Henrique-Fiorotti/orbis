@@ -6,7 +6,6 @@ import {
   AlertTriangleIcon,
   BotIcon,
   FileTextIcon,
-  ImageIcon,
   Loader2Icon,
   PlusIcon,
   SendIcon,
@@ -30,8 +29,6 @@ import { cn } from "@/lib/utils"
 
 const MIN_QUESTION_LENGTH = 3
 const MAX_QUESTION_LENGTH = 500
-const MAX_IMAGE_ATTACHMENTS = 3
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
 const PAGE_CONTEXTS = [
   {
@@ -83,7 +80,7 @@ const SUGGESTED_PROMPTS = [
     prompt: "Analise o dashboard e me diga quais prioridades operacionais devo olhar agora.",
   },
   {
-    icon: ImageIcon,
+    icon: BotIcon,
     label: "Conferir sensores",
     prompt: "Quais sensores parecem exigir uma verificação mais cuidadosa?",
   },
@@ -123,26 +120,6 @@ function getErrorMessage(error) {
   return "Nao foi possivel consultar a IA agora."
 }
 
-function truncateText(value, maxLength) {
-  if (value.length <= maxLength) {
-    return value
-  }
-
-  return `${value.slice(0, Math.max(maxLength - 3, 0))}...`
-}
-
-function formatFileSize(size) {
-  if (!Number.isFinite(size)) {
-    return ""
-  }
-
-  if (size < 1024 * 1024) {
-    return `${Math.max(Math.round(size / 1024), 1)} KB`
-  }
-
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`
-}
-
 function getCurrentPageContext(pathname) {
   const normalizedPathname = pathname || "/dashboard"
   const page =
@@ -159,19 +136,11 @@ function getCurrentPageContext(pathname) {
   }
 }
 
-function buildPromptPayload(question, attachments, contexts) {
+function buildPromptPayload(question, contexts) {
   const lines = []
 
   if (contexts.length > 0) {
     lines.push(`Contexto de pagina: ${contexts.map((context) => context.text).join(" | ")}`)
-  }
-
-  if (attachments.length > 0) {
-    lines.push(
-      `Imagens anexadas no chat: ${attachments
-        .map((attachment) => `${truncateText(attachment.name, 28)} (${formatFileSize(attachment.size)})`)
-        .join(", ")}. Se o backend ainda nao tiver visao multimodal, use apenas esses metadados e peca uma descricao quando necessario.`
-    )
   }
 
   lines.push(`Pergunta: ${question}`)
@@ -218,25 +187,6 @@ function ChatMessage({ message }) {
               >
                 {context.label}
               </span>
-            ))}
-          </div>
-        ) : null}
-        {message.attachments?.length ? (
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {message.attachments.map((attachment) => (
-              <div
-                key={attachment.id}
-                className="overflow-hidden rounded-[8px] border border-black/10 bg-background/80"
-              >
-                <img
-                  src={attachment.previewUrl}
-                  alt={attachment.name}
-                  className="h-24 w-full object-cover"
-                />
-                <div className="truncate px-2 py-1 text-[10px] text-muted-foreground">
-                  {attachment.name}
-                </div>
-              </div>
             ))}
           </div>
         ) : null}
@@ -293,22 +243,19 @@ export function DashboardAiAssistant() {
   const [open, setOpen] = React.useState(false)
   const [input, setInput] = React.useState("")
   const [messages, setMessages] = React.useState([])
-  const [attachments, setAttachments] = React.useState([])
   const [pageContexts, setPageContexts] = React.useState([])
   const [inlineError, setInlineError] = React.useState("")
   const [lastFailedRequest, setLastFailedRequest] = React.useState(null)
   const [loading, setLoading] = React.useState(false)
   const messagesEndRef = React.useRef(null)
   const textareaRef = React.useRef(null)
-  const imageInputRef = React.useRef(null)
-  const objectUrlsRef = React.useRef(new Set())
 
   const trimmedInput = input.trim()
   const promptPayload = React.useMemo(
-    () => buildPromptPayload(trimmedInput, attachments, pageContexts),
-    [attachments, pageContexts, trimmedInput]
+    () => buildPromptPayload(trimmedInput, pageContexts),
+    [pageContexts, trimmedInput]
   )
-  const hasPromptExtras = attachments.length > 0 || pageContexts.length > 0
+  const hasPromptExtras = pageContexts.length > 0
   const promptLength = hasPromptExtras ? promptPayload.length : input.length
   const canSend =
     !loading &&
@@ -331,18 +278,9 @@ export function DashboardAiAssistant() {
     messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" })
   }, [messages, loading, open])
 
-  React.useEffect(() => {
-    const urls = objectUrlsRef.current
-
-    return () => {
-      urls.forEach((url) => URL.revokeObjectURL(url))
-      urls.clear()
-    }
-  }, [])
-
-  async function sendQuestion({ question, attachments: requestAttachments = [], contexts = [], showUserMessage = true }) {
+  async function sendQuestion({ question, contexts = [], showUserMessage = true }) {
     const normalizedQuestion = question.trim()
-    const payloadQuestion = buildPromptPayload(normalizedQuestion, requestAttachments, contexts)
+    const payloadQuestion = buildPromptPayload(normalizedQuestion, contexts)
 
     if (normalizedQuestion.length < MIN_QUESTION_LENGTH) {
       setInlineError("Escreva uma pergunta com pelo menos 3 caracteres.")
@@ -350,7 +288,7 @@ export function DashboardAiAssistant() {
     }
 
     if (payloadQuestion.length > MAX_QUESTION_LENGTH) {
-      setInlineError("A pergunta com anexos e contexto deve ter no maximo 500 caracteres.")
+      setInlineError("A pergunta com contexto deve ter no maximo 500 caracteres.")
       return
     }
 
@@ -367,7 +305,6 @@ export function DashboardAiAssistant() {
       setMessages((current) => [
         ...current,
         createMessage("user", normalizedQuestion, {
-          attachments: requestAttachments,
           contexts,
         }),
       ])
@@ -390,7 +327,6 @@ export function DashboardAiAssistant() {
 
       setLastFailedRequest({
         question: normalizedQuestion,
-        attachments: requestAttachments,
         contexts,
       })
       setMessages((current) => [
@@ -409,20 +345,17 @@ export function DashboardAiAssistant() {
       if (trimmedInput.length > 0 && trimmedInput.length < MIN_QUESTION_LENGTH) {
         setInlineError("Escreva uma pergunta com pelo menos 3 caracteres.")
       } else if (promptPayload.length > MAX_QUESTION_LENGTH) {
-        setInlineError("Remova contexto, imagem ou reduza a pergunta para ficar dentro de 500 caracteres.")
+        setInlineError("Remova contexto ou reduza a pergunta para ficar dentro de 500 caracteres.")
       }
       return
     }
 
     const question = trimmedInput
-    const requestAttachments = attachments
     const requestContexts = pageContexts
     setInput("")
-    setAttachments([])
     setPageContexts([])
     sendQuestion({
       question,
-      attachments: requestAttachments,
       contexts: requestContexts,
     })
   }
@@ -440,70 +373,6 @@ export function DashboardAiAssistant() {
     }
 
     sendQuestion({ ...lastFailedRequest, showUserMessage: false })
-  }
-
-  function handleImageSelection(event) {
-    const selectedFiles = Array.from(event.target.files ?? [])
-    event.target.value = ""
-
-    if (selectedFiles.length === 0) {
-      return
-    }
-
-    const remainingSlots = MAX_IMAGE_ATTACHMENTS - attachments.length
-
-    if (remainingSlots <= 0) {
-      setInlineError(`Voce pode anexar ate ${MAX_IMAGE_ATTACHMENTS} imagens por pergunta.`)
-      return
-    }
-
-    const nextAttachments = []
-    const errors = []
-
-    for (const file of selectedFiles.slice(0, remainingSlots)) {
-      if (!file.type.startsWith("image/")) {
-        errors.push(`${file.name} nao e uma imagem valida.`)
-        continue
-      }
-
-      if (file.size > MAX_IMAGE_SIZE) {
-        errors.push(`${file.name} ultrapassa ${formatFileSize(MAX_IMAGE_SIZE)}.`)
-        continue
-      }
-
-      const previewUrl = URL.createObjectURL(file)
-      objectUrlsRef.current.add(previewUrl)
-      nextAttachments.push({
-        id: `image-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        previewUrl,
-      })
-    }
-
-    if (selectedFiles.length > remainingSlots) {
-      errors.push(`Apenas ${remainingSlots} imagem(ns) foram adicionadas.`)
-    }
-
-    if (nextAttachments.length > 0) {
-      setAttachments((current) => [...current, ...nextAttachments])
-    }
-
-    setInlineError(errors[0] ?? "")
-  }
-
-  function removeAttachment(id) {
-    setAttachments((current) => {
-      const attachment = current.find((item) => item.id === id)
-
-      if (attachment) {
-        URL.revokeObjectURL(attachment.previewUrl)
-        objectUrlsRef.current.delete(attachment.previewUrl)
-      }
-
-      return current.filter((item) => item.id !== id)
-    })
   }
 
   function addCurrentPageContext() {
@@ -577,7 +446,7 @@ export function DashboardAiAssistant() {
             {inlineError ? (
               <p className="m-0 mb-2 text-xs text-destructive">{inlineError}</p>
             ) : null}
-            {attachments.length > 0 || pageContexts.length > 0 ? (
+            {pageContexts.length > 0 ? (
               <div className="mb-2 flex flex-wrap gap-2">
                 {pageContexts.map((context) => (
                   <button
@@ -588,18 +457,6 @@ export function DashboardAiAssistant() {
                   >
                     <FileTextIcon className="size-3.5 shrink-0" />
                     <span className="truncate">{context.label}</span>
-                    <XIcon className="size-3 shrink-0" />
-                  </button>
-                ))}
-                {attachments.map((attachment) => (
-                  <button
-                    key={attachment.id}
-                    type="button"
-                    onClick={() => removeAttachment(attachment.id)}
-                    className="inline-flex max-w-full items-center gap-1 rounded-[8px] border bg-background px-2 py-1 text-xs text-muted-foreground"
-                  >
-                    <ImageIcon className="size-3.5 shrink-0" />
-                    <span className="max-w-32 truncate">{attachment.name}</span>
                     <XIcon className="size-3 shrink-0" />
                   </button>
                 ))}
@@ -619,14 +476,6 @@ export function DashboardAiAssistant() {
               </div>
             ) : null}
             <div className="flex items-end gap-2">
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/png,image/jpg,image/jpeg,image/webp"
-                multiple
-                className="hidden"
-                onChange={handleImageSelection}
-              />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -635,41 +484,27 @@ export function DashboardAiAssistant() {
                     size="icon-lg"
                     className="mb-4 p-0!"
                     disabled={loading}
-                    aria-label="Adicionar imagem ou contexto"
+                    aria-label="Adicionar contexto"
                   >
                     <PlusIcon className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" side="top" className="w-56">
-                  <DropdownMenuItem
-                    onSelect={(event) => {
-                      event.preventDefault()
-                      imageInputRef.current?.click()
-                    }}
-                  >
-                    <ImageIcon className="size-4" />
-                    Anexar imagem
-                  </DropdownMenuItem>
                   <DropdownMenuItem onSelect={addCurrentPageContext}>
                     <FileTextIcon className="size-4" />
                     Contexto da pagina
                   </DropdownMenuItem>
-                  {(attachments.length > 0 || pageContexts.length > 0) ? (
+                  {pageContexts.length > 0 ? (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         variant="destructive"
                         onSelect={() => {
-                          attachments.forEach((attachment) => {
-                            URL.revokeObjectURL(attachment.previewUrl)
-                            objectUrlsRef.current.delete(attachment.previewUrl)
-                          })
-                          setAttachments([])
                           setPageContexts([])
                         }}
                       >
                         <XIcon className="size-4" />
-                        Limpar anexos
+                        Limpar contexto
                       </DropdownMenuItem>
                     </>
                   ) : null}
