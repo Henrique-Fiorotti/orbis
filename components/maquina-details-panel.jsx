@@ -2,13 +2,18 @@
 
 import * as React from "react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
-import { AlertTriangleIcon, CircleCheckIcon, ImageIcon, TrendingUpIcon } from "lucide-react"
+import { AlertTriangleIcon, CircleCheckIcon, CircleMinusIcon, ImageIcon, TrendingUpIcon } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import {
+  getMaquinaIntegridadeExibicao,
+  getMaquinaStatusExibicao,
+  getMaquinaUltimaLeituraExibicao,
+} from "@/lib/maquinas-table"
 import { cn, tempoRelativo } from "@/lib/utils"
 
 const chartConfig = {
@@ -38,26 +43,25 @@ function formatMetric(value, suffix = "", digits = 1) {
 
 function CriticidadeBadge({ value }) {
   const styles = {
-    ALTA: "w-[55px] bg-red-100 text-red-700 dark:bg-transparent! dark:text-white",
-    MEDIA: "w-[55px] bg-yellow-100 text-yellow-700 dark:bg-transparent! dark:text-white",
-    BAIXA: "w-[55px] bg-green-100 text-green-700 dark:bg-transparent! dark:text-white",
+    ALTA: "bg-white text-gray-700 border-gray-200 dark:border-border dark:bg-muted/30 dark:text-muted-foreground",
+    MEDIA: "bg-white text-gray-700 border-gray-200 dark:border-border dark:bg-muted/30 dark:text-muted-foreground",
+    BAIXA: "bg-white text-gray-700 border-gray-200 dark:border-border dark:bg-muted/30 dark:text-muted-foreground",
   }
-  const labels = {
-    ALTA: "Alta",
-    MEDIA: "Media",
-    BAIXA: "Baixa",
-  }
-
-  return (
-    <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>
-      {labels[value] ?? value}
-    </Badge>
-  )
+  return <Badge variant="outline" className={`px-1.5 ${styles[value]}`}>{value.charAt(0) + value.slice(1).toLowerCase()}</Badge>
 }
 
 function StatusBadge({ value }) {
+  if (value === "SEM_SENSOR") {
+    return (
+      <Badge variant="outline" className="px-1.5 text-muted-foreground">
+        <CircleMinusIcon className="text-muted-foreground" />
+        Sem sensor
+      </Badge>
+    )
+  }
+
   return (
-    <Badge variant="outline" className="w-[55px] px-1.5 text-muted-foreground">
+    <Badge variant="outline" className="px-1.5 text-muted-foreground">
       {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]!" /> : <AlertTriangleIcon className="text-red-500" />}
       {value}
     </Badge>
@@ -82,16 +86,29 @@ function SensorStatusBadge({ value }) {
   )
 }
 
-function IntegridadeBar({ value }) {
-  const cor = value < 50 ? "bg-red-500" : value < 75 ? "bg-yellow-400" : "bg-green-500"
-  const textCor = value < 50 ? "text-red-500" : value < 75 ? "text-yellow-500" : "text-green-600"
+function IntegridadeBar({ value, inactive = false }) {
+  const normalizedValue = Number(value)
+
+  if (inactive || !Number.isFinite(normalizedValue)) {
+    return (
+      <div className="flex flex-row-reverse items-center gap-2 min-w-[110px]">
+        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="h-full w-full rounded-full bg-muted-foreground/20" />
+        </div>
+        <span className="text-sm font-medium w-9 text-right tabular-nums text-muted-foreground">--</span>
+      </div>
+    )
+  }
+
+  const cor = normalizedValue < 50 ? "bg-red-500" : normalizedValue < 75 ? "bg-yellow-400" : "bg-green-500"
+  const textCor = normalizedValue < 50 ? "text-red-500" : normalizedValue < 75 ? "text-yellow-500" : "text-green-600"
 
   return (
     <div className="flex flex-row-reverse items-center gap-2 min-w-[110px]">
       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${value}%` }} />
+        <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${normalizedValue}%` }} />
       </div>
-      <span className={`text-sm font-medium w-9 text-right tabular-nums ${textCor}`}>{value}%</span>
+      <span className={`text-sm font-medium w-9 text-right tabular-nums ${textCor}`}>{normalizedValue}%</span>
     </div>
   )
 }
@@ -130,6 +147,13 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
     [leiturasAtuais]
   )
   const totalSensores = sensoresDaMaquina.length > 0 ? sensoresDaMaquina.length : maquina.sensores
+  const maquinaComTotalSensores = React.useMemo(
+    () => ({ ...maquina, sensores: totalSensores }),
+    [maquina, totalSensores]
+  )
+  const statusExibicao = getMaquinaStatusExibicao(maquinaComTotalSensores)
+  const integridadeExibicao = getMaquinaIntegridadeExibicao(maquinaComTotalSensores)
+  const ultimaLeituraExibicao = getMaquinaUltimaLeituraExibicao(maquinaComTotalSensores)
 
   return (
     <div className={cn("flex flex-col gap-4 text-sm", className)}>
@@ -161,16 +185,16 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
-          <Label>Criticidade</Label>
+          <Label>Importância</Label>
           <CriticidadeBadge value={maquina.criticidade} />
         </div>
         <div className="flex flex-col gap-1">
           <Label>Status</Label>
-          <StatusBadge value={maquina.status} />
+          <StatusBadge value={statusExibicao} />
         </div>
         <div className="col-span-2 flex flex-col gap-2">
           <Label>Integridade</Label>
-          <IntegridadeBar value={maquina.integridade} />
+          <IntegridadeBar value={integridadeExibicao} inactive={statusExibicao === "SEM_SENSOR"} />
         </div>
         <div className="flex flex-col gap-1">
           <Label>Sensores vinculados</Label>
@@ -178,7 +202,9 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
         </div>
         <div className="flex flex-col gap-1">
           <Label>Ultimo sinal</Label>
-          <span className="font-medium">{tempoRelativo(maquina.ultimaLeituraEm)}</span>
+          <span className="font-medium">
+            {ultimaLeituraExibicao ? tempoRelativo(ultimaLeituraExibicao) : "Sem leitura"}
+          </span>
         </div>
       </div>
 

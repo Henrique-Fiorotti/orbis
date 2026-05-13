@@ -321,6 +321,7 @@ export interface CriticidadeChartDatum {
   label: string;
   operando: number;
   emAlerta: number;
+  semSensor: number;
 }
 
 export interface IntegridadeSetorChartDatum {
