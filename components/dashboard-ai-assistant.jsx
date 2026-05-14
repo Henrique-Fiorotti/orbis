@@ -148,54 +148,49 @@ function buildPromptPayload(question, contexts) {
   return lines.join("\n")
 }
 
-function ChatMessage({ message }) {
+function ChatMessage({ message, animate = false }) {
   const isUser = message.role === "user"
   const isError = message.role === "error"
 
+  const { displayed, isDone } = useTypewriter(animate ? message.content : "")
+  const content = animate ? displayed : message.content
+  const isTyping = animate && !isDone
+
   return (
     <div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
-      <div
-        className={cn(
-          "max-w-[86%] rounded-[8px] border px-3 py-2 shadow-sm",
-          isUser
-            ? "border-primary/70 bg-primary text-primary-foreground"
-            : "border-border bg-muted/40 text-foreground",
-          isError && "border-destructive/30 bg-destructive/5 text-destructive"
-        )}
-      >
+      <div className={cn(
+        "max-w-[86%] rounded-[8px] border px-3 py-2 shadow-sm",
+        isUser ? "border-primary/70 bg-primary text-primary-foreground"
+               : "border-border bg-muted/40 text-foreground",
+        isError && "border-destructive/30 bg-destructive/5 text-destructive"
+      )}>
         <div className="flex items-start gap-2">
-          {isError ? (
-            <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
-          ) : !isUser ? (
-            <BotIcon className="mt-0.5 size-4 shrink-0 text-primary" />
-          ) : null}
+          {isError && <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />}
+          {!isUser && !isError && <BotIcon className="mt-0.5 size-4 shrink-0 text-primary" />}
           <p className="m-0 whitespace-pre-wrap break-words text-sm leading-relaxed">
-            {message.content}
+            {content}
+            {isTyping && (
+              <span className="ml-0.5 inline-block h-[1em] w-0.5 animate-pulse bg-current align-middle" />
+            )}
           </p>
         </div>
         {message.contexts?.length ? (
           <div className="mt-2 flex flex-wrap gap-1">
             {message.contexts.map((context) => (
-              <span
-                key={context.id}
-                className={cn(
-                  "rounded-[6px] border px-1.5 py-0.5 text-[10px]",
-                  isUser
-                    ? "border-primary-foreground/25 text-primary-foreground/85"
-                    : "border-border bg-background/60 text-muted-foreground"
-                )}
-              >
+              <span key={context.id} className={cn(
+                "rounded-[6px] border px-1.5 py-0.5 text-[10px]",
+                isUser ? "border-primary-foreground/25 text-primary-foreground/85"
+                       : "border-border bg-background/60 text-muted-foreground"
+              )}>
                 {context.label}
               </span>
             ))}
           </div>
         ) : null}
-        <span
-          className={cn(
-            "mt-1 block text-right text-[10px]",
-            isUser ? "text-primary-foreground/75" : "text-muted-foreground"
-          )}
-        >
+        <span className={cn(
+          "mt-1 block text-right text-[10px]",
+          isUser ? "text-primary-foreground/75" : "text-muted-foreground"
+        )}>
           {formatMessageTime(message.createdAt)}
         </span>
       </div>
@@ -236,6 +231,30 @@ function EmptyPromptState({ onSelectPrompt }) {
       </div>
     </div>
   )
+}
+
+// Cola esse hook fora do componente, antes do export function DashboardAiAssistant
+function useTypewriter(text, speed = 22) {
+  const [displayed, setDisplayed] = React.useState("")
+  const [isDone, setIsDone] = React.useState(true)
+
+  React.useEffect(() => {
+    if (!text) return
+    setDisplayed("")
+    setIsDone(false)
+    let index = 0
+    const interval = setInterval(() => {
+      index++
+      setDisplayed(text.slice(0, index))
+      if (index >= text.length) {
+        clearInterval(interval)
+        setIsDone(true)
+      }
+    }, speed)
+    return () => clearInterval(interval)
+  }, [text, speed])
+
+  return { displayed, isDone }
 }
 
 export function DashboardAiAssistant() {
@@ -429,7 +448,7 @@ export function DashboardAiAssistant() {
             {messages.length === 0 ? (
               <EmptyPromptState onSelectPrompt={handleSuggestedPrompt} />
             ) : (
-              messages.map((message) => <ChatMessage key={message.id} message={message} />)
+              messages.map((message, index) => <ChatMessage key={message.id} message={message} animate={message.role === "assistant" && index === messages.length - 1} />)
             )}
             {loading ? (
               <div className="flex justify-start">
