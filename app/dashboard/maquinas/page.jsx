@@ -616,7 +616,7 @@ export default function MaquinasPage() {
             placeholder="Buscar por nome, setor ou tipo..."
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
-            className="pl-8"
+            className="pl-8 dark:border-gray-600"
           />
         </div>
 

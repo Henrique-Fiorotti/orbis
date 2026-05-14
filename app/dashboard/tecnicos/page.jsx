@@ -580,7 +580,7 @@ export default function TecnicosPage() {
         {/* Busca */}
         <div className="relative w-full max-w-sm">
           <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
-          <Input placeholder="Buscar por nome, especialidade ou e-mail..." value={busca} onChange={e => setBusca(e.target.value)} className="pl-8" />
+          <Input placeholder="Buscar por nome, especialidade ou e-mail..." value={busca} onChange={e => setBusca(e.target.value)} className="pl-8 dark:border-gray-600" />
         </div>
 
         {loadingInicial ? (

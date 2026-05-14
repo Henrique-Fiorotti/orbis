@@ -623,8 +623,7 @@ export default function SensoresPage() {
             placeholder="Buscar por tipo ou maquina..."
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
-            className="pl-8"
-          />
+            className="pl-8 dark:border-gray-600" />
         </div>
 
         {loadingInicial ? (

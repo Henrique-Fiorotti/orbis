@@ -534,7 +534,7 @@ export default function AlertasPage() {
 
         <div className="relative w-full max-w-sm">
           <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
-          <Input placeholder="Buscar por maquina, sensor, tipo ou status..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-8" />
+          <Input placeholder="Buscar por maquina, sensor, tipo ou status..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-8 dark:border-gray-600" />
         </div>
 
         {loadingInicial ? (
