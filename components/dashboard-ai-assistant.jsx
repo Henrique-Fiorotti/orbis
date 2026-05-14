@@ -234,7 +234,7 @@ function EmptyPromptState({ onSelectPrompt }) {
 }
 
 // Cola esse hook fora do componente, antes do export function DashboardAiAssistant
-function useTypewriter(text, speed = 22) {
+function useTypewriter(text, speed = 18) {
   const [displayed, setDisplayed] = React.useState("")
   const [isDone, setIsDone] = React.useState(true)
 
