@@ -130,6 +130,22 @@ function formatValue(value, suffix) {
   return `${parsed}${suffix}`
 }
 
+function isSensorTransmitindo(sensor) {
+  return sensor?.active && sensor?.maquinaId !== null && sensor?.status === "ONLINE"
+}
+
+function getSensorSemSinalLabel(sensor) {
+  return sensor?.active && sensor?.maquinaId !== null ? "N/A - Sem sinal" : "N/A - Sensor Inativo"
+}
+
+function formatLeituraAtual(sensor, leitura, suffix) {
+  if (!isSensorTransmitindo(sensor)) {
+    return "Sem sinal"
+  }
+
+  return formatValue(leitura?.valorAtual, suffix)
+}
+
 function getSelectedMaquinaId(value) {
   if (!value || value === SEM_MAQUINA_VALUE) {
     return null
@@ -194,6 +210,10 @@ export default function SensoresPage() {
   const totalOffline = React.useMemo(() => sensores.filter((sensor) => sensor.status !== "ONLINE").length, [sensores])
   const semMaquina = React.useMemo(() => sensores.filter((sensor) => !sensor.maquinaId).length, [sensores])
   const foraDoLimite = React.useMemo(() => sensores.filter((sensor) => {
+    if (!isSensorTransmitindo(sensor)) {
+      return false
+    }
+
     const tempFora =
       sensor.temperatura &&
       (sensor.temperatura.valorAtual > sensor.temperatura.limiteMax ||
@@ -322,13 +342,13 @@ export default function SensoresPage() {
     return true
   }
 
-  function criarPayloadSensor() {
+  function criarPayloadSensor(isCreate = false) {
     const maquinaId = getSelectedMaquinaId(form.maquinaId)
 
     return {
       maquinaId,
       tipo: form.tipo.trim(),
-      status: "ONLINE",
+      status: isCreate ? "OFFLINE" : sensorSelecionado?.status ?? "OFFLINE",
       limiteTemperatura: parseDecimalInput(form.limiteTemperatura),
       idealTemperatura: parseDecimalInput(form.idealTemperatura),
       limiteVibracao: parseDecimalInput(form.limiteVibracao),
@@ -341,7 +361,7 @@ export default function SensoresPage() {
       return
     }
 
-    const payload = criarPayloadSensor()
+    const payload = criarPayloadSensor(modoSheet === "criar")
 
     try {
       if (modoSheet === "criar") {
@@ -435,15 +455,15 @@ export default function SensoresPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const sensorAtivo = row.original.active && row.original.maquinaId !== null
+        const sensorAtivo = isSensorTransmitindo(row.original)
         const temperatura = row.original.temperatura
+
+        if (!sensorAtivo) {
+          return <span className="text-sm text-muted-foreground">{getSensorSemSinalLabel(row.original)}</span>
+        }
 
         if (!temperatura) {
           return <span className="text-sm text-muted-foreground">N/A</span>
-        }
-
-        if (!sensorAtivo) {
-          return <span className="text-sm text-muted-foreground">N/A - Sensor Inativo</span>
         }
 
         return <LeituraCell valor={temperatura.valorAtual} unidade="°C" limiteMin={temperatura.limiteMin} limiteMax={temperatura.limiteMax} />
@@ -458,15 +478,15 @@ export default function SensoresPage() {
         </div>
       ),
       cell: ({ row }) => {
-        const sensorAtivo = row.original.active && row.original.maquinaId !== null
+        const sensorAtivo = isSensorTransmitindo(row.original)
         const vibracao = row.original.vibracao
+
+        if (!sensorAtivo) {
+          return <span className="text-sm text-muted-foreground">{getSensorSemSinalLabel(row.original)}</span>
+        }
 
         if (!vibracao) {
           return <span className="text-sm text-muted-foreground">N/A</span>
-        }
-
-        if (!sensorAtivo) {
-          return <span className="text-sm text-muted-foreground">N/A - Sensor Inativo</span>
         }
 
         return <LeituraCell valor={vibracao.valorAtual} unidade="mm/s" limiteMin={vibracao.limiteMin} limiteMax={vibracao.limiteMax} />
@@ -731,7 +751,7 @@ export default function SensoresPage() {
                     <div className="grid grid-cols-3 gap-3">
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Leitura</Label>
-                        <span className="text-sm font-semibold">{formatValue(sensorSelecionado.temperatura?.valorAtual, " °C")}</span>
+                        <span className="text-sm font-semibold">{formatLeituraAtual(sensorSelecionado, sensorSelecionado.temperatura, " °C")}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Ideal</Label>
@@ -751,7 +771,7 @@ export default function SensoresPage() {
                     <div className="grid grid-cols-3 gap-3">
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Leitura</Label>
-                        <span className="text-sm font-semibold">{formatValue(sensorSelecionado.vibracao?.valorAtual, " mm/s")}</span>
+                        <span className="text-sm font-semibold">{formatLeituraAtual(sensorSelecionado, sensorSelecionado.vibracao, " mm/s")}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Ideal</Label>
