@@ -482,7 +482,7 @@ export default function SensoresPage() {
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+            <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
               <EllipsisVerticalIcon />
             </Button>
           </DropdownMenuTrigger>
@@ -524,7 +524,7 @@ export default function SensoresPage() {
       <div className="flex flex-col gap-6 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
+            <Button variant="ghost" className={"cursor-pointer"} size="icon-sm" onClick={() => router.push("/dashboard")}>
               <ArrowLeftIcon className="size-4" />
             </Button>
             <div className="flex items-center gap-2">
@@ -533,7 +533,7 @@ export default function SensoresPage() {
             </div>
           </div>
           {canManageSensores ? (
-            <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
+            <Button onClick={abrirCriar} className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
               <PlusIcon className="mr-1 size-4" />
               Novo sensor
             </Button>

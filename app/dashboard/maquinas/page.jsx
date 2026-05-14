@@ -450,7 +450,7 @@ export default function MaquinasPage() {
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+            <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
               <EllipsisVerticalIcon />
             </Button>
           </DropdownMenuTrigger>
@@ -497,7 +497,7 @@ export default function MaquinasPage() {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
+                <Button className={"cursor-pointer "} variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
                   <ArrowLeftIcon className="size-4" />
                 </Button>
               </TooltipTrigger>
@@ -513,7 +513,7 @@ export default function MaquinasPage() {
             </div>
           </div>
           {canManageMaquinas ? (
-            <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
+            <Button onClick={abrirCriar} className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
               <PlusIcon className="mr-1 size-4" />
               Nova maquina
             </Button>

@@ -185,7 +185,7 @@ function getTableColumns(sensores, sensorError, canManageMaquinas, actions) {
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+            <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
               <EllipsisVerticalIcon />
               <span className="sr-only">Abrir menu</span>
             </Button>

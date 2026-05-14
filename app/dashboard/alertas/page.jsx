@@ -171,7 +171,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+              <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
                 <EllipsisVerticalIcon />
               </Button>
             </DropdownMenuTrigger>
@@ -432,7 +432,7 @@ export default function AlertasPage() {
       <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
+            <Button variant="ghost" className={"cursor-pointer"} size="icon-sm" onClick={() => router.push("/dashboard")}>
               <ArrowLeftIcon className="size-4 dark:text-white!" />
             </Button>
             <div>
@@ -442,7 +442,7 @@ export default function AlertasPage() {
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={() => recarregarAlertas()} disabled={carregando || salvando}>
+          <Button variant="outline" className={"cursor-pointer"} onClick={() => recarregarAlertas()} disabled={carregando || salvando}>
             <RefreshCcwIcon className="mr-1 size-4" />
             Atualizar
           </Button>
