@@ -538,7 +538,7 @@ export default function AdminsPage() {
     {
       accessorKey: "telefone",
       header: "Telefone",
-      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.telefone || "Nao informado"}</span>,
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.telefone || "Não informado"}</span>,
     },
     {
       accessorKey: "status",
