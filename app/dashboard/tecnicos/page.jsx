@@ -119,6 +119,10 @@ function normalizarBusca(value) {
     .toLowerCase()
 }
 
+function formatarTelefoneExibicao(value) {
+  return String(value ?? "").trim() || "Não informado"
+}
+
 export default function TecnicosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -383,7 +387,7 @@ export default function TecnicosPage() {
     {
       accessorKey: "telefone",
       header: "Telefone",
-      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.telefone}</span>,
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{formatarTelefoneExibicao(row.original.telefone)}</span>,
     },
     {
       accessorKey: "status",
@@ -678,7 +682,7 @@ export default function TecnicosPage() {
                   <div className="grid grid-cols-1 gap-3">
                     {[
                       ["E-mail", tecnicoSelecionado.email],
-                      ["Telefone", tecnicoSelecionado.telefone],
+                      ["Telefone", formatarTelefoneExibicao(tecnicoSelecionado.telefone)],
                       ["Cadastrado", tempoRelativo(tecnicoSelecionado.criadoEm)],
                     ].map(([label, value]) => (
                       <div key={label} className="flex flex-col gap-1">
