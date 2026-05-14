@@ -71,12 +71,22 @@ export function AlertasProvider({ children }) {
 
   React.useEffect(() => {
     let reloadTimer = null
+    let lastReloadAt = 0
+
+    function reloadSilencioso() {
+      lastReloadAt = Date.now()
+      reloadTimer = null
+      carregarAlertas({ silent: true }).catch(() => {})
+    }
 
     function handleSensorReading() {
-      window.clearTimeout(reloadTimer)
-      reloadTimer = window.setTimeout(() => {
-        carregarAlertas({ silent: true }).catch(() => {})
-      }, 600)
+      if (reloadTimer) {
+        return
+      }
+
+      const elapsed = Date.now() - lastReloadAt
+      const wait = elapsed >= 3000 ? 0 : 3000 - elapsed
+      reloadTimer = window.setTimeout(reloadSilencioso, wait)
     }
 
     window.addEventListener(SENSOR_READING_EVENT, handleSensorReading)

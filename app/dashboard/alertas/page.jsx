@@ -126,6 +126,23 @@ function isStatusCancelavel(status) {
   return status === "ATIVO" || status === "EM_ANDAMENTO"
 }
 
+function isStatusAberto(status) {
+  return status === "ATIVO" || status === "EM_ANDAMENTO"
+}
+
+function getUltimaOcorrencia(alerta) {
+  return alerta.ultimaOcorrenciaEm || alerta.atualizadoEm || alerta.criadoEm
+}
+
+function getAlertaTimestamp(alerta) {
+  const timestamp = Date.parse(getUltimaOcorrencia(alerta))
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+function compareAlertaRecente(a, b) {
+  return getAlertaTimestamp(b) - getAlertaTimestamp(a)
+}
+
 function StatePanel({ message, tone = "muted" }) {
   return (
     <div
@@ -156,10 +173,29 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
       ),
     },
     { accessorKey: "tipo", header: "Tipo", cell: ({ row }) => <TipoAlertaBadge value={row.original.tipo} /> },
-    { accessorKey: "severidade", header: "Severidade", cell: ({ row }) => <SeveridadeBadge value={row.original.severidade} /> },
     { accessorKey: "status", header: "Status", cell: ({ row }) => <StatusAlertaBadge value={row.original.status} /> },
     { accessorKey: "sensorNome", header: "Sensor", cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.sensorNome}</span> },
-    { accessorKey: "criadoEm", header: "Criado", cell: ({ row }) => <span className="text-sm text-muted-foreground">{tempoRelativo(row.original.criadoEm)}</span> },
+    {
+      accessorKey: "ultimaOcorrenciaEm",
+      header: "Ultima ocorrencia",
+      cell: ({ row }) => (
+        <div className="flex min-w-[120px] flex-col gap-1">
+          <span className="text-sm text-muted-foreground">{tempoRelativo(getUltimaOcorrencia(row.original))}</span>
+          <span className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-medium ${row.original.recencia === "RECENTE" ? "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300" : "bg-muted text-muted-foreground"}`}>
+            {row.original.recencia === "RECENTE" ? "Recente" : "Antigo"}
+          </span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "ocorrencias",
+      header: "Ocorrencias",
+      cell: ({ row }) => (
+        <Badge variant="outline" className={`px-1.5 ${row.original.duplicado ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
+          {Math.max(Number(row.original.ocorrencias) || 1, 1)}
+        </Badge>
+      ),
+    },
     {
       id: "actions",
       cell: ({ row }) => {
@@ -298,12 +334,20 @@ export default function AlertasPage() {
   const loadingInicial = useDashboardMetricsLoading(carregando && alertas.length === 0)
   const errorSemDados = status === "error" && alertas.length === 0
 
-  const totalAtivos = alertas.filter((a) => a.status === "ATIVO").length
-  const totalEmAndamento = alertas.filter((a) => a.status === "EM_ANDAMENTO").length
-  const totalResolvidos = alertas.filter((a) => a.status === "RESOLVIDO").length
-  const totalCancelados = alertas.filter((a) => a.status === "CANCELADO").length
-  const altaSeveridadeAtivos = alertas.filter((a) => a.status === "ATIVO" && a.severidade === "ALTA").length
-  const taxaResolucao = alertas.length ? Math.round((totalResolvidos / alertas.length) * 100) : 0
+  const alertasOrdenados = React.useMemo(() => [...alertas].sort(compareAlertaRecente), [alertas])
+  const alertasAbertos = React.useMemo(() => alertasOrdenados.filter((alerta) => isStatusAberto(alerta.status)), [alertasOrdenados])
+  const alertasRecentes = React.useMemo(() => alertasAbertos.filter((alerta) => alerta.recencia === "RECENTE"), [alertasAbertos])
+  const alertasAntigos = React.useMemo(() => alertasAbertos.filter((alerta) => alerta.recencia !== "RECENTE"), [alertasAbertos])
+  const alertasRepetidos = React.useMemo(
+    () => alertasAbertos.filter((alerta) => alerta.duplicado || Number(alerta.ocorrencias) > 1),
+    [alertasAbertos]
+  )
+  const alertaAbertoMaisAntigo = React.useMemo(
+    () => alertasAbertos.reduce((oldest, alerta) => (!oldest || getAlertaTimestamp(alerta) < getAlertaTimestamp(oldest) ? alerta : oldest), null),
+    [alertasAbertos]
+  )
+  const altaSeveridadeRecentes = alertasRecentes.filter((a) => a.severidade === "ALTA").length
+  const totalOcorrenciasAgrupadas = alertasRepetidos.reduce((total, alerta) => total + Math.max(Number(alerta.ocorrencias) || 1, 1), 0)
 
   React.useEffect(() => {
     const maquinaParam = searchParams.get("maquina")
@@ -399,23 +443,24 @@ export default function AlertasPage() {
   }
 
   const dadosFiltrados = React.useMemo(() =>
-    alertas.filter((alerta) => {
+    alertasOrdenados.filter((alerta) => {
       const termo = busca.toLowerCase()
 
       return (
         alerta.maquinaNome.toLowerCase().includes(termo) ||
         alerta.sensorNome.toLowerCase().includes(termo) ||
         alerta.mensagem.toLowerCase().includes(termo) ||
+        String(alerta.ocorrencias ?? "").includes(termo) ||
         STATUS_ALERTA_LABEL[alerta.status]?.toLowerCase().includes(termo) ||
         TIPOS_ALERTA_LABEL[alerta.tipo]?.toLowerCase().includes(termo)
       )
     }),
-  [alertas, busca])
+  [alertasOrdenados, busca])
 
-  const ativos = dadosFiltrados.filter((a) => a.status === "ATIVO")
-  const emAndamento = dadosFiltrados.filter((a) => a.status === "EM_ANDAMENTO")
+  const recentes = dadosFiltrados.filter((a) => isStatusAberto(a.status) && a.recencia === "RECENTE")
+  const antigos = dadosFiltrados.filter((a) => isStatusAberto(a.status) && a.recencia !== "RECENTE")
+  const repetidos = dadosFiltrados.filter((a) => isStatusAberto(a.status) && (a.duplicado || Number(a.ocorrencias) > 1))
   const resolvidos = dadosFiltrados.filter((a) => a.status === "RESOLVIDO")
-  const cancelados = dadosFiltrados.filter((a) => a.status === "CANCELADO")
 
   const tableProps = {
     onVer: abrirVer,
@@ -471,63 +516,54 @@ export default function AlertasPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Total</span>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Todos os chamados</span>
+              <span className="text-sm font-medium text-muted-foreground">Recentes</span>
+              <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">30 min</span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={alertas.length} loading={loadingInicial} />
-            </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className={`flex items-center gap-1 ${taxaResolucao >= 75 ? "text-green-700 dark:text-green-300" : taxaResolucao >= 40 ? "text-yellow-700 dark:text-yellow-300" : "text-red-700 dark:text-red-300"}`}>
-                {totalResolvidos} / {alertas.length} resolvidos.
-              </span>
-              <div>
-                <span className={`text-md font-medium ${taxaResolucao >= 75 ? "text-green-700 dark:text-green-300" : taxaResolucao >= 40 ? "text-yellow-700 dark:text-yellow-300" : "text-red-700 dark:text-red-300"}`}>
-                  Taxa de resolucao
-                </span>
-                <span className={`ms-1 rounded-full px-2 py-0.5 text-xs font-medium ${taxaResolucao >= 75 ? "border border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300" : taxaResolucao >= 40 ? "border border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : "border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"}`}>
-                  {taxaResolucao >= 75 ? "Boa" : taxaResolucao >= 40 ? "Regular" : "Baixa"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Chamados disponiveis</span>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${totalAtivos > 0 ? "border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : "border border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"}`}>
-                {totalAtivos > 0 ? "Pendente" : "Zerado"}
-              </span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={totalAtivos} loading={loadingInicial} />
+              <MetricValue value={alertasRecentes.length} loading={loadingInicial} />
             </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="flex items-center gap-1 text-red-600 dark:text-red-300">
                 <ShieldAlertIcon className="size-3.5" />
-                {altaSeveridadeAtivos} de alta severidade
+                {altaSeveridadeRecentes} de alta severidade
               </span>
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <AlertTriangleIcon className="size-3.5 text-yellow-500" />
-                {totalEmAndamento} em atendimento
-              </span>
+              <span className="text-xs text-muted-foreground">Alertas abertos atualizados nos ultimos 30 minutos.</span>
             </div>
           </div>
 
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Chamados resolvidos</span>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Total</span>
+              <span className="text-sm font-medium text-muted-foreground">Aguardando ha mais tempo</span>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${alertasAntigos.length > 0 ? "border border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : "border border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"}`}>
+                {alertasAntigos.length > 0 ? "Priorizar" : "Zerado"}
+              </span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={totalResolvidos} loading={loadingInicial} />
+              <MetricValue value={alertasAntigos.length} loading={loadingInicial} />
             </span>
             <div className="flex flex-col gap-0.5 text-sm">
-              <span className={`flex items-center gap-1 ${totalResolvidos > 0 ? "text-green-700 dark:text-green-300" : "text-gray-400 dark:text-muted-foreground"}`}>
-                <CircleCheckIcon className={`size-3.5 ${totalResolvidos > 0 ? "fill-green-600" : "fill-gray-200 dark:fill-muted"}`} />
-                {totalResolvidos} encerrados
+              <span className="flex items-center gap-1 text-yellow-700 dark:text-yellow-300">
+                <AlertTriangleIcon className="size-3.5" />
+                {alertaAbertoMaisAntigo ? `Mais antigo: ${tempoRelativo(getUltimaOcorrencia(alertaAbertoMaisAntigo))}` : "Nenhum alerta antigo"}
               </span>
-              <span className="text-xs text-muted-foreground">{totalCancelados} cancelados pelo administrador</span>
+              <span className="text-xs text-muted-foreground">Alertas abertos sem atualizacao recente.</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Ocorrencias agrupadas</span>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Duplicados</span>
+            </div>
+            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
+              <MetricValue value={alertasRepetidos.length} loading={loadingInicial} />
+            </span>
+            <div className="flex flex-col gap-0.5 text-sm">
+              <span className="flex items-center gap-1 text-orange-700 dark:text-orange-300">
+                <AlertTriangleIcon className="size-3.5" />
+                {totalOcorrenciasAgrupadas} ocorrencias no total
+              </span>
+              <span className="text-xs text-muted-foreground">Mesmo sensor e tipo permanecem em um unico chamado aberto.</span>
             </div>
           </div>
         </div>
@@ -542,27 +578,27 @@ export default function AlertasPage() {
         ) : errorSemDados ? (
           <StatePanel message={mensagem || "Nao foi possivel carregar os chamados."} tone="error" />
         ) : (
-          <Tabs defaultValue="ativos" className="min-w-0 w-full flex-col gap-4">
+          <Tabs defaultValue="recentes" className="min-w-0 w-full flex-col gap-4">
             <TabsList className="w-full max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <TabsTrigger value="ativos" className="shrink-0 flex-none">
-                Disponiveis{ativos.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{ativos.length}</Badge>}
+              <TabsTrigger value="recentes" className="shrink-0 flex-none">
+                Recentes{recentes.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{recentes.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="em-andamento" className="shrink-0 flex-none">
-                Em andamento{emAndamento.length > 0 && <Badge variant="secondary" className="ml-1.5 border-yellow-200! bg-yellow-100! text-yellow-700! dark:border-yellow-900/60! dark:bg-yellow-950/30! dark:text-yellow-300!">{emAndamento.length}</Badge>}
+              <TabsTrigger value="antigos" className="shrink-0 flex-none">
+                Antigos{antigos.length > 0 && <Badge variant="secondary" className="ml-1.5 border-yellow-200! bg-yellow-100! text-yellow-700! dark:border-yellow-900/60! dark:bg-yellow-950/30! dark:text-yellow-300!">{antigos.length}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="repetidos" className="shrink-0 flex-none">
+                Repetidos{repetidos.length > 0 && <Badge variant="secondary" className="ml-1.5 border-orange-200! bg-orange-100! text-orange-700! dark:border-orange-900/60! dark:bg-orange-950/30! dark:text-orange-300!">{repetidos.length}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="resolvidos" className="shrink-0 flex-none">
                 Resolvidos{resolvidos.length > 0 && <Badge variant="secondary" className="ml-1.5">{resolvidos.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="cancelados" className="shrink-0 flex-none">
-                Cancelados{cancelados.length > 0 && <Badge variant="secondary" className="ml-1.5">{cancelados.length}</Badge>}
-              </TabsTrigger>
               <TabsTrigger value="todos" className="shrink-0 flex-none">Todos ({dadosFiltrados.length})</TabsTrigger>
             </TabsList>
             {[
-              { value: "ativos", data: ativos },
-              { value: "em-andamento", data: emAndamento },
+              { value: "recentes", data: recentes },
+              { value: "antigos", data: antigos },
+              { value: "repetidos", data: repetidos },
               { value: "resolvidos", data: resolvidos },
-              { value: "cancelados", data: cancelados },
               { value: "todos", data: dadosFiltrados },
             ].map(({ value, data }) => (
               <TabsContent key={value} value={value} className="flex flex-col gap-4">
@@ -619,6 +655,16 @@ export default function AlertasPage() {
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs text-muted-foreground">Criado em</Label>
                     <span className="text-sm">{tempoRelativo(alertaSelecionado.criadoEm)}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs text-muted-foreground">Ultima ocorrencia</Label>
+                      <span className="text-sm">{tempoRelativo(getUltimaOcorrencia(alertaSelecionado))}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs text-muted-foreground">Ocorrencias</Label>
+                      <span className="text-sm font-semibold">{Math.max(Number(alertaSelecionado.ocorrencias) || 1, 1)}</span>
+                    </div>
                   </div>
                   <Separator />
                   <div className="flex flex-col gap-2">
