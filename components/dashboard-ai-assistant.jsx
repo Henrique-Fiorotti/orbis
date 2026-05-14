@@ -209,7 +209,7 @@ function EmptyPromptState({ onSelectPrompt }) {
       <div className="w-full max-w-[320px]">
         <div className="mb-5 flex items-center gap-3">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-[8px] text-primary">
-            <Image src="/orb-ia.svg" alt="Orb" width={58} height={58} />
+            <Image src="/orb-ia.svg" className="dark:invert" alt="Orb" width={58} height={58} />
           </div>
           <h3 className="m-0 text-left text-xl font-semibold leading-tight text-foreground">
             O que posso olhar por você?
@@ -555,12 +555,12 @@ export function DashboardAiAssistant() {
           <Button
             type="button"
             size="icon-lg"
-            className="fixed bottom-5 right-5 z-40 size-12 rounded-full! p-0! shadow-lg shadow-primary/25 hover:scale-[1.06] border-1 border-black/30 bg-white"
+            className="fixed dark:bg-[#1e2939] bottom-5 right-5 z-40 size-12 rounded-full! p-0! hover:scale-[1.06] border-1 border-black/30 bg-white"
             onClick={() => setOpen((current) => !current)}
             aria-label="Agente Orb"
             aria-expanded={open}
           >
-            <Image src="/orb-ia.svg" alt="Orb" width={34} height={34} />
+            <Image src="/orb-ia.svg" className="dark:invert" alt="Orb" width={34} height={34} />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="left" sideOffset={8}>Converse com o Orb!</TooltipContent>
