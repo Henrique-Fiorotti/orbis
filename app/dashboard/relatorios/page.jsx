@@ -386,56 +386,38 @@ function EmailAutomationPanel({
   onDestinatariosChange,
   frequencia,
   onFrequenciaChange,
-  periodoLabel,
+  horario,
+  onHorarioChange,
   onSaveDraft,
   onSendNow,
 }) {
   const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
+  const hasDestinatarios = destinatarios.trim().length > 0
+  const frequencyLabel = selectedFrequency?.label ?? "Recorrencia"
 
   return (
     <div className="print:hidden rounded-xl border bg-card p-4 shadow-sm">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 items-center gap-2">
-          <MailIcon className="size-4 text-[#3B2867] dark:text-white" />
-          <div className="min-w-0">
-            <h2 className="m-0 text-sm font-medium text-[#3B2867] dark:text-white">
-              Envio por e-mail
-            </h2>
-            <p className="m-0 mt-1 text-xs text-muted-foreground">
-              Relatórios recorrentes enviados automaticamente pela integracao Resend.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2 text-xs">
-          <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 font-medium text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
-            Resend ativo
-          </span>
-          <span className="rounded-full border bg-muted px-2 py-0.5 text-muted-foreground">
-            {periodoLabel}
-          </span>
-          <span className="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/30 dark:text-purple-300">
-            Agendamento sincronizado
-          </span>
-        </div>
+      <div className="mb-3 flex min-w-0 items-center gap-2">
+        <MailIcon className="size-5 text-foreground" />
+        <h2 className="m-0 text-sm font-semibold text-[#3B2867] dark:text-white">
+          Envio por E-mail
+        </h2>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
-          Destinatarios deste envio
-          <Input
-            value={destinatarios}
-            onChange={(event) => onDestinatariosChange(event.target.value)}
-            placeholder="email@empresa.com, equipe@empresa.com"
-            className="h-9"
-          />
-        </label>
+      <div className="grid gap-2">
+        <Input
+          value={destinatarios}
+          onChange={(event) => onDestinatariosChange(event.target.value)}
+          placeholder="email@empresa.com"
+          className="h-9"
+          type="email"
+          inputMode="email"
+        />
 
-        <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
-          Recorrencia sugerida
+        <div className="grid grid-cols-2 gap-2">
           <Select value={frequencia} onValueChange={onFrequenciaChange}>
             <SelectTrigger className="h-9 w-full">
-              <SelectValue placeholder="Recorrencia" />
+              <SelectValue placeholder="Semanal" />
             </SelectTrigger>
             <SelectContent>
               {EMAIL_FREQUENCY_OPTIONS.map((option) => (
@@ -445,25 +427,65 @@ function EmailAutomationPanel({
               ))}
             </SelectContent>
           </Select>
-        </label>
+          <Input
+            value={horario}
+            onChange={(event) => onHorarioChange(event.target.value)}
+            className="h-9"
+            type="time"
+            aria-label="Horario do envio"
+          />
+        </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:col-span-2">
-          <Button type="button" variant="outline" className="cursor-pointer h-9" onClick={onSaveDraft}>
-            Salvar agendamento
+        <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-2">
+          <Button type="button" variant="outline" className="h-9 px-3 font-normal text-muted-foreground" disabled>
+            Segunda
           </Button>
           <Button
             type="button"
-            className="cursor-pointer h-9 bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={onSendNow}
+            variant="secondary"
+            className="h-9 bg-muted text-muted-foreground hover:bg-muted"
+            onClick={onSaveDraft}
+            disabled={!hasDestinatarios}
           >
-            <SendIcon className="mr-1 size-4" />
-            Enviar agora
+            Salvar Agendamento
           </Button>
         </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-1 h-9 border-primary text-primary hover:bg-primary/10 hover:text-primary"
+          onClick={onSendNow}
+        >
+          <SendIcon className="mr-1 size-4" />
+          Enviar agora
+        </Button>
       </div>
 
       <div className="mt-3 rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-        Proximo envio: {selectedFrequency?.detail ?? "recorrencia nao definida"}. O relatorio considera as secoes e filtros selecionados acima.
+        Proximo envio: {frequencyLabel} as {horario || "08:00"}. O relatorio considera as secoes e filtros selecionados acima.
+      </div>
+    </div>
+  )
+}
+
+function ReportActionsPanel({ onRefresh, onPrint, refreshDisabled, printDisabled }) {
+  return (
+    <div className="print:hidden hidden rounded-xl border bg-card p-4 shadow-sm sm:block">
+      <div className="grid grid-cols-2 gap-2">
+        <Button type="button" variant="outline" className="h-10" onClick={onRefresh} disabled={refreshDisabled}>
+          <RefreshCcwIcon className="mr-1 size-4" />
+          Atualizar
+        </Button>
+        <Button
+          type="button"
+          className="h-10 bg-primary text-primary-foreground hover:bg-primary/90"
+          onClick={onPrint}
+          disabled={printDisabled}
+        >
+          <PrinterIcon className="mr-1 size-4" />
+          Imprimir agora
+        </Button>
       </div>
     </div>
   )
@@ -570,6 +592,7 @@ export default function RelatoriosPage() {
   const [refreshError, setRefreshError] = React.useState(null)
   const [emailDestinatarios, setEmailDestinatarios] = React.useState("")
   const [emailFrequencia, setEmailFrequencia] = React.useState("semanal")
+  const [emailHorario, setEmailHorario] = React.useState("08:00")
   const [geradoEm] = React.useState(formatDate())
 
   React.useEffect(() => {
@@ -611,6 +634,10 @@ export default function RelatoriosPage() {
 
       if (EMAIL_FREQUENCY_OPTIONS.some((option) => option.value === draft.frequencia)) {
         setEmailFrequencia(draft.frequencia)
+      }
+
+      if (typeof draft.horario === "string" && /^\d{2}:\d{2}$/.test(draft.horario)) {
+        setEmailHorario(draft.horario)
       }
     } catch {
       window.localStorage.removeItem(EMAIL_DRAFT_STORAGE_KEY)
@@ -688,6 +715,7 @@ export default function RelatoriosPage() {
       periodoDias,
       secoes,
       recorrencia: emailFrequencia,
+      horario: emailHorario,
       destinatarios: emailDestinatarios
         .split(/[;,]/)
         .map((email) => email.trim())
@@ -703,6 +731,7 @@ export default function RelatoriosPage() {
       JSON.stringify({
         destinatarios: emailDestinatarios,
         frequencia: emailFrequencia,
+        horario: emailHorario,
         atualizadoEm: new Date().toISOString(),
         payload,
       })
@@ -825,9 +854,17 @@ export default function RelatoriosPage() {
               onDestinatariosChange={setEmailDestinatarios}
               frequencia={emailFrequencia}
               onFrequenciaChange={setEmailFrequencia}
-              periodoLabel={periodoLabel}
+              horario={emailHorario}
+              onHorarioChange={setEmailHorario}
               onSaveDraft={salvarRascunhoEmail}
               onSendNow={enviarRelatorioAgora}
+            />
+
+            <ReportActionsPanel
+              onRefresh={recarregar}
+              onPrint={() => window.print()}
+              refreshDisabled={carregandoTudo}
+              printDisabled={carregandoTudo || (tipoRelatorio === "maquina" && !selectedMaquina)}
             />
 
             {errorMsg && (

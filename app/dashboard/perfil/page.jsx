@@ -11,12 +11,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { CODE_LENGTH, OtpCodeInput } from "@/components/ui/otp-code-input"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { clearAuthSession, getAuthSession, updateAuthSessionUser } from "@/lib/auth-session"
 import { getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
+import { isValidBackendPassword, isValidEmail } from "@/lib/form-formatters"
 import {
   ActivityIcon,
   AlertTriangleIcon,
@@ -203,9 +205,12 @@ export default function PerfilPage() {
   const [salvandoDados, setSalvandoDados] = React.useState(false)
   const [salvandoFoto, setSalvandoFoto] = React.useState(false)
   const [salvandoSenha, setSalvandoSenha] = React.useState(false)
+  const [senhaEtapa, setSenhaEtapa] = React.useState("solicitar")
   const inputFotoRef = React.useRef(null)
   const [senhas, setSenhas] = React.useState({
     atual: "",
+    emailDestino: "",
+    codigo: "",
     nova: "",
     confirmar: "",
   })
@@ -241,6 +246,10 @@ export default function PerfilPage() {
 
         setPerfil(nextPerfil)
         setForm(getFormFromPerfil(nextPerfil))
+        setSenhas((current) => ({
+          ...current,
+          emailDestino: current.emailDestino || nextPerfil.email,
+        }))
         updateAuthSessionUser(nextPerfil)
         setStatus("success")
         setMensagem("")
@@ -436,17 +445,25 @@ export default function PerfilPage() {
     }
   }
 
-  async function salvarSenha() {
-    if (!senhas.atual || !senhas.nova || !senhas.confirmar) {
-      toast.error("Preencha todos os campos de senha.")
+  function resetarFormularioSenha() {
+    setSenhaEtapa("solicitar")
+    setSenhas({
+      atual: "",
+      emailDestino: perfil.email || "",
+      codigo: "",
+      nova: "",
+      confirmar: "",
+    })
+  }
+
+  async function solicitarCodigoSenha() {
+    if (!senhas.atual || !senhas.emailDestino) {
+      toast.error("Informe a senha atual e o e-mail de destino.")
       return
     }
-    if (senhas.nova !== senhas.confirmar) {
-      toast.error("A nova senha e a confirmacao nao coincidem.")
-      return
-    }
-    if (senhas.nova.length < 8) {
-      toast.error("A nova senha deve ter pelo menos 8 caracteres.")
+
+    if (!isValidEmail(senhas.emailDestino)) {
+      toast.error("Informe um e-mail de destino valido.")
       return
     }
 
@@ -460,16 +477,72 @@ export default function PerfilPage() {
     setSalvandoSenha(true)
 
     try {
-      await requestDashboardJson("/perfil/senha", session.accessToken, "a alteracao de senha", {
-        method: "PUT",
+      const payload = await requestDashboardJson("/senha/solicitar-alteracao", session.accessToken, "a solicitacao de alteracao de senha", {
+        method: "POST",
         body: {
           senhaAtual: senhas.atual,
+          emailDestino: senhas.emailDestino.trim(),
+        },
+      })
+
+      setSenhaEtapa("confirmar")
+      setSenhas((current) => ({
+        ...current,
+        atual: "",
+        codigo: "",
+        nova: "",
+        confirmar: "",
+      }))
+      toast.success(payload?.message || payload?.mensagem || "Codigo enviado para o e-mail informado.")
+    } catch (error) {
+      if (getHttpErrorStatus(error) === 401) {
+        clearAuthSession()
+        router.replace("/")
+        return
+      }
+
+      toast.error(getErrorMessage(error, "Nao foi possivel solicitar a alteracao de senha."))
+    } finally {
+      setSalvandoSenha(false)
+    }
+  }
+
+  async function confirmarAlteracaoSenha() {
+    if (senhas.codigo.length !== CODE_LENGTH || !senhas.nova || !senhas.confirmar) {
+      toast.error("Informe os 6 numeros do codigo e a nova senha.")
+      return
+    }
+
+    if (!isValidBackendPassword(senhas.nova)) {
+      toast.error("A senha precisa ter 7+ caracteres, letra maiuscula, minuscula e numero.")
+      return
+    }
+
+    if (senhas.nova !== senhas.confirmar) {
+      toast.error("A nova senha e a confirmacao nao coincidem.")
+      return
+    }
+
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      toast.error("Faca login para alterar a senha.")
+      return
+    }
+
+    setSalvandoSenha(true)
+
+    try {
+      const payload = await requestDashboardJson("/senha/confirmar-alteracao", session.accessToken, "a confirmacao de alteracao de senha", {
+        method: "POST",
+        body: {
+          code: senhas.codigo.trim(),
           novaSenha: senhas.nova,
         },
       })
 
-      toast.success("Senha alterada com sucesso!")
-      setSenhas({ atual: "", nova: "", confirmar: "" })
+      toast.success(payload?.message || payload?.mensagem || "Senha alterada com sucesso!")
+      resetarFormularioSenha()
     } catch (error) {
       if (getHttpErrorStatus(error) === 401) {
         clearAuthSession()
@@ -481,6 +554,15 @@ export default function PerfilPage() {
     } finally {
       setSalvandoSenha(false)
     }
+  }
+
+  async function salvarSenha() {
+    if (senhaEtapa === "confirmar") {
+      await confirmarAlteracaoSenha()
+      return
+    }
+
+    await solicitarCodigoSenha()
   }
 
   if (loading) {
@@ -746,61 +828,108 @@ export default function PerfilPage() {
                 Alterar senha
               </div>
 
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="senha-atual" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Senha atual
-                  </Label>
-                  <Input
-                    id="senha-atual"
-                    type="password"
-                    placeholder="********"
-                    value={senhas.atual}
-                    disabled={salvandoSenha}
-                    onChange={(e) => setSenhas((p) => ({ ...p, atual: e.target.value }))}
-                  />
-                </div>
+              {senhaEtapa === "solicitar" ? (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    Confirme sua senha atual e informe o e-mail que deve receber o codigo.
+                  </p>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="senha-nova" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Nova senha
-                  </Label>
-                  <Input
-                    id="senha-nova"
-                    type="password"
-                    placeholder="Minimo 8 caracteres"
-                    value={senhas.nova}
-                    disabled={salvandoSenha}
-                    onChange={(e) => setSenhas((p) => ({ ...p, nova: e.target.value }))}
-                  />
-                </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="senha-atual" className="text-xs text-muted-foreground uppercase tracking-wide">
+                      Senha atual
+                    </Label>
+                    <Input
+                      id="senha-atual"
+                      type="password"
+                      placeholder="********"
+                      autoComplete="current-password"
+                      value={senhas.atual}
+                      disabled={salvandoSenha}
+                      onChange={(e) => setSenhas((p) => ({ ...p, atual: e.target.value }))}
+                    />
+                  </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="senha-confirmar" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Confirmar nova senha
-                  </Label>
-                  <Input
-                    id="senha-confirmar"
-                    type="password"
-                    placeholder="Repita a nova senha"
-                    value={senhas.confirmar}
-                    disabled={salvandoSenha}
-                    onChange={(e) => setSenhas((p) => ({ ...p, confirmar: e.target.value }))}
-                  />
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="senha-email-destino" className="text-xs text-muted-foreground uppercase tracking-wide">
+                      E-mail de destino
+                    </Label>
+                    <Input
+                      id="senha-email-destino"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="destino@empresa.com"
+                      value={senhas.emailDestino}
+                      disabled={salvandoSenha}
+                      onChange={(e) => setSenhas((p) => ({ ...p, emailDestino: e.target.value.trim() }))}
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    Digite o codigo enviado para {senhas.emailDestino || "o e-mail informado"} e escolha a nova senha.
+                  </p>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="senha-codigo-0" className="text-xs text-muted-foreground uppercase tracking-wide">
+                      Codigo recebido
+                    </Label>
+                    <OtpCodeInput
+                      idPrefix="senha-codigo"
+                      value={senhas.codigo}
+                      disabled={salvandoSenha}
+                      onChange={(value) => setSenhas((p) => ({ ...p, codigo: value }))}
+                      aria-label="Codigo recebido"
+                    />
+                    <p className="text-xs leading-5 text-muted-foreground">Digite exatamente 6 numeros.</p>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="senha-nova" className="text-xs text-muted-foreground uppercase tracking-wide">
+                      Nova senha
+                    </Label>
+                    <Input
+                      id="senha-nova"
+                      type="password"
+                      autoComplete="new-password"
+                      placeholder="7+ caracteres, letras e numero"
+                      value={senhas.nova}
+                      disabled={salvandoSenha}
+                      onChange={(e) => setSenhas((p) => ({ ...p, nova: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="senha-confirmar" className="text-xs text-muted-foreground uppercase tracking-wide">
+                      Confirmar nova senha
+                    </Label>
+                    <Input
+                      id="senha-confirmar"
+                      type="password"
+                      autoComplete="new-password"
+                      placeholder="Repita a nova senha"
+                      value={senhas.confirmar}
+                      disabled={salvandoSenha}
+                      onChange={(e) => setSenhas((p) => ({ ...p, confirmar: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1">
                 <Button
                   variant="outline"
                   className="cursor-pointer w-full sm:w-auto"
                   disabled={salvandoSenha}
-                  onClick={() => setSenhas({ atual: "", nova: "", confirmar: "" })}
+                  onClick={resetarFormularioSenha}
                 >
                   Cancelar
                 </Button>
-                <Button className="cursor-pointer w-full sm:w-auto" disabled={salvandoSenha} onClick={salvarSenha}>
-                  {salvandoSenha ? "Alterando..." : "Alterar senha"}
+                <Button className="w-full sm:w-auto" disabled={salvandoSenha} onClick={salvarSenha}>
+                  {senhaEtapa === "confirmar"
+                    ? salvandoSenha ? "Confirmando..." : "Confirmar senha"
+                    : salvandoSenha ? "Enviando..." : "Enviar codigo"}
                 </Button>
               </div>
             </div>

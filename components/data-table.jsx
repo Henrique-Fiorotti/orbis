@@ -390,20 +390,7 @@ export function DataTable() {
           </TabsTrigger>
         </TabsList>
         <div className="flex flex-wrap items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Columns3Icon data-icon="inline-start" />
-                Colunas
-                <ChevronDownIcon data-icon="inline-end" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem className="text-xs text-muted-foreground" onClick={() => router.push("/dashboard/maquinas")}>
-                Gerenciar colunas
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          
 
           {permissions.canManageMaquinas ? (
             <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => router.push("/dashboard/maquinas?action=new")}>
