@@ -67,7 +67,7 @@ function TecnicoAvatar({ tecnico, size = "default" }) {
   const sizeClass = size === "lg"
     ? "h-16 w-16 text-xl"
     : size === "sm"
-      ? "h-7 w-7 text-xs"
+      ? "h-18 w-18 text-xs"
       : "h-8 w-8 text-xs"
 
   return (

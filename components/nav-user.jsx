@@ -34,11 +34,12 @@ export function NavUser({user}){
     }
   }
 
-  function handleLogout() {
-    closeMobileSidebar()
-    clearAuthSession()
-    router.replace("/")
-  }
+  //alterei para não precisar clicar duas vezes para sair, uma para fechar o menu e outra para deslogar
+async function handleLogout() {
+  closeMobileSidebar()
+  await clearAuthSession()
+  router.replace("/")
+}
 
   return (
     <SidebarMenu>
