@@ -411,12 +411,12 @@ export default function TecnicosPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
             {canManageTecnicos ? (
               <>
-                <DropdownMenuItem onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
               </>
             ) : null}
           </DropdownMenuContent>
@@ -609,7 +609,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="hidden size-8 lg:flex" 
+              className="cursor-pointer hidden size-8 lg:flex" 
               onClick={() => recarregarTecnicos(1, limiteItems)} 
               disabled={paginaAtual <= 1 || carregando}
             >
@@ -618,7 +618,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="size-8" 
+              className="cursor-pointer size-8" 
               onClick={() => recarregarTecnicos(paginaAtual - 1, limiteItems)} 
               disabled={paginaAtual <= 1 || carregando}
             >
@@ -628,7 +628,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="size-8" 
+              className="cursor-pointer size-8" 
               onClick={() => recarregarTecnicos(paginaAtual + 1, limiteItems)} 
               disabled={paginaAtual >= totalPaginas || carregando}
             >
@@ -637,7 +637,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="hidden size-8 lg:flex" 
+              className="cursor-pointer hidden size-8 lg:flex" 
               onClick={() => recarregarTecnicos(totalPaginas, limiteItems)} 
               disabled={paginaAtual >= totalPaginas || carregando}
             >
@@ -703,10 +703,10 @@ export default function TecnicosPage() {
 
                   {canManageTecnicos ? (
                     <div className="flex gap-2">
-                      <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
+                      <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
                         <PencilIcon className="size-4 mr-1" /> Editar
                       </Button>
-                      <Button variant="destructive" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>
+                      <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>
                         <Trash2Icon className="size-4 mr-1" /> Excluir
                       </Button>
                     </div>

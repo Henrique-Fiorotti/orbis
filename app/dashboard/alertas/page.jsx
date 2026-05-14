@@ -176,7 +176,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => onVer(chamado)}>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => onVer(chamado)}>
                 <EyeIcon className="mr-1 size-4" /> Ver detalhes
               </DropdownMenuItem>
               {canIniciar || canResolver || canCancelar ? <DropdownMenuSeparator /> : null}

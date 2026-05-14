@@ -487,16 +487,16 @@ export default function SensoresPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem onClick={() => abrirVer(row.original)}>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}>
               <EyeIcon className="mr-1 size-4" /> Ver detalhes
             </DropdownMenuItem>
             {canManageSensores ? (
               <>
-                <DropdownMenuItem onClick={() => abrirEditar(row.original)}>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}>
                   <PencilIcon className="mr-1 size-4" /> Editar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}>
+                <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}>
                   <Trash2Icon className="mr-1 size-4" /> Excluir
                 </DropdownMenuItem>
               </>
