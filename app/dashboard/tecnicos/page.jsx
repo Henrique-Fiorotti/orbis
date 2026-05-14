@@ -119,18 +119,8 @@ function normalizarBusca(value) {
     .toLowerCase()
 }
 
-function getTecnicoWhatsappUrl(telefone) {
-  const digits = String(telefone ?? "Telefone não informado").replace(/\D/g, "")
-
-  if (digits.length === 13 && digits.startsWith("55")) {
-    return `https://wa.me/${digits}`
-  }
-
-  if (digits.length === 10 || digits.length === 11) {
-    return `https://wa.me/55${digits}`
-  }
-
-  return ""
+function formatarTelefoneExibicao(value) {
+  return String(value ?? "").trim() || "Não informado"
 }
 
 export default function TecnicosPage() {
@@ -398,7 +388,7 @@ export default function TecnicosPage() {
     {
       accessorKey: "telefone",
       header: "Telefone",
-      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.telefone}</span>,
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{formatarTelefoneExibicao(row.original.telefone)}</span>,
     },
     {
       accessorKey: "status",
@@ -417,17 +407,17 @@ export default function TecnicosPage() {
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+            <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
               <EllipsisVerticalIcon />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
             {canManageTecnicos ? (
               <>
-                <DropdownMenuItem onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
               </>
             ) : null}
           </DropdownMenuContent>
@@ -463,7 +453,7 @@ export default function TecnicosPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
+            <Button variant="ghost" className={"cursor-pointer"} size="icon-sm" onClick={() => router.push("/dashboard")}>
               <ArrowLeftIcon className="size-4" />
             </Button>
             <div>
@@ -475,7 +465,7 @@ export default function TecnicosPage() {
             </div>
           </div>
           {canManageTecnicos ? (
-            <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
+            <Button onClick={abrirCriar} className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
               <PlusIcon className="size-4 mr-1" />Novo técnico
             </Button>
           ) : null}
@@ -620,7 +610,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="hidden size-8 lg:flex" 
+              className="cursor-pointer hidden size-8 lg:flex" 
               onClick={() => recarregarTecnicos(1, limiteItems)} 
               disabled={paginaAtual <= 1 || carregando}
             >
@@ -629,7 +619,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="size-8" 
+              className="cursor-pointer size-8" 
               onClick={() => recarregarTecnicos(paginaAtual - 1, limiteItems)} 
               disabled={paginaAtual <= 1 || carregando}
             >
@@ -639,7 +629,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="size-8" 
+              className="cursor-pointer size-8" 
               onClick={() => recarregarTecnicos(paginaAtual + 1, limiteItems)} 
               disabled={paginaAtual >= totalPaginas || carregando}
             >
@@ -648,7 +638,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="hidden size-8 lg:flex" 
+              className="cursor-pointer hidden size-8 lg:flex" 
               onClick={() => recarregarTecnicos(totalPaginas, limiteItems)} 
               disabled={paginaAtual >= totalPaginas || carregando}
             >
@@ -693,7 +683,7 @@ export default function TecnicosPage() {
                   <div className="grid grid-cols-1 gap-3">
                     {[
                       ["E-mail", tecnicoSelecionado.email],
-                      ["Telefone", tecnicoSelecionado.telefone],
+                      ["Telefone", formatarTelefoneExibicao(tecnicoSelecionado.telefone)],
                       ["Cadastrado", tempoRelativo(tecnicoSelecionado.criadoEm)],
                     ].map(([label, value]) => (
                       <div key={label} className="flex flex-col gap-1">

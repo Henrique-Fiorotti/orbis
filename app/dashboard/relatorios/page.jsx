@@ -817,7 +817,7 @@ export default function RelatoriosPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            <Button variant="outline" size="sm" onClick={recarregar} disabled={carregandoTudo} className="w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="cursor-pointer" onClick={recarregar} disabled={carregandoTudo}>
               <RefreshCcwIcon className="mr-1 size-4" />
               Atualizar
             </Button>

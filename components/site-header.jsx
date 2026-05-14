@@ -165,7 +165,7 @@ function buildAlertNotification(alerta, prefs) {
   const lidas = new Set(prefs.lidas)
   const lidaPorPadrao = alerta.status !== "ATIVO" && alerta.status !== "EM_ANDAMENTO"
   const maquina = alerta.maquinaNome || "Máquina não informada"
-  const sensor = alerta.sensorNome || "Sensor não informado"
+  const sensor = alerta.sensorNome || "Sensor Não informado"
 
   return {
     key,

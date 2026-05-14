@@ -538,7 +538,7 @@ export default function AdminsPage() {
     {
       accessorKey: "telefone",
       header: "Telefone",
-      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.telefone || "Nao informado"}</span>,
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.telefone || "Não informado"}</span>,
     },
     {
       accessorKey: "status",
@@ -557,15 +557,15 @@ export default function AdminsPage() {
             cell: ({ row }) => (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+                  <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
                     <EllipsisVerticalIcon />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-36">
-                  <DropdownMenuItem onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ),
@@ -600,7 +600,7 @@ export default function AdminsPage() {
       <div className="flex flex-col gap-6 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
+            <Button className={"cursor-pointer"} variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
               <ArrowLeftIcon className="size-4" />
             </Button>
             <div className="flex items-center gap-2">
@@ -609,7 +609,7 @@ export default function AdminsPage() {
             </div>
           </div>
           {canManageAdmins ? (
-            <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
+            <Button onClick={abrirCriar} className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
               <PlusIcon className="size-4 mr-1" />Novo admin
             </Button>
           ) : null}
@@ -627,65 +627,13 @@ export default function AdminsPage() {
           >
             <div className="flex items-center justify-between gap-3">
               <span>{mensagem}</span>
-              <Button variant="outline" size="sm" onClick={() => carregarAdmins(paginaAtual, limiteItems)} disabled={status === "loading" || salvando}>
+              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => carregarAdmins(paginaAtual, limiteItems)} disabled={status === "loading" || salvando}>
                 <RefreshCcwIcon className="mr-1 size-4" />
                 Atualizar
               </Button>
             </div>
           </div>
         ) : null}
-
-        {/* <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <button type="button" className={getResumoCardClass("TODOS")} onClick={() => setFiltroResumo("TODOS")}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Total de administradores</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                {loadingInicial ? "Sincronizando" : `${totalAtivos} ativos`}
-              </span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(admins.length, loadingInicial)}</span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
-                <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} com acesso ativo`}
-              </span>
-              <span className="text-muted-foreground flex items-center gap-1">
-                <CircleMinusIcon className="size-3.5 text-gray-400 dark:text-muted-foreground" />
-                {loadingInicial ? "Conferindo status..." : `${totalInativos} inativos`}
-              </span>
-            </div>
-          </button>
-
-          <button type="button" className={getResumoCardClass("ATIVO")} onClick={() => setFiltroResumo("ATIVO")}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Admins ativos</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">operando</span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(totalAtivos, loadingInicial)}</span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
-                <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} disponiveis`}
-              </span>
-              <span className="text-muted-foreground text-xs">Clique para ver somente administradores ativos</span>
-            </div>
-          </button>
-
-          <button type="button" className={getResumoCardClass("INATIVO")} onClick={() => setFiltroResumo("INATIVO")}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Admins inativos</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">sem acesso</span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{formatMetric(totalInativos, loadingInicial)}</span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-muted-foreground flex items-center gap-1">
-                <CircleMinusIcon className="size-3.5 text-gray-400 dark:text-muted-foreground" />
-                {loadingInicial ? "Conferindo status..." : `${totalInativos} sem acesso ativo`}
-              </span>
-              <span className="text-muted-foreground text-xs">Clique para ver somente administradores inativos</span>
-            </div>
-          </button>
-        </div> */}
 
         <div className="relative w-full max-w-sm">
           <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
@@ -739,17 +687,17 @@ export default function AdminsPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{adminsFiltrados.length} resultado(s) nesta pagina - {filtroResumoLabel}</span>
               <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
-                <Button variant="outline" size="icon" className="hidden size-8 lg:flex" onClick={() => carregarAdmins(1, limiteItems)} disabled={paginaAtual <= 1 || status === "loading"}>
+                <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => carregarAdmins(1, limiteItems)} disabled={paginaAtual <= 1 || status === "loading"}>
                   <ChevronsLeftIcon className="size-4" />
                 </Button>
-                <Button variant="outline" size="icon" className="size-8" onClick={() => carregarAdmins(paginaAtual - 1, limiteItems)} disabled={paginaAtual <= 1 || status === "loading"}>
+                <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => carregarAdmins(paginaAtual - 1, limiteItems)} disabled={paginaAtual <= 1 || status === "loading"}>
                   <ChevronLeftIcon className="size-4" />
                 </Button>
                 <span className="text-sm">Pag. {paginaAtual} de {Math.max(totalPaginas, 1)}</span>
-                <Button variant="outline" size="icon" className="size-8" onClick={() => carregarAdmins(paginaAtual + 1, limiteItems)} disabled={paginaAtual >= totalPaginas || status === "loading"}>
+                <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => carregarAdmins(paginaAtual + 1, limiteItems)} disabled={paginaAtual >= totalPaginas || status === "loading"}>
                   <ChevronRightIcon className="size-4" />
                 </Button>
-                <Button variant="outline" size="icon" className="hidden size-8 lg:flex" onClick={() => carregarAdmins(totalPaginas, limiteItems)} disabled={paginaAtual >= totalPaginas || status === "loading"}>
+                <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => carregarAdmins(totalPaginas, limiteItems)} disabled={paginaAtual >= totalPaginas || status === "loading"}>
                   <ChevronsRightIcon className="size-4" />
                 </Button>
               </div>
@@ -804,10 +752,10 @@ export default function AdminsPage() {
 
                   {canManageAdmins ? (
                     <div className="flex gap-2">
-                      <Button className="flex-1" onClick={() => abrirEditar(adminSelecionado)} disabled={salvando}>
+                      <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(adminSelecionado)} disabled={salvando}>
                         <PencilIcon className="size-4 mr-1" /> Editar
                       </Button>
-                      <Button variant="destructive" onClick={() => confirmarExcluir(adminSelecionado)} disabled={salvando}>
+                      <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(adminSelecionado)} disabled={salvando}>
                         <Trash2Icon className="size-4 mr-1" /> Excluir
                       </Button>
                     </div>
@@ -900,8 +848,8 @@ export default function AdminsPage() {
 
             {modoSheet !== "ver" && (
               <SheetFooter className="px-4 pb-4">
-                <Button variant="outline" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
-                <Button onClick={salvar} disabled={salvando}>
+                <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
+                <Button className="cursor-pointer" onClick={salvar} disabled={salvando}>
                   {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alteracoes"}
                 </Button>
               </SheetFooter>
@@ -918,8 +866,8 @@ export default function AdminsPage() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => alternarDialogExcluir(false)} disabled={salvando}>Cancelar</Button>
-              <Button variant="destructive" onClick={excluir} disabled={salvando}>{salvando ? "Excluindo..." : "Excluir"}</Button>
+              <Button variant="outline" className="cursor-pointer" onClick={() => alternarDialogExcluir(false)} disabled={salvando}>Cancelar</Button>
+              <Button variant="destructive" className="cursor-pointer" onClick={excluir} disabled={salvando}>{salvando ? "Excluindo..." : "Excluir"}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
