@@ -12,6 +12,7 @@ import {
   mergeSensorLeitura,
   mergeSensorLeituras,
   normalizeSensorCollection,
+  refreshSensorStatuses,
   requestDashboardJson,
 } from "@/lib/dashboard-api"
 
@@ -58,7 +59,7 @@ export function SensoresProvider({ children }) {
         sensoresNormalizados = mergeSensorLeituras(sensoresNormalizados, leiturasPayload)
       } catch {}
 
-      setSensores(sensoresNormalizados)
+      setSensores(refreshSensorStatuses(sensoresNormalizados))
       setStatus("success")
       setMensagem("")
     } catch (error) {
@@ -76,6 +77,14 @@ export function SensoresProvider({ children }) {
   React.useEffect(() => {
     carregarSensores().catch(() => {})
   }, [carregarSensores])
+
+  React.useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setSensores((current) => refreshSensorStatuses(current))
+    }, 5000)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
 
   React.useEffect(() => {
     const session = getAuthSession()
@@ -96,7 +105,7 @@ export function SensoresProvider({ children }) {
     })
 
     function handleNovaLeitura(payload) {
-      setSensores((current) => mergeSensorLeitura(current, payload))
+      setSensores((current) => refreshSensorStatuses(mergeSensorLeitura(current, payload)))
       window.dispatchEvent(new CustomEvent(SENSOR_READING_EVENT, { detail: payload }))
     }
 
