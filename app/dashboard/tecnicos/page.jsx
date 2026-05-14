@@ -123,6 +123,18 @@ function formatarTelefoneExibicao(value) {
   return String(value ?? "").trim() || "Não informado"
 }
 
+function getTecnicoWhatsappUrl(value) {
+  const digits = String(value ?? "").replace(/\D/g, "")
+
+  if (digits.length < 10) {
+    return null
+  }
+
+  const normalizedDigits = digits.startsWith("55") ? digits : `55${digits}`
+
+  return `https://wa.me/${normalizedDigits}`
+}
+
 export default function TecnicosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
