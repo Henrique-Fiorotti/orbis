@@ -448,12 +448,12 @@ function EmailAutomationPanel({
         </label>
 
         <div className="grid grid-cols-2 gap-2 sm:col-span-2">
-          <Button type="button" variant="outline" className="h-9" onClick={onSaveDraft}>
+          <Button type="button" variant="outline" className="cursor-pointer h-9" onClick={onSaveDraft}>
             Salvar agendamento
           </Button>
           <Button
             type="button"
-            className="h-9 bg-primary text-primary-foreground hover:bg-primary/90"
+            className="cursor-pointer h-9 bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={onSendNow}
           >
             <SendIcon className="mr-1 size-4" />
@@ -788,7 +788,7 @@ export default function RelatoriosPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            <Button variant="outline" size="sm" onClick={recarregar} disabled={carregandoTudo} className="w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="cursor-pointer" onClick={recarregar} disabled={carregandoTudo}>
               <RefreshCcwIcon className="mr-1 size-4" />
               Atualizar
             </Button>

@@ -690,13 +690,13 @@ export default function PerfilPage() {
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1">
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto"
+                  className="cursor-pointer w-full sm:w-auto"
                   disabled={loading || salvandoDados}
                   onClick={() => setForm(getFormFromPerfil(perfil))}
                 >
                   Cancelar
                 </Button>
-                <Button className="w-full sm:w-auto" disabled={loading || salvandoDados} onClick={salvarDados}>
+                <Button className="cursor-pointer w-full sm:w-auto" disabled={loading || salvandoDados} onClick={salvarDados}>
                   {salvandoDados ? "Salvando..." : "Salvar alteracoes"}
                 </Button>
               </div>
@@ -793,13 +793,13 @@ export default function PerfilPage() {
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1">
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto"
+                  className="cursor-pointer w-full sm:w-auto"
                   disabled={salvandoSenha}
                   onClick={() => setSenhas({ atual: "", nova: "", confirmar: "" })}
                 >
                   Cancelar
                 </Button>
-                <Button className="w-full sm:w-auto" disabled={salvandoSenha} onClick={salvarSenha}>
+                <Button className="cursor-pointer w-full sm:w-auto" disabled={salvandoSenha} onClick={salvarSenha}>
                   {salvandoSenha ? "Alterando..." : "Alterar senha"}
                 </Button>
               </div>

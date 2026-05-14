@@ -552,7 +552,7 @@ export default function SensoresPage() {
           >
             <div className="flex items-center justify-between gap-3">
               <span>{mensagem}</span>
-              <Button variant="outline" size="sm" onClick={() => recarregarSensores()} disabled={carregando || salvando}>
+              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => recarregarSensores()} disabled={carregando || salvando}>
                 <RefreshCcwIcon className="mr-1 size-4" />
                 Atualizar
               </Button>
@@ -669,17 +669,17 @@ export default function SensoresPage() {
             <div className="flex items-center justify-between px-4">
               <span className="text-sm text-muted-foreground">{dadosFiltrados.length} resultado(s)</span>
               <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
-                <Button variant="outline" size="icon" className="hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
+                <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
                   <ChevronsLeftIcon className="size-4" />
                 </Button>
-                <Button variant="outline" size="icon" className="size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+                <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
                   <ChevronLeftIcon className="size-4" />
                 </Button>
                 <span className="flex w-fit items-center justify-center text-sm font-medium">Pag. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
-                <Button variant="outline" size="icon" className="size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+                <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
                   <ChevronRightIcon className="size-4" />
                 </Button>
-                <Button variant="outline" size="icon" className="hidden size-8 lg:flex" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
+                <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
                   <ChevronsRightIcon className="size-4" />
                 </Button>
               </div>
@@ -766,11 +766,11 @@ export default function SensoresPage() {
                   <Separator />
                   {canManageSensores ? (
                     <div className="flex gap-2">
-                      <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(sensorSelecionado), 100) }} disabled={salvando}>
+                      <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(sensorSelecionado), 100) }} disabled={salvando}>
                         <PencilIcon className="mr-1 size-4" />
                         Editar
                       </Button>
-                      <Button variant="destructive" onClick={() => confirmarExcluir(sensorSelecionado)} disabled={salvando}>
+                      <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(sensorSelecionado)} disabled={salvando}>
                         <Trash2Icon className="mr-1 size-4" />
                         Excluir
                       </Button>
@@ -876,10 +876,10 @@ export default function SensoresPage() {
             </div>
             {modoSheet !== "ver" ? (
               <SheetFooter className="px-4 pb-4">
-                <Button variant="outline" onClick={() => setSheetAberto(false)} disabled={salvando}>
+                <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>
                   Cancelar
                 </Button>
-                <Button onClick={salvar} disabled={salvando}>
+                <Button className="cursor-pointer" onClick={salvar} disabled={salvando}>
                   {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alteracoes"}
                 </Button>
               </SheetFooter>
@@ -896,10 +896,10 @@ export default function SensoresPage() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => alternarDialogExcluir(false)} disabled={salvando}>
+              <Button variant="outline" className="cursor-pointer" onClick={() => alternarDialogExcluir(false)} disabled={salvando}>
                 Cancelar
               </Button>
-              <Button variant="destructive" onClick={excluir} disabled={salvando}>
+              <Button variant="destructive" className="cursor-pointer" onClick={excluir} disabled={salvando}>
                 {salvando ? "Excluindo..." : "Excluir"}
               </Button>
             </DialogFooter>

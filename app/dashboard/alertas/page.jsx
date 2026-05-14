@@ -250,17 +250,17 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
       <div className="flex items-center justify-between px-4">
         <span className="text-sm text-muted-foreground">{data.length} resultado(s)</span>
         <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
-          <Button variant="outline" size="icon" className="hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
+          <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
             <ChevronsLeftIcon className="size-4" />
           </Button>
-          <Button variant="outline" size="icon" className="size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+          <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
             <ChevronLeftIcon className="size-4" />
           </Button>
           <span className="text-sm">Pag. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
-          <Button variant="outline" size="icon" className="size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
             <ChevronRightIcon className="size-4" />
           </Button>
-          <Button variant="outline" size="icon" className="hidden size-8 lg:flex" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
+          <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
             <ChevronsRightIcon className="size-4" />
           </Button>
         </div>
@@ -460,7 +460,7 @@ export default function AlertasPage() {
           >
             <div className="flex items-center justify-between gap-3">
               <span>{mensagem}</span>
-              <Button variant="outline" size="sm" onClick={() => recarregarAlertas()} disabled={carregando || salvando}>
+              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => recarregarAlertas()} disabled={carregando || salvando}>
                 <RefreshCcwIcon className="mr-1 size-4" />
                 Atualizar
               </Button>
@@ -623,17 +623,17 @@ export default function AlertasPage() {
                   <Separator />
                   <div className="flex flex-col gap-2">
                     {canStartAlertStatus && alertaSelecionado.status === "ATIVO" ? (
-                      <Button className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "EM_ANDAMENTO"); setSheetAberto(false) }}>
+                      <Button className="cursor-pointer w-full" onClick={() => { handleStatus(alertaSelecionado.id, "EM_ANDAMENTO"); setSheetAberto(false) }}>
                         <AlertTriangleIcon className="mr-1 size-4" /> Iniciar atendimento
                       </Button>
                     ) : null}
                     {canResolveAlertStatus && alertaSelecionado.status === "EM_ANDAMENTO" ? (
-                      <Button className="w-full" onClick={() => { handleStatus(alertaSelecionado.id, "RESOLVIDO"); setSheetAberto(false) }}>
+                      <Button className="cursor-pointer w-full" onClick={() => { handleStatus(alertaSelecionado.id, "RESOLVIDO"); setSheetAberto(false) }}>
                         <CircleCheckIcon className="mr-1 size-4" /> Resolver chamado
                       </Button>
                     ) : null}
                     {canCancelAlertas && isStatusCancelavel(alertaSelecionado.status) ? (
-                      <Button variant="destructive" className="w-full" onClick={() => confirmarCancelar(alertaSelecionado)}>
+                      <Button variant="destructive" className="cursor-pointer w-full" onClick={() => confirmarCancelar(alertaSelecionado)}>
                         <CircleXIcon className="mr-1 size-4" /> Cancelar chamado
                       </Button>
                     ) : null}
@@ -684,8 +684,8 @@ export default function AlertasPage() {
             </div>
             {modoSheet !== "ver" ? (
               <SheetFooter className="px-4 pb-4">
-                <Button variant="outline" onClick={() => setSheetAberto(false)}>Cancelar</Button>
-                <Button onClick={salvar}>Registrar chamado</Button>
+                <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)}>Cancelar</Button>
+                <Button className="cursor-pointer" onClick={salvar}>Registrar chamado</Button>
               </SheetFooter>
             ) : null}
           </SheetContent>
@@ -700,8 +700,8 @@ export default function AlertasPage() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogCancelar(false)}>Voltar</Button>
-              <Button variant="destructive" onClick={cancelar}>Cancelar chamado</Button>
+              <Button variant="outline" className="cursor-pointer" onClick={() => setDialogCancelar(false)}>Voltar</Button>
+              <Button variant="destructive" className="cursor-pointer" onClick={cancelar}>Cancelar chamado</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -627,7 +627,7 @@ export default function AdminsPage() {
           >
             <div className="flex items-center justify-between gap-3">
               <span>{mensagem}</span>
-              <Button variant="outline" size="sm" onClick={() => carregarAdmins(paginaAtual, limiteItems)} disabled={status === "loading" || salvando}>
+              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => carregarAdmins(paginaAtual, limiteItems)} disabled={status === "loading" || salvando}>
                 <RefreshCcwIcon className="mr-1 size-4" />
                 Atualizar
               </Button>
@@ -804,10 +804,10 @@ export default function AdminsPage() {
 
                   {canManageAdmins ? (
                     <div className="flex gap-2">
-                      <Button className="flex-1" onClick={() => abrirEditar(adminSelecionado)} disabled={salvando}>
+                      <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(adminSelecionado)} disabled={salvando}>
                         <PencilIcon className="size-4 mr-1" /> Editar
                       </Button>
-                      <Button variant="destructive" onClick={() => confirmarExcluir(adminSelecionado)} disabled={salvando}>
+                      <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(adminSelecionado)} disabled={salvando}>
                         <Trash2Icon className="size-4 mr-1" /> Excluir
                       </Button>
                     </div>
@@ -900,8 +900,8 @@ export default function AdminsPage() {
 
             {modoSheet !== "ver" && (
               <SheetFooter className="px-4 pb-4">
-                <Button variant="outline" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
-                <Button onClick={salvar} disabled={salvando}>
+                <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
+                <Button className="cursor-pointer" onClick={salvar} disabled={salvando}>
                   {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alteracoes"}
                 </Button>
               </SheetFooter>
@@ -918,8 +918,8 @@ export default function AdminsPage() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => alternarDialogExcluir(false)} disabled={salvando}>Cancelar</Button>
-              <Button variant="destructive" onClick={excluir} disabled={salvando}>{salvando ? "Excluindo..." : "Excluir"}</Button>
+              <Button variant="outline" className="cursor-pointer" onClick={() => alternarDialogExcluir(false)} disabled={salvando}>Cancelar</Button>
+              <Button variant="destructive" className="cursor-pointer" onClick={excluir} disabled={salvando}>{salvando ? "Excluindo..." : "Excluir"}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
