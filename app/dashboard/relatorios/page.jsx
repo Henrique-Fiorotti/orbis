@@ -85,13 +85,62 @@ const DEFAULT_SECTIONS = {
   historico: true,
 }
 
+const DEFAULT_REPORT_CONFIG = {
+  tipoRelatorio: "geral",
+  maquinaId: "",
+  periodo: "30d",
+  secoes: DEFAULT_SECTIONS,
+}
+
 const EMAIL_DRAFT_STORAGE_KEY = "orbis-report-email-draft"
 
 const EMAIL_FREQUENCY_OPTIONS = [
-  { value: "semanal", label: "Semanal", detail: "Segundas-feiras as 08:00" },
   { value: "diario", label: "Diario", detail: "Todos os dias as 08:00" },
+  { value: "semanal", label: "Semanal", detail: "Segundas-feiras as 08:00" },
   { value: "mensal", label: "Mensal", detail: "Todo dia 1 as 08:00" },
 ]
+
+const WEEKDAY_OPTIONS = [
+  { value: "segunda", label: "Segunda-feira" },
+  { value: "terca", label: "Terca-feira" },
+  { value: "quarta", label: "Quarta-feira" },
+  { value: "quinta", label: "Quinta-feira" },
+  { value: "sexta", label: "Sexta-feira" },
+  { value: "sabado", label: "Sabado" },
+  { value: "domingo", label: "Domingo" },
+]
+
+const MONTH_DAY_OPTIONS = Array.from({ length: 31 }, (_, index) => {
+  const day = String(index + 1)
+  return { value: day, label: `Dia ${day}` }
+})
+
+function createReportConfig(overrides = {}) {
+  return {
+    ...DEFAULT_REPORT_CONFIG,
+    ...overrides,
+    secoes: {
+      ...DEFAULT_SECTIONS,
+      ...(overrides.secoes ?? {}),
+    },
+  }
+}
+
+function getEmailDataWindow(frequencia) {
+  if (frequencia === "diario") {
+    return { tipo: "atual", label: "Dados atuais", periodo: null, periodoDias: null }
+  }
+
+  if (frequencia === "mensal") {
+    return { tipo: "mensal", label: "Mes atual", periodo: "30d", periodoDias: 30 }
+  }
+
+  return { tipo: "semanal", label: "Ultimos 7 dias", periodo: "7d", periodoDias: 7 }
+}
+
+function getWeekdayLabel(value) {
+  return WEEKDAY_OPTIONS.find((option) => option.value === value)?.label ?? "Segunda-feira"
+}
 
 function formatDate(date = new Date()) {
   return date.toLocaleDateString("pt-BR", {
@@ -388,12 +437,27 @@ function EmailAutomationPanel({
   onFrequenciaChange,
   horario,
   onHorarioChange,
+  diaSemana,
+  onDiaSemanaChange,
+  diaMes,
+  onDiaMesChange,
+  config,
+  maquinas,
+  onConfigChange,
+  onToggleSecao,
   onSaveDraft,
   onSendNow,
 }) {
+  const [showConfig, setShowConfig] = React.useState(false)
   const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
   const hasDestinatarios = destinatarios.trim().length > 0
   const frequencyLabel = selectedFrequency?.label ?? "Recorrencia"
+  const dataWindow = getEmailDataWindow(frequencia)
+  const selectedMachine = maquinas.find((maquina) => String(maquina.id) === String(config.maquinaId))
+
+  function updateConfig(nextValues) {
+    onConfigChange((current) => createReportConfig({ ...current, ...nextValues }))
+  }
 
   return (
     <div className="print:hidden rounded-xl border bg-card p-4 shadow-sm">
@@ -436,20 +500,114 @@ function EmailAutomationPanel({
           />
         </div>
 
-        <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-2">
-          <Button type="button" variant="outline" className="h-9 px-3 font-normal text-muted-foreground" disabled>
-            Segunda
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-9 bg-muted text-muted-foreground hover:bg-muted"
-            onClick={onSaveDraft}
-            disabled={!hasDestinatarios}
-          >
-            Salvar Agendamento
-          </Button>
-        </div>
+        {frequencia === "semanal" && (
+          <Select value={diaSemana} onValueChange={onDiaSemanaChange}>
+            <SelectTrigger className="h-9 w-full">
+              <SelectValue placeholder="Dia da semana" />
+            </SelectTrigger>
+            <SelectContent>
+              {WEEKDAY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {frequencia === "mensal" && (
+          <Select value={diaMes} onValueChange={onDiaMesChange}>
+            <SelectTrigger className="h-9 w-full">
+              <SelectValue placeholder="Dia do mes" />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTH_DAY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 justify-between px-3 font-normal text-primary"
+          onClick={() => setShowConfig((current) => !current)}
+        >
+          Configuracoes do relatorio
+          <SlidersHorizontalIcon className="size-4" />
+        </Button>
+
+        {showConfig && (
+          <div className="grid gap-3 rounded-lg border bg-muted/10 p-3">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
+                Tipo
+                <Select
+                  value={config.tipoRelatorio}
+                  onValueChange={(value) => updateConfig({ tipoRelatorio: value })}
+                >
+                  <SelectTrigger className="h-9 w-full bg-background">
+                    <SelectValue placeholder="Tipo de relatorio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="geral">Geral da frota</SelectItem>
+                    <SelectItem value="maquina">Maquina especifica</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+
+              <label className="flex flex-col gap-1.5 text-xs font-medium text-muted-foreground">
+                Maquina
+                <Select
+                  value={config.maquinaId}
+                  onValueChange={(value) => updateConfig({ maquinaId: value })}
+                  disabled={config.tipoRelatorio !== "maquina" || maquinas.length === 0}
+                >
+                  <SelectTrigger className="h-9 w-full bg-background">
+                    <SelectValue placeholder="Selecione uma maquina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {maquinas.map((maquina) => (
+                      <SelectItem key={maquina.id} value={String(maquina.id)}>
+                        {maquina.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+            </div>
+
+            <div className="rounded-md border bg-background px-3 py-2 text-xs text-muted-foreground">
+              Janela de dados: <span className="font-medium text-foreground">{dataWindow.label}</span>
+              {config.tipoRelatorio === "maquina" && selectedMachine ? ` - ${selectedMachine.nome}` : ""}
+            </div>
+
+            <div className="flex grid-cols-1 gap-2 min-[420px]:flex-wrap ">
+              {SECTION_OPTIONS.map((secao) => (
+                <label key={secao.id} className="w-fit flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-1 text-sm text-foreground">
+                  <Checkbox
+                    checked={config.secoes[secao.id]}
+                    onCheckedChange={(checked) => onToggleSecao(secao.id, checked === true)}
+                  />
+                  {secao.label}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-9 bg-muted text-muted-foreground hover:bg-muted"
+          onClick={onSaveDraft}
+          disabled={!hasDestinatarios}
+        >
+          Salvar Agendamento
+        </Button>
 
         <Button
           type="button"
@@ -463,7 +621,9 @@ function EmailAutomationPanel({
       </div>
 
       <div className="mt-3 rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-        Proximo envio: {frequencyLabel} as {horario || "08:00"}. O relatorio considera as secoes e filtros selecionados acima.
+        Proximo envio: {frequencyLabel}
+        {frequencia === "semanal" ? `, ${getWeekdayLabel(diaSemana)}` : ""}
+        {frequencia === "mensal" ? `, dia ${diaMes}` : ""} as {horario || "08:00"}. Janela: {dataWindow.label}. O relatorio usara os filtros de e-mail.
       </div>
     </div>
   )
@@ -593,11 +753,22 @@ export default function RelatoriosPage() {
   const [emailDestinatarios, setEmailDestinatarios] = React.useState("")
   const [emailFrequencia, setEmailFrequencia] = React.useState("semanal")
   const [emailHorario, setEmailHorario] = React.useState("08:00")
+  const [emailDiaSemana, setEmailDiaSemana] = React.useState("segunda")
+  const [emailDiaMes, setEmailDiaMes] = React.useState("1")
+  const [emailReportConfig, setEmailReportConfig] = React.useState(() => createReportConfig({ periodo: "7d" }))
   const [geradoEm] = React.useState(formatDate())
 
   React.useEffect(() => {
     if (!maquinaId && maquinas.length > 0) {
       setMaquinaId(String(maquinas[0].id))
+    }
+
+    if (maquinas.length > 0) {
+      setEmailReportConfig((current) => (
+        current.maquinaId
+          ? current
+          : createReportConfig({ ...current, maquinaId: String(maquinas[0].id) })
+      ))
     }
   }, [maquinaId, maquinas])
 
@@ -638,6 +809,18 @@ export default function RelatoriosPage() {
 
       if (typeof draft.horario === "string" && /^\d{2}:\d{2}$/.test(draft.horario)) {
         setEmailHorario(draft.horario)
+      }
+
+      if (WEEKDAY_OPTIONS.some((option) => option.value === draft.diaSemana)) {
+        setEmailDiaSemana(draft.diaSemana)
+      }
+
+      if (MONTH_DAY_OPTIONS.some((option) => option.value === String(draft.diaMes))) {
+        setEmailDiaMes(String(draft.diaMes))
+      }
+
+      if (draft.config && typeof draft.config === "object") {
+        setEmailReportConfig(createReportConfig(draft.config))
       }
     } catch {
       window.localStorage.removeItem(EMAIL_DRAFT_STORAGE_KEY)
@@ -697,6 +880,16 @@ export default function RelatoriosPage() {
     setSecoes((current) => ({ ...current, [secao]: checked }))
   }
 
+  function onToggleEmailSecao(secao, checked) {
+    setEmailReportConfig((current) => createReportConfig({
+      ...current,
+      secoes: {
+        ...current.secoes,
+        [secao]: checked,
+      },
+    }))
+  }
+
   function recarregar() {
     setRefreshError(null)
     Promise.allSettled([recarregarMaquinas(), recarregarSensores()]).then((results) => {
@@ -708,14 +901,20 @@ export default function RelatoriosPage() {
   }
 
   function getEmailAutomationPayload() {
+    const dataWindow = getEmailDataWindow(emailFrequencia)
+    const emailSelectedMaquina = maquinas.find((maquina) => String(maquina.id) === String(emailReportConfig.maquinaId))
+
     return {
-      tipoRelatorio,
-      maquinaId: isRelatorioMaquina ? selectedMaquina.id : null,
-      periodo,
-      periodoDias,
-      secoes,
+      tipoRelatorio: emailReportConfig.tipoRelatorio,
+      maquinaId: emailReportConfig.tipoRelatorio === "maquina" ? emailSelectedMaquina?.id ?? null : null,
+      periodo: dataWindow.periodo,
+      periodoDias: dataWindow.periodoDias,
+      janelaDados: dataWindow,
+      secoes: emailReportConfig.secoes,
       recorrencia: emailFrequencia,
       horario: emailHorario,
+      diaSemana: emailFrequencia === "semanal" ? emailDiaSemana : null,
+      diaMes: emailFrequencia === "mensal" ? Number(emailDiaMes) : null,
       destinatarios: emailDestinatarios
         .split(/[;,]/)
         .map((email) => email.trim())
@@ -732,6 +931,9 @@ export default function RelatoriosPage() {
         destinatarios: emailDestinatarios,
         frequencia: emailFrequencia,
         horario: emailHorario,
+        diaSemana: emailDiaSemana,
+        diaMes: emailDiaMes,
+        config: emailReportConfig,
         atualizadoEm: new Date().toISOString(),
         payload,
       })
@@ -741,14 +943,20 @@ export default function RelatoriosPage() {
   }
 
   function enviarRelatorioAgora() {
-    const destinatarios = getEmailAutomationPayload().destinatarios
+    const payload = getEmailAutomationPayload()
+    const destinatarios = payload.destinatarios
 
     if (destinatarios.length === 0) {
       toast.error("Informe pelo menos um destinatario.")
       return
     }
 
-    toast.success(`Relatorio enviado para ${destinatarios.length} destinatario(s).`)
+    if (payload.tipoRelatorio === "maquina" && !payload.maquinaId) {
+      toast.error("Selecione a maquina do relatorio por e-mail.")
+      return
+    }
+
+    toast.success(`Solicitacao pronta para enviar a ${destinatarios.length} destinatario(s) quando o backend estiver conectado.`)
   }
 
   const totalMaquinas = maquinas.length
@@ -856,6 +1064,14 @@ export default function RelatoriosPage() {
               onFrequenciaChange={setEmailFrequencia}
               horario={emailHorario}
               onHorarioChange={setEmailHorario}
+              diaSemana={emailDiaSemana}
+              onDiaSemanaChange={setEmailDiaSemana}
+              diaMes={emailDiaMes}
+              onDiaMesChange={setEmailDiaMes}
+              config={emailReportConfig}
+              maquinas={maquinas}
+              onConfigChange={setEmailReportConfig}
+              onToggleSecao={onToggleEmailSecao}
               onSaveDraft={salvarRascunhoEmail}
               onSendNow={enviarRelatorioAgora}
             />
