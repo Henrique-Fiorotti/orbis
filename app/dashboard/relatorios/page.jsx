@@ -437,13 +437,13 @@ function EmailAutomationPanel({
         </div>
 
         <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-2">
-          <Button type="button" variant="outline" className="h-9 px-3 font-normal text-muted-foreground" disabled>
+          <Button type="button" variant="outline" className="cursor-pointer h-9 px-3 font-normal text-muted-foreground" disabled>
             Segunda
           </Button>
           <Button
             type="button"
             variant="secondary"
-            className="h-9 bg-muted text-muted-foreground hover:bg-muted"
+            className="cursor-pointer h-9 bg-muted text-muted-foreground hover:bg-muted"
             onClick={onSaveDraft}
             disabled={!hasDestinatarios}
           >
@@ -454,7 +454,7 @@ function EmailAutomationPanel({
         <Button
           type="button"
           variant="outline"
-          className="mt-1 h-9 border-primary text-primary hover:bg-primary/10 hover:text-primary"
+          className="cursor-pointer mt-1 h-9 border-primary text-primary hover:bg-primary/10 hover:text-primary"
           onClick={onSendNow}
         >
           <SendIcon className="mr-1 size-4" />
@@ -473,13 +473,13 @@ function ReportActionsPanel({ onRefresh, onPrint, refreshDisabled, printDisabled
   return (
     <div className="print:hidden hidden rounded-xl border bg-card p-4 shadow-sm sm:block">
       <div className="grid grid-cols-2 gap-2">
-        <Button type="button" variant="outline" className="h-10" onClick={onRefresh} disabled={refreshDisabled}>
+        <Button type="button" variant="outline" className="cursor-pointer h-10" onClick={onRefresh} disabled={refreshDisabled}>
           <RefreshCcwIcon className="mr-1 size-4" />
           Atualizar
         </Button>
         <Button
           type="button"
-          className="h-10 bg-primary text-primary-foreground hover:bg-primary/90"
+          className="cursor-pointer h-10 bg-primary text-primary-foreground hover:bg-primary/90"
           onClick={onPrint}
           disabled={printDisabled}
         >
@@ -801,7 +801,7 @@ export default function RelatoriosPage() {
           <div className="flex min-w-0 items-center gap-3">
             <UITooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
+                <Button variant="ghost" className="cursor-pointer" size="icon-sm" onClick={() => router.push("/dashboard")}>
                   <ArrowLeftIcon className="size-4" />
                 </Button>
               </TooltipTrigger>
@@ -823,7 +823,7 @@ export default function RelatoriosPage() {
             </Button>
             <Button
               size="sm"
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
+              className="cursor-pointer w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
               onClick={() => window.print()}
               disabled={carregandoTudo || (tipoRelatorio === "maquina" && !selectedMaquina)}
             >
@@ -870,7 +870,7 @@ export default function RelatoriosPage() {
             {errorMsg && (
               <div className="flex flex-col gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive sm:flex-row sm:items-center sm:justify-between lg:flex-col lg:items-start">
                 <span>{errorMsg}</span>
-                <Button variant="outline" size="sm" onClick={recarregar}>
+                <Button variant="outline" size="sm" className="cursor-pointer" onClick={recarregar}>
                   Tentar novamente
                 </Button>
               </div>

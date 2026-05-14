@@ -246,13 +246,15 @@ export function GlobalSearch({ open, onOpenChange }) {
         <DialogTitle className="sr-only ">Pesquisar</DialogTitle>
         <div className="flex items-center gap-3 px-5 py-1.5">
           <SearchIcon className="size-5 shrink-0 text-muted-foreground " />
-          <Input
+
+          <input
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Pesquisar maquinas, tecnicos, administradores, sensores e alertas..."
-            className="h-12 border-0 bg-transparent px-0 text-[17px] shadow-none focus-visible:ring-0 md:text-[17px]"
+            className="h-12 flex-1 bg-transparent px-0 text-[17px] outline-none placeholder:text-muted-foreground"
           />
+
           <Button variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
             <XIcon className="size-4" />
             <span className="sr-only">Fechar</span>

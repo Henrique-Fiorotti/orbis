@@ -590,11 +590,10 @@ export default function PerfilPage() {
 
         {mensagem ? (
           <div
-            className={`rounded-xl border px-4 py-3 text-sm ${
-              status === "error"
+            className={`rounded-xl border px-4 py-3 text-sm ${status === "error"
                 ? "border-destructive/25 bg-destructive/5 text-destructive"
                 : "border-border/60 bg-muted/30 text-muted-foreground"
-            }`}
+              }`}
           >
             {mensagem}
           </div>
@@ -644,11 +643,10 @@ export default function PerfilPage() {
               </Badge>
               <Badge
                 variant="outline"
-                className={`px-1.5 text-xs ${
-                  perfil.ativo
+                className={`px-1.5 text-xs ${perfil.ativo
                     ? "bg-green-100 text-green-700 border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
                     : "bg-red-100 text-red-700 border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
-                }`}
+                  }`}
               >
                 <span className={`mr-1 size-1.5 rounded-full inline-block ${perfil.ativo ? "bg-green-500" : "bg-red-500"}`} />
                 {perfil.ativo ? "Ativo" : "Inativo"}
@@ -715,8 +713,8 @@ export default function PerfilPage() {
                     {podeEditarIdentidade ? "Voce pode alterar este dado." : "Alterado apenas pelo administrador."}
                   </p>
                 </div>
-
-                <div className="flex flex-col gap-1.5">
+                {/*
+                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="perfil" className="text-xs text-muted-foreground uppercase tracking-wide">
                     Cargo / Perfil
                   </Label>
@@ -742,7 +740,8 @@ export default function PerfilPage() {
                   <p className="text-xs text-muted-foreground">
                     {podeEditarIdentidade ? "Voce pode alterar este dado." : "Alterado apenas pelo administrador."}
                   </p>
-                </div>
+                </div> 
+                */}
 
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="telefone" className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -807,11 +806,10 @@ export default function PerfilPage() {
                   <span className="text-xs text-muted-foreground uppercase tracking-wide">Status</span>
                   <Badge
                     variant="outline"
-                    className={`px-1.5 w-fit mt-0.5 ${
-                      perfil.ativo
+                    className={`px-1.5 w-fit mt-0.5 ${perfil.ativo
                         ? "bg-green-100 text-green-700 border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
                         : "bg-red-100 text-red-700 border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
-                    }`}
+                      }`}
                   >
                     <span className={`mr-1 size-1.5 rounded-full inline-block ${perfil.ativo ? "bg-green-500" : "bg-red-500"}`} />
                     {perfil.ativo ? "Ativo" : "Inativo"}

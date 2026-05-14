@@ -641,7 +641,7 @@ export default function AdminsPage() {
             placeholder="Buscar por nome, e-mail ou telefone..."
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
-            className="pl-8"
+            className="pl-8 dark:border-gray-600"
           />
         </div>
 
