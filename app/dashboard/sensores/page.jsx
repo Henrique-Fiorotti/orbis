@@ -495,7 +495,7 @@ export default function SensoresPage() {
       cell: ({ row }) => (
         <button
           onClick={() => abrirVer(row.original)}
-          className="text-left text-sm font-medium transition-colors hover:text-primary hover:underline"
+          className="cursor-pointer text-left text-sm font-medium transition-colors hover:text-primary hover:underline"
         >
           {row.original.tipo}
         </button>

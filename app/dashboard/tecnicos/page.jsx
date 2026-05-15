@@ -380,7 +380,7 @@ export default function TecnicosPage() {
           <TecnicoAvatar tecnico={row.original} size="sm" />
           <button
             onClick={() => abrirVer(row.original)}
-            className="text-left font-medium text-sm hover:underline hover:text-primary transition-colors"
+            className="cursor-pointer text-left font-medium text-sm hover:underline hover:text-primary transition-colors"
           >
             {row.original.nome}
           </button>
@@ -734,10 +734,10 @@ export default function TecnicosPage() {
 
                     {canManageTecnicos ? (
                       <div className="flex gap-2">
-                        <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
+                        <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
                           <PencilIcon className="size-4 mr-1" /> Editar
                         </Button>
-                        <Button variant="destructive" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>
+                        <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>
                           <Trash2Icon className="size-4 mr-1" /> Excluir
                         </Button>
                       </div>

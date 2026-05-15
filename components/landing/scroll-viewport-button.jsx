@@ -21,7 +21,7 @@ export default function ScrollViewportButton({
         width="20"
         height="20"
         viewBox="0 0 24 24"
-        className={iconClassName}
+        className={iconClassName} 
         aria-hidden="true"
       >
         <path d="M12 16l-6-6h12z" />
