@@ -53,7 +53,7 @@ function SheetTrigger({
 function SheetClose({
   ...props
 }) {
-  return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
+  return <SheetPrimitive.Close className="cursor-pointer" data-slot="sheet-close" {...props} />;
 }
 
 function SheetPortal({
@@ -111,8 +111,8 @@ function SheetContent({
         {...props}>
         {children}
         {showCloseButton && (
-          <SheetPrimitive.Close data-slot="sheet-close" asChild>
-            <Button variant="ghost" className="absolute top-3 right-3" size="icon-sm">
+          <SheetPrimitive.Close className="cursor-pointer" data-slot="sheet-close" asChild>
+            <Button variant="ghost" className="absolute top-3 right-3 cursor-pointer" size="icon-sm">
               <XIcon />
               <span className="sr-only">Close</span>
             </Button>
