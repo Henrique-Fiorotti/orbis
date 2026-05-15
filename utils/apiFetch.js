@@ -27,11 +27,11 @@ function createHttpError(status, message, payload = null) {
 
 function getApiErrorMessage(statusCode, payload, contextLabel) {
   if (statusCode === 401) {
-    return "Sua sessao expirou. Faca login novamente."
+    return "Sua sessão expirou. Faça login novamente."
   }
 
   if (statusCode === 403) {
-    return `Seu usuario nao tem permissao para visualizar ${contextLabel}.`
+    return `Seu usuário não tem permissão para visualizar ${contextLabel}.`
   }
 
   return payload?.mensagem || payload?.message || `Erro ${statusCode} ao carregar ${contextLabel}.`
@@ -57,7 +57,7 @@ async function refreshAccessToken(refreshToken) {
   if (!response.ok || !payload?.accessToken) {
     throw createHttpError(
       response.status,
-      getApiErrorMessage(response.status, payload, "sua sessao"),
+      getApiErrorMessage(response.status, payload, "sua sessão"),
       payload
     )
   }

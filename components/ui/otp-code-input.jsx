@@ -16,7 +16,7 @@ function OtpCodeInput({
   disabled = false,
   idPrefix = "otp-code",
   className,
-  "aria-label": ariaLabel = "Codigo de seguranca",
+  "aria-label": ariaLabel = "Código de segurança",
 }) {
   const refs = React.useRef([])
   const digits = normalizeCode(value).padEnd(CODE_LENGTH, " ").split("")

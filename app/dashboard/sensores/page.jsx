@@ -75,8 +75,8 @@ const SENSOR_STATUS_SORT_OPTIONS = [
 ]
 
 const SENSOR_MAQUINA_FILTER_OPTIONS = [
-  { value: "COM_MAQUINA", label: "Com maquina" },
-  { value: "SEM_MAQUINA", label: "Sem maquina" },
+  { value: "COM_MAQUINA", label: "Com máquina" },
+  { value: "SEM_MAQUINA", label: "Sem máquina" },
 ]
 
 const SENSOR_LEITURA_FILTER_OPTIONS = [
@@ -371,15 +371,15 @@ export default function SensoresPage() {
     }
 
     if (!getSelectedMaquinaId(form.maquinaId)) {
-      toast.error("Selecione a maquina vinculada ao sensor.")
+      toast.error("Selecione a máquina vinculada ao sensor.")
       return false
     }
 
     const requiredFields = [
       ["limiteTemperatura", "Informe o limite de temperatura em °C."],
       ["idealTemperatura", "Informe a temperatura ideal em °C."],
-      ["limiteVibracao", "Informe o limite de vibracao em mm/s."],
-      ["idealVibracao", "Informe a vibracao ideal em mm/s."],
+      ["limiteVibracao", "Informe o limite de vibração em mm/s."],
+      ["idealVibracao", "Informe a vibração ideal em mm/s."],
     ]
 
     for (const [field, message] of requiredFields) {
@@ -400,7 +400,7 @@ export default function SensoresPage() {
     }
 
     if (limiteVibracao <= idealVibracao) {
-      toast.error("O limite de vibracao deve ser maior que a vibracao ideal.")
+      toast.error("O limite de vibração deve ser maior que a vibração ideal.")
       return false
     }
 
@@ -441,7 +441,7 @@ export default function SensoresPage() {
       setForm(formVazio)
       setSensorSelecionado(null)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar o sensor.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar o sensor.")
     }
   }
 
@@ -474,7 +474,7 @@ export default function SensoresPage() {
       setSheetAberto(false)
       setSensorExcluir(null)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel remover o sensor.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível remover o sensor.")
     }
   }
 
@@ -507,13 +507,13 @@ export default function SensoresPage() {
       header: ({ column }) => (
         <TableColumnHeaderMenu
           column={column}
-          label="Maquina"
+          label="Máquina"
           filterOptions={SENSOR_MAQUINA_FILTER_OPTIONS}
         />
       ),
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {row.original.maquinaId ? row.original.maquinaNome : "Sem maquina vinculada"}
+          {row.original.maquinaId ? row.original.maquinaNome : "Sem máquina vinculada"}
         </span>
       ),
       filterFn: selectSensorFilterFn,
@@ -564,7 +564,7 @@ export default function SensoresPage() {
       header: ({ column }) => (
         <TableColumnHeaderMenu
           column={column}
-          label="Vibracao"
+          label="Vibração"
           filterOptions={SENSOR_LEITURA_FILTER_OPTIONS}
         />
       ),
@@ -586,7 +586,7 @@ export default function SensoresPage() {
     },
     {
       accessorKey: "ultimaLeituraEm",
-      header: "Ultimo sinal",
+      header: "Último sinal",
       cell: ({ row }) => <span className="text-sm text-muted-foreground">{tempoRelativo(row.original.ultimaLeituraEm)}</span>,
     },
     {
@@ -711,13 +711,13 @@ export default function SensoresPage() {
               <span className="text-muted-foreground">
                 {loadingInicial ? "Verificando limites..." : `${Math.max(sensores.length - foraDoLimite, 0)} dentro dos limites`}
               </span>
-              <span className="text-xs text-muted-foreground">Temperatura ou vibracao acima do limite.</span>
+              <span className="text-xs text-muted-foreground">Temperatura ou vibração acima do limite.</span>
             </div>
           </div>
 
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Sem maquina vinculada</span>
+              <span className="text-sm font-medium text-muted-foreground">Sem máquina vinculada</span>
               <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
                 inativos
               </span>
@@ -726,7 +726,7 @@ export default function SensoresPage() {
               <MetricValue value={semMaquina} loading={loadingInicial} />
             </span>
             <span className="text-sm text-muted-foreground">
-              {loadingInicial ? "Conferindo vinculos..." : "Sensores sem maquina sao cadastrados como OFFLINE."}
+              {loadingInicial ? "Conferindo vínculos..." : "Sensores sem máquina são cadastrados como OFFLINE."}
             </span>
           </div>
         </div>
@@ -734,16 +734,16 @@ export default function SensoresPage() {
         <div className="relative w-full max-w-sm">
           <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por tipo ou maquina..."
+            placeholder="Buscar por tipo ou máquina..."
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
             className="pl-8 dark:border-gray-600" />
         </div>
 
         {loadingInicial ? (
-          <StatePanel message="Sincronizando sensores da pagina com a API..." />
+          <StatePanel message="Sincronizando sensores da página com a API..." />
         ) : errorSemDados ? (
-          <StatePanel message={mensagem || "Nao foi possivel carregar os sensores."} tone="error" />
+          <StatePanel message={mensagem || "Não foi possível carregar os sensores."} tone="error" />
         ) : (
           <>
             <div className="min-h-[500px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
@@ -788,7 +788,7 @@ export default function SensoresPage() {
                 <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
                   <ChevronLeftIcon className="size-4" />
                 </Button>
-                <span className="flex w-fit items-center justify-center text-sm font-medium">Pag. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
+                <span className="flex w-fit items-center justify-center text-sm font-medium">Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
                 <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
                   <ChevronRightIcon className="size-4" />
                 </Button>
@@ -808,10 +808,10 @@ export default function SensoresPage() {
               </SheetTitle>
               <SheetDescription>
                 {modoSheet === "criar"
-                  ? "Cadastre os limites e ideais que serao enviados para a API."
+                  ? "Cadastre os limites e ideais que serão enviados para a API."
                   : modoSheet === "editar"
-                    ? "Altere as configuracoes e clique em salvar."
-                    : "Leituras e configuracoes do sensor."}
+                    ? "Altere as configurações e clique em salvar."
+                    : "Leituras e configurações do sensor."}
               </SheetDescription>
             </SheetHeader>
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
@@ -823,8 +823,8 @@ export default function SensoresPage() {
                       <span className="text-sm font-semibold">{sensorSelecionado.tipo}</span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Maquina vinculada</Label>
-                      <span className="text-sm font-medium">{sensorSelecionado.maquinaId ? sensorSelecionado.maquinaNome : "Sem maquina vinculada"}</span>
+                      <Label className="text-xs text-muted-foreground">Máquina vinculada</Label>
+                      <span className="text-sm font-medium">{sensorSelecionado.maquinaId ? sensorSelecionado.maquinaNome : "Sem máquina vinculada"}</span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Status</Label>
@@ -859,7 +859,7 @@ export default function SensoresPage() {
                   <div className="flex flex-col gap-3 rounded-lg border border-[#5E17EB] bg-[#5E17EB]/10 p-3 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10">
                     <div className="flex items-center gap-2">
                       <ActivityIcon className="size-4 text-[#5E17EB] dark:text-[#5E17EB]" />
-                      <span className="text-sm font-medium">Vibracao</span>
+                      <span className="text-sm font-medium">Vibração</span>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="flex flex-col gap-1">
@@ -877,7 +877,7 @@ export default function SensoresPage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Label className="text-xs text-muted-foreground">Ultimo sinal</Label>
+                    <Label className="text-xs text-muted-foreground">Último sinal</Label>
                     <span className="text-sm">{tempoRelativo(sensorSelecionado.ultimaLeituraEm)}</span>
                   </div>
                   <Separator />
@@ -908,14 +908,14 @@ export default function SensoresPage() {
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="maquina">Maquina vinculada <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="maquina">Máquina vinculada <span className="text-red-500">*</span></Label>
                     <Select value={form.maquinaId || SEM_MAQUINA_VALUE} onValueChange={handleMaquinaChange}>
                       <SelectTrigger id="maquina" className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectItem value={SEM_MAQUINA_VALUE}>Sem maquina vinculada</SelectItem>
+                          <SelectItem value={SEM_MAQUINA_VALUE}>Sem máquina vinculada</SelectItem>
                           {maquinas.map((maquina) => (
                             <SelectItem key={maquina.id} value={String(maquina.id)}>
                               {maquina.nome}
@@ -926,8 +926,8 @@ export default function SensoresPage() {
                     </Select>
                     <span className={`text-xs ${form.maquinaId ? "text-muted-foreground" : "font-medium text-red-600 dark:text-red-300"}`}>
                       {form.maquinaId
-                        ? "Sensor sera vinculado a maquina selecionada no cadastro da API."
-                        : "Obrigatorio: o back-end exige uma maquina para criar ou atualizar sensores."}
+                        ? "Sensor será vinculado à máquina selecionada no cadastro da API."
+                        : "Obrigatório: o back-end exige uma máquina para criar ou atualizar sensores."}
                     </span>
                   </div>
                   <Separator />
@@ -947,7 +947,7 @@ export default function SensoresPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="limite-temperatura" className="text-xs text-muted-foreground">
-                        Limite temperatura <span className="text-red-500">*</span>
+                        Limite de temperatura <span className="text-red-500">*</span>
                       </Label>
                       <UnitInput
                         id="limite-temperatura"
@@ -960,7 +960,7 @@ export default function SensoresPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="ideal-vibracao" className="text-xs text-muted-foreground">
-                        Vibracao ideal <span className="text-red-500">*</span>
+                        Vibração ideal <span className="text-red-500">*</span>
                       </Label>
                       <UnitInput
                         id="ideal-vibracao"
@@ -973,7 +973,7 @@ export default function SensoresPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="limite-vibracao" className="text-xs text-muted-foreground">
-                        Limite vibracao <span className="text-red-500">*</span>
+                        Limite de vibração <span className="text-red-500">*</span>
                       </Label>
                       <UnitInput
                         id="limite-vibracao"
@@ -986,7 +986,7 @@ export default function SensoresPage() {
                     </div>
                   </div>
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Temperatura em Celsius (°C) e vibracao em milimetros por segundo (mm/s). O limite deve ser maior que o valor ideal.
+                    Temperatura em Celsius (°C) e vibração em milímetros por segundo (mm/s). O limite deve ser maior que o valor ideal.
                   </p>
                 </>
               )}
@@ -997,7 +997,7 @@ export default function SensoresPage() {
                   Cancelar
                 </Button>
                 <Button className="cursor-pointer" onClick={salvar} disabled={salvando}>
-                  {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alteracoes"}
+                  {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}
                 </Button>
               </SheetFooter>
             ) : null}
@@ -1007,9 +1007,9 @@ export default function SensoresPage() {
         <Dialog open={dialogExcluir} onOpenChange={alternarDialogExcluir}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirmar exclusao</DialogTitle>
+              <DialogTitle>Confirmar exclusão</DialogTitle>
               <DialogDescription>
-                Tem certeza que deseja excluir o sensor <strong>{sensorExcluir?.tipo}</strong>? Esta acao sera enviada para a API e nao usa mais dados locais do navegador.
+                Tem certeza que deseja excluir o sensor <strong>{sensorExcluir?.tipo}</strong>? Esta ação será enviada para a API e não usa mais dados locais do navegador.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

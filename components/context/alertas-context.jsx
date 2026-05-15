@@ -39,7 +39,7 @@ export function AlertasProvider({ children }) {
     if (!session?.accessToken) {
       setAlertas([])
       setStatus("error")
-      setMensagem("Faca login para carregar os chamados.")
+      setMensagem("Faça login para carregar os chamados.")
       return
     }
 
@@ -59,7 +59,7 @@ export function AlertasProvider({ children }) {
       }
 
       setStatus("error")
-      setMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar os chamados.")
+      setMensagem(error instanceof Error ? error.message : "Não foi possível carregar os chamados.")
       setAlertas((current) => (silent ? current : []))
       throw error
     }
@@ -101,7 +101,7 @@ export function AlertasProvider({ children }) {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      const error = new Error("Faca login para gerenciar os chamados.")
+      const error = new Error("Faça login para gerenciar os chamados.")
       setStatus("error")
       setMensagem(error.message)
       throw error
@@ -118,7 +118,7 @@ export function AlertasProvider({ children }) {
         clearAuthSession()
       }
 
-      const message = error instanceof Error ? error.message : "Nao foi possivel atualizar o chamado."
+      const message = error instanceof Error ? error.message : "Não foi possível atualizar o chamado."
       setStatus((current) => (current === "loading" ? "error" : current))
       setMensagem(message)
       throw error instanceof Error ? error : new Error(message)
@@ -141,7 +141,7 @@ export function AlertasProvider({ children }) {
   async function atualizarStatus(id, novoStatus) {
     if (novoStatus === "EM_ANDAMENTO") {
       return await executarMutacao((accessToken) =>
-        requestDashboardJson("/manutencoes", accessToken, "o inicio do atendimento", {
+        requestDashboardJson("/manutencoes", accessToken, "o início do atendimento", {
           method: "POST",
           body: {
             alertaId: id,
@@ -157,10 +157,10 @@ export function AlertasProvider({ children }) {
         const manutencao = getOpenMaintenance(manutencoes)
 
         if (!manutencao?.id) {
-          throw new Error("Nao foi encontrada uma manutencao em andamento para este chamado.")
+          throw new Error("Não foi encontrada uma manutenção em andamento para este chamado.")
         }
 
-        return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "a resolucao do chamado", {
+        return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "a resolução do chamado", {
           method: "PUT",
           body: {
             status: "RESOLVIDO",
@@ -170,14 +170,14 @@ export function AlertasProvider({ children }) {
       })
     }
 
-    throw new Error("Este status nao pode ser aplicado pelo fluxo atual do backend.")
+    throw new Error("Este status não pode ser aplicado pelo fluxo atual do backend.")
   }
 
   /**
    * @param {number} _id
    */
   async function cancelarAlerta(_id) {
-    throw new Error("O backend atual nao possui rota para cancelar chamados.")
+    throw new Error("O backend atual não possui rota para cancelar chamados.")
   }
 
   const recarregarAlertas = React.useCallback(async () => {

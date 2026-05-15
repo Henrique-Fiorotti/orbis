@@ -56,14 +56,14 @@ const EMPTY_PERFIL = {
 
 const MAQUINAS_MOCK = [
   { id: 1, nome: "Motor Esteira A-01", setor: "Setor A - Expedicao", criticidade: "ALTA", status: "OK" },
-  { id: 2, nome: "Compressor B-03", setor: "Setor B - Producao", criticidade: "MEDIA", status: "ALERTA" },
+  { id: 2, nome: "Compressor B-03", setor: "Setor B - Produção", criticidade: "MEDIA", status: "ALERTA" },
   { id: 3, nome: "Torno CNC C-07", setor: "Setor C - Utilidades", criticidade: "BAIXA", status: "OK" },
 ]
 
 const ALERTAS_MOCK = [
   { id: 1, maquina: "Motor Esteira A-01", tipo: "Temperatura", data: "01/04/2026 - 14:22", status: "RESOLVIDO" },
-  { id: 2, maquina: "Compressor B-03", tipo: "Vibracao", data: "30/03/2026 - 09:55", status: "RESOLVIDO" },
-  { id: 3, maquina: "Compressor B-03", tipo: "Tendencia", data: "28/03/2026 - 17:08", status: "EM_ANDAMENTO" },
+  { id: 2, maquina: "Compressor B-03", tipo: "Vibração", data: "30/03/2026 - 09:55", status: "RESOLVIDO" },
+  { id: 3, maquina: "Compressor B-03", tipo: "Tendência", data: "28/03/2026 - 17:08", status: "EM_ANDAMENTO" },
   { id: 4, maquina: "Torno CNC C-07", tipo: "Temperatura", data: "25/03/2026 - 11:30", status: "RESOLVIDO" },
 ]
 
@@ -120,8 +120,8 @@ function getIniciais(nome) {
 
 function getRoleLabel(role) {
   if (role === "ADMIN") return "Admin"
-  if (role === "TECNICO") return "Tecnico"
-  return role || "Perfil nao informado"
+  if (role === "TECNICO") return "Técnico"
+  return role || "Perfil não informado"
 }
 
 function getEspecialidadeLabel(perfil) {
@@ -131,13 +131,13 @@ function getEspecialidadeLabel(perfil) {
 
 function formatDateTime(value) {
   if (!value) {
-    return "Nao informado"
+    return "Não informado"
   }
 
   const date = new Date(value)
 
   if (Number.isNaN(date.getTime())) {
-    return "Nao informado"
+    return "Não informado"
   }
 
   return new Intl.DateTimeFormat("pt-BR", {
@@ -229,7 +229,7 @@ export default function PerfilPage() {
 
       if (!session?.accessToken) {
         setStatus("error")
-        setMensagem("Faca login para carregar o perfil.")
+        setMensagem("Faça login para carregar o perfil.")
         return
       }
 
@@ -265,7 +265,7 @@ export default function PerfilPage() {
         }
 
         setStatus("error")
-        setMensagem(getErrorMessage(error, "Nao foi possivel carregar o perfil."))
+        setMensagem(getErrorMessage(error, "Não foi possível carregar o perfil."))
       }
     }
 
@@ -280,7 +280,7 @@ export default function PerfilPage() {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      toast.error("Faca login para atualizar o perfil.")
+      toast.error("Faça login para atualizar o perfil.")
       return
     }
 
@@ -325,7 +325,7 @@ export default function PerfilPage() {
       let payload
 
       try {
-        payload = await requestDashboardJson(endpoint, session.accessToken, "a atualizacao do perfil", {
+        payload = await requestDashboardJson(endpoint, session.accessToken, "a atualização do perfil", {
           method: "PUT",
           body,
         })
@@ -335,7 +335,7 @@ export default function PerfilPage() {
         }
 
         const { email: _email, ...bodySemEmail } = body
-        payload = await requestDashboardJson(endpoint, session.accessToken, "a atualizacao do perfil", {
+        payload = await requestDashboardJson(endpoint, session.accessToken, "a atualização do perfil", {
           method: "PUT",
           body: {
             ...bodySemEmail,
@@ -353,7 +353,7 @@ export default function PerfilPage() {
         if (body.email && nextPerfil.email !== body.email) {
           const { email: _email, ...bodySemEmail } = body
 
-          payload = await requestDashboardJson(endpoint, session.accessToken, "a atualizacao do e-mail", {
+          payload = await requestDashboardJson(endpoint, session.accessToken, "a atualização do e-mail", {
             method: "PUT",
             body: {
               ...bodySemEmail,
@@ -366,7 +366,7 @@ export default function PerfilPage() {
         }
 
         if (body.email && nextPerfil.email !== body.email) {
-          throw new Error("A API nao confirmou a alteracao do e-mail.")
+          throw new Error("A API não confirmou a alteração do e-mail.")
         }
       }
 
@@ -383,7 +383,7 @@ export default function PerfilPage() {
         return
       }
 
-      toast.error(getErrorMessage(error, "Nao foi possivel atualizar o perfil."))
+      toast.error(getErrorMessage(error, "Não foi possível atualizar o perfil."))
     } finally {
       setSalvandoDados(false)
     }
@@ -403,14 +403,14 @@ export default function PerfilPage() {
     }
 
     if (file.size > 15 * 1024 * 1024) {
-      toast.error("A imagem deve ter no maximo 15 MB.")
+      toast.error("A imagem deve ter no máximo 15 MB.")
       return
     }
 
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      toast.error("Faca login para atualizar a foto.")
+      toast.error("Faça login para atualizar a foto.")
       return
     }
 
@@ -439,7 +439,7 @@ export default function PerfilPage() {
         return
       }
 
-      toast.error(getErrorMessage(error, "Nao foi possivel atualizar a foto."))
+      toast.error(getErrorMessage(error, "Não foi possível atualizar a foto."))
     } finally {
       setSalvandoFoto(false)
     }
@@ -463,21 +463,21 @@ export default function PerfilPage() {
     }
 
     if (!isValidEmail(senhas.emailDestino)) {
-      toast.error("Informe um e-mail de destino valido.")
+      toast.error("Informe um e-mail de destino válido.")
       return
     }
 
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      toast.error("Faca login para alterar a senha.")
+      toast.error("Faça login para alterar a senha.")
       return
     }
 
     setSalvandoSenha(true)
 
     try {
-      const payload = await requestDashboardJson("/senha/solicitar-alteracao", session.accessToken, "a solicitacao de alteracao de senha", {
+      const payload = await requestDashboardJson("/senha/solicitar-alteracao", session.accessToken, "a solicitação de alteração de senha", {
         method: "POST",
         body: {
           senhaAtual: senhas.atual,
@@ -493,7 +493,7 @@ export default function PerfilPage() {
         nova: "",
         confirmar: "",
       }))
-      toast.success(payload?.message || payload?.mensagem || "Codigo enviado para o e-mail informado.")
+      toast.success(payload?.message || payload?.mensagem || "Código enviado para o e-mail informado.")
     } catch (error) {
       if (getHttpErrorStatus(error) === 401) {
         clearAuthSession()
@@ -501,7 +501,7 @@ export default function PerfilPage() {
         return
       }
 
-      toast.error(getErrorMessage(error, "Nao foi possivel solicitar a alteracao de senha."))
+      toast.error(getErrorMessage(error, "Não foi possível solicitar a alteração de senha."))
     } finally {
       setSalvandoSenha(false)
     }
@@ -509,31 +509,31 @@ export default function PerfilPage() {
 
   async function confirmarAlteracaoSenha() {
     if (senhas.codigo.length !== CODE_LENGTH || !senhas.nova || !senhas.confirmar) {
-      toast.error("Informe os 6 numeros do codigo e a nova senha.")
+      toast.error("Informe os 6 números do código e a nova senha.")
       return
     }
 
     if (!isValidBackendPassword(senhas.nova)) {
-      toast.error("A senha precisa ter 7+ caracteres, letra maiuscula, minuscula e numero.")
+      toast.error("A senha precisa ter 7+ caracteres, letra maiúscula, minúscula e número.")
       return
     }
 
     if (senhas.nova !== senhas.confirmar) {
-      toast.error("A nova senha e a confirmacao nao coincidem.")
+      toast.error("A nova senha e a confirmação não coincidem.")
       return
     }
 
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      toast.error("Faca login para alterar a senha.")
+      toast.error("Faça login para alterar a senha.")
       return
     }
 
     setSalvandoSenha(true)
 
     try {
-      const payload = await requestDashboardJson("/senha/confirmar-alteracao", session.accessToken, "a confirmacao de alteracao de senha", {
+      const payload = await requestDashboardJson("/senha/confirmar-alteracao", session.accessToken, "a confirmação de alteração de senha", {
         method: "POST",
         body: {
           code: senhas.codigo.trim(),
@@ -550,7 +550,7 @@ export default function PerfilPage() {
         return
       }
 
-      toast.error(getErrorMessage(error, "Nao foi possivel alterar a senha."))
+      toast.error(getErrorMessage(error, "Não foi possível alterar a senha."))
     } finally {
       setSalvandoSenha(false)
     }
@@ -582,7 +582,7 @@ export default function PerfilPage() {
         <div>
           <h1 className="text-xl font-semibold">Meu Perfil</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie suas informacoes pessoais e preferencias de conta.
+            Gerencie suas informações pessoais e preferências de conta.
           </p>
         </div>
 
@@ -631,10 +631,10 @@ export default function PerfilPage() {
 
           <div className="flex flex-col gap-1 text-start sm:text-left">
             <p className="font-semibold m-0 text-xl sm:text-2xl lg:text-3xl leading-tight">
-              {form.nome || (loading ? "Carregando..." : "Nome nao informado")}
+              {form.nome || (loading ? "Carregando..." : "Nome não informado")}
             </p>
             <p className="text-sm sm:text-base text-muted-foreground">
-              {form.email || (loading ? "Sincronizando e-mail..." : "E-mail nao informado")}
+              {form.email || (loading ? "Sincronizando e-mail..." : "E-mail não informado")}
             </p>
             <div className="flex flex-wrap justify-center sm:justify-start items-center gap-1.5 mt-1">
               <Badge variant="outline" className="px-1.5 bg-purple-100 text-purple-700 border-purple-200 text-xs dark:border-primary/40 dark:bg-primary/10 dark:text-primary-foreground">
@@ -664,7 +664,7 @@ export default function PerfilPage() {
               <UserIcon className="size-3.5" /> Dados Pessoais
             </TabsTrigger>
             <TabsTrigger value="seguranca" className="gap-1.5">
-              <LockIcon className="size-3.5" /> Seguranca
+              <LockIcon className="size-3.5" /> Segurança
             </TabsTrigger>
             {podeVerAtividade ? (
               <TabsTrigger value="atividade" className="gap-1.5">
@@ -677,7 +677,7 @@ export default function PerfilPage() {
             <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-4">
               <div className="flex items-center gap-2 font-semibold text-sm">
                 <UserIcon className="size-4 text-[#5E17EB] dark:text-primary" />
-                Informacoes pessoais
+                Informações pessoais
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -693,7 +693,7 @@ export default function PerfilPage() {
                     onChange={(e) => setForm((p) => ({ ...p, nome: e.target.value }))}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {podeEditarIdentidade ? "Voce pode alterar este dado." : "Alterado apenas pelo administrador."}
+                    {podeEditarIdentidade ? "Você pode alterar este dado." : "Alterado apenas pelo administrador."}
                   </p>
                 </div>
 
@@ -710,7 +710,7 @@ export default function PerfilPage() {
                     onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {podeEditarIdentidade ? "Voce pode alterar este dado." : "Alterado apenas pelo administrador."}
+                    {podeEditarIdentidade ? "Você pode alterar este dado." : "Alterado apenas pelo administrador."}
                   </p>
                 </div>
                 {/*
@@ -738,14 +738,14 @@ export default function PerfilPage() {
                     <Input id="perfil" value={getRoleLabel(perfil.role)} disabled readOnly />
                   )}
                   <p className="text-xs text-muted-foreground">
-                    {podeEditarIdentidade ? "Voce pode alterar este dado." : "Alterado apenas pelo administrador."}
+                    {podeEditarIdentidade ? "Você pode alterar este dado." : "Alterado apenas pelo administrador."}
                   </p>
                 </div> 
                 */}
 
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="telefone" className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Numero de contato
+                    Número de contato
                   </Label>
                   <Input
                     id="telefone"
@@ -778,7 +778,7 @@ export default function PerfilPage() {
                   Cancelar
                 </Button>
                 <Button className="cursor-pointer w-full sm:w-auto" disabled={loading || salvandoDados} onClick={salvarDados}>
-                  {salvandoDados ? "Salvando..." : "Salvar alteracoes"}
+                  {salvandoDados ? "Salvando..." : "Salvar alterações"}
                 </Button>
               </div>
             </div>
@@ -786,7 +786,7 @@ export default function PerfilPage() {
             <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-4">
               <div className="flex items-center gap-2 font-semibold text-sm">
                 <ShieldCheckIcon className="size-4 text-[#5E17EB] dark:text-primary" />
-                Informacoes da conta
+                Informações da conta
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -798,7 +798,7 @@ export default function PerfilPage() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                   <span className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                    <ClockIcon className="size-3" /> Ultima atualizacao
+                    <ClockIcon className="size-3" /> Última atualização
                   </span>
                   <span className="text-sm font-medium">{formatDateTime(perfil.atualizadoEm)}</span>
                 </div>
@@ -829,7 +829,7 @@ export default function PerfilPage() {
               {senhaEtapa === "solicitar" ? (
                 <div className="flex flex-col gap-3">
                   <p className="text-sm text-muted-foreground">
-                    Confirme sua senha atual e informe o e-mail que deve receber o codigo.
+                    Confirme sua senha atual e informe o e-mail que deve receber o código.
                   </p>
 
                   <div className="flex flex-col gap-1.5">
@@ -866,21 +866,21 @@ export default function PerfilPage() {
               ) : (
                 <div className="flex flex-col gap-3">
                   <p className="text-sm text-muted-foreground">
-                    Digite o codigo enviado para {senhas.emailDestino || "o e-mail informado"} e escolha a nova senha.
+                    Digite o código enviado para {senhas.emailDestino || "o e-mail informado"} e escolha a nova senha.
                   </p>
 
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="senha-codigo-0" className="text-xs text-muted-foreground uppercase tracking-wide">
-                      Codigo recebido
+                      Código recebido
                     </Label>
                     <OtpCodeInput
                       idPrefix="senha-codigo"
                       value={senhas.codigo}
                       disabled={salvandoSenha}
                       onChange={(value) => setSenhas((p) => ({ ...p, codigo: value }))}
-                      aria-label="Codigo recebido"
+                      aria-label="Código recebido"
                     />
-                    <p className="text-xs leading-5 text-muted-foreground">Digite exatamente 6 numeros.</p>
+                    <p className="text-xs leading-5 text-muted-foreground">Digite exatamente 6 números.</p>
                   </div>
 
                   <div className="flex flex-col gap-1.5">
@@ -891,7 +891,7 @@ export default function PerfilPage() {
                       id="senha-nova"
                       type="password"
                       autoComplete="new-password"
-                      placeholder="7+ caracteres, letras e numero"
+                      placeholder="7+ caracteres, letras e número"
                       value={senhas.nova}
                       disabled={salvandoSenha}
                       onChange={(e) => setSenhas((p) => ({ ...p, nova: e.target.value }))}
@@ -927,7 +927,7 @@ export default function PerfilPage() {
                 <Button className="w-full sm:w-auto" disabled={salvandoSenha} onClick={salvarSenha}>
                   {senhaEtapa === "confirmar"
                     ? salvandoSenha ? "Confirmando..." : "Confirmar senha"
-                    : salvandoSenha ? "Enviando..." : "Enviar codigo"}
+                    : salvandoSenha ? "Enviando..." : "Enviar código"}
                 </Button>
               </div>
             </div>
@@ -937,8 +937,8 @@ export default function PerfilPage() {
             <TabsContent value="atividade" className="flex flex-col gap-4 mt-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
-                  { label: "Alertas resolvidos este mes", value: alertasResolvidos },
-                  { label: "Maquinas sob responsabilidade", value: MAQUINAS_MOCK.length },
+                  { label: "Alertas resolvidos este mês", value: alertasResolvidos },
+                  { label: "Máquinas sob responsabilidade", value: MAQUINAS_MOCK.length },
                   { label: "Alertas em andamento", value: alertasEmAndamento },
                 ].map((stat) => (
                   <div key={stat.label} className="rounded-xl border bg-card p-4">
@@ -951,7 +951,7 @@ export default function PerfilPage() {
               <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
                 <div className="flex items-center gap-2 font-semibold text-sm">
                   <WrenchIcon className="size-4 text-[#5E17EB] dark:text-primary" />
-                  Maquinas sob responsabilidade
+                  Máquinas sob responsabilidade
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -982,14 +982,14 @@ export default function PerfilPage() {
               <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
                 <div className="flex items-center gap-2 font-semibold text-sm">
                   <ActivityIcon className="size-4 text-[#5E17EB] dark:text-primary" />
-                  Historico de alertas atendidos
+                  Histórico de alertas atendidos
                 </div>
 
                 <div className="min-h-[300px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
                   <Table>
                     <TableHeader className="sticky top-0 z-10 bg-muted">
                       <TableRow>
-                        <TableHead className="whitespace-nowrap">Maquina</TableHead>
+                        <TableHead className="whitespace-nowrap">Máquina</TableHead>
                         <TableHead className="whitespace-nowrap">Tipo</TableHead>
                         <TableHead className="whitespace-nowrap">Data</TableHead>
                         <TableHead className="whitespace-nowrap">Status</TableHead>

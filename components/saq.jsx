@@ -526,10 +526,10 @@ export default function ContatoPage() {
                                 delay={0}
                             />
                             <ContactCard
-                                href="mailto:suporte.orbis@gmail.com"
+                                href="mailto:contato@orbis-3td.com"
                                 icon={<EmailIcon isDark={isDark} />}
                                 label={contact.cards.email}
-                                value="suporte.orbis@gmail.com"
+                                value="contato@orbis-3td.com"
                                 delay={160}
                             />
                         </div>

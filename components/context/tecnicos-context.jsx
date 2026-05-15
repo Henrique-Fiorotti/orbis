@@ -116,7 +116,7 @@ async function fetchTecnicosAtivosParaConferencia(accessToken, totalTecnicos, ba
   const limit = Math.min(Math.max(totalTecnicos, baseItems.length), 100)
 
   try {
-    const payload = await fetchDashboardJson(`/tecnicos/?page=1&limit=${limit}`, accessToken, "os tecnicos")
+    const payload = await fetchDashboardJson(`/tecnicos/?page=1&limit=${limit}`, accessToken, "os técnicos")
     return mergeTecnicoRecords(baseItems, getTecnicosFromPayload(payload, "tecnicos"))
   } catch (error) {
     const statusCode = getHttpErrorStatus(error)
@@ -145,7 +145,7 @@ async function fetchTecnicosInativosPorId(accessToken, knownItems, totalTecnicos
     const batch = idsParaBuscar.slice(index, index + 12)
     const results = await Promise.all(batch.map(async (id) => {
       try {
-        return await fetchDashboardJson(`/usuarios/${id}`, accessToken, "o tecnico")
+        return await fetchDashboardJson(`/usuarios/${id}`, accessToken, "o técnico")
       } catch (error) {
         const statusCode = getHttpErrorStatus(error)
 
@@ -179,7 +179,7 @@ async function fetchTecnicosPayload(accessToken, page, limit) {
 
   for (const candidate of getTecnicosEndpoints(page, limit)) {
     try {
-      const payload = await fetchDashboardJson(candidate.endpoint, accessToken, "os tecnicos")
+      const payload = await fetchDashboardJson(candidate.endpoint, accessToken, "os técnicos")
       return { payload, source: candidate.source }
     } catch (error) {
       const statusCode = getHttpErrorStatus(error)
@@ -198,7 +198,7 @@ async function fetchTecnicosPayload(accessToken, page, limit) {
     throw lastRecoverableError
   }
 
-  throw new Error("Nao foi possivel localizar um endpoint de leitura de tecnicos na API.")
+  throw new Error("Não foi possível localizar um endpoint de leitura de técnicos na API.")
 }
 
 /**
@@ -207,7 +207,7 @@ async function fetchTecnicosPayload(accessToken, page, limit) {
 export function TecnicosProvider({ children }) {
   const [tecnicos, setTecnicos] = React.useState([])
   const [status, setStatus] = React.useState("loading")
-  const [mensagem, setMensagem] = React.useState("Carregando tecnicos...")
+  const [mensagem, setMensagem] = React.useState("Carregando técnicos...")
   const [salvando, setSalvando] = React.useState(false)
   const [totalPaginas, setTotalPaginas] = React.useState(0)
   const [paginaAtual, setPaginaAtual] = React.useState(1)
@@ -218,13 +218,13 @@ export function TecnicosProvider({ children }) {
     if (!session?.accessToken) {
       setTecnicos([])
       setStatus("error")
-      setMensagem("Faca login para carregar os tecnicos.")
+      setMensagem("Faça login para carregar os técnicos.")
       return
     }
 
     if (!silent) {
       setStatus("loading")
-      setMensagem("Carregando tecnicos...")
+      setMensagem("Carregando técnicos...")
     }
 
     const permissions = getDashboardPermissions(session.usuario)
@@ -277,7 +277,7 @@ export function TecnicosProvider({ children }) {
 
       if (statusCode === 403) {
         const message =
-          "A API atual bloqueou a listagem de tecnicos para este usuario. Para exibir outros tecnicos via API, o backend precisa liberar uma rota de leitura para o perfil TECNICO."
+          "A API atual bloqueou a listagem de técnicos para este usuário. Para exibir outros técnicos via API, o backend precisa liberar uma rota de leitura para o perfil TECNICO."
         setStatus("error")
         setMensagem(message)
         setTecnicos((current) => (silent ? current : []))
@@ -285,7 +285,7 @@ export function TecnicosProvider({ children }) {
       }
 
       setStatus("error")
-      setMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar os tecnicos.")
+      setMensagem(error instanceof Error ? error.message : "Não foi possível carregar os técnicos.")
       setTecnicos((current) => (silent ? current : []))
       throw error
     }
@@ -303,7 +303,7 @@ export function TecnicosProvider({ children }) {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      const error = new Error("Faca login para gerenciar os tecnicos.")
+      const error = new Error("Faça login para gerenciar os técnicos.")
       setStatus("error")
       setMensagem(error.message)
       throw error
@@ -312,7 +312,7 @@ export function TecnicosProvider({ children }) {
     const permissions = getDashboardPermissions(session.usuario)
 
     if (!permissions.canViewTecnicos || !permissions.canManageTecnicos) {
-      const error = new Error("Seu perfil tem acesso somente leitura para tecnicos.")
+      const error = new Error("Seu perfil tem acesso somente leitura para técnicos.")
       setStatus("error")
       setMensagem(error.message)
       throw error
@@ -333,7 +333,7 @@ export function TecnicosProvider({ children }) {
       }
 
       const message =
-        error instanceof Error ? error.message : "Nao foi possivel concluir a operacao nos tecnicos."
+        error instanceof Error ? error.message : "Não foi possível concluir a operação nos técnicos."
       setStatus("error")
       setMensagem(message)
       throw error instanceof Error ? error : new Error(message)
