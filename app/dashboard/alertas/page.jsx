@@ -20,7 +20,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import { SiteHeader } from "@/components/site-header"
-import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import {
   AlertTriangleIcon,
   EllipsisVerticalIcon,
@@ -39,9 +38,7 @@ import {
 import {
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   getPaginationRowModel,
-  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
 import { tempoRelativo } from "@/lib/utils"
@@ -56,48 +53,11 @@ const TIPOS_ALERTA_LABEL = {
 }
 
 const STATUS_ALERTA_LABEL = {
-  ATIVO: "Disponível",
+  ATIVO: "Em aberto",
   EM_ANDAMENTO: "Em andamento",
   RESOLVIDO: "Resolvido",
   CANCELADO: "Cancelado",
 }
-
-const ALERTA_TIPO_FILTER_OPTIONS = TIPOS_ALERTA.map((value) => ({
-  value,
-  label: TIPOS_ALERTA_LABEL[value] ?? value,
-}))
-
-const ALERTA_STATUS_FILTER_OPTIONS = Object.entries(STATUS_ALERTA_LABEL).map(([value, label]) => ({
-  value,
-  label,
-}))
-
-const ALERTA_STATUS_SORT_OPTIONS = [
-  { value: "desc", label: "Abertos primeiro", desc: true },
-  { value: "asc", label: "Resolvidos primeiro", desc: false },
-]
-
-const ALERTA_RECENCIA_FILTER_OPTIONS = [
-  { value: "RECENTE", label: "Recente" },
-  { value: "ANTIGO", label: "Antigo" },
-]
-
-const ALERTA_RECENCIA_SORT_OPTIONS = [
-  { value: "desc", label: "Mais recentes", desc: true },
-  { value: "asc", label: "Mais antigos", desc: false },
-]
-
-const ALERTA_OCORRENCIAS_FILTER_OPTIONS = [
-  { value: "UNICO", label: "Única ocorrência" },
-  { value: "REPETIDO", label: "Repetidos" },
-]
-
-const ALERTA_OCORRENCIAS_SORT_OPTIONS = [
-  { value: "desc", label: "Maior primeiro", desc: true },
-  { value: "asc", label: "Menor primeiro", desc: false },
-]
-
-const ALERTA_STATUS_ORDER = { CANCELADO: 0, RESOLVIDO: 1, EM_ANDAMENTO: 2, ATIVO: 3 }
 
 const formVazio = {
   tipo: "LIMITE_ULTRAPASSADO",
@@ -107,6 +67,10 @@ const formVazio = {
   sensorNome: "",
   severidade: "MEDIA",
   mensagem: "",
+}
+
+function getStatusActionKey(id, status) {
+  return `${id}:${status}`
 }
 
 function SeveridadeBadge({ value }) {
@@ -177,39 +141,12 @@ function getAlertaTimestamp(alerta) {
   return Number.isFinite(timestamp) ? timestamp : 0
 }
 
+function isAlertaRepetido(alerta) {
+  return alerta?.duplicado === true && Number(alerta?.ocorrencias) > 1
+}
+
 function compareAlertaRecente(a, b) {
   return getAlertaTimestamp(b) - getAlertaTimestamp(a)
-}
-
-function getAlertaRecenciaFiltro(alerta) {
-  return alerta?.recencia === "RECENTE" ? "RECENTE" : "ANTIGO"
-}
-
-function getAlertaOcorrenciasFiltro(alerta) {
-  return alerta?.duplicado || Number(alerta?.ocorrencias) > 1 ? "REPETIDO" : "UNICO"
-}
-
-function selectAlertaFilterFn(row, columnId, value) {
-  if (!value) {
-    return true
-  }
-
-  return row.getValue(columnId) === value
-}
-
-function alertaStatusSortFn(rowA, rowB, columnId) {
-  const valueA = ALERTA_STATUS_ORDER[rowA.getValue(columnId)] ?? 0
-  const valueB = ALERTA_STATUS_ORDER[rowB.getValue(columnId)] ?? 0
-
-  return valueA - valueB
-}
-
-function alertaUltimaOcorrenciaSortFn(rowA, rowB) {
-  return getAlertaTimestamp(rowA.original) - getAlertaTimestamp(rowB.original)
-}
-
-function alertaOcorrenciasSortFn(rowA, rowB, columnId) {
-  return Number(rowA.getValue(columnId) ?? 0) - Number(rowB.getValue(columnId) ?? 0)
 }
 
 function StatePanel({ message, tone = "muted" }) {
@@ -226,9 +163,7 @@ function StatePanel({ message, tone = "muted" }) {
   )
 }
 
-function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, canStartAlertStatus, canResolveAlertStatus }) {
-  const [sorting, setSorting] = React.useState([])
-  const [columnFilters, setColumnFilters] = React.useState([])
+function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, canStartAlertStatus, canResolveAlertStatus, statusActionKey }) {
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const columns = React.useMemo(() => [
     {
@@ -245,42 +180,19 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
     },
     {
       accessorKey: "tipo",
-      header: ({ column }) => (
-        <TableColumnHeaderMenu
-          column={column}
-          label="Tipo"
-          filterOptions={ALERTA_TIPO_FILTER_OPTIONS}
-        />
-      ),
+      header: "Tipo",
       cell: ({ row }) => <TipoAlertaBadge value={row.original.tipo} />,
-      filterFn: selectAlertaFilterFn,
     },
     {
       accessorKey: "status",
-      header: ({ column }) => (
-        <TableColumnHeaderMenu
-          column={column}
-          label="Status"
-          filterOptions={ALERTA_STATUS_FILTER_OPTIONS}
-          sortOptions={ALERTA_STATUS_SORT_OPTIONS}
-        />
-      ),
+      header: "Status",
       cell: ({ row }) => <StatusAlertaBadge value={row.original.status} />,
-      filterFn: selectAlertaFilterFn,
-      sortingFn: alertaStatusSortFn,
     },
     { accessorKey: "sensorNome", header: "Sensor", cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.sensorNome}</span> },
     {
       id: "recencia",
-      accessorFn: getAlertaRecenciaFiltro,
-      header: ({ column }) => (
-        <TableColumnHeaderMenu
-          column={column}
-          label="Última ocorrência"
-          filterOptions={ALERTA_RECENCIA_FILTER_OPTIONS}
-          sortOptions={ALERTA_RECENCIA_SORT_OPTIONS}
-        />
-      ),
+      accessorKey: "ultimaOcorrenciaEm",
+      header: "Ultima ocorrencia",
       cell: ({ row }) => (
         <div className="flex min-w-[120px] flex-col gap-1">
           <span className="text-sm text-muted-foreground">{tempoRelativo(getUltimaOcorrencia(row.original))}</span>
@@ -289,37 +201,25 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
           </span>
         </div>
       ),
-      filterFn: selectAlertaFilterFn,
-      sortingFn: alertaUltimaOcorrenciaSortFn,
     },
     {
       accessorKey: "ocorrencias",
-      header: ({ column }) => (
-        <TableColumnHeaderMenu
-          column={column}
-          label="Ocorrências"
-          filterOptions={ALERTA_OCORRENCIAS_FILTER_OPTIONS}
-          sortOptions={ALERTA_OCORRENCIAS_SORT_OPTIONS}
-        />
-      ),
+      header: "Ocorrencias",
       cell: ({ row }) => (
-        <Badge variant="outline" className={`px-1.5 ${row.original.duplicado ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
+        <Badge variant="outline" className={`px-1.5 ${isAlertaRepetido(row.original) ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
           {Math.max(Number(row.original.ocorrencias) || 1, 1)}
         </Badge>
       ),
-      filterFn: (row, columnId, value) => {
-        if (!value) {
-          return true
-        }
-
-        return getAlertaOcorrenciasFiltro(row.original) === value
-      },
-      sortingFn: alertaOcorrenciasSortFn,
     },
     {
       id: "actions",
       cell: ({ row }) => {
         const chamado = row.original
+        const statusActionPending = Boolean(statusActionKey)
+        const startActionKey = getStatusActionKey(chamado.id, "EM_ANDAMENTO")
+        const resolveActionKey = getStatusActionKey(chamado.id, "RESOLVIDO")
+        const isStarting = statusActionKey === startActionKey
+        const isResolving = statusActionKey === resolveActionKey
         const canIniciar = canStartAlertStatus && chamado.status === "ATIVO"
         const canResolver = canResolveAlertStatus && chamado.status === "EM_ANDAMENTO"
         const canCancelar = canCancelAlertas && isStatusCancelavel(chamado.status)
@@ -337,13 +237,13 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
               </DropdownMenuItem>
               {canIniciar || canResolver || canCancelar ? <DropdownMenuSeparator /> : null}
               {canIniciar ? (
-                <DropdownMenuItem onClick={() => onStatus(chamado.id, "EM_ANDAMENTO")}>
-                  <AlertTriangleIcon className="mr-1 size-4 text-yellow-600 dark:text-yellow-300" /> Iniciar atendimento
+                <DropdownMenuItem disabled={statusActionPending} onClick={() => onStatus(chamado.id, "EM_ANDAMENTO")}>
+                  <AlertTriangleIcon className="mr-1 size-4 text-yellow-600 dark:text-yellow-300" /> {isStarting ? "Iniciando..." : "Iniciar atendimento"}
                 </DropdownMenuItem>
               ) : null}
               {canResolver ? (
-                <DropdownMenuItem onClick={() => onStatus(chamado.id, "RESOLVIDO")}>
-                  <CircleCheckIcon className="mr-1 size-4 text-green-600 dark:text-green-300" /> Resolver chamado
+                <DropdownMenuItem disabled={statusActionPending} onClick={() => onStatus(chamado.id, "RESOLVIDO")}>
+                  <CircleCheckIcon className="mr-1 size-4 text-green-600 dark:text-green-300" /> {isResolving ? "Resolvendo..." : "Resolver chamado"}
                 </DropdownMenuItem>
               ) : null}
               {canCancelar ? (
@@ -356,19 +256,15 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
         )
       },
     },
-  ], [canCancelAlertas, canResolveAlertStatus, canStartAlertStatus, onVer, onCancelar, onStatus])
+  ], [canCancelAlertas, canResolveAlertStatus, canStartAlertStatus, onVer, onCancelar, onStatus, statusActionKey])
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, columnFilters, pagination },
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    state: { pagination },
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
   })
 
   return (
@@ -406,7 +302,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
         </Table>
       </div>
       <div className="flex items-center justify-between px-4">
-        <span className="text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} resultado(s)</span>
+        <span className="text-sm text-muted-foreground">{data.length} resultado(s)</span>
         <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
           <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
             <ChevronsLeftIcon className="size-4" />
@@ -450,26 +346,18 @@ export default function AlertasPage() {
   const [form, setForm] = React.useState(formVazio)
   const [dialogCancelar, setDialogCancelar] = React.useState(false)
   const [alertaCancelar, setAlertaCancelar] = React.useState(null)
+  const [statusPendente, setStatusPendente] = React.useState(null)
+  const statusPendenteRef = React.useRef(null)
   const canCancelAlertas = false
-  const canStartAlertStatus = permissions.isTecnico
-  const canResolveAlertStatus = permissions.isTecnico
+  const canStartAlertStatus = permissions.canUpdateAlertStatus
+  const canResolveAlertStatus = permissions.canUpdateAlertStatus
   const loadingInicial = useDashboardMetricsLoading(carregando && alertas.length === 0)
   const errorSemDados = status === "error" && alertas.length === 0
 
   const alertasOrdenados = React.useMemo(() => [...alertas].sort(compareAlertaRecente), [alertas])
-  const alertasAbertos = React.useMemo(() => alertasOrdenados.filter((alerta) => isStatusAberto(alerta.status)), [alertasOrdenados])
-  const alertasRecentes = React.useMemo(() => alertasAbertos.filter((alerta) => alerta.recencia === "RECENTE"), [alertasAbertos])
-  const alertasAntigos = React.useMemo(() => alertasAbertos.filter((alerta) => alerta.recencia !== "RECENTE"), [alertasAbertos])
-  const alertasRepetidos = React.useMemo(
-    () => alertasAbertos.filter((alerta) => alerta.duplicado || Number(alerta.ocorrencias) > 1),
-    [alertasAbertos]
-  )
-  const alertaAbertoMaisAntigo = React.useMemo(
-    () => alertasAbertos.reduce((oldest, alerta) => (!oldest || getAlertaTimestamp(alerta) < getAlertaTimestamp(oldest) ? alerta : oldest), null),
-    [alertasAbertos]
-  )
-  const altaSeveridadeRecentes = alertasRecentes.filter((a) => a.severidade === "ALTA").length
-  const totalOcorrenciasAgrupadas = alertasRepetidos.reduce((total, alerta) => total + Math.max(Number(alerta.ocorrencias) || 1, 1), 0)
+  const totalEmAberto = React.useMemo(() => alertasOrdenados.filter((alerta) => alerta.status === "ATIVO").length, [alertasOrdenados])
+  const totalEmAndamento = React.useMemo(() => alertasOrdenados.filter((alerta) => alerta.status === "EM_ANDAMENTO").length, [alertasOrdenados])
+  const totalConcluidos = React.useMemo(() => alertasOrdenados.filter((alerta) => alerta.status === "RESOLVIDO").length, [alertasOrdenados])
 
   React.useEffect(() => {
     const maquinaParam = searchParams.get("maquina")
@@ -481,8 +369,14 @@ export default function AlertasPage() {
 
   React.useEffect(() => {
     const alertaIdParam = searchParams.get("alertaId")
+    const abrirParam = searchParams.get("abrir")
 
     if (!alertaIdParam || alertas.length === 0) {
+      return
+    }
+
+    if (abrirParam === "false") {
+      setSheetAberto(false)
       return
     }
 
@@ -532,6 +426,15 @@ export default function AlertasPage() {
   }
 
   async function handleStatus(id, status) {
+    const actionKey = getStatusActionKey(id, status)
+
+    if (statusPendenteRef.current) {
+      return false
+    }
+
+    statusPendenteRef.current = actionKey
+    setStatusPendente(actionKey)
+
     try {
       await atualizarStatus(id, status)
       const labels = {
@@ -540,8 +443,13 @@ export default function AlertasPage() {
       }
 
       toast.success(`Chamado ${labels[status] ?? "atualizado"}.`)
+      return true
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível atualizar o chamado.")
+      return false
+    } finally {
+      statusPendenteRef.current = null
+      setStatusPendente(null)
     }
   }
 
@@ -579,10 +487,10 @@ export default function AlertasPage() {
     }),
   [alertasOrdenados, busca])
 
-  const recentes = dadosFiltrados.filter((a) => isStatusAberto(a.status) && a.recencia === "RECENTE")
-  const antigos = dadosFiltrados.filter((a) => isStatusAberto(a.status) && a.recencia !== "RECENTE")
-  const repetidos = dadosFiltrados.filter((a) => isStatusAberto(a.status) && (a.duplicado || Number(a.ocorrencias) > 1))
-  const resolvidos = dadosFiltrados.filter((a) => a.status === "RESOLVIDO")
+  const emAberto = dadosFiltrados.filter((a) => a.status === "ATIVO")
+  const emAndamento = dadosFiltrados.filter((a) => a.status === "EM_ANDAMENTO")
+  const repetidos = dadosFiltrados.filter((a) => isStatusAberto(a.status) && isAlertaRepetido(a))
+  const concluidos = dadosFiltrados.filter((a) => a.status === "RESOLVIDO")
 
   const tableProps = {
     onVer: abrirVer,
@@ -591,6 +499,7 @@ export default function AlertasPage() {
     canCancelAlertas,
     canStartAlertStatus,
     canResolveAlertStatus,
+    statusActionKey: statusPendente,
   }
 
   return (
@@ -635,58 +544,35 @@ export default function AlertasPage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Recentes</span>
-              <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">30 min</span>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="flex min-h-[116px] flex-col justify-between rounded-lg border border-red-100 bg-card p-4 shadow-sm dark:border-red-900/40">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-muted-foreground">Em aberto</span>
+              <ShieldAlertIcon className="size-4 text-red-600 dark:text-red-300" />
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={alertasRecentes.length} loading={loadingInicial} />
+            <span className="text-3xl font-semibold text-[#3B2867] dark:text-white">
+              <MetricValue value={totalEmAberto} loading={loadingInicial} />
             </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="flex items-center gap-1 text-red-600 dark:text-red-300">
-                <ShieldAlertIcon className="size-3.5" />
-                {altaSeveridadeRecentes} de alta severidade
-              </span>
-              <span className="text-xs text-muted-foreground">Alertas abertos atualizados nos últimos 30 minutos.</span>
-            </div>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Aguardando há mais tempo</span>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${alertasAntigos.length > 0 ? "border border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : "border border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"}`}>
-                {alertasAntigos.length > 0 ? "Priorizar" : "Zerado"}
-              </span>
+          <div className="flex min-h-[116px] flex-col justify-between rounded-lg border border-yellow-100 bg-card p-4 shadow-sm dark:border-yellow-900/40">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-muted-foreground">Em andamento</span>
+              <AlertTriangleIcon className="size-4 text-yellow-700 dark:text-yellow-300" />
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={alertasAntigos.length} loading={loadingInicial} />
+            <span className="text-3xl font-semibold text-[#3B2867] dark:text-white">
+              <MetricValue value={totalEmAndamento} loading={loadingInicial} />
             </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="flex items-center gap-1 text-yellow-700 dark:text-yellow-300">
-                <AlertTriangleIcon className="size-3.5" />
-                {alertaAbertoMaisAntigo ? `Mais antigo: ${tempoRelativo(getUltimaOcorrencia(alertaAbertoMaisAntigo))}` : "Nenhum alerta antigo"}
-              </span>
-              <span className="text-xs text-muted-foreground">Alertas abertos sem atualização recente.</span>
-            </div>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Ocorrências agrupadas</span>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Duplicados</span>
+          <div className="flex min-h-[116px] flex-col justify-between rounded-lg border border-green-100 bg-card p-4 shadow-sm dark:border-green-900/40">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-muted-foreground">Concluidos</span>
+              <CircleCheckIcon className="size-4 text-green-700 dark:text-green-300" />
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={alertasRepetidos.length} loading={loadingInicial} />
+            <span className="text-3xl font-semibold text-[#3B2867] dark:text-white">
+              <MetricValue value={totalConcluidos} loading={loadingInicial} />
             </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="flex items-center gap-1 text-orange-700 dark:text-orange-300">
-                <AlertTriangleIcon className="size-3.5" />
-                {totalOcorrenciasAgrupadas} ocorrências no total
-              </span>
-              <span className="text-xs text-muted-foreground">Mesmo sensor e tipo permanecem em um único chamado aberto.</span>
-            </div>
           </div>
         </div>
 
@@ -700,28 +586,26 @@ export default function AlertasPage() {
         ) : errorSemDados ? (
           <StatePanel message={mensagem || "Não foi possível carregar os alertas."} tone="error" />
         ) : (
-          <Tabs defaultValue="recentes" className="min-w-0 w-full flex-col gap-4">
+          <Tabs defaultValue="em-aberto" className="min-w-0 w-full flex-col gap-4">
             <TabsList className="w-full max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <TabsTrigger value="recentes" className="shrink-0 flex-none">
-                Recentes{recentes.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{recentes.length}</Badge>}
+              <TabsTrigger value="em-aberto" className="shrink-0 flex-none">
+                Em aberto{emAberto.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{emAberto.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="antigos" className="shrink-0 flex-none">
-                Antigos{antigos.length > 0 && <Badge variant="secondary" className="ml-1.5 border-yellow-200! bg-yellow-100! text-yellow-700! dark:border-yellow-900/60! dark:bg-yellow-950/30! dark:text-yellow-300!">{antigos.length}</Badge>}
+              <TabsTrigger value="em-andamento" className="shrink-0 flex-none">
+                Em andamento{emAndamento.length > 0 && <Badge variant="secondary" className="ml-1.5 border-yellow-200! bg-yellow-100! text-yellow-700! dark:border-yellow-900/60! dark:bg-yellow-950/30! dark:text-yellow-300!">{emAndamento.length}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="repetidos" className="shrink-0 flex-none">
                 Repetidos{repetidos.length > 0 && <Badge variant="secondary" className="ml-1.5 border-orange-200! bg-orange-100! text-orange-700! dark:border-orange-900/60! dark:bg-orange-950/30! dark:text-orange-300!">{repetidos.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="resolvidos" className="shrink-0 flex-none">
-                Resolvidos{resolvidos.length > 0 && <Badge variant="secondary" className="ml-1.5">{resolvidos.length}</Badge>}
+              <TabsTrigger value="concluidos" className="shrink-0 flex-none">
+                Concluidos{concluidos.length > 0 && <Badge variant="secondary" className="ml-1.5">{concluidos.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="todos" className="shrink-0 flex-none">Todos ({dadosFiltrados.length})</TabsTrigger>
             </TabsList>
             {[
-              { value: "recentes", data: recentes },
-              { value: "antigos", data: antigos },
+              { value: "em-aberto", data: emAberto },
+              { value: "em-andamento", data: emAndamento },
               { value: "repetidos", data: repetidos },
-              { value: "resolvidos", data: resolvidos },
-              { value: "todos", data: dadosFiltrados },
+              { value: "concluidos", data: concluidos },
             ].map(({ value, data }) => (
               <TabsContent key={value} value={value} className="flex flex-col gap-4">
                 <AlertasTable data={data} {...tableProps} />
@@ -791,13 +675,27 @@ export default function AlertasPage() {
                   <Separator />
                   <div className="flex flex-col gap-2">
                     {canStartAlertStatus && alertaSelecionado.status === "ATIVO" ? (
-                      <Button className="cursor-pointer w-full" onClick={() => { handleStatus(alertaSelecionado.id, "EM_ANDAMENTO"); setSheetAberto(false) }}>
-                        <AlertTriangleIcon className="mr-1 size-4" /> Iniciar atendimento
+                      <Button
+                        className="cursor-pointer w-full"
+                        disabled={Boolean(statusPendente)}
+                        onClick={async () => {
+                          const updated = await handleStatus(alertaSelecionado.id, "EM_ANDAMENTO")
+                          if (updated) setSheetAberto(false)
+                        }}
+                      >
+                        <AlertTriangleIcon className="mr-1 size-4" /> {statusPendente === getStatusActionKey(alertaSelecionado.id, "EM_ANDAMENTO") ? "Iniciando..." : "Iniciar atendimento"}
                       </Button>
                     ) : null}
                     {canResolveAlertStatus && alertaSelecionado.status === "EM_ANDAMENTO" ? (
-                      <Button className="cursor-pointer w-full" onClick={() => { handleStatus(alertaSelecionado.id, "RESOLVIDO"); setSheetAberto(false) }}>
-                        <CircleCheckIcon className="mr-1 size-4" /> Resolver chamado
+                      <Button
+                        className="cursor-pointer w-full"
+                        disabled={Boolean(statusPendente)}
+                        onClick={async () => {
+                          const updated = await handleStatus(alertaSelecionado.id, "RESOLVIDO")
+                          if (updated) setSheetAberto(false)
+                        }}
+                      >
+                        <CircleCheckIcon className="mr-1 size-4" /> {statusPendente === getStatusActionKey(alertaSelecionado.id, "RESOLVIDO") ? "Resolvendo..." : "Resolver chamado"}
                       </Button>
                     ) : null}
                     {canCancelAlertas && isStatusCancelavel(alertaSelecionado.status) ? (
