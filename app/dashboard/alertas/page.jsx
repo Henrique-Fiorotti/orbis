@@ -605,7 +605,7 @@ export default function AlertasPage() {
             <div>
               <div className="flex items-center gap-2">
                 <AlertTriangleIcon size={22} className="text-[#3B2867] dark:text-white!" />
-                <h1 className="text-lg font-medium text-[#3B2867] dark:text-white">Chamados</h1>
+                <h1 className="text-lg font-medium text-[#3B2867] dark:text-white">Alertas</h1>
               </div>
             </div>
           </div>
@@ -696,9 +696,9 @@ export default function AlertasPage() {
         </div>
 
         {loadingInicial ? (
-          <StatePanel message="Sincronizando chamados gerados pelos sensores..." />
+          <StatePanel message="Sincronizando alertas gerados pelos sensores..." />
         ) : errorSemDados ? (
-          <StatePanel message={mensagem || "Não foi possível carregar os chamados."} tone="error" />
+          <StatePanel message={mensagem || "Não foi possível carregar os alertas."} tone="error" />
         ) : (
           <Tabs defaultValue="recentes" className="min-w-0 w-full flex-col gap-4">
             <TabsList className="w-full max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

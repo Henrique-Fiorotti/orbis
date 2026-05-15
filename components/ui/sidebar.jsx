@@ -488,7 +488,13 @@ function SidebarMenuButton({
       data-sidebar="menu-button"
       data-size={size}
       data-active={isActive}
-      className={cn(sidebarMenuButtonVariants({ variant, size }), "dark:text-white!", className)}
+      className={cn(
+        sidebarMenuButtonVariants({ variant, size }),
+        "dark:text-white!",
+        isActive &&
+          "border-[#5F18EA]/25! bg-[#5F18EA]/10! text-[#5F18EA]! shadow-[0_0_0_1px_rgba(95,24,234,0.12)] hover:bg-[#5F18EA]/10! hover:text-[#5F18EA]! [&_svg]:text-[#5F18EA]! dark:border-[#8B5CF6]/35! dark:bg-[#5F18EA]/20! dark:text-[#C5A3FF]! dark:hover:text-[#C5A3FF]! dark:[&_svg]:text-[#C5A3FF]!",
+        className
+      )}
       {...props} />
   )
 

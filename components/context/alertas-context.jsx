@@ -30,7 +30,7 @@ function getOpenMaintenance(payload) {
 export function AlertasProvider({ children }) {
   const [alertas, setAlertas] = React.useState([])
   const [status, setStatus] = React.useState("loading")
-  const [mensagem, setMensagem] = React.useState("Carregando chamados...")
+  const [mensagem, setMensagem] = React.useState("Carregando alertas...")
   const [salvando, setSalvando] = React.useState(false)
 
   const carregarAlertas = React.useCallback(async ({ silent = false } = {}) => {
@@ -39,17 +39,17 @@ export function AlertasProvider({ children }) {
     if (!session?.accessToken) {
       setAlertas([])
       setStatus("error")
-      setMensagem("Faça login para carregar os chamados.")
+      setMensagem("Faça login para carregar os alertas.")
       return
     }
 
     if (!silent) {
       setStatus("loading")
-      setMensagem("Carregando chamados...")
+      setMensagem("Carregando alertas...")
     }
 
     try {
-      const payload = await fetchDashboardJson("/alertas", session.accessToken, "os chamados")
+      const payload = await fetchDashboardJson("/alertas", session.accessToken, "os alertas")
       setAlertas(normalizeAlertaCollection(payload))
       setStatus("success")
       setMensagem("")
@@ -59,7 +59,7 @@ export function AlertasProvider({ children }) {
       }
 
       setStatus("error")
-      setMensagem(error instanceof Error ? error.message : "Não foi possível carregar os chamados.")
+      setMensagem(error instanceof Error ? error.message : "Não foi possível carregar os alertas.")
       setAlertas((current) => (silent ? current : []))
       throw error
     }
@@ -101,7 +101,7 @@ export function AlertasProvider({ children }) {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      const error = new Error("Faça login para gerenciar os chamados.")
+      const error = new Error("Faça login para gerenciar os alertas.")
       setStatus("error")
       setMensagem(error.message)
       throw error
@@ -131,7 +131,7 @@ export function AlertasProvider({ children }) {
    * @param {NovoAlertaInput} _dados
    */
   async function adicionarAlerta(_dados) {
-    throw new Error("Os chamados sao gerados automaticamente pelas leituras dos sensores.")
+    throw new Error("Os alertas sao gerados automaticamente pelas leituras dos sensores.")
   }
 
   /**
@@ -177,7 +177,7 @@ export function AlertasProvider({ children }) {
    * @param {number} _id
    */
   async function cancelarAlerta(_id) {
-    throw new Error("O backend atual não possui rota para cancelar chamados.")
+    throw new Error("O backend atual não possui rota para cancelar alertas.")
   }
 
   const recarregarAlertas = React.useCallback(async () => {

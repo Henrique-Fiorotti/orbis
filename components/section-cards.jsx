@@ -202,10 +202,10 @@ export function SectionCards() {
               {loading || totalAlertasEmAndamento > 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
             </div>
             <div className="text-muted-foreground">
-              {loading ? "Resumo dos chamados em sincronização" : `${totalAlertasResolvidos} alertas resolvidos no total`}
+              {loading ? "Resumo dos alertas em sincronização" : `${totalAlertasResolvidos} alertas resolvidos no total`}
             </div>
             <div className="text-muted-foreground">
-              {loading ? "Conferindo chamados cancelados" : `${totalAlertasCancelados} alertas cancelados no total`}
+              {loading ? "Conferindo alertas cancelados" : `${totalAlertasCancelados} alertas cancelados no total`}
             </div>
           </CardFooter>
         </Card>
