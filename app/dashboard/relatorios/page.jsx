@@ -1556,7 +1556,7 @@ function RelatorioGeral({
               <MetricCard icon={WashingMachineIcon} label="Máquinas ativas" value={loadingMaquinas ? "--" : totalMaquinas} sub={`${totalOk} OK - ${totalAlerta} em alerta`} />
               <MetricCard icon={ShieldAlertIcon} label="Alta importância" value={loadingMaquinas ? "--" : criticasAlta} sub="Máquinas críticas" color={COLORS.alerta} />
               <MetricCard icon={ActivityIcon} label="Integridade média" value={loadingMaquinas ? "--" : `${integridadeMedia}%`} sub="Média de toda a frota" color={integridadeMedia >= 75 ? COLORS.ok : integridadeMedia >= 50 ? COLORS.medio : COLORS.alerta} />
-              <MetricCard icon={ZapIcon} label="Chamados abertos" value={chamadosAbertos} sub={`${chamadosResolvidos} resolvidos no período`} color={chamadosAbertos > 0 ? COLORS.medio : COLORS.ok} />
+              <MetricCard icon={ZapIcon} label="Alertas abertos" value={chamadosAbertos} sub={`${chamadosResolvidos} resolvidos no período`} color={chamadosAbertos > 0 ? COLORS.medio : COLORS.ok} />
             </div>
           </div>
         )}
@@ -1650,7 +1650,7 @@ function RelatorioGeral({
 
           {secoes.chamados && (
             <div className="mb-6 print:mb-4">
-              <SectionTitle>Chamados Técnicos</SectionTitle>
+              <SectionTitle>Alertas Técnicos</SectionTitle>
               <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
                 <ChamadosTable chamados={chamados} />
               </div>
@@ -1695,7 +1695,7 @@ function RelatorioMaquina({
               <MetricCard icon={GaugeIcon} label="Integridade" value={`${metricas.integridade}%`} sub="Valor atual" color={metricas.integridade >= 75 ? COLORS.ok : metricas.integridade >= 50 ? COLORS.medio : COLORS.alerta} />
               <MetricCard icon={ActivityIcon} label="Estabilidade" value={`${metricas.estabilidade}%`} sub="Score operacional" color={metricas.estabilidade >= 75 ? COLORS.ok : metricas.estabilidade >= 50 ? COLORS.medio : COLORS.alerta} />
               <MetricCard icon={WashingMachineIcon} label="Sensores" value={metricas.sensoresTotal} sub={`${metricas.sensoresOnline} online`} />
-              <MetricCard icon={ZapIcon} label="Chamados abertos" value={metricas.chamadosAbertos} sub={`${metricas.chamadosResolvidos} resolvidos`} color={metricas.chamadosAbertos > 0 ? COLORS.medio : COLORS.ok} />
+              <MetricCard icon={ZapIcon} label="Alertas abertos" value={metricas.chamadosAbertos} sub={`${metricas.chamadosResolvidos} resolvidos`} color={metricas.chamadosAbertos > 0 ? COLORS.medio : COLORS.ok} />
             </div>
           </div>
         )}
@@ -1763,7 +1763,7 @@ function RelatorioMaquina({
 
           {secoes.chamados && (
             <div className="mb-6 print:mb-4">
-              <SectionTitle>Chamados da Máquina</SectionTitle>
+              <SectionTitle>Alertas da Máquina</SectionTitle>
               <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
                 <ChamadosTable chamados={chamados} />
               </div>

@@ -291,7 +291,7 @@ export function SiteHeader({ tourId }) {
     }
 
     const primeira = novas[0]
-    toast.warning(novas.length > 1 ? `${novas.length} novos chamados` : primeira.titulo, {
+    toast.warning(novas.length > 1 ? `${novas.length} novos alertas` : primeira.titulo, {
       description: primeira.descricao,
       action: {
         label: "Ver",
@@ -520,7 +520,7 @@ export function SiteHeader({ tourId }) {
                   {sincronizandoNotificacoes ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground">
                       <Loader2Icon className="size-8 animate-spin opacity-40" />
-                      <p className="text-sm">Sincronizando chamados...</p>
+                      <p className="text-sm">Sincronizando alertas...</p>
                     </div>
                   ) : notificacoes.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground">

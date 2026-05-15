@@ -44,7 +44,7 @@ const PAGE_CONTEXTS = [
   {
     path: "/dashboard/alertas",
     label: "Alertas",
-    description: "chamados, severidade, status e priorização de atendimento",
+    description: "alertas, severidade, status e priorização de atendimento",
   },
   {
     path: "/dashboard/tecnicos",
