@@ -380,7 +380,7 @@ export default function TecnicosPage() {
           <TecnicoAvatar tecnico={row.original} size="sm" />
           <button
             onClick={() => abrirVer(row.original)}
-            className="text-left font-medium text-sm hover:underline hover:text-primary transition-colors"
+            className="cursor-pointer text-left font-medium text-sm hover:underline hover:text-primary transition-colors"
           >
             {row.original.nome}
           </button>

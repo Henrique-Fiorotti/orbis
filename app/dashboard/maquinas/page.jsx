@@ -384,7 +384,7 @@ export default function MaquinasPage() {
           </button>
           <button
             onClick={() => abrirVer(row.original)}
-            className="text-left text-sm font-medium transition-colors hover:text-primary hover:underline"
+            className="cursor-pointer text-left text-sm font-medium transition-colors hover:text-primary hover:underline"
           >
             {row.original.nome}
           </button>
@@ -693,7 +693,8 @@ export default function MaquinasPage() {
                 </SheetHeader>
                 <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
                   <MaquinaDetailsPanel maquina={maquinaSelecionada} sensores={sensores} sensorError={sensorError} />
-                  <Button
+                  <Button 
+                    className={"cursor-pointer"}
                     type="button"
                     onClick={() => router.push(`/dashboard/alertas?maquina=${encodeURIComponent(maquinaSelecionada.nome)}`)}
                   >
