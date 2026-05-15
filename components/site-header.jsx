@@ -155,10 +155,11 @@ function getNotificationTitle(alerta) {
 
 function buildAlertNotification(alerta, prefs) {
   const data = getNotificationDate(alerta)
-  const key = `alerta:${alerta.id}:${alerta.status}:${data}`
+  const key = `alerta:${alerta.id}`
+  const legacyKeyPrefix = `${key}:`
   const removidas = new Set(prefs.removidas)
 
-  if (removidas.has(key)) {
+  if (removidas.has(key) || prefs.removidas.some((value) => String(value).startsWith(legacyKeyPrefix))) {
     return null
   }
 
@@ -176,8 +177,8 @@ function buildAlertNotification(alerta, prefs) {
     descricao: `${maquina} - ${sensor}: ${alerta.mensagem}${ocorrenciasDescricao}`,
     tempo: tempoRelativo(data),
     timestamp: Date.parse(data) || 0,
-    lida: lidas.has(key) || lidaPorPadrao,
-    href: `/dashboard/alertas?alertaId=${encodeURIComponent(alerta.id)}`,
+    lida: lidas.has(key) || prefs.lidas.some((value) => String(value).startsWith(legacyKeyPrefix)) || lidaPorPadrao,
+    href: `/dashboard/alertas?alertaId=${encodeURIComponent(alerta.id)}&abrir=false`,
   }
 }
 
@@ -291,7 +292,7 @@ export function SiteHeader({ tourId }) {
     }
 
     const primeira = novas[0]
-    toast.warning(novas.length > 1 ? `${novas.length} novos alertas` : primeira.titulo, {
+    toast.warning(primeira.titulo, {
       description: primeira.descricao,
       action: {
         label: "Ver",
