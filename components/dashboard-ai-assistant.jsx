@@ -4,7 +4,7 @@ import * as React from "react"
 import { usePathname } from "next/navigation"
 import {
   AlertTriangleIcon,
-  BotIcon,
+  LucideEye,
   FileTextIcon,
   Loader2Icon,
   PlusIcon,
@@ -80,7 +80,7 @@ const SUGGESTED_PROMPTS = [
     prompt: "Analise o dashboard e me diga quais prioridades operacionais devo olhar agora.",
   },
   {
-    icon: BotIcon,
+    icon: LucideEye,
     label: "Conferir sensores",
     prompt: "Quais sensores parecem exigir uma verificação mais cuidadosa?",
   },
@@ -166,7 +166,7 @@ function ChatMessage({ message, animate = false }) {
       )}>
         <div className="flex items-start gap-2">
           {isError && <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />}
-          {!isUser && !isError && <BotIcon className="mt-0.5 size-4 shrink-0 text-primary" />}
+          {!isUser && !isError && <LucideEye className="mt-0.5 size-4 shrink-0 text-primary" />}
           <p className="m-0 whitespace-pre-wrap break-words text-sm leading-relaxed">
             {content}
             {isTyping && (

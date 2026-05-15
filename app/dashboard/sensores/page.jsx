@@ -20,6 +20,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import { SiteHeader } from "@/components/site-header"
+import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import {
   ActivityIcon,
   AlertTriangleIcon,
@@ -63,19 +64,42 @@ const formVazio = {
   idealVibracao: "",
 }
 
+const SENSOR_STATUS_FILTER_OPTIONS = [
+  { value: "ONLINE", label: "Online" },
+  { value: "OFFLINE", label: "Offline" },
+]
+
+const SENSOR_STATUS_SORT_OPTIONS = [
+  { value: "desc", label: "Online primeiro", desc: true },
+  { value: "asc", label: "Offline primeiro", desc: false },
+]
+
+const SENSOR_MAQUINA_FILTER_OPTIONS = [
+  { value: "COM_MAQUINA", label: "Com maquina" },
+  { value: "SEM_MAQUINA", label: "Sem maquina" },
+]
+
+const SENSOR_LEITURA_FILTER_OPTIONS = [
+  { value: "NORMAL", label: "Dentro do limite" },
+  { value: "FORA_LIMITE", label: "Fora do limite" },
+  { value: "SEM_SINAL", label: "Sem sinal" },
+  { value: "SEM_LEITURA", label: "Sem leitura" },
+]
+
+const SENSOR_STATUS_ORDER = { OFFLINE: 0, ONLINE: 1 }
+
 function StatusBadge({ value }) {
   const isOnline = value === "ONLINE"
+  const badgeClass = isOnline
+    ? "border-[#5E17EB] bg-[#5E17EB] text-white dark:border-[#5E17EB] dark:bg-[#5E17EB] dark:text-white"
+    : "border-gray-200 bg-white text-gray-700 dark:border-border dark:bg-muted/30 dark:text-muted-foreground"
 
   return (
     <Badge
       variant="outline"
-      className={`px-1.5 ${
-        isOnline
-          ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
-          : "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
-      }`}
+      className={`px-1.5 ${badgeClass}`}
     >
-      {isOnline ? <CircleCheckIcon className="fill-green-600!" /> : <WifiOffIcon className="text-red-500 dark:text-red-300" />}
+      {isOnline ? <CircleCheckIcon className="text-white" /> : <WifiOffIcon className="text-muted-foreground" />}
       {value}
     </Badge>
   )
@@ -100,7 +124,10 @@ function LeituraCell({ valor, unidade, limiteMin, limiteMax }) {
         {overLimit ? <AlertTriangleIcon className="size-3 text-red-500 dark:text-red-300" /> : null}
       </div>
       <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+        <div
+          className={`h-full w-full origin-left rounded-full transition-[transform,background-color] duration-700 ease-out will-change-transform motion-reduce:transition-none ${barColor}`}
+          style={{ transform: `scaleX(${pct / 100})` }}
+        />
       </div>
     </div>
   )
@@ -132,6 +159,42 @@ function formatValue(value, suffix) {
 
 function isSensorTransmitindo(sensor) {
   return sensor?.active && sensor?.maquinaId !== null && sensor?.status === "ONLINE"
+}
+
+function getSensorVinculoExibicao(sensor) {
+  return sensor?.maquinaId ? "COM_MAQUINA" : "SEM_MAQUINA"
+}
+
+function getSensorLeituraStatus(sensor, chave) {
+  if (!isSensorTransmitindo(sensor)) {
+    return "SEM_SINAL"
+  }
+
+  const leitura = sensor?.[chave]
+  const valor = Number(leitura?.valorAtual)
+  const limiteMin = Number(leitura?.limiteMin)
+  const limiteMax = Number(leitura?.limiteMax)
+
+  if (!leitura || !Number.isFinite(valor) || !Number.isFinite(limiteMin) || !Number.isFinite(limiteMax)) {
+    return "SEM_LEITURA"
+  }
+
+  return valor > limiteMax || valor < limiteMin ? "FORA_LIMITE" : "NORMAL"
+}
+
+function selectSensorFilterFn(row, columnId, value) {
+  if (!value) {
+    return true
+  }
+
+  return row.getValue(columnId) === value
+}
+
+function statusSensorSortFn(rowA, rowB, columnId) {
+  const valueA = SENSOR_STATUS_ORDER[rowA.getValue(columnId)] ?? 0
+  const valueB = SENSOR_STATUS_ORDER[rowB.getValue(columnId)] ?? 0
+
+  return valueA - valueB
 }
 
 function getSensorSemSinalLabel(sensor) {
@@ -200,6 +263,8 @@ export default function SensoresPage() {
   const [form, setForm] = React.useState(formVazio)
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [sensorExcluir, setSensorExcluir] = React.useState(null)
+  const [sorting, setSorting] = React.useState([])
+  const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
 
   const loadingInicial = useDashboardMetricsLoading(carregando && sensores.length === 0)
@@ -437,22 +502,45 @@ export default function SensoresPage() {
       ),
     },
     {
-      accessorKey: "maquinaNome",
-      header: "Maquina",
+      id: "vinculoMaquina",
+      accessorFn: getSensorVinculoExibicao,
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Maquina"
+          filterOptions={SENSOR_MAQUINA_FILTER_OPTIONS}
+        />
+      ),
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {row.original.maquinaId ? row.original.maquinaNome : "Sem maquina vinculada"}
         </span>
       ),
+      filterFn: selectSensorFilterFn,
     },
-    { accessorKey: "status", header: "Status", cell: ({ row }) => <StatusBadge value={row.original.status} /> },
+    {
+      accessorKey: "status",
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Status"
+          filterOptions={SENSOR_STATUS_FILTER_OPTIONS}
+          sortOptions={SENSOR_STATUS_SORT_OPTIONS}
+        />
+      ),
+      cell: ({ row }) => <StatusBadge value={row.original.status} />,
+      filterFn: selectSensorFilterFn,
+      sortingFn: statusSensorSortFn,
+    },
     {
       id: "temperatura",
-      header: () => (
-        <div className="flex items-center gap-1">
-          <ThermometerIcon color="#5E17EB" className="size-3.5 text-[#5e17eb]" />
-          Temperatura
-        </div>
+      accessorFn: (sensor) => getSensorLeituraStatus(sensor, "temperatura"),
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Temperatura"
+          filterOptions={SENSOR_LEITURA_FILTER_OPTIONS}
+        />
       ),
       cell: ({ row }) => {
         const sensorAtivo = isSensorTransmitindo(row.original)
@@ -468,14 +556,17 @@ export default function SensoresPage() {
 
         return <LeituraCell valor={temperatura.valorAtual} unidade="°C" limiteMin={temperatura.limiteMin} limiteMax={temperatura.limiteMax} />
       },
+      filterFn: selectSensorFilterFn,
     },
     {
       id: "vibracao",
-      header: () => (
-        <div className="flex items-center gap-1">
-          <ActivityIcon color="#5E17EB" className="size-3.5" />
-          Vibracao
-        </div>
+      accessorFn: (sensor) => getSensorLeituraStatus(sensor, "vibracao"),
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Vibracao"
+          filterOptions={SENSOR_LEITURA_FILTER_OPTIONS}
+        />
       ),
       cell: ({ row }) => {
         const sensorAtivo = isSensorTransmitindo(row.original)
@@ -491,6 +582,7 @@ export default function SensoresPage() {
 
         return <LeituraCell valor={vibracao.valorAtual} unidade="mm/s" limiteMin={vibracao.limiteMin} limiteMax={vibracao.limiteMax} />
       },
+      filterFn: selectSensorFilterFn,
     },
     {
       accessorKey: "ultimaLeituraEm",
@@ -530,7 +622,9 @@ export default function SensoresPage() {
   const table = useReactTable({
     data: dadosFiltrados,
     columns,
-    state: { pagination },
+    state: { sorting, columnFilters, pagination },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -686,7 +780,7 @@ export default function SensoresPage() {
             </div>
 
             <div className="flex items-center justify-between px-4">
-              <span className="text-sm text-muted-foreground">{dadosFiltrados.length} resultado(s)</span>
+              <span className="text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} resultado(s)</span>
               <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
                 <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
                   <ChevronsLeftIcon className="size-4" />
