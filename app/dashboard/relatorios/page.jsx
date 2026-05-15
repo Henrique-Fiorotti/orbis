@@ -4,25 +4,6 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  PolarAngleAxis,
-  PolarGrid,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts"
-import {
   ActivityIcon,
   AlertTriangleIcon,
   ArrowLeftIcon,
@@ -45,11 +26,9 @@ import { Separator } from "@/components/ui/separator"
 import { SiteHeader } from "@/components/site-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { useAlertas } from "@/components/context/alertas-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
-import { useSensores } from "@/components/context/sensores-context"
 import { getAuthSession } from "@/lib/auth-session"
-import { extractCollection, requestDashboardJson } from "@/lib/dashboard-api"
+import { getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
 import { tempoRelativo } from "@/lib/utils"
 
 const COLORS = {
@@ -60,8 +39,6 @@ const COLORS = {
   medio: "#8A6A2F",
 }
 
-const PIE_COLORS = ["#8000ff", "#ff5e00"]
-
 const PERIOD_OPTIONS = [
   { value: "7d", label: "7 dias", days: 7 },
   { value: "15d", label: "15 dias", days: 15 },
@@ -70,28 +47,96 @@ const PERIOD_OPTIONS = [
 ]
 
 const SECTION_OPTIONS = [
-  { id: "resumo", label: "Resumo" },
-  { id: "desempenho", label: "Desempenho" },
-  { id: "sensores", label: "Sensores" },
+  { id: "resumo", label: "Visao geral" },
+  { id: "indicadores", label: "Indicadores" },
+  { id: "maquinas", label: "Inventario" },
   { id: "chamados", label: "Chamados" },
-  { id: "historico", label: "Histórico de Tendência" },
 ]
 
 const DEFAULT_SECTIONS = {
   resumo: true,
-  desempenho: true,
-  sensores: true,
+  indicadores: true,
+  maquinas: true,
   chamados: true,
-  historico: true,
+}
+
+const DEFAULT_REPORT_CONFIG = {
+  tipoRelatorio: "geral",
+  maquinaId: "",
+  periodo: "30d",
+  secoes: DEFAULT_SECTIONS,
 }
 
 const EMAIL_DRAFT_STORAGE_KEY = "orbis-report-email-draft"
 
+const REPORT_ENDPOINTS = ["/relatorios/gerar", "/relatorios"]
+
 const EMAIL_FREQUENCY_OPTIONS = [
-  { value: "semanal", label: "Semanal", detail: "Segundas-feiras as 08:00" },
   { value: "diario", label: "Diario", detail: "Todos os dias as 08:00" },
+  { value: "semanal", label: "Semanal", detail: "Segundas-feiras as 08:00" },
   { value: "mensal", label: "Mensal", detail: "Todo dia 1 as 08:00" },
 ]
+
+const WEEKDAY_OPTIONS = [
+  { value: "segunda", label: "Segunda-feira" },
+  { value: "terca", label: "Terca-feira" },
+  { value: "quarta", label: "Quarta-feira" },
+  { value: "quinta", label: "Quinta-feira" },
+  { value: "sexta", label: "Sexta-feira" },
+  { value: "sabado", label: "Sabado" },
+  { value: "domingo", label: "Domingo" },
+]
+
+const MONTH_DAY_OPTIONS = Array.from({ length: 31 }, (_, index) => {
+  const day = String(index + 1)
+  return { value: day, label: `Dia ${day}` }
+})
+
+function createReportConfig(overrides = {}) {
+  const overrideSections = { ...(overrides.secoes ?? {}) }
+
+  if (overrideSections.historico !== undefined && overrideSections.historicoTendencia === undefined) {
+    overrideSections.historicoTendencia = overrideSections.historico
+  }
+
+  if (overrideSections.desempenho !== undefined && overrideSections.maquinas === undefined) {
+    overrideSections.maquinas = overrideSections.desempenho
+  }
+
+  if (overrideSections.sensores !== undefined && overrideSections.indicadores === undefined) {
+    overrideSections.indicadores = overrideSections.sensores
+  }
+
+  delete overrideSections.historico
+  delete overrideSections.historicoTendencia
+  delete overrideSections.desempenho
+  delete overrideSections.sensores
+
+  return {
+    ...DEFAULT_REPORT_CONFIG,
+    ...overrides,
+    secoes: {
+      ...DEFAULT_SECTIONS,
+      ...overrideSections,
+    },
+  }
+}
+
+function getEmailDataWindow(frequencia) {
+  if (frequencia === "diario") {
+    return { tipo: "atual", label: "Dados atuais", periodo: null, periodoDias: null }
+  }
+
+  if (frequencia === "mensal") {
+    return { tipo: "mensal", label: "Mes atual", periodo: "30d", periodoDias: 30 }
+  }
+
+  return { tipo: "semanal", label: "Ultimos 7 dias", periodo: "7d", periodoDias: 7 }
+}
+
+function getWeekdayLabel(value) {
+  return WEEKDAY_OPTIONS.find((option) => option.value === value)?.label ?? "Segunda-feira"
+}
 
 function formatDate(date = new Date()) {
   return date.toLocaleDateString("pt-BR", {
@@ -109,6 +154,181 @@ function getPeriodLabel(periodo) {
 
 function getPeriodDays(periodo) {
   return PERIOD_OPTIONS.find((option) => option.value === periodo)?.days ?? 30
+}
+
+function toReportNumber(value, fallback = 0) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function formatReportDateTime(value) {
+  if (!value) return "-"
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function formatReportDate(value) {
+  if (!value) return "-"
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  })
+}
+
+function getEnabledSections(secoes) {
+  return Object.entries(secoes)
+    .filter(([, enabled]) => enabled)
+    .map(([secao]) => secao)
+}
+
+function buildReportPayload({ tipoRelatorio, maquinaId, periodo, secoes }) {
+  const periodoDias = getPeriodDays(periodo)
+  const isMaquina = tipoRelatorio === "maquina" && maquinaId
+  const periodoLabel = getPeriodLabel(periodo)
+
+  return {
+    nome: isMaquina ? "Relatorio de Maquina" : "Relatorio Operacional",
+    assunto: `Relatorio dos ultimos ${periodoDias} dias`,
+    periodo: {
+      tipo: "RELATIVE_DAYS",
+      valor: periodoDias,
+    },
+    filtros: {
+      maquinasIds: isMaquina ? [Number(maquinaId)] : [],
+      secoes: getEnabledSections(secoes),
+    },
+    config: {
+      periodo: periodoLabel,
+      tipo: isMaquina ? "maquina" : "geral",
+    },
+  }
+}
+
+function extractReportHtml(source) {
+  const html = source?.html ?? source?.relatorioHtml ?? source?.templateHtml ?? source?.body ?? source?.conteudoHtml
+  return typeof html === "string" && html.trim().startsWith("<") ? html : ""
+}
+
+function normalizeReportPayload(payload, fallbackPeriodLabel = "30 dias") {
+  const source = payload?.relatorio ?? payload?.data ?? payload?.dados ?? payload ?? {}
+  const resumo = source.resumo ?? {}
+  const desempenho = source.desempenho ?? {}
+  const statusDasMaquinas = desempenho.statusDasMaquinas ?? {}
+  const maquinasPorImportancia = desempenho.maquinasPorImportancia ?? {}
+  const sensores = source.sensores ?? {}
+  const maquinas = Array.isArray(source.maquinas) ? source.maquinas : []
+  const alertas = Array.isArray(source.alertas) ? source.alertas : Array.isArray(source.chamados) ? source.chamados : []
+  const config = source.config ?? {}
+  const totalMaquinas = toReportNumber(resumo.totalMaquinas ?? resumo.maquinasAtivas ?? maquinas.length)
+  const maquinasFuncionando = toReportNumber(
+    resumo.maquinasFuncionando ??
+      desempenho.statusDasMaquinas?.operando ??
+      maquinas.filter((maquina) => maquina.status === "OK").length
+  )
+  const maquinasEmAlerta = toReportNumber(
+    resumo.maquinasEmAlerta ??
+      desempenho.statusDasMaquinas?.emAlerta ??
+      maquinas.filter((maquina) => maquina.status && maquina.status !== "OK").length
+  )
+  const alertasAtivos = toReportNumber(
+    resumo.alertasAtivos ??
+      resumo.chamadosAbertos ??
+      alertas.filter((alerta) => !["RESOLVIDO", "ENCERRADO"].includes(alerta.status)).length
+  )
+  const sensoresOnline = toReportNumber(resumo.sensoresOnline ?? sensores.online)
+
+  return {
+    html: extractReportHtml(source),
+    periodoLabel: source.periodoLabel ?? config.periodo ?? fallbackPeriodLabel,
+    config: {
+      periodo: config.periodo ?? fallbackPeriodLabel,
+      tipo: config.tipo ?? "geral",
+    },
+    resumo: {
+      totalMaquinas,
+      maquinasFuncionando,
+      maquinasEmAlerta,
+      alertasAtivos,
+      alertasHoje: toReportNumber(resumo.alertasHoje),
+      tecnicosAtivos: toReportNumber(resumo.tecnicosAtivos),
+      integridadeMedia: toReportNumber(resumo.integridadeMedia),
+      sensoresOnline,
+      alertaSemAtendimento: toReportNumber(resumo.alertaSemAtendimento),
+      alertasAtendidosHoje: toReportNumber(resumo.alertasAtendidosHoje),
+      maquinasAltaImportancia: toReportNumber(
+        resumo.maquinasAltaImportancia ?? maquinas.filter((maquina) => maquina.criticidade === "ALTA").length
+      ),
+    },
+    desempenho: {
+      statusDasMaquinas: {
+        operando: maquinasFuncionando || toReportNumber(statusDasMaquinas.operando),
+        emAlerta: maquinasEmAlerta || toReportNumber(statusDasMaquinas.emAlerta),
+        inativa: toReportNumber(statusDasMaquinas.inativa),
+      },
+      maquinasPorImportancia: {
+        alta: toReportNumber(maquinasPorImportancia.alta ?? maquinas.filter((maquina) => maquina.criticidade === "ALTA").length),
+        media: toReportNumber(maquinasPorImportancia.media ?? maquinas.filter((maquina) => maquina.criticidade === "MEDIA").length),
+        baixa: toReportNumber(maquinasPorImportancia.baixa ?? maquinas.filter((maquina) => maquina.criticidade === "BAIXA").length),
+      },
+      integridadePorSetor: Array.isArray(desempenho.integridadePorSetor)
+        ? desempenho.integridadePorSetor.map((item, index) => ({
+            setor: item.setor ?? item.nome ?? `Setor ${index + 1}`,
+            integridadeMedia: toReportNumber(item.integridadeMedia ?? item.integridade),
+          }))
+        : [],
+    },
+    sensores: {
+      online: sensoresOnline,
+      offline: toReportNumber(sensores.offline),
+      inativo: toReportNumber(sensores.inativo),
+    },
+    maquinas,
+    alertas,
+    chamados: alertas,
+    historicoTendencia: Array.isArray(source.historicoTendencia)
+      ? source.historicoTendencia.map((item) => ({
+          data: item.data,
+          quantidade: toReportNumber(item.quantidade ?? item.alertas),
+        }))
+      : [],
+  }
+}
+
+async function requestRelatorio(payload, accessToken) {
+  let lastError = null
+
+  for (const endpoint of REPORT_ENDPOINTS) {
+    try {
+      return await requestDashboardJson(endpoint, accessToken, "o relatorio", {
+        method: "POST",
+        body: payload,
+      })
+    } catch (error) {
+      lastError = error
+
+      if (getHttpErrorStatus(error) === 404) {
+        continue
+      }
+
+      throw error
+    }
+  }
+
+  throw lastError ?? new Error("Endpoint de relatorio nao encontrado.")
 }
 
 function isWithinPeriod(dateValue, days) {
@@ -271,6 +491,46 @@ function Estado({ msg, tone = "muted" }) {
   )
 }
 
+function PlainStatusBadge({ value }) {
+  const normalized = String(value ?? "-")
+  const isOk = ["OK", "ONLINE", "RESOLVIDO", "ENCERRADO", "OPERANDO"].includes(normalized)
+
+  return (
+    <span className={`inline-flex border px-2 py-0.5 text-xs font-medium ${isOk ? "border-stone-300 bg-white text-stone-700" : "border-stone-300 bg-stone-50 text-stone-800"}`}>
+      {normalized}
+    </span>
+  )
+}
+
+function EmailMetric({ label, value, sub }) {
+  return (
+    <div className="border border-stone-200 bg-white p-3 print:border-stone-300">
+      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">{label}</p>
+      <p className="mb-0 text-2xl font-semibold text-stone-900">{value}</p>
+      {sub && <p className="mb-0 mt-1 text-xs text-stone-500">{sub}</p>}
+    </div>
+  )
+}
+
+function SummaryTable({ rows, emptyMessage = "Sem dados disponiveis" }) {
+  if (rows.length === 0) {
+    return <Estado msg={emptyMessage} />
+  }
+
+  return (
+    <table className="w-full text-xs">
+      <tbody className="divide-y divide-stone-100 bg-white">
+        {rows.map((row) => (
+          <tr key={row.label}>
+            <th className="w-2/3 px-3 py-2 text-left font-medium text-stone-600">{row.label}</th>
+            <td className="px-3 py-2 text-right font-semibold tabular-nums text-stone-900">{row.value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
 function ReportPreviewPage({ children }) {
   return (
     <div className="report-preview-page mx-auto w-full max-w-[210mm] bg-white px-4 py-6 shadow-sm ring-1 ring-border/70 sm:px-6 sm:py-8 print:mx-0 print:max-w-none print:bg-white print:px-0 print:py-0 print:shadow-none print:ring-0">
@@ -388,6 +648,11 @@ function EmailAutomationPanel({
   onFrequenciaChange,
   horario,
   onHorarioChange,
+  diaSemana,
+  onDiaSemanaChange,
+  diaMes,
+  onDiaMesChange,
+  reportPeriodLabel,
   onSaveDraft,
   onSendNow,
 }) {
@@ -436,20 +701,45 @@ function EmailAutomationPanel({
           />
         </div>
 
-        <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-2">
-          <Button type="button" variant="outline" className="cursor-pointer h-9 px-3 font-normal text-muted-foreground" disabled>
-            Segunda
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="cursor-pointer h-9 bg-muted text-muted-foreground hover:bg-muted"
-            onClick={onSaveDraft}
-            disabled={!hasDestinatarios}
-          >
-            Salvar Agendamento
-          </Button>
-        </div>
+        {frequencia === "semanal" && (
+          <Select value={diaSemana} onValueChange={onDiaSemanaChange}>
+            <SelectTrigger className="h-9 w-full">
+              <SelectValue placeholder="Dia da semana" />
+            </SelectTrigger>
+            <SelectContent>
+              {WEEKDAY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {frequencia === "mensal" && (
+          <Select value={diaMes} onValueChange={onDiaMesChange}>
+            <SelectTrigger className="h-9 w-full">
+              <SelectValue placeholder="Dia do mes" />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTH_DAY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-9 bg-muted text-muted-foreground hover:bg-muted"
+          onClick={onSaveDraft}
+          disabled={!hasDestinatarios}
+        >
+          Salvar Agendamento
+        </Button>
 
         <Button
           type="button"
@@ -463,7 +753,9 @@ function EmailAutomationPanel({
       </div>
 
       <div className="mt-3 rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-            Próximo envio: {frequencyLabel} às {horario || "08:00"}. O relatório considera as seções e filtros selecionados acima.
+        Proximo envio: {frequencyLabel}
+        {frequencia === "semanal" ? `, ${getWeekdayLabel(diaSemana)}` : ""}
+        {frequencia === "mensal" ? `, dia ${diaMes}` : ""} as {horario || "08:00"}. Periodo do relatorio: {reportPeriodLabel}. O relatorio usara os filtros configurados acima.
       </div>
     </div>
   )
@@ -570,6 +862,240 @@ function ChamadosTable({ chamados }) {
   )
 }
 
+function ChamadosReportTable({ chamados }) {
+  if (chamados.length === 0) {
+    return <Estado msg="Nenhum chamado no periodo" />
+  }
+
+  return (
+    <table className="w-full min-w-[760px] text-xs print:min-w-0">
+      <thead>
+        <tr className="border-b border-stone-200 bg-stone-50 text-left print:bg-stone-100">
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Maquina</th>
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Tipo</th>
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Severidade</th>
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Status</th>
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Sensor</th>
+          <th className="px-3 py-2.5 font-semibold text-stone-600 text-right">Criado</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-stone-100 bg-white">
+        {chamados.map((chamado, index) => {
+          const severidade = chamado.severidade ?? chamado.criticidade ?? "MEDIA"
+          const isResolvido = ["RESOLVIDO", "ENCERRADO"].includes(chamado.status)
+
+          return (
+            <tr key={chamado.id ?? index} className={severidade === "ALTA" ? "bg-stone-50 print:bg-stone-50" : ""}>
+              <td className="px-3 py-2 font-medium text-stone-900">{chamado.maquina ?? chamado.maquinaNome ?? "-"}</td>
+              <td className="px-3 py-2 text-stone-600">{chamado.tipo ?? "-"}</td>
+              <td className="px-3 py-2">
+                <CriticidadeBadge value={severidade} />
+              </td>
+              <td className="px-3 py-2">
+                <PlainStatusBadge value={isResolvido ? "RESOLVIDO" : "ABERTO"} />
+              </td>
+              <td className="px-3 py-2 text-stone-600">{chamado.sensor ?? chamado.sensorNome ?? "-"}</td>
+              <td className="px-3 py-2 text-right text-stone-500">{formatReportDate(chamado.criadoEm ?? chamado.createdAt)}</td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
+  )
+}
+
+function MaquinasEmailTable({ maquinas }) {
+  return (
+    <table className="w-full min-w-[720px] text-xs print:min-w-0">
+      <thead>
+        <tr className="border-b border-stone-200 bg-stone-50 text-left print:bg-stone-100">
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Maquina</th>
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Setor</th>
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Tipo</th>
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Importancia</th>
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Status</th>
+          <th className="px-3 py-2.5 text-right font-semibold text-stone-600">Integridade</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-stone-100 bg-white">
+        {maquinas.map((maquina, index) => {
+          const isAlerta = maquina.status !== "OK"
+          const integridade = toReportNumber(maquina.integridade)
+
+          return (
+            <tr key={maquina.id ?? index} className={isAlerta ? "bg-stone-50 print:bg-stone-50" : ""}>
+              <td className="px-3 py-2 font-medium text-stone-900">{maquina.nome ?? "-"}</td>
+              <td className="px-3 py-2 text-stone-600">{maquina.setor ?? "-"}</td>
+              <td className="px-3 py-2 text-stone-600">{maquina.tipo ?? "-"}</td>
+              <td className="px-3 py-2">
+                <CriticidadeBadge value={maquina.criticidade ?? "MEDIA"} />
+              </td>
+              <td className="px-3 py-2">
+                <PlainStatusBadge value={isAlerta ? "ALERTA" : "OK"} />
+              </td>
+              <td className="px-3 py-2 text-right font-semibold tabular-nums text-stone-900">{integridade}%</td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
+  )
+}
+
+function RelatorioOperacional({
+  relatorio,
+  status,
+  mensagem,
+  geradoEm,
+  periodoLabel,
+  secoes,
+  tipoRelatorio,
+  selectedMaquina,
+}) {
+  const isLoading = status === "loading"
+  const resumo = relatorio?.resumo ?? normalizeReportPayload(null, periodoLabel).resumo
+  const maquinas = relatorio?.maquinas ?? []
+  const alertas = relatorio?.alertas ?? relatorio?.chamados ?? []
+  const reportPeriodLabel = relatorio?.periodoLabel ?? periodoLabel
+  const isMaquina = tipoRelatorio === "maquina"
+  const escopoLabel = isMaquina ? selectedMaquina?.nome ?? "Maquina especifica" : "Completo"
+  const integridadeMedia = Math.round(resumo.integridadeMedia)
+  const statusLabel = isLoading
+    ? "Carregando"
+    : integridadeMedia >= 75
+      ? "Frota Estavel"
+      : integridadeMedia >= 50
+        ? "Atencao Necessaria"
+        : "Estado Critico"
+  const maquinasVisiveis = maquinas.slice(0, 15)
+  const alertasVisiveis = alertas.slice(0, 10)
+
+  if (relatorio?.html) {
+    return (
+      <div className="report-html-preview mx-auto w-full max-w-[760px] overflow-hidden rounded-sm bg-white shadow-sm ring-1 ring-border/70 print:max-w-none print:shadow-none print:ring-0">
+        <div dangerouslySetInnerHTML={{ __html: relatorio.html }} />
+      </div>
+    )
+  }
+
+  return (
+    <ReportPreviewPage>
+      <div className="mx-auto max-w-[680px] border border-stone-200 bg-white print:max-w-none print:border-stone-300">
+        <ReportHeader
+          title="Relatorio Operacional"
+          meta={[`Gerado em ${geradoEm}`, `Periodo: ${reportPeriodLabel}`, `Escopo: ${escopoLabel}`]}
+          statusLabel={statusLabel}
+          statusSub={isLoading ? "Aguardando dados do backend" : `Integridade media: ${integridadeMedia}%`}
+        />
+
+        {mensagem && status === "error" && (
+          <div className="mb-6">
+            <Estado msg={mensagem} tone="error" />
+          </div>
+        )}
+
+        <div className="px-4 pb-6 sm:px-6 print:px-4">
+          {secoes.resumo && (
+            <div className="mb-6 print:mb-4">
+              <SectionTitle>Visao Geral da Frota</SectionTitle>
+              {isLoading ? (
+                <div className="mt-3">
+                  <Estado msg="Carregando resumo..." />
+                </div>
+              ) : (
+                <div className="mt-3 grid grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
+                  <EmailMetric label="Maquinas ativas" value={resumo.totalMaquinas} sub={`${resumo.maquinasFuncionando} OK - ${resumo.maquinasEmAlerta} em alerta`} />
+                  <EmailMetric label="Alta importancia" value={resumo.maquinasAltaImportancia} sub="Maquinas criticas" />
+                  <EmailMetric label="Integridade media" value={`${integridadeMedia}%`} sub="Media de toda a frota" />
+                  <EmailMetric label="Chamados abertos" value={resumo.alertasAtivos} sub={`${resumo.alertasAtendidosHoje} atendidos hoje`} />
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mb-6 print:mb-4">
+            <div className="border border-stone-200 bg-white p-4 print:border-stone-300">
+              <div className="mb-2 flex items-center justify-between gap-4">
+                <span className="text-xs font-semibold uppercase tracking-widest text-stone-500">Integridade da frota</span>
+                <span className="text-sm font-semibold text-stone-900">{isLoading ? "--" : `${integridadeMedia}%`}</span>
+              </div>
+              <div className="h-2 w-full bg-stone-200">
+                <div className="h-2 bg-[#8000ff]" style={{ width: `${Math.min(100, Math.max(0, integridadeMedia))}%` }} />
+              </div>
+            </div>
+          </div>
+
+          {secoes.indicadores && (
+            <div className="mb-6 print:mb-4">
+              <SectionTitle>Indicadores Operacionais</SectionTitle>
+              {isLoading ? (
+                <div className="mt-3">
+                  <Estado msg="Carregando indicadores..." />
+                </div>
+              ) : (
+                <div className="mt-3 grid grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
+                  <EmailMetric label="Alertas hoje" value={resumo.alertasHoje} sub="Novos chamados hoje" />
+                  <EmailMetric label="Sem atendimento" value={resumo.alertaSemAtendimento} sub="Chamados sem resposta" />
+                  <EmailMetric label="Sensores online" value={resumo.sensoresOnline} sub="Sensores ativos" />
+                  <EmailMetric label="Tecnicos ativos" value={resumo.tecnicosAtivos} sub="Disponiveis agora" />
+                </div>
+              )}
+            </div>
+          )}
+
+          {secoes.maquinas && (
+            <div className="mb-6 print:mb-4">
+              <SectionTitle>Inventario de Maquinas</SectionTitle>
+              <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
+                {isLoading ? (
+                  <Estado msg="Carregando maquinas..." />
+                ) : maquinasVisiveis.length === 0 ? (
+                  <Estado msg="Nenhuma maquina no relatorio" />
+                ) : (
+                  <>
+                    <MaquinasEmailTable maquinas={maquinasVisiveis} />
+                    {maquinas.length > maquinasVisiveis.length && (
+                      <p className="mb-0 border-t border-stone-200 bg-stone-50 px-3 py-2 text-center text-xs text-stone-500">
+                        + {maquinas.length - maquinasVisiveis.length} maquinas nao exibidas. Acesse o dashboard para ver a lista completa.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {secoes.chamados && (
+            <div className="mb-6 print:mb-4">
+              <SectionTitle>Chamados Tecnicos</SectionTitle>
+              <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
+                {isLoading ? (
+                  <Estado msg="Carregando chamados..." />
+                ) : alertasVisiveis.length === 0 ? (
+                  <Estado msg="Nenhum chamado no periodo selecionado." />
+                ) : (
+                  <>
+                    <ChamadosReportTable chamados={alertasVisiveis} />
+                    {alertas.length > alertasVisiveis.length && (
+                      <p className="mb-0 border-t border-stone-200 bg-stone-50 px-3 py-2 text-center text-xs text-stone-500">
+                        + {alertas.length - alertasVisiveis.length} chamados nao exibidos. Acesse o dashboard para ver todos.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="border-t border-stone-200 bg-stone-50 px-4 py-3 text-xs text-stone-500 print:border-stone-300">
+            Este relatorio foi gerado automaticamente pelo sistema Orbis.
+          </div>
+        </div>
+      </div>
+    </ReportPreviewPage>
+  )
+}
+
 export default function RelatoriosPage() {
   const router = useRouter()
   const {
@@ -579,44 +1105,37 @@ export default function RelatoriosPage() {
     carregando: loadingMaquinas,
     recarregarMaquinas,
   } = useMaquinas()
-  const { sensores, recarregarSensores } = useSensores()
-  const { alertas: chamados } = useAlertas()
 
   const [tipoRelatorio, setTipoRelatorio] = React.useState("geral")
   const [maquinaId, setMaquinaId] = React.useState("")
   const [periodo, setPeriodo] = React.useState("30d")
   const [secoes, setSecoes] = React.useState(DEFAULT_SECTIONS)
-  const [historico, setHistorico] = React.useState([])
-  const [historicoStatus, setHistoricoStatus] = React.useState("idle")
-  const [historicoMensagem, setHistoricoMensagem] = React.useState("")
+  const [relatorio, setRelatorio] = React.useState(() => normalizeReportPayload(null, getPeriodLabel("30d")))
+  const [relatorioStatus, setRelatorioStatus] = React.useState("idle")
+  const [relatorioMensagem, setRelatorioMensagem] = React.useState("")
   const [refreshError, setRefreshError] = React.useState(null)
   const [emailDestinatarios, setEmailDestinatarios] = React.useState("")
   const [emailFrequencia, setEmailFrequencia] = React.useState("semanal")
   const [emailHorario, setEmailHorario] = React.useState("08:00")
-  const [geradoEm] = React.useState(formatDate())
+  const [emailDiaSemana, setEmailDiaSemana] = React.useState("segunda")
+  const [emailDiaMes, setEmailDiaMes] = React.useState("1")
+  const [geradoEm, setGeradoEm] = React.useState(formatDate())
+  const relatorioRequestIdRef = React.useRef(0)
 
   React.useEffect(() => {
     if (!maquinaId && maquinas.length > 0) {
       setMaquinaId(String(maquinas[0].id))
     }
+
   }, [maquinaId, maquinas])
 
   const selectedMaquina = React.useMemo(
     () => maquinas.find((maquina) => String(maquina.id) === String(maquinaId)) ?? null,
     [maquinaId, maquinas]
   )
-  const periodoDias = getPeriodDays(periodo)
   const periodoLabel = getPeriodLabel(periodo)
-  const isRelatorioMaquina = tipoRelatorio === "maquina" && selectedMaquina
-
-  const sensoresMaquina = React.useMemo(
-    () => (selectedMaquina ? filtrarSensoresPorMaquina(sensores, selectedMaquina.id) : []),
-    [selectedMaquina, sensores]
-  )
-  const chamadosMaquina = React.useMemo(
-    () => (selectedMaquina ? filtrarChamadosPorMaquina(chamados, selectedMaquina.id, periodoDias) : []),
-    [selectedMaquina, chamados, periodoDias]
-  )
+  const isRelatorioMaquina = tipoRelatorio === "maquina"
+  const canFetchRelatorio = tipoRelatorio !== "maquina" || Boolean(selectedMaquina)
 
   React.useEffect(() => {
     try {
@@ -639,59 +1158,64 @@ export default function RelatoriosPage() {
       if (typeof draft.horario === "string" && /^\d{2}:\d{2}$/.test(draft.horario)) {
         setEmailHorario(draft.horario)
       }
+
+      if (WEEKDAY_OPTIONS.some((option) => option.value === draft.diaSemana)) {
+        setEmailDiaSemana(draft.diaSemana)
+      }
+
+      if (MONTH_DAY_OPTIONS.some((option) => option.value === String(draft.diaMes))) {
+        setEmailDiaMes(String(draft.diaMes))
+      }
+
     } catch {
       window.localStorage.removeItem(EMAIL_DRAFT_STORAGE_KEY)
     }
   }, [])
 
+  const carregarRelatorio = React.useCallback(async () => {
+    const requestId = relatorioRequestIdRef.current + 1
+    relatorioRequestIdRef.current = requestId
+
+    if (!canFetchRelatorio) {
+      setRelatorio(normalizeReportPayload(null, periodoLabel))
+      setRelatorioStatus("idle")
+      setRelatorioMensagem("Selecione uma maquina para gerar o relatorio.")
+      return
+    }
+
+    const session = getAuthSession()
+    if (!session?.accessToken) {
+      setRelatorioStatus("error")
+      setRelatorioMensagem("Sua sessao expirou. Faca login novamente.")
+      return
+    }
+
+    setRelatorioStatus("loading")
+    setRelatorioMensagem("")
+
+    try {
+      const requestPayload = buildReportPayload({
+        tipoRelatorio,
+        maquinaId: selectedMaquina?.id ?? maquinaId,
+        periodo,
+        secoes,
+      })
+      const payload = await requestRelatorio(requestPayload, session.accessToken)
+
+      if (relatorioRequestIdRef.current !== requestId) return
+      setRelatorio(normalizeReportPayload(payload, periodoLabel))
+      setGeradoEm(formatDate())
+      setRelatorioStatus("success")
+    } catch (error) {
+      if (relatorioRequestIdRef.current !== requestId) return
+      setRelatorioStatus("error")
+      setRelatorioMensagem(error instanceof Error ? error.message : "Falha ao carregar relatorio.")
+    }
+  }, [canFetchRelatorio, maquinaId, periodo, periodoLabel, secoes, selectedMaquina, tipoRelatorio])
+
   React.useEffect(() => {
-    let ativo = true
-
-    async function carregarHistoricoMaquina() {
-      if (!isRelatorioMaquina || !secoes.historico) {
-        setHistorico([])
-        setHistoricoStatus("idle")
-        setHistoricoMensagem("")
-        return
-      }
-
-      const session = getAuthSession()
-      if (!session?.accessToken) {
-        setHistorico([])
-        setHistoricoStatus("empty")
-      setHistoricoMensagem("Sem histórico disponível para o período")
-        return
-      }
-
-      setHistoricoStatus("loading")
-      setHistoricoMensagem("")
-
-      try {
-        const payload = await requestDashboardJson(
-          `/maquinas/${selectedMaquina.id}/historico?periodo=${periodo}`,
-          session.accessToken,
-          "o histórico da máquina"
-        )
-        const data = montarTendenciaHistorica(payload)
-
-        if (!ativo) return
-        setHistorico(data)
-        setHistoricoStatus(data.length > 0 ? "success" : "empty")
-        setHistoricoMensagem(data.length > 0 ? "" : "Sem histórico disponível para o período")
-      } catch {
-        if (!ativo) return
-        setHistorico([])
-        setHistoricoStatus("empty")
-        setHistoricoMensagem("Sem histórico disponível para o período")
-      }
-    }
-
-    carregarHistoricoMaquina()
-
-    return () => {
-      ativo = false
-    }
-  }, [isRelatorioMaquina, periodo, secoes.historico, selectedMaquina])
+    carregarRelatorio()
+  }, [carregarRelatorio])
 
   function onToggleSecao(secao, checked) {
     setSecoes((current) => ({ ...current, [secao]: checked }))
@@ -699,7 +1223,7 @@ export default function RelatoriosPage() {
 
   function recarregar() {
     setRefreshError(null)
-    Promise.allSettled([recarregarMaquinas(), recarregarSensores()]).then((results) => {
+    Promise.allSettled([recarregarMaquinas(), carregarRelatorio()]).then((results) => {
       const rejected = results.find((result) => result.status === "rejected")
       if (rejected) {
       setRefreshError(rejected.reason instanceof Error ? rejected.reason.message : "Falha ao atualizar relatório")
@@ -708,14 +1232,26 @@ export default function RelatoriosPage() {
   }
 
   function getEmailAutomationPayload() {
-    return {
+    const dataWindow = getEmailDataWindow(emailFrequencia)
+    const relatorioPayload = buildReportPayload({
       tipoRelatorio,
-      maquinaId: isRelatorioMaquina ? selectedMaquina.id : null,
+      maquinaId: selectedMaquina?.id ?? maquinaId,
       periodo,
-      periodoDias,
       secoes,
+    })
+
+    return {
+      ...relatorioPayload,
+      janelaDados: {
+        ...dataWindow,
+        label: getPeriodLabel(periodo),
+        periodo,
+        periodoDias: getPeriodDays(periodo),
+      },
       recorrencia: emailFrequencia,
       horario: emailHorario,
+      diaSemana: emailFrequencia === "semanal" ? emailDiaSemana : null,
+      diaMes: emailFrequencia === "mensal" ? Number(emailDiaMes) : null,
       destinatarios: emailDestinatarios
         .split(/[;,]/)
         .map((email) => email.trim())
@@ -732,6 +1268,14 @@ export default function RelatoriosPage() {
         destinatarios: emailDestinatarios,
         frequencia: emailFrequencia,
         horario: emailHorario,
+        diaSemana: emailDiaSemana,
+        diaMes: emailDiaMes,
+        filtrosRelatorio: {
+          tipoRelatorio,
+          maquinaId,
+          periodo,
+          secoes,
+        },
         atualizadoEm: new Date().toISOString(),
         payload,
       })
@@ -741,54 +1285,24 @@ export default function RelatoriosPage() {
   }
 
   function enviarRelatorioAgora() {
-    const destinatarios = getEmailAutomationPayload().destinatarios
+    const payload = getEmailAutomationPayload()
+    const destinatarios = payload.destinatarios
 
     if (destinatarios.length === 0) {
       toast.error("Informe pelo menos um destinatario.")
       return
     }
 
-    toast.success(`Relatório enviado para ${destinatarios.length} destinatário(s).`)
+    if (tipoRelatorio === "maquina" && payload.filtros.maquinasIds.length === 0) {
+      toast.error("Selecione a maquina do relatorio por e-mail.")
+      return
+    }
+
+    toast.success(`Solicitacao pronta para enviar a ${destinatarios.length} destinatario(s) quando o backend estiver conectado.`)
   }
 
-  const totalMaquinas = maquinas.length
-  const totalOk = maquinas.filter((maquina) => maquina.status === "OK").length
-  const totalAlerta = maquinas.filter((maquina) => maquina.status !== "OK").length
-  const criticasAlta = maquinas.filter((maquina) => maquina.criticidade === "ALTA").length
-  const integridadeMedia = totalMaquinas
-    ? Math.round(maquinas.reduce((acc, maquina) => acc + (maquina.integridade ?? 0), 0) / totalMaquinas)
-    : 0
-  const chamadosAbertos = chamados.filter((chamado) =>
-    ["ABERTO", "DISPONIVEL", "ATIVO", "EM_ANDAMENTO"].includes(chamado.status)
-  ).length
-  const chamadosResolvidos = chamados.filter((chamado) =>
-    ["RESOLVIDO", "ENCERRADO"].includes(chamado.status)
-  ).length
-
-  const tendencia = React.useMemo(() => montarTendenciaChamados(chamados, periodoDias), [chamados, periodoDias])
-  const pieStatus = [
-    { name: "Estável", value: totalOk },
-    { name: "Alerta", value: totalAlerta },
-  ].filter((item) => item.value > 0)
-  const barCriticidade = ["ALTA", "MEDIA", "BAIXA"].map((criticidade) => ({
-    name: criticidade.charAt(0) + criticidade.slice(1).toLowerCase(),
-    Operando: maquinas.filter((maquina) => maquina.criticidade === criticidade && maquina.status === "OK").length,
-    "Em alerta": maquinas.filter((maquina) => maquina.criticidade === criticidade && maquina.status !== "OK").length,
-  }))
-  const setores = [...new Set(maquinas.map((maquina) => maquina.setor))].slice(0, 6)
-  const radarData = setores.map((setor) => {
-    const group = maquinas.filter((maquina) => maquina.setor === setor)
-    const avg = group.length
-      ? Math.round(group.reduce((acc, maquina) => acc + (maquina.integridade ?? 0), 0) / group.length)
-      : 0
-    return { setor: setor.length > 10 ? `${setor.slice(0, 10)}...` : setor, integridade: avg }
-  })
-  const metricasMaquina = selectedMaquina
-    ? calcularMetricasMaquina(selectedMaquina, sensoresMaquina, chamadosMaquina)
-    : null
-
-  const errorMsg = maquinasStatus === "error" ? maquinasMensagem : refreshError
-  const carregandoTudo = loadingMaquinas
+  const errorMsg = relatorioStatus === "error" ? relatorioMensagem : maquinasStatus === "error" ? maquinasMensagem : refreshError
+  const carregandoTudo = loadingMaquinas || relatorioStatus === "loading"
 
   return (
     <>
@@ -856,6 +1370,11 @@ export default function RelatoriosPage() {
               onFrequenciaChange={setEmailFrequencia}
               horario={emailHorario}
               onHorarioChange={setEmailHorario}
+              diaSemana={emailDiaSemana}
+              onDiaSemanaChange={setEmailDiaSemana}
+              diaMes={emailDiaMes}
+              onDiaMesChange={setEmailDiaMes}
+              reportPeriodLabel={periodoLabel}
               onSaveDraft={salvarRascunhoEmail}
               onSendNow={enviarRelatorioAgora}
             />
@@ -883,40 +1402,16 @@ export default function RelatoriosPage() {
             className="report-preview-stack flex w-full flex-col gap-6 pb-6 print:block print:gap-0 print:pb-0 print:px-[1.2cm] print:py-[1cm] print:text-black"
             style={{ fontFamily: "'Inter', sans-serif" }}
           >
-            {isRelatorioMaquina ? (
-              <RelatorioMaquina
-                maquina={selectedMaquina}
-                periodoLabel={periodoLabel}
-                geradoEm={geradoEm}
-                secoes={secoes}
-                metricas={metricasMaquina}
-                sensores={sensoresMaquina}
-                chamados={chamadosMaquina}
-                historico={historico}
-                historicoStatus={historicoStatus}
-                historicoMensagem={historicoMensagem}
-              />
-            ) : (
-              <RelatorioGeral
-                geradoEm={geradoEm}
-                periodoLabel={periodoLabel}
-                secoes={secoes}
-                loadingMaquinas={loadingMaquinas}
-                totalMaquinas={totalMaquinas}
-                totalOk={totalOk}
-                totalAlerta={totalAlerta}
-                criticasAlta={criticasAlta}
-                integridadeMedia={integridadeMedia}
-                chamados={chamados}
-                chamadosAbertos={chamadosAbertos}
-                chamadosResolvidos={chamadosResolvidos}
-                maquinas={maquinas}
-                pieStatus={pieStatus}
-                barCriticidade={barCriticidade}
-                tendencia={tendencia}
-                radarData={radarData}
-              />
-            )}
+            <RelatorioOperacional
+              relatorio={relatorio}
+              status={relatorioStatus}
+              mensagem={relatorioMensagem}
+              geradoEm={geradoEm}
+              periodoLabel={periodoLabel}
+              secoes={secoes}
+              tipoRelatorio={tipoRelatorio}
+              selectedMaquina={selectedMaquina}
+            />
           </div>
         </section>
       </div>
@@ -1015,10 +1510,6 @@ export default function RelatoriosPage() {
           tr    { page-break-inside: avoid; page-break-after: auto; }
           thead { display: table-header-group; }
           tfoot { display: table-footer-group; }
-
-          .recharts-wrapper svg {
-            overflow: visible !important;
-          }
 
           .border {
             border-color: #D1D5DB !important;
