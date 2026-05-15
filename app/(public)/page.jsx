@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import HeroDashboard from "@/components/hero-dashboard";
+import { getValidAuthSession, isAuthSessionRemembered } from "@/lib/auth-session";
 import { useLandingLanguage } from "@/components/landing/language-provider";
 import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
@@ -87,6 +88,11 @@ export default function HomePage() {
   const router = useRouter();
 
   React.useEffect(() => {
+    if (isAuthSessionRemembered() && getValidAuthSession()) {
+      router.replace("/dashboard");
+      return;
+    }
+
     const url = new URL(window.location.href);
 
     if (url.searchParams.get("login") !== "1") {
