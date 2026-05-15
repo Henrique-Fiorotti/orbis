@@ -20,6 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import { SiteHeader } from "@/components/site-header"
+import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import {
   AlertTriangleIcon,
   EllipsisVerticalIcon,
@@ -60,6 +61,43 @@ const STATUS_ALERTA_LABEL = {
   RESOLVIDO: "Resolvido",
   CANCELADO: "Cancelado",
 }
+
+const ALERTA_TIPO_FILTER_OPTIONS = TIPOS_ALERTA.map((value) => ({
+  value,
+  label: TIPOS_ALERTA_LABEL[value] ?? value,
+}))
+
+const ALERTA_STATUS_FILTER_OPTIONS = Object.entries(STATUS_ALERTA_LABEL).map(([value, label]) => ({
+  value,
+  label,
+}))
+
+const ALERTA_STATUS_SORT_OPTIONS = [
+  { value: "desc", label: "Abertos primeiro", desc: true },
+  { value: "asc", label: "Resolvidos primeiro", desc: false },
+]
+
+const ALERTA_RECENCIA_FILTER_OPTIONS = [
+  { value: "RECENTE", label: "Recente" },
+  { value: "ANTIGO", label: "Antigo" },
+]
+
+const ALERTA_RECENCIA_SORT_OPTIONS = [
+  { value: "desc", label: "Mais recentes", desc: true },
+  { value: "asc", label: "Mais antigos", desc: false },
+]
+
+const ALERTA_OCORRENCIAS_FILTER_OPTIONS = [
+  { value: "UNICO", label: "Unica ocorrencia" },
+  { value: "REPETIDO", label: "Repetidos" },
+]
+
+const ALERTA_OCORRENCIAS_SORT_OPTIONS = [
+  { value: "desc", label: "Maior primeiro", desc: true },
+  { value: "asc", label: "Menor primeiro", desc: false },
+]
+
+const ALERTA_STATUS_ORDER = { CANCELADO: 0, RESOLVIDO: 1, EM_ANDAMENTO: 2, ATIVO: 3 }
 
 const formVazio = {
   tipo: "LIMITE_ULTRAPASSADO",
@@ -143,6 +181,37 @@ function compareAlertaRecente(a, b) {
   return getAlertaTimestamp(b) - getAlertaTimestamp(a)
 }
 
+function getAlertaRecenciaFiltro(alerta) {
+  return alerta?.recencia === "RECENTE" ? "RECENTE" : "ANTIGO"
+}
+
+function getAlertaOcorrenciasFiltro(alerta) {
+  return alerta?.duplicado || Number(alerta?.ocorrencias) > 1 ? "REPETIDO" : "UNICO"
+}
+
+function selectAlertaFilterFn(row, columnId, value) {
+  if (!value) {
+    return true
+  }
+
+  return row.getValue(columnId) === value
+}
+
+function alertaStatusSortFn(rowA, rowB, columnId) {
+  const valueA = ALERTA_STATUS_ORDER[rowA.getValue(columnId)] ?? 0
+  const valueB = ALERTA_STATUS_ORDER[rowB.getValue(columnId)] ?? 0
+
+  return valueA - valueB
+}
+
+function alertaUltimaOcorrenciaSortFn(rowA, rowB) {
+  return getAlertaTimestamp(rowA.original) - getAlertaTimestamp(rowB.original)
+}
+
+function alertaOcorrenciasSortFn(rowA, rowB, columnId) {
+  return Number(rowA.getValue(columnId) ?? 0) - Number(rowB.getValue(columnId) ?? 0)
+}
+
 function StatePanel({ message, tone = "muted" }) {
   return (
     <div
@@ -158,6 +227,8 @@ function StatePanel({ message, tone = "muted" }) {
 }
 
 function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, canStartAlertStatus, canResolveAlertStatus }) {
+  const [sorting, setSorting] = React.useState([])
+  const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const columns = React.useMemo(() => [
     {
@@ -172,12 +243,44 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
         </button>
       ),
     },
-    { accessorKey: "tipo", header: "Tipo", cell: ({ row }) => <TipoAlertaBadge value={row.original.tipo} /> },
-    { accessorKey: "status", header: "Status", cell: ({ row }) => <StatusAlertaBadge value={row.original.status} /> },
+    {
+      accessorKey: "tipo",
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Tipo"
+          filterOptions={ALERTA_TIPO_FILTER_OPTIONS}
+        />
+      ),
+      cell: ({ row }) => <TipoAlertaBadge value={row.original.tipo} />,
+      filterFn: selectAlertaFilterFn,
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Status"
+          filterOptions={ALERTA_STATUS_FILTER_OPTIONS}
+          sortOptions={ALERTA_STATUS_SORT_OPTIONS}
+        />
+      ),
+      cell: ({ row }) => <StatusAlertaBadge value={row.original.status} />,
+      filterFn: selectAlertaFilterFn,
+      sortingFn: alertaStatusSortFn,
+    },
     { accessorKey: "sensorNome", header: "Sensor", cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.sensorNome}</span> },
     {
-      accessorKey: "ultimaOcorrenciaEm",
-      header: "Ultima ocorrencia",
+      id: "recencia",
+      accessorFn: getAlertaRecenciaFiltro,
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Ultima ocorrencia"
+          filterOptions={ALERTA_RECENCIA_FILTER_OPTIONS}
+          sortOptions={ALERTA_RECENCIA_SORT_OPTIONS}
+        />
+      ),
       cell: ({ row }) => (
         <div className="flex min-w-[120px] flex-col gap-1">
           <span className="text-sm text-muted-foreground">{tempoRelativo(getUltimaOcorrencia(row.original))}</span>
@@ -186,15 +289,32 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
           </span>
         </div>
       ),
+      filterFn: selectAlertaFilterFn,
+      sortingFn: alertaUltimaOcorrenciaSortFn,
     },
     {
       accessorKey: "ocorrencias",
-      header: "Ocorrencias",
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Ocorrencias"
+          filterOptions={ALERTA_OCORRENCIAS_FILTER_OPTIONS}
+          sortOptions={ALERTA_OCORRENCIAS_SORT_OPTIONS}
+        />
+      ),
       cell: ({ row }) => (
         <Badge variant="outline" className={`px-1.5 ${row.original.duplicado ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
           {Math.max(Number(row.original.ocorrencias) || 1, 1)}
         </Badge>
       ),
+      filterFn: (row, columnId, value) => {
+        if (!value) {
+          return true
+        }
+
+        return getAlertaOcorrenciasFiltro(row.original) === value
+      },
+      sortingFn: alertaOcorrenciasSortFn,
     },
     {
       id: "actions",
@@ -241,7 +361,9 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
   const table = useReactTable({
     data,
     columns,
-    state: { pagination },
+    state: { sorting, columnFilters, pagination },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -284,7 +406,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
         </Table>
       </div>
       <div className="flex items-center justify-between px-4">
-        <span className="text-sm text-muted-foreground">{data.length} resultado(s)</span>
+        <span className="text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} resultado(s)</span>
         <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
           <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
             <ChevronsLeftIcon className="size-4" />
