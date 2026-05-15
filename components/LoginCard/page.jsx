@@ -9,14 +9,46 @@ import { Eye, EyeOff } from 'lucide-react'
 import { useTheme } from "next-themes";
 import { getValidAuthSession } from "@/lib/auth-session";
 
-function PrivacyModal({ onClose, privacy }) {
+function PrivacyModal({ onClose, privacy, darkMode }) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    const previousPaddingRight = document.body.style.paddingRight
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+
+    document.body.style.overflow = "hidden"
+
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.body.style.paddingRight = previousPaddingRight
+    }
+  }, [])
+
+  const modalStyles = {
+    overlayBg: darkMode ? "rgba(0,0,0,0.62)" : "rgba(15,23,42,0.28)",
+    cardBg: darkMode ? "#0f0f12" : "#ffffff",
+    border: darkMode ? "#27272a" : "#e4e4e7",
+    title: darkMode ? "#e4e4e7" : "#18181b",
+    meta: "#71717a",
+    text: darkMode ? "#a1a1aa" : "#52525b",
+    buttonBg: darkMode ? "#18181b" : "#f4f4f5",
+    buttonHoverBg: darkMode ? "#27272a" : "#e4e4e7",
+    buttonText: darkMode ? "#a1a1aa" : "#52525b",
+    shadow: darkMode ? "0 24px 80px rgba(0,0,0,0.5)" : "0 24px 70px rgba(15,23,42,0.2)",
+    scrollbar: darkMode ? "#27272a transparent" : "#d4d4d8 transparent",
+  }
+
   return (
     <div
       onClick={onClose}
+      onWheel={(event) => event.stopPropagation()}
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.6)",
+        background: modalStyles.overlayBg,
         backdropFilter: "blur(4px)",
         display: "flex",
         alignItems: "center",
@@ -29,34 +61,34 @@ function PrivacyModal({ onClose, privacy }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#0f0f12",
-          border: "1px solid #27272a",
+          background: modalStyles.cardBg,
+          border: `1px solid ${modalStyles.border}`,
           borderRadius: "20px",
           width: "100%",
           maxWidth: "560px",
           maxHeight: "78vh",
           display: "flex",
           flexDirection: "column",
-          boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
+          boxShadow: modalStyles.shadow,
           animation: "slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)",
           overflow: "hidden",
         }}
       >
-        <div style={{ padding: "24px 28px 20px", borderBottom: "1px solid #27272a", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div style={{ padding: "24px 28px 20px", borderBottom: `1px solid ${modalStyles.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4e4e7" }}>{privacy.title}</h3>
-            <p style={{ margin: "4px 0 0", fontSize: "0.75rem", color: "#52525b" }}>{privacy.lastUpdated}</p>
+            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: modalStyles.title }}>{privacy.title}</h3>
+            <p style={{ margin: "4px 0 0", fontSize: "0.75rem", color: modalStyles.meta }}>{privacy.lastUpdated}</p>
           </div>
           <button
             onClick={onClose}
             aria-label={privacy.closeLabel}
-            style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "8px", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#71717a", fontSize: "1rem", transition: "background 0.2s", flexShrink: 0 }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#27272a")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#18181b")}
+            style={{ background: modalStyles.buttonBg, border: `1px solid ${modalStyles.border}`, borderRadius: "8px", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: modalStyles.buttonText, fontSize: "1rem", transition: "background 0.2s", flexShrink: 0 }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = modalStyles.buttonHoverBg)}
+            onMouseLeave={(e) => (e.currentTarget.style.background = modalStyles.buttonBg)}
           >✕</button>
         </div>
 
-        <div style={{ overflowY: "auto", padding: "24px 28px 28px", fontSize: "0.85rem", color: "#a1a1aa", lineHeight: 1.75, scrollbarWidth: "thin", scrollbarColor: "#27272a transparent" }}>
+        <div style={{ minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", padding: "24px 28px 28px", fontSize: "0.85rem", color: modalStyles.text, lineHeight: 1.75, scrollbarWidth: "thin", scrollbarColor: modalStyles.scrollbar }}>
           {privacy.sections.map((section, i) => (
             <div key={i} style={{ marginBottom: "20px" }}>
               <p style={{ fontWeight: 600, color: "#8C52ff", margin: "0 0 6px", fontSize: "0.875rem" }}>{section.title}</p>
@@ -65,7 +97,7 @@ function PrivacyModal({ onClose, privacy }) {
           ))}
         </div>
 
-        <div style={{ padding: "16px 28px", borderTop: "1px solid #27272a", flexShrink: 0 }}>
+        <div style={{ padding: "16px 28px", borderTop: `1px solid ${modalStyles.border}`, flexShrink: 0 }}>
           <button
             onClick={onClose}
             style={{ width: "100%", background: "#8C52ff", color: "#fff", border: "none", borderRadius: "10px", padding: "12px", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", transition: "opacity 0.2s ease" }}
@@ -372,7 +404,7 @@ export default function LoginCard({isDark}) {
         </p>
       </div>
 
-      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} privacy={login.privacy} />}
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} privacy={login.privacy} darkMode={darkMode} />}
     </>
   );
 }
