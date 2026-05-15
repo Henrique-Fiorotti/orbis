@@ -12,7 +12,15 @@ import {
 } from "@/components/ui/sidebar"
 import { CirclePlusIcon } from "lucide-react"
 
-export function NavMain({ items }) {
+function isSidebarItemActive(pathname, url) {
+  if (url === "/dashboard") {
+    return pathname === "/dashboard"
+  }
+
+  return pathname === url || pathname?.startsWith(`${url}/`)
+}
+
+export function NavMain({ items, pathname }) {
   const permissions = useDashboardPermissions()
   const { isMobile, setOpenMobile } = useSidebar()
 
@@ -42,19 +50,24 @@ export function NavMain({ items }) {
           </SidebarMenu>
         ) : null}
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild
-                tooltip={item.title}
-              >
-                <Link href={item.url} onClick={closeMobileSidebar}>
-                  {item.icon}
-                  <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const active = isSidebarItemActive(pathname, item.url)
+
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={item.title}
+                  isActive={active}
+                >
+                  <Link href={item.url} onClick={closeMobileSidebar} aria-current={active ? "page" : undefined}>
+                    {item.icon}
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

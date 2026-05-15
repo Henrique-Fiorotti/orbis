@@ -19,8 +19,13 @@ import {
 } from "@/components/ui/sidebar"
 import { MoreHorizontalIcon, FolderIcon, ShareIcon, Trash2Icon, FileTextIcon } from "lucide-react"
 
+function isSidebarItemActive(pathname, url) {
+  return pathname === url || pathname?.startsWith(`${url}/`)
+}
+
 export function NavDocuments({
-  items
+  items,
+  pathname,
 }) {
   const { isMobile, setOpenMobile } = useSidebar()
 
@@ -34,14 +39,22 @@ export function NavDocuments({
     <SidebarGroup>
       <SidebarGroupLabel>Documentos</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild tooltip={item.name}>
-              <Link className="no-underline! text-black dark:text-white" href={item.url} onClick={closeMobileSidebar}>
-                {item.icon}
-                <span>{item.name}</span>
-              </Link>
-            </SidebarMenuButton>
+        {items.map((item) => {
+          const active = isSidebarItemActive(pathname, item.url)
+
+          return (
+            <SidebarMenuItem key={item.name}>
+              <SidebarMenuButton asChild tooltip={item.name} isActive={active}>
+                <Link
+                  className="no-underline! text-black dark:text-white"
+                  href={item.url}
+                  onClick={closeMobileSidebar}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {item.icon}
+                  <span>{item.name}</span>
+                </Link>
+              </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuAction showOnHover className="rounded-sm data-[state=open]:bg-accent">
@@ -68,12 +81,23 @@ export function NavDocuments({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </SidebarMenuItem>
-        ))}
+            </SidebarMenuItem>
+          )
+        })}
         <SidebarMenuItem>
-          <SidebarMenuButton asChild tooltip="Relatório" className="text-sidebar-foreground/70">
-            <Link className="no-underline! text-black dark:text-white" href="/dashboard/relatorios" onClick={closeMobileSidebar}>
-              <FileTextIcon className="text-sidebar-foreground/70" />
+          <SidebarMenuButton
+            asChild
+            tooltip="Relatório"
+            className="text-sidebar-foreground/70"
+            isActive={isSidebarItemActive(pathname, "/dashboard/relatorios")}
+          >
+            <Link
+              className={`no-underline! ${isSidebarItemActive(pathname, "/dashboard/relatorios") ? "text-[#5F18EA]! dark:text-[#C5A3FF]!" : "text-black dark:text-white"}`}
+              href="/dashboard/relatorios"
+              onClick={closeMobileSidebar}
+              aria-current={isSidebarItemActive(pathname, "/dashboard/relatorios") ? "page" : undefined}
+            >
+              <FileTextIcon className={isSidebarItemActive(pathname, "/dashboard/relatorios") ? "text-[#5F18EA]! dark:text-[#C5A3FF]!" : "text-sidebar-foreground/70"} />
               <span>Relatório</span>
             </Link>
           </SidebarMenuButton>

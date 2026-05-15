@@ -179,13 +179,13 @@ export function AppSidebar({ ...props }) {
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
-          <NavMain items={navMainItems} />
-          <NavDocuments items={data.documents} />
+          <NavMain items={navMainItems} pathname={pathname} />
+          <NavDocuments items={data.documents} pathname={pathname} />
           <NavSecondary items={navSecondaryItems} className="mt-auto dark:text-white" />
         </SidebarContent>
 
         <SidebarFooter>
-          <NavUser user={userData} />
+          <NavUser user={userData} pathname={pathname} />
         </SidebarFooter>
       </Sidebar>
       <DashboardSettingsDialog  open={settingsOpen} onOpenChange={setSettingsOpen} />

@@ -24,9 +24,10 @@ import {
 import { clearAuthSession } from "@/lib/auth-session"
 import { EllipsisVerticalIcon, CircleUserRoundIcon, LogOutIcon } from "lucide-react"
 
-export function NavUser({user}){
+export function NavUser({user, pathname}){
   const { isMobile, setOpenMobile } = useSidebar()
   const router = useRouter()
+  const profileActive = pathname === "/dashboard/perfil"
 
   function closeMobileSidebar() {
     if (isMobile) {
@@ -49,6 +50,7 @@ async function handleLogout() {
             <SidebarMenuButton
               size="xl"
               tooltip={user.name}
+              isActive={profileActive}
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:bg-gray-200 dark:data-[state=open]:bg-gray-700">
               <Avatar className="size-13 rounded-lg group-data-[collapsible=icon]:size-4">
                 <AvatarImage src={user.avatar} alt={user.name} />
@@ -84,7 +86,7 @@ async function handleLogout() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <Link href="/dashboard/perfil" onClick={closeMobileSidebar}>
+              <Link href="/dashboard/perfil" onClick={closeMobileSidebar} aria-current={profileActive ? "page" : undefined}>
                 <DropdownMenuItem className={"cursor-pointer"}>
                   <CircleUserRoundIcon />
                   Perfil

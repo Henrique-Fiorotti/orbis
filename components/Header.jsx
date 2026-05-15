@@ -7,21 +7,55 @@ import { Globe2Icon, MoonIcon, SunIcon, MenuIcon, XIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useLandingLanguage } from '@/components/landing/language-provider'
 
+const LANDING_HEADER_SECTIONS = [
+  { id: 'inicio', href: '/#inicio' },
+  { id: 'sobre', href: '/#sobre' },
+  { id: 'contact', href: '/#contact' },
+]
+
+function getActiveLandingHref() {
+  const activationLine = Math.min(window.innerHeight * 0.42, 420)
+  let activeHref = '/#inicio'
+
+  for (const { id, href } of LANDING_HEADER_SECTIONS) {
+    const section = document.getElementById(id)
+
+    if (!section) continue
+
+    const rect = section.getBoundingClientRect()
+
+    if (rect.top <= activationLine && rect.bottom > 0) {
+      activeHref = href
+    }
+  }
+
+  return activeHref
+}
+
 export default function Header() {
   const { resolvedTheme, setTheme } = useTheme()
   const { copy, languages, locale, setLocale } = useLandingLanguage()
   const [mounted, setMounted] = React.useState(false)
   const [menuOpen, setMenuOpen] = React.useState(false)
   const [visible, setVisible] = React.useState(true)
+  const [activeHref, setActiveHref] = React.useState('/#inicio')
   const lastScrollY = React.useRef(0)
   const visibleRef = React.useRef(true)
-  const frameRef = React.useRef(0)
+  const activeHrefRef = React.useRef('/#inicio')
 
   React.useEffect(() => setMounted(true), [])
 
   React.useEffect(() => {
-    const updateVisibility = () => {
-      frameRef.current = 0
+    const updateActiveHref = () => {
+      const nextActiveHref = getActiveLandingHref()
+
+      if (activeHrefRef.current !== nextActiveHref) {
+        activeHrefRef.current = nextActiveHref
+        setActiveHref(nextActiveHref)
+      }
+    }
+
+    const updateHeaderState = () => {
       const currentY = window.scrollY
       let nextVisible = true
 
@@ -35,29 +69,29 @@ export default function Header() {
 
       lastScrollY.current = currentY
 
+      updateActiveHref()
+
       if (visibleRef.current !== nextVisible) {
         visibleRef.current = nextVisible
         setVisible(nextVisible)
       }
     }
 
-    const handleScroll = () => {
-      if (frameRef.current) return
-      frameRef.current = requestAnimationFrame(updateVisibility)
-    }
+    lastScrollY.current = window.scrollY
+    updateActiveHref()
 
-    window.addEventListener('scroll', handleScroll, { passive: true }) 
+    window.addEventListener('scroll', updateHeaderState, { passive: true })
+    window.addEventListener('resize', updateActiveHref)
     return () => {
-      window.removeEventListener('scroll', handleScroll)
-
-      if (frameRef.current) {
-        cancelAnimationFrame(frameRef.current)
-      }
+      window.removeEventListener('scroll', updateHeaderState)
+      window.removeEventListener('resize', updateActiveHref)
     }
   }, [])
 
   const isDark = resolvedTheme === 'dark'
   const navLinks = copy.header.nav
+  const activeNavTextClass = 'text-[#5E17EB] dark:text-[#5E17EB]'
+  const defaultNavTextClass = 'text-black/55 dark:text-white/50'
 
   const scrollToLandingHash = React.useCallback((href) => {
     if (typeof window === 'undefined') return false
@@ -84,6 +118,9 @@ export default function Header() {
       '',
       `${url.pathname}${search}${url.hash}`
     )
+    const nextActiveHref = `${url.pathname}${url.hash}`
+    activeHrefRef.current = nextActiveHref
+    setActiveHref(nextActiveHref)
     visibleRef.current = true
     setVisible(true)
     target.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -108,7 +145,7 @@ export default function Header() {
       <header
         className={`fixed top-0 left-0 right-0 z-50 h-[60px] grid grid-cols-[1fr_auto_1fr] items-center px-[5%] gap-6 bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08] transition-transform duration-300 ${
           visible ? 'translate-y-0' : '-translate-y-full'
-        }`} 
+        }`}
       >
         <Link href="/" aria-label="Orbis" className='w-fit'>
           <Image
@@ -121,21 +158,25 @@ export default function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-0.5 bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.08] dark:border-white/[0.07] rounded-[10px] p-1 ms-4">
-          {navLinks.map(({ label, href }) => (
-            <Link
-              key={href}
-              href={href}
-              prefetch={false}
-              onClick={(event) => handleNavClick(event, href)}
-              className="text-[13.5px] text-black/55 dark:text-white/50 px-3.5 py-1.5 rounded-[7px] border border-transparent hover:bg-white dark:hover:bg-white/[0.08] hover:border-black/[0.08] dark:hover:border-white/[0.07] hover:text-[#5e17eb] transition-all duration-150"
-            >
-              {label}
-            </Link>
-          ))}
+          {navLinks.map(({ label, href }) => {
+            const active = activeHref === href
+
+            return (
+              <Link
+                key={href}
+                href={href}
+                prefetch={false}
+                onClick={(event) => handleNavClick(event, href)}
+                className={`inline-flex h-8 w-[92px] items-center justify-center rounded-[7px] border border-transparent px-3 text-center text-[13.5px] ${active ? activeNavTextClass : defaultNavTextClass} hover:bg-white hover:text-[#5e17eb] dark:hover:bg-white/[0.08] hover:border-black/[0.08] dark:hover:border-white/[0.07] transition-all duration-150`}
+              >
+                {label}
+              </Link>
+            )
+          })}
         </nav>
 
         <div className="flex items-center gap-2 justify-end">
-          <div className="hidden sm:flex h-9 items-center gap-1 rounded-[10px] border border-black/[0.08] px-2 text-black/70 transition-all duration-150 hover:border-[#5e17eb]/20 hover:text-[#5e17eb] dark:border-white/[0.08] dark:text-white/70">
+          <div className="hidden h-9 w-[134px] items-center gap-1 rounded-[10px] border border-black/[0.08] px-2 text-black/70 transition-all duration-150 hover:border-[#5e17eb]/20 hover:text-[#5e17eb] dark:border-white/[0.08] dark:text-white/70 sm:flex">
             <Globe2Icon size={15} aria-hidden="true" />
             <label htmlFor="landing-language-select" className="sr-only">
               {copy.header.languageSelectLabel}
@@ -145,7 +186,7 @@ export default function Header() {
               value={locale}
               onChange={handleLanguageChange}
               aria-label={copy.header.languageSelectLabel}
-              className="h-8 cursor-pointer rounded-[8px] bg-white text-[12.5px] font-medium text-black outline-none transition-colors dark:bg-[#09090b] dark:text-white"
+              className="h-8 min-w-0 flex-1 cursor-pointer rounded-[8px] bg-white text-[12.5px] font-medium text-black outline-none transition-colors dark:bg-[#09090b] dark:text-white"
             >
               {languages.map((language) => (
                 <option
@@ -163,7 +204,7 @@ export default function Header() {
           <button
             onClick={() => setTheme(isDark ? 'light' : 'dark')}
             aria-label={mounted ? (isDark ? copy.header.theme.light : copy.header.theme.dark) : copy.header.theme.toggle}
-            className="cursor-pointer w-9 h-9 flex items-center justify-center rounded-[10px] border border-black/[0.08] dark:border-white/[0.08] text-black/70 dark:text-white/70 hover:bg-[#5e17eb]/[0.08] hover:border-[#5e17eb]/20 hover:text-[#5e17eb] transition-all duration-150"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-[10px] border border-black/[0.08] text-black/70 transition-all duration-150 hover:border-[#5e17eb]/20 hover:bg-[#5e17eb]/[0.08] hover:text-[#5e17eb] dark:border-white/[0.08] dark:text-white/70"
           >
             {mounted ? (
               isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />
@@ -175,7 +216,7 @@ export default function Header() {
           <Link
             href="/login"
             prefetch={false}
-            className="hidden md:flex items-center text-[13.5px] px-4 py-[7px] rounded-[10px] border border-[#5e17eb] text-[#5e17eb] hover:bg-[#5e17eb] hover:text-gray-200 dark:bg-[#5e17eb]/30 dark:hover:bg-[#5e17eb] dark:text-gray-300 transition-all duration-150"
+            className="hidden h-9 w-[92px] items-center justify-center rounded-[10px] border border-[#5e17eb] px-4 text-center text-[13.5px] text-[#5e17eb] transition-all duration-150 hover:bg-[#5e17eb] hover:text-gray-200 dark:bg-[#5e17eb]/30 dark:text-gray-300 dark:hover:bg-[#5e17eb] md:flex"
           >
             {copy.header.login}
           </Link>
@@ -185,7 +226,7 @@ export default function Header() {
             aria-label={menuOpen ? copy.header.menu.close : copy.header.menu.open}
             aria-expanded={menuOpen}
             aria-controls="site-mobile-nav"
-            className="md:hidden w-9 h-9 flex items-center justify-center rounded-[10px] border border-black/[0.08] dark:border-white/[0.08] text-black/70 dark:text-white/70 transition-all duration-150"
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/[0.08] text-black/70 transition-all duration-150 dark:border-white/[0.08] dark:text-white/70 md:hidden"
           >
             {menuOpen ? <XIcon size={16} /> : <MenuIcon size={16} />}
           </button>
@@ -197,17 +238,21 @@ export default function Header() {
           id="site-mobile-nav"
           className="fixed top-[60px] left-0 right-0 z-40 flex flex-col gap-1 px-[5%] pt-3 pb-5 bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08] md:hidden"
         >
-          {navLinks.map(({ label, href }) => (
-            <Link
-              key={href}
-              href={href}
-              prefetch={false}
-              onClick={(event) => handleNavClick(event, href)}
-              className="text-[18px] text-black dark:text-white px-3.5 py-2.5 rounded-[10px] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] hover:text-[#5e17eb] transition-all duration-150"
-            >
-              {label}
-            </Link>
-          ))}
+          {navLinks.map(({ label, href }) => {
+            const active = activeHref === href
+
+            return (
+              <Link
+                key={href}
+                href={href}
+                prefetch={false}
+                onClick={(event) => handleNavClick(event, href)}
+                className={`rounded-[10px] px-3.5 py-2.5 text-[18px] ${active ? activeNavTextClass : 'text-black dark:text-white'} transition-all duration-150 hover:bg-black/[0.04] hover:text-[#5e17eb] dark:hover:bg-white/[0.05]`}
+              >
+                {label}
+              </Link>
+            )
+          })}
           <div className="mt-2 flex items-center justify-between gap-3 rounded-[10px] border border-black/[0.08] px-3.5 py-2.5 dark:border-white/[0.08]">
             <label
               htmlFor="landing-mobile-language-select"
