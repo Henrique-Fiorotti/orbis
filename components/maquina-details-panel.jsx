@@ -189,14 +189,14 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  aria-label="Como a estabilidade da maquina e calculada"
+                  aria-label="Como a estabilidade da máquina é calculada"
                   className="flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <CircleHelpIcon className="size-4" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" sideOffset={6} className="max-w-64 text-left leading-relaxed">
-                O score de estabilidade da maquina considera a condição operacional consolidada, incluindo integridade e comportamento das leituras dos sensores. Quanto mais perto de 100%, mais estável ela está.
+                O score de estabilidade da máquina considera a condição operacional consolidada, incluindo integridade e comportamento das leituras dos sensores. Quanto mais perto de 100%, mais estável ela está.
               </TooltipContent>
             </Tooltip>
           </div>
@@ -207,7 +207,7 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
           <span className="font-medium">{totalSensores}</span>
         </div>
         <div className="col-span-2 flex flex-col gap-1">
-          <Label>Ultimo sinal</Label>
+          <Label>Último sinal</Label>
           <span className="font-medium">
             {ultimaLeituraExibicao ? tempoRelativo(ultimaLeituraExibicao) : "Sem leitura"}
           </span>
@@ -219,7 +219,7 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
       <div className="flex flex-col gap-3">
         <Label>Sensores sincronizados</Label>
         {sensoresDaMaquina.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nenhum sensor vinculado foi retornado pela API para esta maquina.</p>
+          <p className="text-xs text-muted-foreground">Nenhum sensor vinculado foi retornado pela API para esta máquina.</p>
         ) : (
           sensoresDaMaquina.map((sensor, index) => (
             <div key={sensor.id ?? `${sensor.nome}-${index}`} className="rounded-lg border p-3">
@@ -237,11 +237,11 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
                   current={sensor.temperatura?.valorAtual}
                   ideal={sensor.idealTemperatura}
                   limit={sensor.limiteTemperatura ?? sensor.temperatura?.limiteMax}
-                  suffix=" C"
+                  suffix=" °C"
                 />
                 <MetricSnapshot
                   icon={ActivityIcon}
-                  label="Vibracao"
+                  label="Vibração"
                   current={sensor.vibracao?.valorAtual}
                   ideal={sensor.idealVibracao}
                   limit={sensor.limiteVibracao ?? sensor.vibracao?.limiteMax}

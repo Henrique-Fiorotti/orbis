@@ -27,7 +27,7 @@ export function AdminsProvider({ children }) {
       setTotalPaginas(0)
       setPaginaAtual(1)
       setStatus("error")
-      setMensagem("Faca login para carregar os administradores.")
+      setMensagem("Faça login para carregar os administradores.")
       return
     }
 
@@ -69,7 +69,7 @@ export function AdminsProvider({ children }) {
       }
 
       setStatus("error")
-      setMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar os administradores.")
+      setMensagem(error instanceof Error ? error.message : "Não foi possível carregar os administradores.")
       setAdmins((current) => (silent ? current : []))
       throw error
     }

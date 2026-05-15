@@ -132,7 +132,7 @@ function getTableColumns(sensores, sensorError, canManageMaquinas, actions) {
       header: ({ column }) => (
         <TableColumnHeaderMenu
           column={column}
-          label="Importancia"
+          label="Importância"
           filterOptions={IMPORTANCIA_FILTER_OPTIONS}
           sortOptions={IMPORTANCIA_SORT_OPTIONS}
         />
@@ -515,7 +515,7 @@ function MachineDetailsDrawer({
           <MaquinaDetailsPanel maquina={item} sensores={sensores} sensorError={sensorError} />
         </div>
         <DrawerFooter>
-          <Button className="cursor-pointer" onClick={() => onViewAlerts?.(item)}>Ver alertas desta maquina</Button>
+          <Button className="cursor-pointer" onClick={() => onViewAlerts?.(item)}>Ver alertas desta máquina</Button>
           <DrawerClose asChild><Button variant="outline">Fechar</Button></DrawerClose>
         </DrawerFooter>
       </DrawerContent>

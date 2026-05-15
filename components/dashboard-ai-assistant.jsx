@@ -33,8 +33,8 @@ const MAX_QUESTION_LENGTH = 500
 const PAGE_CONTEXTS = [
   {
     path: "/dashboard/maquinas",
-    label: "Maquinas",
-    description: "gestão e leitura operacional das maquinas cadastradas",
+    label: "Máquinas",
+    description: "gestão e leitura operacional das máquinas cadastradas",
   },
   {
     path: "/dashboard/sensores",
@@ -48,12 +48,12 @@ const PAGE_CONTEXTS = [
   },
   {
     path: "/dashboard/tecnicos",
-    label: "Tecnicos",
+    label: "Técnicos",
     description: "equipe técnica, disponibilidade e cadastro de usuários técnicos",
   },
   {
     path: "/dashboard/relatorios",
-    label: "Relatorios",
+    label: "Relatórios",
     description: "análises, gráficos e consolidação de indicadores",
   },
   {
@@ -86,7 +86,7 @@ const SUGGESTED_PROMPTS = [
   },
   {
     icon: FileTextIcon,
-    label: "Planejar proximos passos",
+    label: "Planejar próximos passos",
     prompt: "Monte uma lista curta de próximos passos para manter a operação estável hoje.",
   },
 ]
@@ -117,7 +117,7 @@ function getErrorMessage(error) {
     return error.message
   }
 
-  return "Nao foi possivel consultar a IA agora."
+  return "Não foi possível consultar a IA agora."
 }
 
 function getCurrentPageContext(pathname) {
@@ -140,7 +140,7 @@ function buildPromptPayload(question, contexts) {
   const lines = []
 
   if (contexts.length > 0) {
-    lines.push(`Contexto de pagina: ${contexts.map((context) => context.text).join(" | ")}`)
+    lines.push(`Contexto de página: ${contexts.map((context) => context.text).join(" | ")}`)
   }
 
   lines.push(`Pergunta: ${question}`)
@@ -307,14 +307,14 @@ export function DashboardAiAssistant() {
     }
 
     if (payloadQuestion.length > MAX_QUESTION_LENGTH) {
-      setInlineError("A pergunta com contexto deve ter no maximo 500 caracteres.")
+      setInlineError("A pergunta com contexto deve ter no máximo 500 caracteres.")
       return
     }
 
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      setInlineError("Faca login para consultar a IA.")
+      setInlineError("Faça login para consultar a IA.")
       return
     }
 
@@ -399,7 +399,7 @@ export function DashboardAiAssistant() {
 
     setPageContexts((current) => {
       if (current.some((item) => item.id === context.id)) {
-        setInlineError("O contexto desta pagina ja foi adicionado.")
+        setInlineError("O contexto desta página já foi adicionado.")
         return current
       }
 
@@ -511,7 +511,7 @@ export function DashboardAiAssistant() {
                 <DropdownMenuContent align="start" side="top" className="w-56">
                   <DropdownMenuItem onSelect={addCurrentPageContext}>
                     <FileTextIcon className="size-4" />
-                    Contexto da pagina
+                    Contexto da página
                   </DropdownMenuItem>
                   {pageContexts.length > 0 ? (
                     <>
@@ -540,7 +540,7 @@ export function DashboardAiAssistant() {
                   onKeyDown={handleKeyDown}
                   maxLength={MAX_QUESTION_LENGTH}
                   rows={2}
-                  placeholder="Pergunte sobre maquinas, sensores ou alertas..."
+                  placeholder="Pergunte sobre máquinas, sensores ou alertas..."
                   className="max-h-28 min-h-12 w-full resize-none rounded-[8px] border bg-background px-3 py-2 text-sm leading-relaxed outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={loading}
                   aria-label="Pergunta para a IA"

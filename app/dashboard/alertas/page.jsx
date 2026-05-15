@@ -49,14 +49,14 @@ import { tempoRelativo } from "@/lib/utils"
 const TIPOS_ALERTA = ["LIMITE_ULTRAPASSADO", "TENDENCIA_CURTA", "TENDENCIA_LONGA", "DEGRADACAO_ACELERADA", "INSTABILIDADE"]
 const TIPOS_ALERTA_LABEL = {
   LIMITE_ULTRAPASSADO: "Limite Ultrapassado",
-  TENDENCIA_CURTA: "Tendencia Curta",
-  TENDENCIA_LONGA: "Tendencia Longa",
-  DEGRADACAO_ACELERADA: "Degradacao Acelerada",
+  TENDENCIA_CURTA: "Tendência Curta",
+  TENDENCIA_LONGA: "Tendência Longa",
+  DEGRADACAO_ACELERADA: "Degradação Acelerada",
   INSTABILIDADE: "Instabilidade",
 }
 
 const STATUS_ALERTA_LABEL = {
-  ATIVO: "Disponivel",
+  ATIVO: "Disponível",
   EM_ANDAMENTO: "Em andamento",
   RESOLVIDO: "Resolvido",
   CANCELADO: "Cancelado",
@@ -88,7 +88,7 @@ const ALERTA_RECENCIA_SORT_OPTIONS = [
 ]
 
 const ALERTA_OCORRENCIAS_FILTER_OPTIONS = [
-  { value: "UNICO", label: "Unica ocorrencia" },
+  { value: "UNICO", label: "Única ocorrência" },
   { value: "REPETIDO", label: "Repetidos" },
 ]
 
@@ -233,7 +233,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
   const columns = React.useMemo(() => [
     {
       accessorKey: "maquinaNome",
-      header: "Maquina",
+      header: "Máquina",
       cell: ({ row }) => (
         <button
           onClick={() => onVer(row.original)}
@@ -276,7 +276,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
       header: ({ column }) => (
         <TableColumnHeaderMenu
           column={column}
-          label="Ultima ocorrencia"
+          label="Última ocorrência"
           filterOptions={ALERTA_RECENCIA_FILTER_OPTIONS}
           sortOptions={ALERTA_RECENCIA_SORT_OPTIONS}
         />
@@ -297,7 +297,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
       header: ({ column }) => (
         <TableColumnHeaderMenu
           column={column}
-          label="Ocorrencias"
+          label="Ocorrências"
           filterOptions={ALERTA_OCORRENCIAS_FILTER_OPTIONS}
           sortOptions={ALERTA_OCORRENCIAS_SORT_OPTIONS}
         />
@@ -414,7 +414,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
           <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
             <ChevronLeftIcon className="size-4" />
           </Button>
-          <span className="text-sm">Pag. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
+            <span className="text-sm">Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
           <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
             <ChevronRightIcon className="size-4" />
           </Button>
@@ -527,7 +527,7 @@ export default function AlertasPage() {
       setSheetAberto(false)
       setAlertaCancelar(null)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel cancelar o chamado.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível cancelar o chamado.")
     }
   }
 
@@ -541,13 +541,13 @@ export default function AlertasPage() {
 
       toast.success(`Chamado ${labels[status] ?? "atualizado"}.`)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel atualizar o chamado.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível atualizar o chamado.")
     }
   }
 
   async function salvar() {
     if (!form.maquinaNome.trim() || !form.sensorNome.trim() || !form.mensagem.trim()) {
-      toast.error("Preencha todos os campos obrigatorios.")
+      toast.error("Preencha todos os campos obrigatórios.")
       return
     }
 
@@ -560,7 +560,7 @@ export default function AlertasPage() {
       toast.success("Chamado registrado com sucesso!")
       setSheetAberto(false)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel registrar o chamado.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível registrar o chamado.")
     }
   }
 
@@ -649,13 +649,13 @@ export default function AlertasPage() {
                 <ShieldAlertIcon className="size-3.5" />
                 {altaSeveridadeRecentes} de alta severidade
               </span>
-              <span className="text-xs text-muted-foreground">Alertas abertos atualizados nos ultimos 30 minutos.</span>
+              <span className="text-xs text-muted-foreground">Alertas abertos atualizados nos últimos 30 minutos.</span>
             </div>
           </div>
 
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Aguardando ha mais tempo</span>
+              <span className="text-sm font-medium text-muted-foreground">Aguardando há mais tempo</span>
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${alertasAntigos.length > 0 ? "border border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : "border border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"}`}>
                 {alertasAntigos.length > 0 ? "Priorizar" : "Zerado"}
               </span>
@@ -668,13 +668,13 @@ export default function AlertasPage() {
                 <AlertTriangleIcon className="size-3.5" />
                 {alertaAbertoMaisAntigo ? `Mais antigo: ${tempoRelativo(getUltimaOcorrencia(alertaAbertoMaisAntigo))}` : "Nenhum alerta antigo"}
               </span>
-              <span className="text-xs text-muted-foreground">Alertas abertos sem atualizacao recente.</span>
+              <span className="text-xs text-muted-foreground">Alertas abertos sem atualização recente.</span>
             </div>
           </div>
 
           <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Ocorrencias agrupadas</span>
+              <span className="text-sm font-medium text-muted-foreground">Ocorrências agrupadas</span>
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Duplicados</span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
@@ -683,22 +683,22 @@ export default function AlertasPage() {
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="flex items-center gap-1 text-orange-700 dark:text-orange-300">
                 <AlertTriangleIcon className="size-3.5" />
-                {totalOcorrenciasAgrupadas} ocorrencias no total
+                {totalOcorrenciasAgrupadas} ocorrências no total
               </span>
-              <span className="text-xs text-muted-foreground">Mesmo sensor e tipo permanecem em um unico chamado aberto.</span>
+              <span className="text-xs text-muted-foreground">Mesmo sensor e tipo permanecem em um único chamado aberto.</span>
             </div>
           </div>
         </div>
 
         <div className="relative w-full max-w-sm">
           <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
-          <Input placeholder="Buscar por maquina, sensor, tipo ou status..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-8 dark:border-gray-600" />
+          <Input placeholder="Buscar por máquina, sensor, tipo ou status..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-8 dark:border-gray-600" />
         </div>
 
         {loadingInicial ? (
           <StatePanel message="Sincronizando chamados gerados pelos sensores..." />
         ) : errorSemDados ? (
-          <StatePanel message={mensagem || "Nao foi possivel carregar os chamados."} tone="error" />
+          <StatePanel message={mensagem || "Não foi possível carregar os chamados."} tone="error" />
         ) : (
           <Tabs defaultValue="recentes" className="min-w-0 w-full flex-col gap-4">
             <TabsList className="w-full max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -734,7 +734,7 @@ export default function AlertasPage() {
           <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
             <SheetHeader>
               <SheetTitle>{modoSheet === "criar" ? "Registrar chamado manual" : "Detalhes do chamado"}</SheetTitle>
-              <SheetDescription>{modoSheet === "criar" ? "Registre um chamado manualmente para acompanhamento." : "Informacoes completas do chamado."}</SheetDescription>
+              <SheetDescription>{modoSheet === "criar" ? "Registre um chamado manualmente para acompanhamento." : "Informações completas do chamado."}</SheetDescription>
             </SheetHeader>
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
               {modoSheet === "ver" && alertaSelecionado ? (
@@ -756,7 +756,7 @@ export default function AlertasPage() {
                   <Separator />
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Maquina</Label>
+                      <Label className="text-xs text-muted-foreground">Máquina</Label>
                       <span className="text-sm font-medium">{alertaSelecionado.maquinaNome}</span>
                     </div>
                     <div className="flex flex-col gap-1">
@@ -766,7 +766,7 @@ export default function AlertasPage() {
                   </div>
                   {alertaSelecionado.tecnicoNome ? (
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Tecnico responsavel</Label>
+                      <Label className="text-xs text-muted-foreground">Técnico responsável</Label>
                       <span className="text-sm font-medium">{alertaSelecionado.tecnicoNome}</span>
                     </div>
                   ) : null}
@@ -780,11 +780,11 @@ export default function AlertasPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Ultima ocorrencia</Label>
+                      <Label className="text-xs text-muted-foreground">Última ocorrência</Label>
                       <span className="text-sm">{tempoRelativo(getUltimaOcorrencia(alertaSelecionado))}</span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Ocorrencias</Label>
+                      <Label className="text-xs text-muted-foreground">Ocorrências</Label>
                       <span className="text-sm font-semibold">{Math.max(Number(alertaSelecionado.ocorrencias) || 1, 1)}</span>
                     </div>
                   </div>
@@ -829,14 +829,14 @@ export default function AlertasPage() {
                       <SelectContent>
                         <SelectGroup>
                           <SelectItem value="BAIXA">Baixa</SelectItem>
-                          <SelectItem value="MEDIA">Media</SelectItem>
+                          <SelectItem value="MEDIA">Média</SelectItem>
                           <SelectItem value="ALTA">Alta</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="maquinaNome">Nome da maquina <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="maquinaNome">Nome da máquina <span className="text-red-500">*</span></Label>
                     <Input id="maquinaNome" placeholder="Ex: Motor Esteira A1" value={form.maquinaNome} onChange={(e) => setForm((current) => ({ ...current, maquinaNome: e.target.value }))} />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -864,7 +864,7 @@ export default function AlertasPage() {
             <DialogHeader>
               <DialogTitle>Confirmar cancelamento</DialogTitle>
               <DialogDescription>
-                Tem certeza que deseja cancelar o chamado de <strong>{alertaCancelar?.maquinaNome}</strong>? O registro sera mantido como cancelado.
+                Tem certeza que deseja cancelar o chamado de <strong>{alertaCancelar?.maquinaNome}</strong>? O registro será mantido como cancelado.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

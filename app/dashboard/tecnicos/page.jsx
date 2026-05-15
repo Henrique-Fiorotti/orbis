@@ -297,12 +297,12 @@ export default function TecnicosPage() {
     }
 
     if (!isValidEmail(email)) {
-      toast.error("Informe um e-mail valido para o tecnico.")
+      toast.error("Informe um e-mail válido para o técnico.")
       return
     }
 
     if (modoSheet === "criar" && !isValidBackendPassword(form.senha)) {
-      toast.error("A senha precisa ter 7+ caracteres, letra maiuscula, minuscula e numero.")
+      toast.error("A senha precisa ter 7+ caracteres, letra maiúscula, minúscula e número.")
       return
     }
 
@@ -334,7 +334,7 @@ export default function TecnicosPage() {
       setForm(formVazio)
       setTecnicoSelecionado(null)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar o tecnico.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar o técnico.")
     }
   }
 
@@ -367,7 +367,7 @@ export default function TecnicosPage() {
       setSheetAberto(false)
       setTecnicoExcluir(null)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel remover o tecnico.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível remover o técnico.")
     }
   }
 
@@ -537,7 +537,7 @@ export default function TecnicosPage() {
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} disponiveis`}
+                {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} disponíveis`}
               </span>
               <span className="text-muted-foreground text-xs">Clique para ver somente técnicos ativos</span>
             </div>
@@ -554,7 +554,7 @@ export default function TecnicosPage() {
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-muted-foreground flex items-center gap-1">
                 <CircleMinusIcon className="size-3.5 text-gray-400 dark:text-muted-foreground" />
-                {loadingInicial ? "Conferindo status..." : `${totalInativos} sem operacao ativa`}
+                {loadingInicial ? "Conferindo status..." : `${totalInativos} sem operação ativa`}
               </span>
               <span className="text-muted-foreground text-xs">Clique para ver somente técnicos inativos</span>
             </div>
@@ -570,7 +570,7 @@ export default function TecnicosPage() {
             </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-muted-foreground">
-                {loadingInicial ? "Sincronizando disponibilidade" : `${Math.max(totalAtivos - tecnicosComAlertas, 0)} disponiveis`}
+                {loadingInicial ? "Sincronizando disponibilidade" : `${Math.max(totalAtivos - tecnicosComAlertas, 0)} disponíveis`}
               </span>
               <span className="text-muted-foreground text-xs">Técnicos ativos com atendimentos</span>
             </div>
@@ -584,9 +584,9 @@ export default function TecnicosPage() {
         </div>
 
         {loadingInicial ? (
-          <StatePanel message="Sincronizando tecnicos da pagina com a API..." />
+          <StatePanel message="Sincronizando técnicos da página com a API..." />
         ) : errorSemDados ? (
-          <StatePanel message={mensagem || "Nao foi possivel carregar os tecnicos."} tone="error" />
+          <StatePanel message={mensagem || "Não foi possível carregar os técnicos."} tone="error" />
         ) : (
           <>
         {/* Tabela */}
@@ -759,7 +759,7 @@ export default function TecnicosPage() {
                     </Avatar>
                     <div className="flex flex-col gap-0.5">
                       <span className="text-sm font-medium">{form.nome || "Nome do técnico"}</span>
-                      <span className="text-xs text-muted-foreground">{modoSheet === "criar" ? "Perfil tecnico" : form.especialidade}</span>
+                      <span className="text-xs text-muted-foreground">{modoSheet === "criar" ? "Perfil técnico" : form.especialidade}</span>
                     </div>
                   </div>
 
@@ -782,7 +782,7 @@ export default function TecnicosPage() {
                     />
                     {modoSheet === "editar" ? (
                       <p className="text-xs text-muted-foreground">
-                        O back-end deste fluxo nao altera e-mail na edicao do tecnico.
+                        O back-end deste fluxo não altera e-mail na edição do técnico.
                       </p>
                     ) : null}
                   </div>
@@ -794,7 +794,7 @@ export default function TecnicosPage() {
                         id="senha"
                         type="password"
                         autoComplete="new-password"
-                        placeholder="Minimo 7 caracteres"
+                        placeholder="Mínimo 7 caracteres"
                         value={form.senha}
                         onChange={e => setForm(p => ({ ...p, senha: e.target.value }))}
                       />
@@ -848,7 +848,7 @@ export default function TecnicosPage() {
                   </div>
 
                   <p className="rounded-lg border bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-                    Foto de perfil nao e atualizada por URL neste endpoint. Use o fluxo de upload de foto do perfil.
+                    Foto de perfil não é atualizada por URL neste endpoint. Use o fluxo de upload de foto do perfil.
                   </p>
                     </>
                   ) : null}
@@ -859,7 +859,7 @@ export default function TecnicosPage() {
             {modoSheet !== "ver" && (
               <SheetFooter className="px-4 pb-4">
                 <Button variant="outline" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
-                <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alteracoes"}</Button>
+                <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}</Button>
               </SheetFooter>
             )}
           </SheetContent>

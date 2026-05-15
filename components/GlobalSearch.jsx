@@ -27,8 +27,8 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 const GROUP_LABELS = {
-  maquina: "Maquinas",
-  tecnico: "Tecnicos",
+  maquina: "Máquinas",
+  tecnico: "Técnicos",
   admin: "Administradores",
   sensor: "Sensores",
   alerta: "Alertas",
@@ -179,7 +179,7 @@ export function GlobalSearch({ open, onOpenChange }) {
       id: `sensor-${sensor.id}`,
       type: "sensor",
       title: sensor.tipo || `Sensor #${sensor.id}`,
-      subtitle: sensor.maquinaId ? sensor.maquinaNome : "Sem maquina vinculada",
+      subtitle: sensor.maquinaId ? sensor.maquinaNome : "Sem máquina vinculada",
       meta: sensor.status,
       href: `/dashboard/sensores?sensorId=${encodeURIComponent(sensor.id)}`,
       searchText: buildSearchText([
@@ -251,7 +251,7 @@ export function GlobalSearch({ open, onOpenChange }) {
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Pesquisar maquinas, tecnicos, administradores, sensores e alertas..."
+            placeholder="Pesquisar máquinas, técnicos, administradores, sensores e alertas..."
             className="h-12 flex-1 bg-transparent px-0 text-[17px] outline-none placeholder:text-muted-foreground"
           />
 
@@ -276,7 +276,7 @@ export function GlobalSearch({ open, onOpenChange }) {
             </div>
           ) : !query.trim() ? (
             <div className="flex min-h-28 items-center justify-center px-4 text-center text-sm text-muted-foreground">
-              Digite para encontrar maquinas, tecnicos, administradores, sensores ou alertas.
+              Digite para encontrar máquinas, técnicos, administradores, sensores ou alertas.
             </div>
           ) : results.length === 0 ? (
             <div className="flex min-h-32 items-center justify-center px-4 text-center text-sm text-muted-foreground">

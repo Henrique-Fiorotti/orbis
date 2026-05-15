@@ -25,7 +25,7 @@ const MaquinasContext = React.createContext(null)
 export function MaquinasProvider({ children }) {
   const [maquinas, setMaquinas] = React.useState([])
   const [status, setStatus] = React.useState("loading")
-  const [mensagem, setMensagem] = React.useState("Carregando maquinas...")
+  const [mensagem, setMensagem] = React.useState("Carregando máquinas...")
   const [salvando, setSalvando] = React.useState(false)
 
   const carregarMaquinas = React.useCallback(async ({ silent = false } = {}) => {
@@ -34,17 +34,17 @@ export function MaquinasProvider({ children }) {
     if (!session?.accessToken) {
       setMaquinas([])
       setStatus("error")
-      setMensagem("Faca login para carregar as maquinas.")
+      setMensagem("Faça login para carregar as máquinas.")
       return
     }
 
     if (!silent) {
       setStatus("loading")
-      setMensagem("Carregando maquinas...")
+      setMensagem("Carregando máquinas...")
     }
 
     try {
-      const payload = await fetchDashboardJson("/maquinas", session.accessToken, "as maquinas")
+      const payload = await fetchDashboardJson("/maquinas", session.accessToken, "as máquinas")
       setMaquinas(normalizeMaquinaCollection(payload))
       setStatus("success")
       setMensagem("")
@@ -54,7 +54,7 @@ export function MaquinasProvider({ children }) {
       }
 
       setStatus("error")
-      setMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar as maquinas.")
+      setMensagem(error instanceof Error ? error.message : "Não foi possível carregar as máquinas.")
       setMaquinas((current) => (silent ? current : []))
       throw error
     }
@@ -72,7 +72,7 @@ export function MaquinasProvider({ children }) {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      const error = new Error("Faca login para gerenciar as maquinas.")
+      const error = new Error("Faça login para gerenciar as máquinas.")
       setStatus("error")
       setMensagem(error.message)
       throw error
@@ -81,7 +81,7 @@ export function MaquinasProvider({ children }) {
     const permissions = getDashboardPermissions(session.usuario)
 
     if (!permissions.canManageMaquinas) {
-      const error = new Error("Seu perfil tem acesso somente leitura para maquinas.")
+      const error = new Error("Seu perfil tem acesso somente leitura para máquinas.")
       setStatus("error")
       setMensagem(error.message)
       throw error
@@ -103,7 +103,7 @@ export function MaquinasProvider({ children }) {
       }
 
       const message =
-        error instanceof Error ? error.message : "Nao foi possivel concluir a operacao nas maquinas."
+        error instanceof Error ? error.message : "Não foi possível concluir a operação nas máquinas."
       setStatus("error")
       setMensagem(message)
       throw error instanceof Error ? error : new Error(message)
@@ -119,7 +119,7 @@ export function MaquinasProvider({ children }) {
     return await executarMutacao("/maquinas", {
       method: "POST",
       body: dados,
-      contextLabel: "o cadastro da maquina",
+      contextLabel: "o cadastro da máquina",
     })
   }, [executarMutacao])
 
@@ -131,7 +131,7 @@ export function MaquinasProvider({ children }) {
     return await executarMutacao(`/maquinas/${id}`, {
       method: "PUT",
       body: dados,
-      contextLabel: "a atualizacao da maquina",
+      contextLabel: "a atualização da máquina",
     })
   }, [executarMutacao])
 
@@ -141,7 +141,7 @@ export function MaquinasProvider({ children }) {
   const excluirMaquina = React.useCallback(async (id) => {
     await executarMutacao(`/maquinas/${id}`, {
       method: "DELETE",
-      contextLabel: "a exclusao da maquina",
+      contextLabel: "a exclusão da máquina",
     })
   }, [executarMutacao])
 
@@ -156,7 +156,7 @@ export function MaquinasProvider({ children }) {
     await executarMutacao(`/maquinas/${id}/foto`, {
       method: "PUT",
       body: formData,
-      contextLabel: "o upload da imagem da maquina",
+      contextLabel: "o upload da imagem da máquina",
     })
   }, [executarMutacao])
 

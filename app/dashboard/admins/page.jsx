@@ -124,7 +124,7 @@ async function fetchAdminsPayload(accessToken, page, limit) {
   }
 
   if (lastRecoverableError) throw lastRecoverableError
-  throw new Error("Nao foi possivel localizar um endpoint de leitura de administradores na API.")
+  throw new Error("Não foi possível localizar um endpoint de leitura de administradores na API.")
 }
 
 function AdminAvatar({ admin, size = "default" }) {
@@ -209,7 +209,7 @@ export default function AdminsPage() {
     if (!session?.accessToken) {
       setAdmins([])
       setStatus("error")
-      setMensagem("Faca login para carregar os administradores.")
+      setMensagem("Faça login para carregar os administradores.")
       return
     }
 
@@ -245,10 +245,10 @@ export default function AdminsPage() {
       setStatus("error")
       setMensagem(
         statusCode === 403 && permissions.isTecnico
-          ? "A API bloqueou a leitura de administradores para este tecnico."
+          ? "A API bloqueou a leitura de administradores para este técnico."
           : error instanceof Error
             ? error.message
-            : "Nao foi possivel carregar os administradores."
+            : "Não foi possível carregar os administradores."
       )
     }
   }, [permissions.isTecnico, router])
@@ -305,7 +305,7 @@ export default function AdminsPage() {
       const session = getAuthSession()
 
       if (!session?.accessToken) {
-        toast.error("Faca login para visualizar o administrador.")
+        toast.error("Faça login para visualizar o administrador.")
         return
       }
 
@@ -316,7 +316,7 @@ export default function AdminsPage() {
         if (cancelado) return
 
         if (!adminNormalizado) {
-          toast.error("Administrador nao encontrado.")
+          toast.error("Administrador não encontrado.")
           return
         }
 
@@ -330,7 +330,7 @@ export default function AdminsPage() {
         }
 
         if (!cancelado) {
-          toast.error(error instanceof Error ? error.message : "Nao foi possivel carregar o administrador.")
+          toast.error(error instanceof Error ? error.message : "Não foi possível carregar o administrador.")
         }
       }
     }
@@ -373,7 +373,7 @@ export default function AdminsPage() {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      toast.error("Faca login para gerenciar administradores.")
+      toast.error("Faça login para gerenciar administradores.")
       return
     }
 
@@ -406,12 +406,12 @@ export default function AdminsPage() {
     }
 
     if (!isValidEmail(email)) {
-      toast.error("Informe um e-mail valido para o administrador.")
+      toast.error("Informe um e-mail válido para o administrador.")
       return
     }
 
     if (modoSheet === "criar" && !isValidBackendPassword(form.senha)) {
-      toast.error("A senha precisa ter 7+ caracteres, letra maiuscula, minuscula e numero.")
+      toast.error("A senha precisa ter 7+ caracteres, letra maiúscula, minúscula e número.")
       return
     }
 
@@ -436,7 +436,7 @@ export default function AdminsPage() {
       } else {
         await executarMutacao(`/usuarios/${adminSelecionado.id}`, {
           method: "PUT",
-          contextLabel: "a atualizacao do administrador",
+          contextLabel: "a atualização do administrador",
           body: {
             nome,
             ...(telefone ? { telefone } : {}),
@@ -450,7 +450,7 @@ export default function AdminsPage() {
       setForm(formVazio)
       setAdminSelecionado(null)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar o administrador.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar o administrador.")
     }
   }
 
@@ -473,14 +473,14 @@ export default function AdminsPage() {
     try {
       await executarMutacao(`/usuarios/${adminExcluir.id}`, {
         method: "DELETE",
-        contextLabel: "a exclusao do administrador",
+        contextLabel: "a exclusão do administrador",
       })
       toast.success("Administrador removido.")
       setDialogExcluir(false)
       setSheetAberto(false)
       setAdminExcluir(null)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel remover o administrador.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível remover o administrador.")
     }
   }
 
@@ -648,7 +648,7 @@ export default function AdminsPage() {
         {loadingInicial ? (
           <StatePanel message="Sincronizando administradores com a API..." />
         ) : errorSemDados ? (
-          <StatePanel message={mensagem || "Nao foi possivel carregar os administradores."} tone="error" />
+          <StatePanel message={mensagem || "Não foi possível carregar os administradores."} tone="error" />
         ) : (
           <>
             <div className="min-h-[500px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
@@ -685,7 +685,7 @@ export default function AdminsPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{adminsFiltrados.length} resultado(s) nesta pagina - {filtroResumoLabel}</span>
+              <span className="text-sm text-muted-foreground">{adminsFiltrados.length} resultado(s) nesta página - {filtroResumoLabel}</span>
               <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
                 <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => carregarAdmins(1, limiteItems)} disabled={paginaAtual <= 1 || status === "loading"}>
                   <ChevronsLeftIcon className="size-4" />
@@ -693,7 +693,7 @@ export default function AdminsPage() {
                 <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => carregarAdmins(paginaAtual - 1, limiteItems)} disabled={paginaAtual <= 1 || status === "loading"}>
                   <ChevronLeftIcon className="size-4" />
                 </Button>
-                <span className="text-sm">Pag. {paginaAtual} de {Math.max(totalPaginas, 1)}</span>
+                <span className="text-sm">Pág. {paginaAtual} de {Math.max(totalPaginas, 1)}</span>
                 <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => carregarAdmins(paginaAtual + 1, limiteItems)} disabled={paginaAtual >= totalPaginas || status === "loading"}>
                   <ChevronRightIcon className="size-4" />
                 </Button>
@@ -716,7 +716,7 @@ export default function AdminsPage() {
                   ? "Preencha os dados para cadastrar um novo administrador."
                   : modoSheet === "editar"
                     ? "Altere os dados e clique em salvar."
-                    : "Informacoes completas do administrador."}
+                    : "Informações completas do administrador."}
               </SheetDescription>
             </SheetHeader>
 
@@ -737,7 +737,7 @@ export default function AdminsPage() {
                   <div className="grid grid-cols-1 gap-3">
                     {[
                       ["E-mail", adminSelecionado.email],
-                      ["Telefone", adminSelecionado.telefone || "Nao informado"],
+                      ["Telefone", adminSelecionado.telefone || "Não informado"],
                       ["Perfil", "Administrador"],
                     //   ["Cadastrado", tempoRelativo(adminSelecionado.criadoEm)],
                     ].map(([label, value]) => (
@@ -794,7 +794,7 @@ export default function AdminsPage() {
                       onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value.trim() }))}
                     />
                     {modoSheet === "editar" ? (
-                      <p className="text-xs text-muted-foreground">O back-end deste fluxo nao altera e-mail na edicao do administrador.</p>
+                      <p className="text-xs text-muted-foreground">O back-end deste fluxo não altera e-mail na edição do administrador.</p>
                     ) : null}
                   </div>
 
@@ -805,11 +805,11 @@ export default function AdminsPage() {
                         id="senha"
                         type="password"
                         autoComplete="new-password"
-                        placeholder="Minimo 7 caracteres"
+                        placeholder="Mínimo 7 caracteres"
                         value={form.senha}
                         onChange={(event) => setForm((prev) => ({ ...prev, senha: event.target.value }))}
                       />
-                      <p className="text-xs text-muted-foreground">Use letra maiuscula, letra minuscula e numero, sem espacos.</p>
+                      <p className="text-xs text-muted-foreground">Use letra maiúscula, letra minúscula e número, sem espaços.</p>
                     </div>
                   ) : null}
 
@@ -850,7 +850,7 @@ export default function AdminsPage() {
               <SheetFooter className="px-4 pb-4">
                 <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
                 <Button className="cursor-pointer" onClick={salvar} disabled={salvando}>
-                  {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alteracoes"}
+                  {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}
                 </Button>
               </SheetFooter>
             )}
@@ -860,9 +860,9 @@ export default function AdminsPage() {
         <Dialog open={dialogExcluir} onOpenChange={alternarDialogExcluir}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirmar exclusao</DialogTitle>
+              <DialogTitle>Confirmar exclusão</DialogTitle>
               <DialogDescription>
-                Tem certeza que deseja excluir <strong>{adminExcluir?.nome}</strong>? Esta acao nao pode ser desfeita.
+                Tem certeza que deseja excluir <strong>{adminExcluir?.nome}</strong>? Esta ação não pode ser desfeita.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

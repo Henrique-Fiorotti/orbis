@@ -277,7 +277,7 @@ export default function MaquinasPage() {
     }
 
     if (file.size > 15 * 1024 * 1024) {
-      toast.error("A imagem deve ter no maximo 15 MB.")
+      toast.error("A imagem deve ter no máximo 15 MB.")
       return
     }
 
@@ -286,7 +286,7 @@ export default function MaquinasPage() {
 
   async function salvar() {
     if (!form.nome.trim() || !form.setor.trim() || !form.tipo.trim()) {
-      toast.error("Preencha todos os campos obrigatorios.")
+      toast.error("Preencha todos os campos obrigatórios.")
       return
     }
 
@@ -301,7 +301,7 @@ export default function MaquinasPage() {
           await atualizarImagemMaquina(maquinaId, imagemArquivo)
         }
 
-        toast.success("Maquina cadastrada com sucesso!")
+        toast.success("Máquina cadastrada com sucesso!")
       } else {
         await editarMaquina(maquinaSelecionada.id, form)
 
@@ -309,7 +309,7 @@ export default function MaquinasPage() {
           await atualizarImagemMaquina(maquinaId, imagemArquivo)
         }
 
-        toast.success("Maquina atualizada com sucesso!")
+        toast.success("Máquina atualizada com sucesso!")
       }
 
       setSheetAberto(false)
@@ -317,7 +317,7 @@ export default function MaquinasPage() {
       setImagemArquivo(null)
       setMaquinaSelecionada(null)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar a maquina.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar a máquina.")
     }
   }
 
@@ -347,13 +347,13 @@ export default function MaquinasPage() {
 
     try {
       await excluirMaquina(maquinaExcluir.id)
-      toast.success("Maquina removida.")
+      toast.success("Máquina removida.")
       setDialogExcluir(false)
       setSheetAberto(false)
       setMaquinaExcluir(null)
       setConfirmacaoExclusao("")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel remover a maquina.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível remover a máquina.")
     }
   }
 
@@ -368,7 +368,7 @@ export default function MaquinasPage() {
   const columns = [
     {
       accessorKey: "nome",
-      header: "Maquina",
+      header: "Máquina",
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <button
@@ -397,7 +397,7 @@ export default function MaquinasPage() {
       header: ({ column }) => (
         <TableColumnHeaderMenu
           column={column}
-          label="Importancia"
+          label="Importância"
           filterOptions={IMPORTANCIA_FILTER_OPTIONS}
           sortOptions={IMPORTANCIA_SORT_OPTIONS}
         />
@@ -438,7 +438,7 @@ export default function MaquinasPage() {
     {
       id: "ultimaLeituraEm",
       accessorFn: getMaquinaUltimaLeituraExibicao,
-      header: "Ultimo sinal",
+      header: "Último sinal",
       cell: ({ row }) => (
         <span className="text-muted-foreground text-sm">
           {row.getValue("ultimaLeituraEm") ? tempoRelativo(row.getValue("ultimaLeituraEm")) : "Sem leitura"}
@@ -507,7 +507,7 @@ export default function MaquinasPage() {
             <div>
               <div className="flex items-center gap-2">
                 <WashingMachineIcon size={22} className="text-[#3B2867] dark:text-white" />
-                <h1 className="text-[18pt]! mb-0! font-medium text-[#3B2867] dark:text-white">Maquinas</h1>
+                <h1 className="text-[18pt]! mb-0! font-medium text-[#3B2867] dark:text-white">Máquinas</h1>
               </div>
 
             </div>
@@ -515,7 +515,7 @@ export default function MaquinasPage() {
           {canManageMaquinas ? (
             <Button onClick={abrirCriar} className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
               <PlusIcon className="mr-1 size-4" />
-              Nova maquina
+              Nova máquina
             </Button>
           ) : null}
         </div>
@@ -543,7 +543,7 @@ export default function MaquinasPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Total de maquinas</span>
+              <span className="text-sm text-muted-foreground font-medium">Total de máquinas</span>
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                 {loadingInicial ? "Sincronizando" : `${maquinas.length} cadastradas`}
               </span>
@@ -554,11 +554,11 @@ export default function MaquinasPage() {
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {loadingInicial ? "Atualizando operacao..." : `${totalOk} operando normalmente`}
+                {loadingInicial ? "Atualizando operação..." : `${totalOk} operando normalmente`}
               </span>
               <span className="text-red-600 dark:text-red-300 flex items-center gap-1">
                 <AlertTriangleIcon className="size-3.5" />
-                {loadingInicial ? "Lendo alertas..." : `${totalAlerta} requerem atencao`}
+                {loadingInicial ? "Lendo alertas..." : `${totalAlerta} requerem atenção`}
               </span>
             </div>
           </div>
@@ -567,7 +567,7 @@ export default function MaquinasPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Alta Importância</span>
               <span className="text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full font-medium dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
-                atencao
+                atenção
               </span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
@@ -605,7 +605,7 @@ export default function MaquinasPage() {
                   style={{ width: `${integridadeMedia}%` }}
                 />
               </div>
-              <span className="text-muted-foreground text-xs">Media de integridade da frota</span>
+              <span className="text-muted-foreground text-xs">Média de integridade da frota</span>
             </div>
           </div>
         </div>
@@ -621,9 +621,9 @@ export default function MaquinasPage() {
         </div>
 
         {loadingInicial ? (
-          <StatePanel message="Sincronizando maquinas da pagina com a API..." />
+          <StatePanel message="Sincronizando máquinas da página com a API..." />
         ) : errorSemDados ? (
-          <StatePanel message={mensagem || "Nao foi possivel carregar as maquinas."} tone="error" />
+          <StatePanel message={mensagem || "Não foi possível carregar as máquinas."} tone="error" />
         ) : (
           <>
             <div className="min-h-[500px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
@@ -651,7 +651,7 @@ export default function MaquinasPage() {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                        Nenhuma maquina encontrada.
+                        Nenhuma máquina encontrada.
                       </TableCell>
                     </TableRow>
                   )}
@@ -668,7 +668,7 @@ export default function MaquinasPage() {
                 <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
                   <ChevronLeftIcon className="size-4" />
                 </Button>
-                <span className="flex w-fit items-center justify-center text-sm font-medium">Pag. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
+                <span className="flex w-fit items-center justify-center text-sm font-medium">Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
                 <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
                   <ChevronRightIcon className="size-4" />
                 </Button>
@@ -688,7 +688,7 @@ export default function MaquinasPage() {
                   <MaquinaImagePreview maquina={maquinaSelecionada} />
                 </div>
                 <SheetHeader>
-                  <SheetTitle>Detalhes da maquina</SheetTitle>
+                  <SheetTitle>Detalhes da máquina</SheetTitle>
                   <SheetDescription>{maquinaSelecionada.setor} - {maquinaSelecionada.tipo}</SheetDescription>
                 </SheetHeader>
                 <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
@@ -697,7 +697,7 @@ export default function MaquinasPage() {
                     type="button"
                     onClick={() => router.push(`/dashboard/alertas?maquina=${encodeURIComponent(maquinaSelecionada.nome)}`)}
                   >
-                    Ver alertas desta maquina
+                    Ver alertas desta máquina
                   </Button>
                   {canManageMaquinas ? (
                     <div className="flex gap-2">
@@ -714,12 +714,12 @@ export default function MaquinasPage() {
             ) : (
               <>
                 <SheetHeader>
-                  <SheetTitle>{modoSheet === "criar" ? "Nova maquina" : "Editar maquina"}</SheetTitle>
-                  <SheetDescription>{modoSheet === "criar" ? "Preencha os dados para cadastrar uma nova maquina." : "Altere os dados e clique em salvar."}</SheetDescription>
+                  <SheetTitle>{modoSheet === "criar" ? "Nova máquina" : "Editar máquina"}</SheetTitle>
+                  <SheetDescription>{modoSheet === "criar" ? "Preencha os dados para cadastrar uma nova máquina." : "Altere os dados e clique em salvar."}</SheetDescription>
                 </SheetHeader>
                 <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="imagem-maquina">Imagem da maquina</Label>
+                    <Label htmlFor="imagem-maquina">Imagem da máquina</Label>
                     <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
                       {imagemPreview || maquinaSelecionada?.imagem ? (
                         <img src={imagemPreview || maquinaSelecionada?.imagem} alt="" className="size-full object-cover" />
@@ -752,11 +752,11 @@ export default function MaquinasPage() {
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="setor">Setor <span className="text-red-500">*</span></Label>
-                    <Input id="setor" placeholder="Ex: Linha de Producao A" value={form.setor} onChange={(event) => setForm((prev) => ({ ...prev, setor: event.target.value }))} />
+                    <Input id="setor" placeholder="Ex: Linha de Produção A" value={form.setor} onChange={(event) => setForm((prev) => ({ ...prev, setor: event.target.value }))} />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="tipo">Tipo de maquina <span className="text-red-500">*</span></Label>
-                    <Input id="tipo" placeholder="Ex: Motor Eletrico, Compressor..." value={form.tipo} onChange={(event) => setForm((prev) => ({ ...prev, tipo: event.target.value }))} />
+                    <Label htmlFor="tipo">Tipo de máquina <span className="text-red-500">*</span></Label>
+                    <Input id="tipo" placeholder="Ex: Motor Elétrico, Compressor..." value={form.tipo} onChange={(event) => setForm((prev) => ({ ...prev, tipo: event.target.value }))} />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="criticidade">Importância</Label>
@@ -767,7 +767,7 @@ export default function MaquinasPage() {
                       <SelectContent>
                         <SelectGroup>
                           <SelectItem value="BAIXA">Baixa</SelectItem>
-                          <SelectItem value="MEDIA">Media</SelectItem>
+                        <SelectItem value="MEDIA">Média</SelectItem>
                           <SelectItem value="ALTA">Alta</SelectItem>
                         </SelectGroup>
                       </SelectContent>
@@ -777,7 +777,7 @@ export default function MaquinasPage() {
                 <SheetFooter className="px-4 pb-4">
                   <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
                   <Button className="cursor-pointer" onClick={salvar} disabled={salvando}>
-                    {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alteracoes"}
+                {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}
                   </Button>
                 </SheetFooter>
               </>
@@ -788,9 +788,9 @@ export default function MaquinasPage() {
         <Dialog open={dialogExcluir} onOpenChange={alternarDialogExcluir}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirmar exclusao</DialogTitle>
+              <DialogTitle>Confirmar exclusão</DialogTitle>
               <DialogDescription>
-                A maquina <strong>{maquinaExcluir?.nome}</strong> ficara inativa no banco de dados (active: false). Os sensores vinculados tambem ficarao inativos. Tem certeza que deseja excluir?
+                A máquina <strong>{maquinaExcluir?.nome}</strong> ficará inativa no banco de dados (active: false). Os sensores vinculados também ficarão inativos. Tem certeza que deseja excluir?
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
@@ -798,19 +798,19 @@ export default function MaquinasPage() {
               <div className="flex flex-col gap-1">
                 <span className="font-medium">
                   {sensoresVinculadosExclusao > 0
-                    ? `${sensoresVinculadosExclusao} sensor(es) vinculado(s) serao inativados.`
+                    ? `${sensoresVinculadosExclusao} sensor(es) vinculado(s) serão inativados.`
                     : "Nenhum sensor vinculado foi informado pela API."}
                 </span>
                 <span>
                   {sensoresVinculadosExclusao > 0
-                    ? "A exclusao sera enviada para a API. O backend deve aplicar soft delete na maquina e inativar os sensores relacionados."
-                    : "A exclusao sera enviada para a API e a maquina deve sair das listagens ativas."}
+                    ? "A exclusão será enviada para a API. O backend deve aplicar soft delete na máquina e inativar os sensores relacionados."
+                    : "A exclusão será enviada para a API e a máquina deve sair das listagens ativas."}
                 </span>
               </div>
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="confirmacao-exclusao" className="text-sm text-muted-foreground">
-                Digite o nome da maquina para confirmar:
+                Digite o nome da máquina para confirmar:
               </Label>
               <Input
                 id="confirmacao-exclusao"

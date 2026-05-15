@@ -144,7 +144,7 @@ export function ChartAreaInteractive() {
             <SelectTrigger
               className="flex w-40 rounded-xl! **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
               size="sm"
-              aria-label="Selecionar periodo"
+          aria-label="Selecionar período"
             >
               <SelectValue placeholder="Filtrar" />
             </SelectTrigger>

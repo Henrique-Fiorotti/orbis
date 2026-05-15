@@ -77,7 +77,7 @@ const MOBILE_TOUR_STEPS = TOUR_STEPS.map((step) =>
         ...step,
         target: "#tour-sidebar-trigger",
         description:
-          "Toque no menu para alternar entre dashboard, maquinas, sensores, alertas e tecnicos.",
+          "Toque no menu para alternar entre dashboard, máquinas, sensores, alertas e técnicos.",
         side: "bottom",
         align: "start",
       }
