@@ -40,7 +40,7 @@ const data = {
       icon: <LayoutDashboardIcon />,
     },
     {
-      title: "Maquinas",
+      title: "Máquinas",
       url: "/dashboard/maquinas",
       icon: <WashingMachineIcon />,
     },
@@ -55,7 +55,7 @@ const data = {
       icon: <AlertTriangleIcon />,
     },
     {
-      title: "Tecnicos",
+      title: "Técnicos",
       url: "/dashboard/tecnicos",
       icon: <UsersIcon />,
     },

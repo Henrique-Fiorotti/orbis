@@ -8,19 +8,19 @@
     "sensorNome": "Sensor Vib A1-02",
     "severidade": "ALTA",
     "status": "ATIVO",
-    "mensagem": "Vibracao atingiu 0.92 mm/s, ultrapassando o limite de 0.80 mm/s.",
+    "mensagem": "Vibração atingiu 0.92 mm/s, ultrapassando o limite de 0.80 mm/s.",
     "criadoEm": "2026-03-24T10:12:00Z"
   },
   {
     "id": 2,
     "tipo": "DEGRADACAO_ACELERADA",
     "maquinaId": 5,
-    "maquinaNome": "Bomba Hidraulica D1",
+    "maquinaNome": "Bomba Hidráulica D1",
     "sensorId": 7,
     "sensorNome": "Sensor Pres D1-01",
     "severidade": "ALTA",
     "status": "ATIVO",
-    "mensagem": "Sensor offline. Queda abrupta na pressao detectada antes da desconexao.",
+    "mensagem": "Sensor offline. Queda abrupta na pressão detectada antes da desconexão.",
     "criadoEm": "2026-03-24T09:58:00Z"
   },
   {
@@ -32,7 +32,7 @@
     "sensorNome": "Sensor Temp A1-01",
     "severidade": "MEDIA",
     "status": "EM_ANDAMENTO",
-    "mensagem": "Temperatura em tendencia de alta nas ultimas 6 horas. Valor atual: 72.4 C.",
+    "mensagem": "Temperatura em tendência de alta nas últimas 6 horas. Valor atual: 72.4 °C.",
     "criadoEm": "2026-03-24T08:30:00Z",
     "tecnicoId": 12,
     "tecnicoNome": "Carlos Eduardo"
@@ -46,7 +46,7 @@
     "sensorNome": "Sensor Pres G4-01",
     "severidade": "MEDIA",
     "status": "RESOLVIDO",
-    "mensagem": "Pressao oscilando entre 6.8 e 7.8 bar nas ultimas 2 horas.",
+    "mensagem": "Pressão oscilando entre 6.8 e 7.8 bar nas últimas 2 horas.",
     "criadoEm": "2026-03-23T14:00:00Z",
     "tecnicoId": 12,
     "tecnicoNome": "Carlos Eduardo"
@@ -60,7 +60,7 @@
     "sensorNome": "Sensor Temp F1-02",
     "severidade": "MEDIA",
     "status": "RESOLVIDO",
-    "mensagem": "Temperatura atingiu 63.8 C, proxima ao limite de 80 C.",
+    "mensagem": "Temperatura atingiu 63.8 °C, próxima ao limite de 80 °C.",
     "criadoEm": "2026-03-23T11:45:00Z",
     "tecnicoId": 15,
     "tecnicoNome": "Mariana Alves"
@@ -74,7 +74,7 @@
     "sensorNome": "Sensor Temp C3-01",
     "severidade": "BAIXA",
     "status": "CANCELADO",
-    "mensagem": "Leve tendencia de alta na temperatura. Chamado cancelado pelo administrador apos revisao.",
+    "mensagem": "Leve tendência de alta na temperatura. Chamado cancelado pelo administrador após revisão.",
     "criadoEm": "2026-03-22T16:20:00Z"
   }
 ]

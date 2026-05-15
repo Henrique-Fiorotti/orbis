@@ -261,7 +261,7 @@ export const LANDING_COPY = {
         {
           question: "Como entro em contato com o suporte?",
           answer:
-            "Você pode entrar em contato pelo WhatsApp ou pelo e-mail suporte.orbis@gmail.com.",
+            "Você pode entrar em contato pelo WhatsApp ou pelo e-mail contato@orbis-3td.com.",
         },
         {
           question: "Preciso ser um expert em tecnologia para usar o Orbis?",
@@ -330,7 +330,7 @@ export const LANDING_COPY = {
           },
           {
             title: "5. Seus direitos",
-            text: "Você tem o direito de acessar, corrigir ou excluir suas informações pessoais a qualquer momento pelo e-mail suporte.orbis@gmail.com.",
+            text: "Você tem o direito de acessar, corrigir ou excluir suas informações pessoais a qualquer momento pelo e-mail contato@orbis-3td.com.",
           },
           {
             title: "6. Retenção de dados",
@@ -342,10 +342,64 @@ export const LANDING_COPY = {
           },
           {
             title: "8. Contato",
-            text: "Dúvidas? Entre em contato pelo e-mail suporte.orbis@gmail.com.",
+            text: "Dúvidas? Entre em contato pelo e-mail contato@orbis-3td.com.",
           },
         ],
       },
+    },
+    passwordReset: {
+      eyebrow: "Acesso a conta",
+      title: "Redefinir senha",
+      subtitle: "Informe o e-mail da conta e o e-mail que deve receber o código. Depois valide o código enviado para criar uma nova senha.",
+      cardTitle: "Recuperacao de acesso",
+      cardDescription: "O código expira em 15 minutos.",
+      successTitle: "Senha redefinida",
+      successDescription: "A nova senha foi salva. Você já pode voltar ao login.",
+      stepLabel: "Etapa",
+      steps: ["E-mails", "Código", "Nova senha"],
+      fields: {
+        email: "E-mail da conta",
+        emailDestino: "E-mail de destino",
+        code: "Código recebido",
+        novaSenha: "Nova senha",
+        confirmarSenha: "Confirmar nova senha",
+      },
+      placeholders: {
+        email: "conta@empresa.com",
+        emailDestino: "destino@empresa.com",
+        code: "000000",
+        novaSenha: "Digite a nova senha",
+        confirmarSenha: "Repita a nova senha",
+      },
+      actions: {
+        sendCode: "Enviar código",
+        sendingCode: "Enviando...",
+        validateCode: "Validar código",
+        validatingCode: "Validando...",
+        changePassword: "Redefinir senha",
+        changingPassword: "Redefinindo...",
+        goToLogin: "Entrar",
+        restart: "Começar de novo",
+      },
+      messages: {
+        codeSent: "Se o usuário existir, o código será enviado.",
+        codeValid: "Código válido.",
+        passwordChanged: "Senha redefinida com sucesso.",
+        requestError: "Não foi possível enviar o código.",
+        codeError: "Não foi possível validar o código.",
+        passwordError: "Não foi possível redefinir a senha.",
+      },
+      validation: {
+        email: "Informe um e-mail de conta válido.",
+        emailDestino: "Informe um e-mail de destino válido.",
+        code: "Informe os 6 números do código recebido.",
+        password: "A senha precisa ter 7+ caracteres, letra maiúscula, minúscula e número, sem espaços.",
+        passwordMatch: "A nova senha e a confirmação não coincidem.",
+      },
+      passwordHint: "Use 7 ou mais caracteres, com letra maiúscula, minúscula e número.",
+      codeHint: "Digite exatamente 6 números.",
+      backHome: "Voltar para Início",
+      backLogin: "Voltar ao login",
     },
     footer: {
       logoAria: "Orbis - Página inicial",
@@ -444,6 +498,16 @@ export const LANDING_COPY = {
       },
       features: [
         {
+          icon: "/orbisIARoxa.svg",
+          title: "Operational AI",
+          desc: "Automatic insights help your team prioritize what needs attention first.",
+        },
+        {
+          icon: "/connect_icon_contact.svg",
+          title: "Fast integrations",
+          desc: "Connect sensors, teams and data in one unified monitoring experience.",
+        },
+        {
           icon: "/visibility.svg",
           title: "Real-time monitoring",
           desc: "Track every operation in your company with precise dashboards and instant alerts.",
@@ -466,6 +530,12 @@ export const LANDING_COPY = {
           title: "Smart reports",
           desc: "Automated reports with actionable insights for faster, more assertive decisions.",
           delay: 240,
+        },
+        {
+          icon: "/accessibility.png",
+          title: "Full accessibility",
+          desc: "An interface adapted for every user profile, with screen reader support and keyboard navigation.",
+          delay: 320,
         },
       ],
       steps: [
@@ -591,7 +661,7 @@ export const LANDING_COPY = {
         {
           question: "How do I contact support?",
           answer:
-            "You can contact us through WhatsApp or by email at suporte.orbis@gmail.com.",
+            "You can contact us through WhatsApp or by email at contato@orbis-3td.com.",
         },
         {
           question: "Do I need to be a technology expert to use Orbis?",
@@ -660,7 +730,7 @@ export const LANDING_COPY = {
           },
           {
             title: "5. Your rights",
-            text: "You have the right to access, correct, or delete your personal information at any time by emailing suporte.orbis@gmail.com.",
+            text: "You have the right to access, correct, or delete your personal information at any time by emailing contato@orbis-3td.com.",
           },
           {
             title: "6. Data retention",
@@ -672,10 +742,64 @@ export const LANDING_COPY = {
           },
           {
             title: "8. Contact",
-            text: "Questions? Contact us at suporte.orbis@gmail.com.",
+            text: "Questions? Contact us at contato@orbis-3td.com.",
           },
         ],
       },
+    },
+    passwordReset: {
+      eyebrow: "Account access",
+      title: "Reset password",
+      subtitle: "Enter the account email and the email that should receive the code. Then validate the code to create a new password.",
+      cardTitle: "Access recovery",
+      cardDescription: "The code expires in 15 minutes.",
+      successTitle: "Password reset",
+      successDescription: "The new password was saved. You can return to sign in.",
+      stepLabel: "Step",
+      steps: ["Emails", "Code", "New password"],
+      fields: {
+        email: "Account email",
+        emailDestino: "Destination email",
+        code: "Received code",
+        novaSenha: "New password",
+        confirmarSenha: "Confirm new password",
+      },
+      placeholders: {
+        email: "account@company.com",
+        emailDestino: "destination@company.com",
+        code: "000000",
+        novaSenha: "Enter the new password",
+        confirmarSenha: "Repeat the new password",
+      },
+      actions: {
+        sendCode: "Send code",
+        sendingCode: "Sending...",
+        validateCode: "Validate code",
+        validatingCode: "Validating...",
+        changePassword: "Reset password",
+        changingPassword: "Resetting...",
+        goToLogin: "Sign in",
+        restart: "Start over",
+      },
+      messages: {
+        codeSent: "If the user exists, the code will be sent.",
+        codeValid: "Code is valid.",
+        passwordChanged: "Password reset successfully.",
+        requestError: "We could not send the code.",
+        codeError: "We could not validate the code.",
+        passwordError: "We could not reset the password.",
+      },
+      validation: {
+        email: "Enter a valid account email.",
+        emailDestino: "Enter a valid destination email.",
+        code: "Enter the 6 numbers from the received code.",
+        password: "The password needs 7+ characters, uppercase, lowercase and a number, without spaces.",
+        passwordMatch: "The new password and confirmation do not match.",
+      },
+      passwordHint: "Use 7 or more characters, with uppercase, lowercase and a number.",
+      codeHint: "Enter exactly 6 numbers.",
+      backHome: "Back to landing",
+      backLogin: "Back to sign in",
     },
     footer: {
       logoAria: "Orbis - Home page",
@@ -774,6 +898,16 @@ export const LANDING_COPY = {
       },
       features: [
         {
+          icon: "/orbisIARoxa.svg",
+          title: "IA operativa",
+          desc: "Insights automáticos ayudan a tu equipo a priorizar lo que exige atención primero.",
+        },
+        {
+          icon: "/connect_icon_contact.svg",
+          title: "Integraciones rápidas",
+          desc: "Conecta sensores, equipos y datos en una experiencia única de seguimiento.",
+        },
+        {
           icon: "/visibility.svg",
           title: "Monitoreo en tiempo real",
           desc: "Acompaña cada operación de tu empresa con dashboards precisos y alertas instantáneas.",
@@ -796,6 +930,12 @@ export const LANDING_COPY = {
           title: "Informes inteligentes",
           desc: "Informes automáticos con información accionable para decisiones más rápidas y acertadas.",
           delay: 240,
+        },
+        {
+          icon: "/accessibility.png",
+          title: "Accesibilidad total",
+          desc: "Interfaz adaptada para todos los perfiles de usuario, con soporte para lectores de pantalla y navegación por teclado.",
+          delay: 320,
         },
       ],
       steps: [
@@ -921,7 +1061,7 @@ export const LANDING_COPY = {
         {
           question: "¿Cómo contacto al soporte?",
           answer:
-            "Puedes contactarnos por WhatsApp o por correo electrónico en suporte.orbis@gmail.com.",
+            "Puedes contactarnos por WhatsApp o por correo electrónico en contato@orbis-3td.com.",
         },
         {
           question: "¿Necesito ser experto en tecnología para usar Orbis?",
@@ -990,7 +1130,7 @@ export const LANDING_COPY = {
           },
           {
             title: "5. Tus derechos",
-            text: "Tienes derecho a acceder, corregir o eliminar tu información personal en cualquier momento por el email suporte.orbis@gmail.com.",
+            text: "Tienes derecho a acceder, corregir o eliminar tu información personal en cualquier momento por el email contato@orbis-3td.com.",
           },
           {
             title: "6. Retención de datos",
@@ -1002,10 +1142,64 @@ export const LANDING_COPY = {
           },
           {
             title: "8. Contacto",
-            text: "¿Dudas? Contáctanos por email en suporte.orbis@gmail.com.",
+            text: "¿Dudas? Contáctanos por email en contato@orbis-3td.com.",
           },
         ],
       },
+    },
+    passwordReset: {
+      eyebrow: "Acceso a la cuenta",
+      title: "Restablecer contraseña",
+      subtitle: "Ingresa el email de la cuenta y el email que debe recibir el código. Luego valida el código para crear una nueva contraseña.",
+      cardTitle: "Recuperacion de acceso",
+      cardDescription: "El código vence en 15 minutos.",
+      successTitle: "Contraseña restablecida",
+      successDescription: "La nueva contraseña fue guardada. Ya puedes volver al login.",
+      stepLabel: "Paso",
+      steps: ["Emails", "Código", "Nueva contraseña"],
+      fields: {
+        email: "Email de la cuenta",
+        emailDestino: "Email de destino",
+        code: "Código recibido",
+        novaSenha: "Nueva contraseña",
+        confirmarSenha: "Confirmar nueva contraseña",
+      },
+      placeholders: {
+        email: "cuenta@empresa.com",
+        emailDestino: "destino@empresa.com",
+        code: "000000",
+        novaSenha: "Ingresa la nueva contraseña",
+        confirmarSenha: "Repite la nueva contraseña",
+      },
+      actions: {
+        sendCode: "Enviar código",
+        sendingCode: "Enviando...",
+        validateCode: "Validar código",
+        validatingCode: "Validando...",
+        changePassword: "Restablecer contraseña",
+        changingPassword: "Restableciendo...",
+        goToLogin: "Entrar",
+        restart: "Empezar de nuevo",
+      },
+      messages: {
+        codeSent: "Si el usuario existe, se enviará el código.",
+        codeValid: "Código válido.",
+        passwordChanged: "Contraseña restablecida con éxito.",
+        requestError: "No fue posible enviar el código.",
+        codeError: "No fue posible validar el código.",
+        passwordError: "No fue posible restablecer la contraseña.",
+      },
+      validation: {
+        email: "Ingresa un email de cuenta válido.",
+        emailDestino: "Ingresa un email de destino válido.",
+        code: "Ingresa los 6 números del código recibido.",
+        password: "La contraseña necesita 7+ caracteres, mayúscula, minúscula y número, sin espacios.",
+        passwordMatch: "La nueva contraseña y la confirmación no coinciden.",
+      },
+      passwordHint: "Usa 7 o más caracteres, con mayúscula, minúscula y número.",
+      codeHint: "Ingresa exactamente 6 números.",
+      backHome: "Volver a la landing",
+      backLogin: "Volver al login",
     },
     footer: {
       logoAria: "Orbis - Página inicial",

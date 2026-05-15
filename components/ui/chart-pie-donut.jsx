@@ -26,7 +26,7 @@ import { getDistribuicaoStatusMaquinas } from "@/lib/orbis-dashboard"
 export const description = "Distribuição operacional das máquinas"
 
 const chartConfig = {
-  Estavel: {
+  Estável: {
     label: "Estável",
     color: "var(--chart-1)",
   },
@@ -34,7 +34,7 @@ const chartConfig = {
     label: "Alerta",
     color: "var(--chart-2)",
   },
-  Critico: {
+  Crítico: {
     label: "Crítico",
     color: "#ef4444",
   },

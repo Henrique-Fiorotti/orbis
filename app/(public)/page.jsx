@@ -1,6 +1,8 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import HeroDashboard from "@/components/hero-dashboard";
 import { useLandingLanguage } from "@/components/landing/language-provider";
@@ -82,6 +84,19 @@ function Step({ n, title, desc, delay }) {
 export default function HomePage() {
   const { copy } = useLandingLanguage();
   const { home } = copy;
+  const router = useRouter();
+
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+
+    if (url.searchParams.get("login") !== "1") {
+      return;
+    }
+
+    url.searchParams.delete("login");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    router.push("/login");
+  }, [router]);
 
   return (
 

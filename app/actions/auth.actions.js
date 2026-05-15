@@ -30,6 +30,6 @@ export async function loginAction(formData) {
   
   catch (error) {
     console.error("[loginAction]", error)
-    return { error: "Nao foi possivel conectar ao servidor. Tente novamente." }
+    return { error: "Não foi possível conectar ao servidor. Tente novamente." }
   }
 }

@@ -151,6 +151,7 @@ export type TipoAlerta =
 
 export type SeveridadeAlerta = "ALTA" | "MEDIA" | "BAIXA";
 export type StatusAlerta = "ATIVO" | "EM_ANDAMENTO" | "RESOLVIDO" | "CANCELADO";
+export type RecenciaAlerta = "RECENTE" | "ANTIGO";
 
 export interface Alerta {
   id: number;
@@ -164,6 +165,10 @@ export interface Alerta {
   mensagem: string;
   criadoEm: string;
   atualizadoEm?: string | null;
+  ocorrencias: number;
+  ultimaOcorrenciaEm: string;
+  recencia: RecenciaAlerta;
+  duplicado: boolean;
   tecnicoId?: number | null;
   tecnicoNome?: string | null;
 }

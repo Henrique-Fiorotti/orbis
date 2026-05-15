@@ -67,7 +67,7 @@ function TecnicoAvatar({ tecnico, size = "default" }) {
   const sizeClass = size === "lg"
     ? "h-16 w-16 text-xl"
     : size === "sm"
-      ? "h-7 w-7 text-xs"
+      ? "h-18 w-18 text-xs"
       : "h-8 w-8 text-xs"
 
   return (
@@ -119,18 +119,20 @@ function normalizarBusca(value) {
     .toLowerCase()
 }
 
-function getTecnicoWhatsappUrl(telefone) {
-  const digits = String(telefone ?? "Telefone não informado").replace(/\D/g, "")
+function formatarTelefoneExibicao(value) {
+  return String(value ?? "").trim() || "Não informado"
+}
 
-  if (digits.length === 13 && digits.startsWith("55")) {
-    return `https://wa.me/${digits}`
+function getTecnicoWhatsappUrl(value) {
+  const digits = String(value ?? "").replace(/\D/g, "")
+
+  if (digits.length < 10) {
+    return null
   }
 
-  if (digits.length === 10 || digits.length === 11) {
-    return `https://wa.me/55${digits}`
-  }
+  const normalizedDigits = digits.startsWith("55") ? digits : `55${digits}`
 
-  return ""
+  return `https://wa.me/${normalizedDigits}`
 }
 
 export default function TecnicosPage() {
@@ -295,12 +297,12 @@ export default function TecnicosPage() {
     }
 
     if (!isValidEmail(email)) {
-      toast.error("Informe um e-mail valido para o tecnico.")
+      toast.error("Informe um e-mail válido para o técnico.")
       return
     }
 
     if (modoSheet === "criar" && !isValidBackendPassword(form.senha)) {
-      toast.error("A senha precisa ter 7+ caracteres, letra maiuscula, minuscula e numero.")
+      toast.error("A senha precisa ter 7+ caracteres, letra maiúscula, minúscula e número.")
       return
     }
 
@@ -332,7 +334,7 @@ export default function TecnicosPage() {
       setForm(formVazio)
       setTecnicoSelecionado(null)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar o tecnico.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar o técnico.")
     }
   }
 
@@ -365,7 +367,7 @@ export default function TecnicosPage() {
       setSheetAberto(false)
       setTecnicoExcluir(null)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel remover o tecnico.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível remover o técnico.")
     }
   }
 
@@ -378,7 +380,7 @@ export default function TecnicosPage() {
           <TecnicoAvatar tecnico={row.original} size="sm" />
           <button
             onClick={() => abrirVer(row.original)}
-            className="text-left font-medium text-sm hover:underline hover:text-primary transition-colors"
+            className="cursor-pointer text-left font-medium text-sm hover:underline hover:text-primary transition-colors"
           >
             {row.original.nome}
           </button>
@@ -398,7 +400,7 @@ export default function TecnicosPage() {
     {
       accessorKey: "telefone",
       header: "Telefone",
-      cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.original.telefone}</span>,
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{formatarTelefoneExibicao(row.original.telefone)}</span>,
     },
     {
       accessorKey: "status",
@@ -417,17 +419,17 @@ export default function TecnicosPage() {
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+            <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
               <EllipsisVerticalIcon />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
             {canManageTecnicos ? (
               <>
-                <DropdownMenuItem onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
               </>
             ) : null}
           </DropdownMenuContent>
@@ -463,7 +465,7 @@ export default function TecnicosPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
+            <Button variant="ghost" className={"cursor-pointer"} size="icon-sm" onClick={() => router.push("/dashboard")}>
               <ArrowLeftIcon className="size-4" />
             </Button>
             <div>
@@ -475,7 +477,7 @@ export default function TecnicosPage() {
             </div>
           </div>
           {canManageTecnicos ? (
-            <Button onClick={abrirCriar} className="bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
+            <Button onClick={abrirCriar} className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" disabled={salvando}>
               <PlusIcon className="size-4 mr-1" />Novo técnico
             </Button>
           ) : null}
@@ -535,7 +537,7 @@ export default function TecnicosPage() {
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} disponiveis`}
+                {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} disponíveis`}
               </span>
               <span className="text-muted-foreground text-xs">Clique para ver somente técnicos ativos</span>
             </div>
@@ -552,7 +554,7 @@ export default function TecnicosPage() {
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-muted-foreground flex items-center gap-1">
                 <CircleMinusIcon className="size-3.5 text-gray-400 dark:text-muted-foreground" />
-                {loadingInicial ? "Conferindo status..." : `${totalInativos} sem operacao ativa`}
+                {loadingInicial ? "Conferindo status..." : `${totalInativos} sem operação ativa`}
               </span>
               <span className="text-muted-foreground text-xs">Clique para ver somente técnicos inativos</span>
             </div>
@@ -568,7 +570,7 @@ export default function TecnicosPage() {
             </span>
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-muted-foreground">
-                {loadingInicial ? "Sincronizando disponibilidade" : `${Math.max(totalAtivos - tecnicosComAlertas, 0)} disponiveis`}
+                {loadingInicial ? "Sincronizando disponibilidade" : `${Math.max(totalAtivos - tecnicosComAlertas, 0)} disponíveis`}
               </span>
               <span className="text-muted-foreground text-xs">Técnicos ativos com atendimentos</span>
             </div>
@@ -578,13 +580,13 @@ export default function TecnicosPage() {
         {/* Busca */}
         <div className="relative w-full max-w-sm">
           <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
-          <Input placeholder="Buscar por nome, especialidade ou e-mail..." value={busca} onChange={e => setBusca(e.target.value)} className="pl-8" />
+          <Input placeholder="Buscar por nome, especialidade ou e-mail..." value={busca} onChange={e => setBusca(e.target.value)} className="pl-8 dark:border-gray-600" />
         </div>
 
         {loadingInicial ? (
-          <StatePanel message="Sincronizando tecnicos da pagina com a API..." />
+          <StatePanel message="Sincronizando técnicos da página com a API..." />
         ) : errorSemDados ? (
-          <StatePanel message={mensagem || "Nao foi possivel carregar os tecnicos."} tone="error" />
+          <StatePanel message={mensagem || "Não foi possível carregar os técnicos."} tone="error" />
         ) : (
           <>
         {/* Tabela */}
@@ -620,7 +622,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="hidden size-8 lg:flex" 
+              className="cursor-pointer hidden size-8 lg:flex" 
               onClick={() => recarregarTecnicos(1, limiteItems)} 
               disabled={paginaAtual <= 1 || carregando}
             >
@@ -629,7 +631,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="size-8" 
+              className="cursor-pointer size-8" 
               onClick={() => recarregarTecnicos(paginaAtual - 1, limiteItems)} 
               disabled={paginaAtual <= 1 || carregando}
             >
@@ -639,7 +641,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="size-8" 
+              className="cursor-pointer size-8" 
               onClick={() => recarregarTecnicos(paginaAtual + 1, limiteItems)} 
               disabled={paginaAtual >= totalPaginas || carregando}
             >
@@ -648,7 +650,7 @@ export default function TecnicosPage() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="hidden size-8 lg:flex" 
+              className="cursor-pointer hidden size-8 lg:flex" 
               onClick={() => recarregarTecnicos(totalPaginas, limiteItems)} 
               disabled={paginaAtual >= totalPaginas || carregando}
             >
@@ -693,7 +695,7 @@ export default function TecnicosPage() {
                   <div className="grid grid-cols-1 gap-3">
                     {[
                       ["E-mail", tecnicoSelecionado.email],
-                      ["Telefone", tecnicoSelecionado.telefone],
+                      ["Telefone", formatarTelefoneExibicao(tecnicoSelecionado.telefone)],
                       ["Cadastrado", tempoRelativo(tecnicoSelecionado.criadoEm)],
                     ].map(([label, value]) => (
                       <div key={label} className="flex flex-col gap-1">
@@ -732,10 +734,10 @@ export default function TecnicosPage() {
 
                     {canManageTecnicos ? (
                       <div className="flex gap-2">
-                        <Button className="flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
+                        <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
                           <PencilIcon className="size-4 mr-1" /> Editar
                         </Button>
-                        <Button variant="destructive" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>
+                        <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>
                           <Trash2Icon className="size-4 mr-1" /> Excluir
                         </Button>
                       </div>
@@ -757,7 +759,7 @@ export default function TecnicosPage() {
                     </Avatar>
                     <div className="flex flex-col gap-0.5">
                       <span className="text-sm font-medium">{form.nome || "Nome do técnico"}</span>
-                      <span className="text-xs text-muted-foreground">{modoSheet === "criar" ? "Perfil tecnico" : form.especialidade}</span>
+                      <span className="text-xs text-muted-foreground">{modoSheet === "criar" ? "Perfil técnico" : form.especialidade}</span>
                     </div>
                   </div>
 
@@ -780,7 +782,7 @@ export default function TecnicosPage() {
                     />
                     {modoSheet === "editar" ? (
                       <p className="text-xs text-muted-foreground">
-                        O back-end deste fluxo nao altera e-mail na edicao do tecnico.
+                        O back-end deste fluxo não altera e-mail na edição do técnico.
                       </p>
                     ) : null}
                   </div>
@@ -792,7 +794,7 @@ export default function TecnicosPage() {
                         id="senha"
                         type="password"
                         autoComplete="new-password"
-                        placeholder="Minimo 7 caracteres"
+                        placeholder="Mínimo 7 caracteres"
                         value={form.senha}
                         onChange={e => setForm(p => ({ ...p, senha: e.target.value }))}
                       />
@@ -846,7 +848,7 @@ export default function TecnicosPage() {
                   </div>
 
                   <p className="rounded-lg border bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-                    Foto de perfil nao e atualizada por URL neste endpoint. Use o fluxo de upload de foto do perfil.
+                    Foto de perfil não é atualizada por URL neste endpoint. Use o fluxo de upload de foto do perfil.
                   </p>
                     </>
                   ) : null}
@@ -857,7 +859,7 @@ export default function TecnicosPage() {
             {modoSheet !== "ver" && (
               <SheetFooter className="px-4 pb-4">
                 <Button variant="outline" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
-                <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alteracoes"}</Button>
+                <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}</Button>
               </SheetFooter>
             )}
           </SheetContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { loginAction } from "@/app/actions/auth.actions";
 import { useLandingLanguage } from "@/components/landing/language-provider";
 import { saveAuthSession } from "@/lib/auth-session";
@@ -327,9 +328,9 @@ export default function LoginCard({isDark}) {
               </div>
             </div>
 
-            <p style={{ fontSize: "12px", color: "#8C52ff", cursor: "pointer", textAlign: "right", marginTop: "6px", fontWeight: 500 }}>
+            <Link href="/esqueci-senha" prefetch={false} style={{ display: "block", fontSize: "12px", color: "#8C52ff", cursor: "pointer", textAlign: "right", marginTop: "6px", fontWeight: 500 }}>
               {login.forgotPassword}
-            </p>
+            </Link>
 
             <button type="submit" className="orbis-btn" style={{ marginTop: "20px" }}>{login.submit}</button>
           </div>

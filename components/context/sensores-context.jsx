@@ -12,6 +12,7 @@ import {
   mergeSensorLeitura,
   mergeSensorLeituras,
   normalizeSensorCollection,
+  refreshSensorStatuses,
   requestDashboardJson,
 } from "@/lib/dashboard-api"
 
@@ -40,7 +41,7 @@ export function SensoresProvider({ children }) {
     if (!session?.accessToken) {
       setSensores([])
       setStatus("error")
-      setMensagem("Faca login para carregar os sensores.")
+      setMensagem("Faça login para carregar os sensores.")
       return
     }
 
@@ -58,7 +59,7 @@ export function SensoresProvider({ children }) {
         sensoresNormalizados = mergeSensorLeituras(sensoresNormalizados, leiturasPayload)
       } catch {}
 
-      setSensores(sensoresNormalizados)
+      setSensores(refreshSensorStatuses(sensoresNormalizados))
       setStatus("success")
       setMensagem("")
     } catch (error) {
@@ -67,7 +68,7 @@ export function SensoresProvider({ children }) {
       }
 
       setStatus("error")
-      setMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar os sensores.")
+      setMensagem(error instanceof Error ? error.message : "Não foi possível carregar os sensores.")
       setSensores((current) => (silent ? current : []))
       throw error
     }
@@ -76,6 +77,14 @@ export function SensoresProvider({ children }) {
   React.useEffect(() => {
     carregarSensores().catch(() => {})
   }, [carregarSensores])
+
+  React.useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setSensores((current) => refreshSensorStatuses(current))
+    }, 5000)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
 
   React.useEffect(() => {
     const session = getAuthSession()
@@ -96,7 +105,7 @@ export function SensoresProvider({ children }) {
     })
 
     function handleNovaLeitura(payload) {
-      setSensores((current) => mergeSensorLeitura(current, payload))
+      setSensores((current) => refreshSensorStatuses(mergeSensorLeitura(current, payload)))
       window.dispatchEvent(new CustomEvent(SENSOR_READING_EVENT, { detail: payload }))
     }
 
@@ -118,7 +127,7 @@ export function SensoresProvider({ children }) {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      const error = new Error("Faca login para gerenciar os sensores.")
+      const error = new Error("Faça login para gerenciar os sensores.")
       setStatus("error")
       setMensagem(error.message)
       throw error
@@ -148,7 +157,7 @@ export function SensoresProvider({ children }) {
       }
 
       const message =
-        error instanceof Error ? error.message : "Nao foi possivel concluir a operacao nos sensores."
+        error instanceof Error ? error.message : "Não foi possível concluir a operação nos sensores."
       setStatus("error")
       setMensagem(message)
       throw error instanceof Error ? error : new Error(message)
@@ -176,7 +185,7 @@ export function SensoresProvider({ children }) {
     await executarMutacao(`/sensores/${id}`, {
       method: "PUT",
       body: dados,
-      contextLabel: "a atualizacao do sensor",
+      contextLabel: "a atualização do sensor",
     })
   }, [executarMutacao])
 
@@ -186,7 +195,7 @@ export function SensoresProvider({ children }) {
   const excluirSensor = React.useCallback(async (id) => {
     await executarMutacao(`/sensores/${id}`, {
       method: "DELETE",
-      contextLabel: "a exclusao do sensor",
+      contextLabel: "a exclusão do sensor",
     })
   }, [executarMutacao])
 

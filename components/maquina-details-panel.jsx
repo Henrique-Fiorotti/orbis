@@ -1,14 +1,20 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
-import { AlertTriangleIcon, CircleCheckIcon, CircleMinusIcon, ImageIcon, TrendingUpIcon } from "lucide-react"
+import {
+  ActivityIcon,
+  AlertTriangleIcon,
+  CircleCheckIcon,
+  CircleHelpIcon,
+  CircleMinusIcon,
+  ImageIcon,
+  ThermometerIcon,
+} from "lucide-react"
 
-import { useIsMobile } from "@/hooks/use-mobile"
 import { Badge } from "@/components/ui/badge"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   getMaquinaIntegridadeExibicao,
   getMaquinaStatusExibicao,
@@ -16,29 +22,18 @@ import {
 } from "@/lib/maquinas-table"
 import { cn, tempoRelativo } from "@/lib/utils"
 
-const chartConfig = {
-  temperatura: { label: "Temperatura (C)", color: "var(--primary)" },
-  vibracao: { label: "Vibracao", color: "var(--chart-3)" },
-}
-
 function getMachineSensors(maquina, sensores) {
   return sensores.filter((sensor) => sensor.maquinaId === maquina.id || sensor.maquinaNome === maquina.nome)
 }
 
-function formatSensorLabel(nome, index) {
-  if (typeof nome !== "string" || !nome.trim()) {
-    return `Sensor ${index + 1}`
-  }
-
-  return nome.replace(/^Orbis\s+/i, "")
-}
-
 function formatMetric(value, suffix = "", digits = 1) {
-  if (!Number.isFinite(value)) {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
     return "N/A"
   }
 
-  return `${Number(value).toFixed(digits)}${suffix}`
+  return `${parsed.toFixed(digits)}${suffix}`
 }
 
 function CriticidadeBadge({ value }) {
@@ -77,12 +72,37 @@ function SensorStatusBadge({ value }) {
       className={cn(
         "px-2 text-xs",
         isOnline
-          ? "border-green-200 bg-green-50 text-green-700"
-          : "border-red-200 bg-red-50 text-red-700"
+          ? "border-[#5E17EB] bg-[#5E17EB] text-white dark:border-[#5E17EB] dark:bg-[#5E17EB] dark:text-white"
+          : "border-gray-200 bg-white text-gray-700 dark:border-border dark:bg-muted/30 dark:text-muted-foreground"
       )}
     >
       {value}
     </Badge>
+  )
+}
+
+function MetricSnapshot({ icon: Icon, label, current, ideal, limit, suffix, digits = 1 }) {
+  return (
+    <div className="rounded-lg border border-[#5E17EB]/25 bg-[#5E17EB]/5 p-3 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10">
+      <div className="mb-3 flex items-center gap-2">
+        <Icon className="size-4 text-[#5E17EB]" />
+        <span className="text-sm font-medium">{label}</span>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Leitura</span>
+          <span className="text-sm font-semibold">{formatMetric(current, suffix, digits)}</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Ideal</span>
+          <span className="text-sm">{formatMetric(ideal, suffix, digits)}</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Limite</span>
+          <span className="text-sm">{formatMetric(limit, suffix, digits)}</span>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -128,23 +148,9 @@ export function MaquinaImagePreview({ maquina, className = "" }) {
 }
 
 export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", className = "" }) {
-  const isMobile = useIsMobile()
   const sensoresDaMaquina = React.useMemo(
     () => getMachineSensors(maquina, sensores),
     [maquina, sensores]
-  )
-  const leiturasAtuais = React.useMemo(
-    () =>
-      sensoresDaMaquina.map((sensor, index) => ({
-        sensor: formatSensorLabel(sensor.nome, index),
-        temperatura: sensor.temperatura?.valorAtual ?? null,
-        vibracao: sensor.vibracao?.valorAtual ?? null,
-      })),
-    [sensoresDaMaquina]
-  )
-  const possuiLeituras = React.useMemo(
-    () => leiturasAtuais.some((itemLeitura) => itemLeitura.temperatura !== null || itemLeitura.vibracao !== null),
-    [leiturasAtuais]
   )
   const totalSensores = sensoresDaMaquina.length > 0 ? sensoresDaMaquina.length : maquina.sensores
   const maquinaComTotalSensores = React.useMemo(
@@ -157,26 +163,6 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
 
   return (
     <div className={cn("flex flex-col gap-4 text-sm", className)}>
-      {!isMobile && !sensorError && sensoresDaMaquina.length > 0 && possuiLeituras ? (
-        <>
-          <ChartContainer config={chartConfig} className="h-[340px]">
-            <AreaChart accessibilityLayer data={leiturasAtuais} margin={{ left: 0, right: 10 }}>
-              <CartesianGrid vertical={false} />
-              <XAxis dataKey="sensor" tickLine={false} axisLine={false} tickMargin={8} />
-              <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-              <Area dataKey="vibracao" type="natural" fill="var(--color-vibracao)" fillOpacity={0.35} stroke="var(--color-vibracao)" />
-              <Area dataKey="temperatura" type="natural" fill="var(--color-temperatura)" fillOpacity={0.5} stroke="var(--color-temperatura)" />
-            </AreaChart>
-          </ChartContainer>
-          <Separator />
-          <div className="flex gap-2 leading-none font-medium">
-            Integridade: {maquina.integridade}% - Estabilidade: {maquina.scoreEstabilidade}%
-            <TrendingUpIcon className="size-4" />
-          </div>
-          <Separator />
-        </>
-      ) : null}
-
       {sensorError ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
           {sensorError}
@@ -197,11 +183,31 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
           <IntegridadeBar value={integridadeExibicao} inactive={statusExibicao === "SEM_SENSOR"} />
         </div>
         <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <Label>Estabilidade</Label>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Como a estabilidade da máquina é calculada"
+                  className="flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <CircleHelpIcon className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={6} className="max-w-64 text-left leading-relaxed">
+                O score de estabilidade da máquina considera a condição operacional consolidada, incluindo integridade e comportamento das leituras dos sensores. Quanto mais perto de 100%, mais estável ela está.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <span className="font-medium">{formatMetric(maquina.scoreEstabilidade, "%", 0)}</span>
+        </div>
+        <div className="flex flex-col gap-1">
           <Label>Sensores vinculados</Label>
           <span className="font-medium">{totalSensores}</span>
         </div>
-        <div className="flex flex-col gap-1">
-          <Label>Ultimo sinal</Label>
+        <div className="col-span-2 flex flex-col gap-1">
+          <Label>Último sinal</Label>
           <span className="font-medium">
             {ultimaLeituraExibicao ? tempoRelativo(ultimaLeituraExibicao) : "Sem leitura"}
           </span>
@@ -213,7 +219,7 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
       <div className="flex flex-col gap-3">
         <Label>Sensores sincronizados</Label>
         {sensoresDaMaquina.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nenhum sensor vinculado foi retornado pela API para esta maquina.</p>
+          <p className="text-xs text-muted-foreground">Nenhum sensor vinculado foi retornado pela API para esta máquina.</p>
         ) : (
           sensoresDaMaquina.map((sensor, index) => (
             <div key={sensor.id ?? `${sensor.nome}-${index}`} className="rounded-lg border p-3">
@@ -224,19 +230,24 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
                 </div>
                 <SensorStatusBadge value={sensor.status} />
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
-                <div className="rounded-md bg-muted/40 p-2">
-                  <span className="block text-[11px] uppercase tracking-wide">Temperatura</span>
-                  <span className="mt-1 block text-sm font-medium text-foreground">
-                    {formatMetric(sensor.temperatura?.valorAtual, " C")}
-                  </span>
-                </div>
-                <div className="rounded-md bg-muted/40 p-2">
-                  <span className="block text-[11px] uppercase tracking-wide">Vibracao</span>
-                  <span className="mt-1 block text-sm font-medium text-foreground">
-                    {formatMetric(sensor.vibracao?.valorAtual, "", 2)}
-                  </span>
-                </div>
+              <div className="mt-3 grid gap-3">
+                <MetricSnapshot
+                  icon={ThermometerIcon}
+                  label="Temperatura"
+                  current={sensor.temperatura?.valorAtual}
+                  ideal={sensor.idealTemperatura}
+                  limit={sensor.limiteTemperatura ?? sensor.temperatura?.limiteMax}
+                  suffix=" °C"
+                />
+                <MetricSnapshot
+                  icon={ActivityIcon}
+                  label="Vibração"
+                  current={sensor.vibracao?.valorAtual}
+                  ideal={sensor.idealVibracao}
+                  limit={sensor.limiteVibracao ?? sensor.vibracao?.limiteMax}
+                  suffix=" mm/s"
+                  digits={2}
+                />
               </div>
             </div>
           ))

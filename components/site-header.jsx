@@ -128,7 +128,7 @@ function writeNotificationPrefs(storageKey, prefs) {
 }
 
 function getNotificationDate(alerta) {
-  return alerta?.atualizadoEm || alerta?.criadoEm || new Date().toISOString()
+  return alerta?.ultimaOcorrenciaEm || alerta?.atualizadoEm || alerta?.criadoEm || new Date().toISOString()
 }
 
 function getNotificationType(alerta) {
@@ -164,14 +164,16 @@ function buildAlertNotification(alerta, prefs) {
 
   const lidas = new Set(prefs.lidas)
   const lidaPorPadrao = alerta.status !== "ATIVO" && alerta.status !== "EM_ANDAMENTO"
+  const ocorrencias = Number(alerta.ocorrencias)
+  const ocorrenciasDescricao = Number.isFinite(ocorrencias) && ocorrencias > 1 ? ` (${ocorrencias} ocorrências)` : ""
   const maquina = alerta.maquinaNome || "Máquina não informada"
-  const sensor = alerta.sensorNome || "Sensor não informado"
+  const sensor = alerta.sensorNome || "Sensor Não informado"
 
   return {
     key,
     tipo: getNotificationType(alerta),
     titulo: getNotificationTitle(alerta),
-    descricao: `${maquina} - ${sensor}: ${alerta.mensagem}`,
+    descricao: `${maquina} - ${sensor}: ${alerta.mensagem}${ocorrenciasDescricao}`,
     tempo: tempoRelativo(data),
     timestamp: Date.parse(data) || 0,
     lida: lidas.has(key) || lidaPorPadrao,
