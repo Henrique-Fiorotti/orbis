@@ -61,6 +61,9 @@ const formVazio = {
   foto: "",
 }
 
+const ADMIN_PAGE_SIZE = 10
+const ADMIN_FETCH_WINDOW_SIZE = 100
+
 const cardResumoBaseClass = "rounded-xl border bg-card p-4 flex flex-col gap-3 text-left shadow-sm transition-colors"
 
 function getAdminsEndpoints(page, limit) {
@@ -127,6 +130,45 @@ async function fetchAdminsPayload(accessToken, page, limit) {
   throw new Error("Não foi possível localizar um endpoint de leitura de administradores na API.")
 }
 
+async function fetchAdminsFromUsuariosCollection(accessToken) {
+  const admins = []
+  let page = 1
+  let totalPages = 1
+  let lastError = null
+
+  do {
+    const endpoints = [
+      `/usuarios/?page=${page}&limit=${ADMIN_FETCH_WINDOW_SIZE}`,
+      `/usuarios?page=${page}&limit=${ADMIN_FETCH_WINDOW_SIZE}`,
+    ]
+    let payload = null
+
+    for (const endpoint of endpoints) {
+      try {
+        payload = await requestDashboardJson(endpoint, accessToken, "os administradores")
+        break
+      } catch (error) {
+        lastError = error
+      }
+    }
+
+    if (!payload) {
+      throw lastError ?? new Error("Nao foi possivel carregar os administradores.")
+    }
+
+    admins.push(...normalizeAdminCollection(payload))
+    totalPages = Number(payload?.totalPages ?? totalPages)
+
+    if (!Number.isFinite(totalPages) || totalPages < page) {
+      totalPages = page
+    }
+
+    page += 1
+  } while (page <= totalPages)
+
+  return admins
+}
+
 function AdminAvatar({ admin, size = "default" }) {
   const sizeClass = size === "lg"
     ? "h-16 w-16 text-xl"
@@ -189,7 +231,7 @@ export default function AdminsPage() {
   const [form, setForm] = React.useState(formVazio)
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [adminExcluir, setAdminExcluir] = React.useState(null)
-  const [limiteItems] = React.useState(10)
+  const [limiteItems] = React.useState(ADMIN_PAGE_SIZE)
   const [paginaAtual, setPaginaAtual] = React.useState(1)
   const [totalPaginas, setTotalPaginas] = React.useState(1)
   const [filtroResumo, setFiltroResumo] = React.useState("TODOS")
@@ -203,7 +245,7 @@ export default function AdminsPage() {
   const totalAtivos = React.useMemo(() => admins.filter((admin) => admin.status === "ATIVO").length, [admins])
   const totalInativos = React.useMemo(() => admins.filter((admin) => admin.status === "INATIVO").length, [admins])
 
-  const carregarAdmins = React.useCallback(async (page = 1, limit = 10) => {
+  const carregarAdmins = React.useCallback(async (page = 1, limit = ADMIN_PAGE_SIZE) => {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
@@ -218,17 +260,23 @@ export default function AdminsPage() {
 
     try {
       const resolved = await fetchAdminsPayload(session.accessToken, page, limit)
-      const normalizedAdmins = normalizeAdminCollection(resolved.payload, {
+      let normalizedAdmins = normalizeAdminCollection(resolved.payload, {
         assumeAdminWhenRoleMissing: resolved.source !== "usuarios",
       })
-      const totalAdmins = resolved.source === "usuarios" ? normalizedAdmins.length : getPayloadTotal(resolved.payload, normalizedAdmins.length)
+      let totalAdmins = getPayloadTotal(resolved.payload, normalizedAdmins.length)
+      let totalPages = resolved.payload?.totalPages
+
+      if (resolved.source.startsWith("usuarios")) {
+        const allAdmins = await fetchAdminsFromUsuariosCollection(session.accessToken)
+        const startIndex = (page - 1) * limit
+
+        normalizedAdmins = allAdmins.slice(startIndex, startIndex + limit)
+        totalAdmins = allAdmins.length
+        totalPages = Math.max(Math.ceil(totalAdmins / limit), 1)
+      }
 
       setAdmins(normalizedAdmins)
-      setTotalPaginas(
-        resolved.payload?.totalPages
-          ? resolved.payload.totalPages
-          : Math.max(Math.ceil(totalAdmins / limit), 1)
-      )
+      setTotalPaginas(totalPages ? Number(totalPages) : Math.max(Math.ceil(totalAdmins / limit), 1))
       setPaginaAtual(page)
       setStatus("success")
       setMensagem("")
@@ -651,7 +699,7 @@ export default function AdminsPage() {
           <StatePanel message={mensagem || "Não foi possível carregar os administradores."} tone="error" />
         ) : (
           <>
-            <div className="min-h-[500px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
+            <div className="overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-muted">
                   {table.getHeaderGroups().map((headerGroup) => (
