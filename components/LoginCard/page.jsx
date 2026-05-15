@@ -90,6 +90,7 @@ export default function LoginCard({isDark}) {
   const [showPassword, setShowPassword] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [mounted, setMounted] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -124,7 +125,7 @@ export default function LoginCard({isDark}) {
       return
     }
 
-    const session = saveAuthSession(result)
+    const session = saveAuthSession(result, { remember: rememberMe })
 
     if (!session?.accessToken) {
       alert(login.sessionError)
@@ -257,6 +258,24 @@ export default function LoginCard({isDark}) {
         .orbis-btn:hover { background: #7a3fe0; }
         .orbis-btn:active { transform: scale(0.99); }
 
+        .orbis-remember {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 12px;
+          font-size: 12px;
+          color: var(--orbis-label-color);
+          cursor: pointer;
+          user-select: none;
+        }
+
+        .orbis-remember input {
+          width: 15px;
+          height: 15px;
+          accent-color: #8C52ff;
+          cursor: pointer;
+        }
+
         .orbis-footer {
           font-size: 12px;
           color: var(--orbis-footer-text);
@@ -331,6 +350,17 @@ export default function LoginCard({isDark}) {
             <Link href="/esqueci-senha" prefetch={false} style={{ display: "block", fontSize: "12px", color: "#8C52ff", cursor: "pointer", textAlign: "right", marginTop: "6px", fontWeight: 500 }}>
               {login.forgotPassword}
             </Link>
+
+            <label className="orbis-remember" htmlFor="remember-me">
+              <input
+                id="remember-me"
+                name="rememberMe"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(event) => setRememberMe(event.target.checked)}
+              />
+              <span>Lembrar de mim</span>
+            </label>
 
             <button type="submit" className="orbis-btn" style={{ marginTop: "20px" }}>{login.submit}</button>
           </div>

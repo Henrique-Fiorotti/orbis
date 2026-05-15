@@ -21,6 +21,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { clearAuthSession } from "@/lib/auth-session"
 import { EllipsisVerticalIcon, CircleUserRoundIcon, LogOutIcon } from "lucide-react"
 
@@ -92,10 +93,21 @@ async function handleLogout() {
               </Link>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className={"cursor-pointer"} onClick={handleLogout}>
-              <LogOutIcon />
-              Sair
-            </DropdownMenuItem>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuItem className={"cursor-pointer"} onClick={handleLogout}>
+                  <LogOutIcon />
+                  Sair
+                </DropdownMenuItem>
+              </TooltipTrigger>
+              <TooltipContent
+                side={isMobile ? "top" : "right"}
+                sideOffset={8}
+                className="max-w-48 border border-border/60 bg-popover/95 px-2.5 py-1.5 text-[11px] font-normal leading-snug text-muted-foreground shadow-md"
+              >
+                Ao sair, será necessário realizar o login novamente.
+              </TooltipContent>
+            </Tooltip>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
