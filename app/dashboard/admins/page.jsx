@@ -51,6 +51,7 @@ import {
   isValidEmail,
 } from "@/lib/form-formatters"
 import { tempoRelativo } from "@/lib/utils"
+import { getWhatsappUrl } from "@/lib/whatsapp-url.mjs"
 
 const formVazio = {
   nome: "",
@@ -242,6 +243,7 @@ export default function AdminsPage() {
   const canManageAdmins = permissions.canManageAdmins
   const loadingInicial = status === "loading" && admins.length === 0
   const errorSemDados = status === "error" && admins.length === 0
+  const adminWhatsappUrl = getWhatsappUrl(adminSelecionado?.telefone)
   const totalAtivos = React.useMemo(() => admins.filter((admin) => admin.status === "ATIVO").length, [admins])
   const totalInativos = React.useMemo(() => admins.filter((admin) => admin.status === "INATIVO").length, [admins])
 
@@ -798,16 +800,35 @@ export default function AdminsPage() {
 
                   <Separator />
 
-                  {canManageAdmins ? (
-                    <div className="flex gap-2">
-                      <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(adminSelecionado)} disabled={salvando}>
-                        <PencilIcon className="size-4 mr-1" /> Editar
+                  <div className="flex flex-col gap-2">
+                    {adminWhatsappUrl ? (
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="w-full border-green-200 bg-[#5F18EA]/95 text-white hover:bg-[#5F18EA] hover:text-white dark:border-[#5F18EA]60 dark:bg-[#5F18EA]/30 dark:text-white dark:hover:bg-[#5F18EA]/50"
+                      >
+                        <a href={adminWhatsappUrl} target="_blank" rel="noreferrer">
+                          <img src="/whatsapp-128-svgrepo-com.svg" alt="" className="size-4 invert" />
+                          Entrar em contato pelo WhatsApp
+                        </a>
                       </Button>
-                      <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(adminSelecionado)} disabled={salvando}>
-                        <Trash2Icon className="size-4 mr-1" /> Excluir
+                    ) : (
+                      <Button variant="outline" className="w-full text-muted-foreground" disabled>
+                        Administrador precisa registrar um telefone para contato
                       </Button>
-                    </div>
-                  ) : null}
+                    )}
+
+                    {canManageAdmins ? (
+                      <div className="flex gap-2">
+                        <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(adminSelecionado)} disabled={salvando}>
+                          <PencilIcon className="size-4 mr-1" /> Editar
+                        </Button>
+                        <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(adminSelecionado)} disabled={salvando}>
+                          <Trash2Icon className="size-4 mr-1" /> Excluir
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
                 </>
               ) : (
                 <>
