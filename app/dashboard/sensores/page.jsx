@@ -679,7 +679,7 @@ export default function SensoresPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Sensores online</span>
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                {loadingInicial ? "Sincronizando" : `${sensores.length} total`}
+                {loadingInicial ? "Sincronizando" : `${sensores.length} Total`}
               </span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
@@ -688,11 +688,11 @@ export default function SensoresPage() {
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="flex items-center gap-1 text-green-700 dark:text-green-300">
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {loadingInicial ? "Atualizando sensores..." : `${totalOnline} transmitindo normalmente`}
+                {loadingInicial ? "Atualizando sensores..." : `${totalOnline} Transmitindo normalmente`}
               </span>
               <span className="flex items-center gap-1 text-red-600 dark:text-red-300">
                 <WifiOffIcon className="size-3.5" />
-                {loadingInicial ? "Lendo inativos..." : `${totalOffline} offline ou inativos`}
+                {loadingInicial ? "Lendo inativos..." : `${totalOffline} Offline ou inativos`}
               </span>
             </div>
           </div>
@@ -701,7 +701,7 @@ export default function SensoresPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Leituras fora do limite</span>
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${foraDoLimite > 0 ? "border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : "border border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"}`}>
-                {loadingInicial ? "..." : foraDoLimite > 0 ? "alerta" : "normal"}
+                {loadingInicial ? "..." : foraDoLimite > 0 ? "Alerta" : "Normal"}
               </span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
@@ -719,7 +719,7 @@ export default function SensoresPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Sem máquina vinculada</span>
               <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
-                inativos
+                Inativos
               </span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">

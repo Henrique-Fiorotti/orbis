@@ -554,8 +554,8 @@ export default function AdminsPage() {
   }, [admins, busca, filtroResumo])
 
   const filtroResumoLabel = React.useMemo(() => {
-    if (filtroResumo === "ATIVO") return "ativos"
-    if (filtroResumo === "INATIVO") return "inativos"
+    if (filtroResumo === "ATIVO") return "Ativos"
+    if (filtroResumo === "INATIVO") return "Inativos"
     return "todos"
   }, [filtroResumo])
 

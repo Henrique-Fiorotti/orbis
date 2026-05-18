@@ -545,7 +545,7 @@ export default function MaquinasPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Total de máquinas</span>
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                {loadingInicial ? "Sincronizando" : `${maquinas.length} cadastradas`}
+                {loadingInicial ? "Sincronizando" : `${maquinas.length} Cadastradas`}
               </span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
@@ -554,7 +554,7 @@ export default function MaquinasPage() {
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {loadingInicial ? "Atualizando operação..." : `${totalOk} operando normalmente`}
+                {loadingInicial ? "Atualizando operação..." : `${totalOk} Operando normalmente`}
               </span>
               <span className="text-red-600 dark:text-red-300 flex items-center gap-1">
                 <AlertTriangleIcon className="size-3.5" />
@@ -567,7 +567,7 @@ export default function MaquinasPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Alta Importância</span>
               <span className="text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full font-medium dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
-                atenção
+                Atenção
               </span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
@@ -579,7 +579,7 @@ export default function MaquinasPage() {
                 {loadingInicial ? "Verificando status..." : `${criticasAltaAlerta} em alerta agora`}
               </span>
               <span className="text-muted-foreground text-xs">
-                {loadingInicial ? "Classificando importância" : `${Math.max(criticasAlta - criticasAltaAlerta, 0)} operando normalmente`}
+                {loadingInicial ? "Classificando importância" : `${Math.max(criticasAlta - criticasAltaAlerta, 0)} Operando normalmente`}
               </span>
             </div>
           </div>
