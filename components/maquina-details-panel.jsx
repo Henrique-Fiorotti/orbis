@@ -107,7 +107,7 @@ function MetricSnapshot({ icon: Icon, label, current, ideal, limit, suffix, digi
 }
 
 function IntegridadeBar({ value, inactive = false }) {
-  const normalizedValue = Number(value)
+  const normalizedValue = Math.round(Number(value))
 
   if (inactive || !Number.isFinite(normalizedValue)) {
     return (
