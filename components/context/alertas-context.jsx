@@ -20,8 +20,68 @@ import {
 /** @type {React.Context<AlertasContextValue | null>} */
 const AlertasContext = React.createContext(null)
 
+function normalizeManutencaoStatus(value) {
+  if (typeof value !== "string") {
+    return ""
+  }
+
+  const normalized = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_")
+
+  return {
+    ANDAMENTO: "EM_ANDAMENTO",
+    ABERTO: "EM_ANDAMENTO",
+    ATIVO: "EM_ANDAMENTO",
+    EM_ATENDIMENTO: "EM_ANDAMENTO",
+    EM_ANDAMENTO: "EM_ANDAMENTO",
+    INICIADA: "EM_ANDAMENTO",
+    INICIADO: "EM_ANDAMENTO",
+    PENDENTE: "EM_ANDAMENTO",
+  }[normalized] ?? normalized
+}
+
+function getMaintenanceItems(payload) {
+  const collection = extractCollection(payload)
+
+  if (collection.length > 0) {
+    return collection
+  }
+
+  const candidates = [
+    payload?.manutencao,
+    payload?.manutencoes,
+    payload?.data?.manutencao,
+    payload?.data?.manutencoes,
+    payload?.dados?.manutencao,
+    payload?.dados?.manutencoes,
+    payload?.resultado?.manutencao,
+    payload?.resultado?.manutencoes,
+    payload?.registro,
+    payload?.item,
+    payload,
+  ]
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      return candidate
+    }
+
+    if (candidate && typeof candidate === "object") {
+      return [candidate]
+    }
+  }
+
+  return []
+}
+
 function getOpenMaintenance(payload) {
-  return extractCollection(payload).find((item) => item?.status === "EM_ANDAMENTO") ?? null
+  return getMaintenanceItems(payload).find((item) =>
+    normalizeManutencaoStatus(item?.status ?? item?.estado ?? item?.situacao) === "EM_ANDAMENTO"
+  ) ?? null
 }
 
 /**

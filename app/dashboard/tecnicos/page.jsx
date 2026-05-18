@@ -31,6 +31,7 @@ import {
   getSortedRowModel, useReactTable,
 } from "@tanstack/react-table"
 import { tempoRelativo } from "@/lib/utils"
+import { getWhatsappUrl } from "@/lib/whatsapp-url.mjs"
 import {
   formatBrazilianPhoneInput,
   isValidBackendPassword,
@@ -123,18 +124,6 @@ function formatarTelefoneExibicao(value) {
   return String(value ?? "").trim() || "Não informado"
 }
 
-function getTecnicoWhatsappUrl(value) {
-  const digits = String(value ?? "").replace(/\D/g, "")
-
-  if (digits.length < 10) {
-    return null
-  }
-
-  const normalizedDigits = digits.startsWith("55") ? digits : `55${digits}`
-
-  return `https://wa.me/${normalizedDigits}`
-}
-
 export default function TecnicosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -172,7 +161,7 @@ export default function TecnicosPage() {
   const loadingInicial = useDashboardMetricsLoading(carregando && tecnicos.length === 0)
   const errorSemDados = status === "error" && tecnicos.length === 0
   const canManageTecnicos = permissions.canManageTecnicos
-  const tecnicoWhatsappUrl = getTecnicoWhatsappUrl(tecnicoSelecionado?.telefone)
+  const tecnicoWhatsappUrl = getWhatsappUrl(tecnicoSelecionado?.telefone)
   const totalAtivos = React.useMemo(() => tecnicos.filter((tecnico) => tecnico.status === "ATIVO").length, [tecnicos])
   const totalInativos = React.useMemo(() => tecnicos.filter((tecnico) => tecnico.status === "INATIVO").length, [tecnicos])
   const tecnicosComAlertas = React.useMemo(
