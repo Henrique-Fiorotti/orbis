@@ -17,7 +17,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { MoreHorizontalIcon, FolderIcon, ShareIcon, Trash2Icon, FileTextIcon } from "lucide-react"
+import { CalendarClockIcon, MoreHorizontalIcon, FolderIcon, ShareIcon, Trash2Icon, FileTextIcon } from "lucide-react"
 
 function isSidebarItemActive(pathname, url) {
   return pathname === url || pathname?.startsWith(`${url}/`)
@@ -99,6 +99,24 @@ export function NavDocuments({
             >
               <FileTextIcon className={isSidebarItemActive(pathname, "/dashboard/relatorios") ? "text-[#5F18EA]! dark:text-[#C5A3FF]!" : "text-sidebar-foreground/70"} />
               <span>Relatório</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            asChild
+            tooltip="Agendamentos"
+            className="text-sidebar-foreground/70"
+            isActive={isSidebarItemActive(pathname, "/dashboard/agendamentos")}
+          >
+            <Link
+              className={`no-underline! ${isSidebarItemActive(pathname, "/dashboard/agendamentos") ? "text-[#5F18EA]! dark:text-[#C5A3FF]!" : "text-black dark:text-white"}`}
+              href="/dashboard/agendamentos"
+              onClick={closeMobileSidebar}
+              aria-current={isSidebarItemActive(pathname, "/dashboard/agendamentos") ? "page" : undefined}
+            >
+              <CalendarClockIcon className={isSidebarItemActive(pathname, "/dashboard/agendamentos") ? "text-[#5F18EA]! dark:text-[#C5A3FF]!" : "text-sidebar-foreground/70"} />
+              <span>Agendamentos</span>
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
