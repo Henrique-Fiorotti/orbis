@@ -758,6 +758,9 @@ export default function PerfilPage() {
                     disabled={loading || salvandoDados}
                     onChange={(e) => setForm((p) => ({ ...p, telefone: e.target.value }))}
                   />
+                   <p className="text-xs text-muted-foreground">
+                    {podeEditarIdentidade ? "Você pode alterar este dado." : "Alterado apenas pelo administrador."}
+                  </p>
                 </div>
 
                 {/* <div className="flex flex-col gap-1.5">
