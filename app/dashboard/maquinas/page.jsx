@@ -81,7 +81,7 @@ function StatusBadge({ value }) {
 }
 
 function IntegridadeBar({ value, inactive = false }) {
-  const normalizedValue = Number(value)
+  const normalizedValue = Math.round(Number(value)) // isso arredonda o valor 
 
   if (inactive || !Number.isFinite(normalizedValue)) {
     return (
