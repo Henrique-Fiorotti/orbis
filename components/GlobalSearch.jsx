@@ -114,7 +114,10 @@ function ResultIcon({ item }) {
 export function GlobalSearch({ open, onOpenChange }) {
   const router = useRouter()
   const inputRef = React.useRef(null)
+  const resultsContentRef = React.useRef(null)
   const [query, setQuery] = React.useState("")
+  const [resultsPanelHeight, setResultsPanelHeight] = React.useState(0)
+  const [resultsPanelScrollable, setResultsPanelScrollable] = React.useState(false)
   const { admins, carregando: carregandoAdmins } = useAdmins()
   const { maquinas, carregando: carregandoMaquinas } = useMaquinas()
   const { sensores, carregando: carregandoSensores } = useSensores()
@@ -241,6 +244,33 @@ export function GlobalSearch({ open, onOpenChange }) {
     [results]
   )
 
+  React.useLayoutEffect(() => {
+    if (!open || !resultsContentRef.current) {
+      setResultsPanelHeight(0)
+      setResultsPanelScrollable(false)
+      return
+    }
+
+    function updateResultsPanelHeight() {
+      const maxHeight = Math.max(160, Math.min(640, window.innerHeight - 128))
+      const contentHeight = resultsContentRef.current?.scrollHeight ?? 0
+
+      setResultsPanelHeight(Math.min(contentHeight, maxHeight))
+      setResultsPanelScrollable(contentHeight > maxHeight)
+    }
+
+    updateResultsPanelHeight()
+
+    const resizeObserver = new ResizeObserver(updateResultsPanelHeight)
+    resizeObserver.observe(resultsContentRef.current)
+    window.addEventListener("resize", updateResultsPanelHeight)
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener("resize", updateResultsPanelHeight)
+    }
+  }, [groupedResults, loading, open, query, results.length])
+
   function handleSelect(item) {
     onOpenChange(false)
     router.push(item.href)
@@ -272,10 +302,13 @@ export function GlobalSearch({ open, onOpenChange }) {
 
         <div
           className={cn(
-            "max-h-[min(640px,calc(100vh-8rem))] overflow-y-auto px-2 py-2 transition-[max-height,opacity,border-color] duration-300 ease-out",
+            "overflow-hidden transition-[height,opacity,border-color] duration-300 ease-out",
+            resultsPanelScrollable ? "overflow-y-auto" : "",
             query.trim() || loading ? "border-t opacity-100" : "opacity-95"
           )}
+          style={{ height: resultsPanelHeight }}
         >
+          <div ref={resultsContentRef} className="px-2 py-2">
           {loading ? (
             <div className="grid gap-2 p-2">
               {Array.from({ length: 5 }).map((_, index) => (
@@ -333,6 +366,7 @@ export function GlobalSearch({ open, onOpenChange }) {
               </div>
             ))
           )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
