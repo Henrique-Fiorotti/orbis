@@ -34,6 +34,7 @@ import {
   getPaginationRowModel, getSortedRowModel, useReactTable,
 } from "@tanstack/react-table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { tempoRelativo } from "@/lib/utils"
 import {
   MAQUINA_IMPORTANCIA_FILTER_OPTIONS as IMPORTANCIA_FILTER_OPTIONS,
@@ -165,6 +166,7 @@ export default function MaquinasPage() {
   const [sorting, setSorting] = React.useState([])
   const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
+  const maquinaAbertaPelaUrlRef = React.useRef(null)
 
   const loadingInicial = useDashboardMetricsLoading(carregando && maquinas.length === 0)
   const errorSemDados = status === "error" && maquinas.length === 0
@@ -217,12 +219,22 @@ export default function MaquinasPage() {
     const machineIdParam = searchParams.get("machineId")
 
     if (!machineIdParam || maquinas.length === 0) {
+      if (!machineIdParam) {
+        maquinaAbertaPelaUrlRef.current = null
+      }
+      return
+    }
+
+    const machineIdKey = String(machineIdParam)
+
+    if (maquinaAbertaPelaUrlRef.current === machineIdKey) {
       return
     }
 
     const maquina = maquinas.find((item) => String(item.id) === String(machineIdParam))
 
     if (maquina) {
+      maquinaAbertaPelaUrlRef.current = machineIdKey
       abrirVer(maquina)
     }
   }, [maquinas, searchParams])
@@ -455,16 +467,16 @@ export default function MaquinasPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}>
+            <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}>
               <EyeIcon className="mr-1 size-4" /> Ver detalhes
             </DropdownMenuItem>
             {canManageMaquinas ? (
               <>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}>
+                <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirEditar(row.original))}>
                   <PencilIcon className="mr-1 size-4" /> Editar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}>
+                <DropdownMenuItem className="cursor-pointer" variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => confirmarExcluir(row.original))}>
                   <Trash2Icon className="mr-1 size-4" /> Excluir
                 </DropdownMenuItem>
               </>

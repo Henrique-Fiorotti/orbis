@@ -30,6 +30,7 @@ import {
   flexRender, getCoreRowModel, getFilteredRowModel,
   getSortedRowModel, useReactTable,
 } from "@tanstack/react-table"
+import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { tempoRelativo } from "@/lib/utils"
 import { getWhatsappUrl } from "@/lib/whatsapp-url.mjs"
 import {
@@ -151,6 +152,7 @@ export default function TecnicosPage() {
   const [tecnicoExcluir, setTecnicoExcluir] = React.useState(null)
   const [limiteItems] = React.useState(10)
   const [filtroResumo, setFiltroResumo] = React.useState("TODOS")
+  const tecnicoAbertoPelaUrlRef = React.useRef(null)
 
   React.useEffect(() => {
     if (!permissions.canViewTecnicos) {
@@ -224,12 +226,22 @@ export default function TecnicosPage() {
     const tecnicoIdParam = searchParams.get("tecnicoId")
 
     if (!tecnicoIdParam || tecnicos.length === 0) {
+      if (!tecnicoIdParam) {
+        tecnicoAbertoPelaUrlRef.current = null
+      }
+      return
+    }
+
+    const tecnicoIdKey = String(tecnicoIdParam)
+
+    if (tecnicoAbertoPelaUrlRef.current === tecnicoIdKey) {
       return
     }
 
     const tecnico = tecnicos.find((item) => String(item.id) === String(tecnicoIdParam))
 
     if (tecnico) {
+      tecnicoAbertoPelaUrlRef.current = tecnicoIdKey
       abrirVer(tecnico)
     }
   }, [permissions.canViewTecnicos, searchParams, tecnicos])
@@ -413,12 +425,12 @@ export default function TecnicosPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
             {canManageTecnicos ? (
               <>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirEditar(row.original))}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => confirmarExcluir(row.original))}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
               </>
             ) : null}
           </DropdownMenuContent>

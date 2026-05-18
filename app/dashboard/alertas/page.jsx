@@ -41,6 +41,7 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { tempoRelativo } from "@/lib/utils"
 
 const TIPOS_ALERTA = ["LIMITE_ULTRAPASSADO", "TENDENCIA_CURTA", "TENDENCIA_LONGA", "DEGRADACAO_ACELERADA", "INSTABILIDADE"]
@@ -232,22 +233,22 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem className="cursor-pointer" onClick={() => onVer(chamado)}>
+              <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => onVer(chamado))}>
                 <EyeIcon className="mr-1 size-4" /> Ver detalhes
               </DropdownMenuItem>
               {canIniciar || canResolver || canCancelar ? <DropdownMenuSeparator /> : null}
               {canIniciar ? (
-                <DropdownMenuItem disabled={statusActionPending} onClick={() => onStatus(chamado.id, "EM_ANDAMENTO")}>
+                <DropdownMenuItem disabled={statusActionPending} onSelect={() => runAfterCurrentOverlayCloses(() => onStatus(chamado.id, "EM_ANDAMENTO"))}>
                   <AlertTriangleIcon className="mr-1 size-4 text-yellow-600 dark:text-yellow-300" /> {isStarting ? "Iniciando..." : "Iniciar atendimento"}
                 </DropdownMenuItem>
               ) : null}
               {canResolver ? (
-                <DropdownMenuItem disabled={statusActionPending} onClick={() => onStatus(chamado.id, "RESOLVIDO")}>
+                <DropdownMenuItem disabled={statusActionPending} onSelect={() => runAfterCurrentOverlayCloses(() => onStatus(chamado.id, "RESOLVIDO"))}>
                   <CircleCheckIcon className="mr-1 size-4 text-green-600 dark:text-green-300" /> {isResolving ? "Resolvendo..." : "Resolver chamado"}
                 </DropdownMenuItem>
               ) : null}
               {canCancelar ? (
-                <DropdownMenuItem variant="destructive" onClick={() => onCancelar(chamado)}>
+                <DropdownMenuItem variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => onCancelar(chamado))}>
                   <CircleXIcon className="mr-1 size-4" /> Cancelar chamado
                 </DropdownMenuItem>
               ) : null}
@@ -348,6 +349,7 @@ export default function AlertasPage() {
   const [alertaCancelar, setAlertaCancelar] = React.useState(null)
   const [statusPendente, setStatusPendente] = React.useState(null)
   const statusPendenteRef = React.useRef(null)
+  const alertaAbertoPelaUrlRef = React.useRef(null)
   const canCancelAlertas = false
   const canStartAlertStatus = permissions.canUpdateAlertStatus
   const canResolveAlertStatus = permissions.canUpdateAlertStatus
@@ -371,18 +373,29 @@ export default function AlertasPage() {
     const alertaIdParam = searchParams.get("alertaId")
     const abrirParam = searchParams.get("abrir")
 
-    if (!alertaIdParam || alertas.length === 0) {
+    if (!alertaIdParam) {
+      alertaAbertoPelaUrlRef.current = null
       return
     }
 
+    const alertaUrlKey = `${alertaIdParam}:${abrirParam || "open"}`
+
     if (abrirParam === "false") {
-      setSheetAberto(false)
+      if (alertaAbertoPelaUrlRef.current !== alertaUrlKey) {
+        setSheetAberto(false)
+        alertaAbertoPelaUrlRef.current = alertaUrlKey
+      }
+      return
+    }
+
+    if (alertas.length === 0 || alertaAbertoPelaUrlRef.current === alertaUrlKey) {
       return
     }
 
     const alerta = alertas.find((item) => String(item.id) === String(alertaIdParam))
 
     if (alerta) {
+      alertaAbertoPelaUrlRef.current = alertaUrlKey
       abrirVer(alerta)
     }
   }, [alertas, searchParams])
