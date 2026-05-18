@@ -50,6 +50,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 
+import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { tempoRelativo } from "@/lib/utils"
 import { parseDecimalInput, sanitizeDecimalInput } from "@/lib/form-formatters"
 
@@ -266,6 +267,7 @@ export default function SensoresPage() {
   const [sorting, setSorting] = React.useState([])
   const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
+  const sensorAbertoPelaUrlRef = React.useRef(null)
 
   const loadingInicial = useDashboardMetricsLoading(carregando && sensores.length === 0)
   const errorSemDados = status === "error" && sensores.length === 0
@@ -306,12 +308,22 @@ export default function SensoresPage() {
     const sensorIdParam = searchParams.get("sensorId")
 
     if (!sensorIdParam || sensores.length === 0) {
+      if (!sensorIdParam) {
+        sensorAbertoPelaUrlRef.current = null
+      }
+      return
+    }
+
+    const sensorIdKey = String(sensorIdParam)
+
+    if (sensorAbertoPelaUrlRef.current === sensorIdKey) {
       return
     }
 
     const sensor = sensores.find((item) => String(item.id) === String(sensorIdParam))
 
     if (sensor) {
+      sensorAbertoPelaUrlRef.current = sensorIdKey
       abrirVer(sensor)
     }
   }, [searchParams, sensores])
@@ -599,16 +611,16 @@ export default function SensoresPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}>
+            <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}>
               <EyeIcon className="mr-1 size-4" /> Ver detalhes
             </DropdownMenuItem>
             {canManageSensores ? (
               <>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}>
+                <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirEditar(row.original))}>
                   <PencilIcon className="mr-1 size-4" /> Editar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}>
+                <DropdownMenuItem className="cursor-pointer" variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => confirmarExcluir(row.original))}>
                   <Trash2Icon className="mr-1 size-4" /> Excluir
                 </DropdownMenuItem>
               </>

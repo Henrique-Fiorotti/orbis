@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MaquinaDetailsPanel, MaquinaImagePreview } from "@/components/maquina-details-panel"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import { CircleCheckIcon, CircleMinusIcon, AlertTriangleIcon, ImageIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, PlusIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, ArrowRightIcon } from "lucide-react"
+import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { cn, tempoRelativo } from "@/lib/utils"
 import {
   MAQUINA_IMPORTANCIA_FILTER_OPTIONS as IMPORTANCIA_FILTER_OPTIONS,
@@ -191,16 +192,16 @@ function getTableColumns(sensores, sensorError, canManageMaquinas, actions) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-32">
-            <DropdownMenuItem onClick={() => actions.onViewDetails(row.original)}>
+            <DropdownMenuItem onSelect={() => runAfterCurrentOverlayCloses(() => actions.onViewDetails(row.original))}>
               Ver detalhes
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => actions.onViewAlerts(row.original)}>
+            <DropdownMenuItem onSelect={() => runAfterCurrentOverlayCloses(() => actions.onViewAlerts(row.original))}>
               Ver alertas
             </DropdownMenuItem>
             {canManageMaquinas ? (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={() => actions.onManageMachine(row.original)}>
+                <DropdownMenuItem variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => actions.onManageMachine(row.original))}>
                   Remover
                 </DropdownMenuItem>
               </>
