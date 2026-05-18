@@ -197,9 +197,9 @@ export default function TecnicosPage() {
     })
   }, [busca, filtroResumo, tecnicos])
   const filtroResumoLabel = React.useMemo(() => {
-    if (filtroResumo === "ATIVO") return "ativos"
-    if (filtroResumo === "INATIVO") return "inativos"
-    if (filtroResumo === "COM_ALERTAS") return "com alertas"
+    if (filtroResumo === "ATIVO") return "Ativos"
+    if (filtroResumo === "INATIVO") return "Inativos"
+    if (filtroResumo === "COM_ALERTAS") return "Com alertas"
     return "todos"
   }, [filtroResumo])
 
@@ -530,7 +530,7 @@ export default function TecnicosPage() {
           <button type="button" className={getResumoCardClass("ATIVO")} onClick={() => setFiltroResumo("ATIVO")}>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Técnicos ativos</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">operando</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Operando</span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
               <MetricValue value={totalAtivos} loading={loadingInicial} />
@@ -540,14 +540,14 @@ export default function TecnicosPage() {
                 <CircleCheckIcon className="size-3.5 fill-green-600" />
                 {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} disponíveis`}
               </span>
-              <span className="text-muted-foreground text-xs">Clique para ver somente técnicos ativos</span>
+              <span className="text-muted-foreground text-xs">Clique para ver somente técnicos Ativos</span>
             </div>
           </button>
 
           <button type="button" className={getResumoCardClass("INATIVO")} onClick={() => setFiltroResumo("INATIVO")}>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Técnicos inativos</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">fora da escala</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Fora da escala</span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
               <MetricValue value={totalInativos} loading={loadingInicial} />
@@ -564,7 +564,7 @@ export default function TecnicosPage() {
           <button type="button" className={getResumoCardClass("COM_ALERTAS")} onClick={() => setFiltroResumo("COM_ALERTAS")}>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground font-medium">Com alertas ativos</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">hoje</span>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Hoje</span>
             </div>
             <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
               <MetricValue value={tecnicosComAlertas} loading={loadingInicial} />

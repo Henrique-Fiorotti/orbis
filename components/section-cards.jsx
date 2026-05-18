@@ -225,7 +225,7 @@ export function SectionCards() {
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex gap-2 font-medium">
-              {loading ? "Sincronizando status dos sensores" : `${resumo.sensoresOnline} sensores transmitindo agora`}
+              {loading ? "Sincronizando status dos sensores" : `${resumo.sensoresOnline} Sensores transmitindo agora`}
               {loading || resumo.sensoresOnline === 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
             </div>
             <div className="text-muted-foreground">
@@ -249,7 +249,7 @@ export function SectionCards() {
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex gap-2 font-medium">
-              {loading ? "Conferindo equipe ativa" : `${resumo.tecnicosAtivos} técnicos ativos`}
+              {loading ? "Conferindo equipe ativa" : `${resumo.tecnicosAtivos} Técnicos ativos`}
               {loading || resumo.tecnicosAtivos === 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
             </div>
             <div className="text-muted-foreground">
