@@ -73,12 +73,6 @@ const data = {
       icon: <Settings2Icon className="dark:text-white" />,
     },
     {
-      title: "Ajuda",
-      style: "text-muted-foreground dark:text-white!",
-      url: "#",
-      icon: <CircleHelpIcon className="dark:text-white" />,
-    },
-    {
       title: "Pesquisar",
       style: "text-muted-foreground dark:text-white!",
       url: "#",

@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
+import { Lock } from "lucide-react";
 import { ProfilePageSkeleton } from "@/components/dashboard-skeletons"
 import { SiteHeader } from "@/components/site-header"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -591,8 +592,8 @@ export default function PerfilPage() {
         {mensagem ? (
           <div
             className={`rounded-xl border px-4 py-3 text-sm ${status === "error"
-                ? "border-destructive/25 bg-destructive/5 text-destructive"
-                : "border-border/60 bg-muted/30 text-muted-foreground"
+              ? "border-destructive/25 bg-destructive/5 text-destructive"
+              : "border-border/60 bg-muted/30 text-muted-foreground"
               }`}
           >
             {mensagem}
@@ -644,8 +645,8 @@ export default function PerfilPage() {
               <Badge
                 variant="outline"
                 className={`px-1.5 text-xs ${perfil.ativo
-                    ? "bg-green-100 text-green-700 border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
-                    : "bg-red-100 text-red-700 border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+                  ? "bg-green-100 text-green-700 border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
+                  : "bg-red-100 text-red-700 border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
                   }`}
               >
                 <span className={`mr-1 size-1.5 rounded-full inline-block ${perfil.ativo ? "bg-green-500" : "bg-red-500"}`} />
@@ -701,18 +702,22 @@ export default function PerfilPage() {
                   <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wide">
                     E-mail corporativo
                   </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={form.email}
-                    disabled={loading || salvandoDados || !podeEditarIdentidade}
-                    readOnly={!podeEditarIdentidade}
-                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="email"
+                      type="email"
+                      value={form.email}
+                      disabled
+                      readOnly
+                      className="pr-10 opacity-60 cursor-not-allowed"
+                    />
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {podeEditarIdentidade ? "Você pode alterar este dado." : "Alterado apenas pelo administrador."}
+                    Para mudar o E-mail, entre em contato com o administrador.
                   </p>
                 </div>
+
                 {/*
                  <div className="flex flex-col gap-1.5">
                   <Label htmlFor="perfil" className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -807,8 +812,8 @@ export default function PerfilPage() {
                   <Badge
                     variant="outline"
                     className={`px-1.5 w-fit mt-0.5 ${perfil.ativo
-                        ? "bg-green-100 text-green-700 border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
-                        : "bg-red-100 text-red-700 border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+                      ? "bg-green-100 text-green-700 border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
+                      : "bg-red-100 text-red-700 border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
                       }`}
                   >
                     <span className={`mr-1 size-1.5 rounded-full inline-block ${perfil.ativo ? "bg-green-500" : "bg-red-500"}`} />
