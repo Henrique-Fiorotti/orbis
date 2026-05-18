@@ -172,7 +172,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
       cell: ({ row }) => (
         <button
           onClick={() => onVer(row.original)}
-          className="text-left text-sm font-medium transition-colors hover:text-primary hover:underline"
+          className="cursor-pointer text-left text-sm font-medium transition-colors hover:text-primary hover:underline"
         >
           {row.original.maquinaNome}
         </button>
@@ -545,7 +545,7 @@ export default function AlertasPage() {
         ) : null}
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="flex min-h-[116px] flex-col justify-between rounded-lg border border-red-100 bg-card p-4 shadow-sm dark:border-red-900/40">
+          <div className="cursor-pointer flex min-h-[116px] flex-col justify-between rounded-lg border border-red-100 bg-card p-4 shadow-sm dark:border-red-900/40">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium text-muted-foreground">Em aberto</span>
               <ShieldAlertIcon className="size-4 text-red-600 dark:text-red-300" />
@@ -588,16 +588,16 @@ export default function AlertasPage() {
         ) : (
           <Tabs defaultValue="em-aberto" className="min-w-0 w-full flex-col gap-4">
             <TabsList className="w-full max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <TabsTrigger value="em-aberto" className="shrink-0 flex-none">
+              <TabsTrigger value="em-aberto" className="cursor-pointer shrink-0 flex-none">
                 Em aberto{emAberto.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{emAberto.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="em-andamento" className="shrink-0 flex-none">
+              <TabsTrigger value="em-andamento" className="cursor-pointer shrink-0 flex-none">
                 Em andamento{emAndamento.length > 0 && <Badge variant="secondary" className="ml-1.5 border-yellow-200! bg-yellow-100! text-yellow-700! dark:border-yellow-900/60! dark:bg-yellow-950/30! dark:text-yellow-300!">{emAndamento.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="repetidos" className="shrink-0 flex-none">
+              <TabsTrigger value="repetidos" className="cursor-pointer shrink-0 flex-none">
                 Repetidos{repetidos.length > 0 && <Badge variant="secondary" className="ml-1.5 border-orange-200! bg-orange-100! text-orange-700! dark:border-orange-900/60! dark:bg-orange-950/30! dark:text-orange-300!">{repetidos.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="concluidos" className="shrink-0 flex-none">
+              <TabsTrigger value="concluidos" className="cursor-pointer shrink-0 flex-none">
                 Concluidos{concluidos.length > 0 && <Badge variant="secondary" className="ml-1.5">{concluidos.length}</Badge>}
               </TabsTrigger>
             </TabsList>

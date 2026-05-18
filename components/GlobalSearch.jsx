@@ -23,7 +23,6 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 const GROUP_LABELS = {
