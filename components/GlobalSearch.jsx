@@ -42,6 +42,14 @@ const GROUP_ICONS = {
   alerta: AlertTriangleIcon,
 }
 
+const GROUP_SEARCH_TERMS = {
+  maquina: ["maquina", "maquinas", "máquina", "máquinas"],
+  tecnico: ["tecnico", "tecnicos", "técnico", "técnicos"],
+  admin: ["admin", "admins", "administrador", "administradores"],
+  sensor: ["sensor", "sensores"],
+  alerta: ["alerta", "alertas", "chamado", "chamados"],
+}
+
 function normalizeSearch(value) {
   return String(value ?? "")
     .normalize("NFD")
@@ -61,6 +69,10 @@ function matchesSearch(item, query) {
 
 function buildSearchText(values) {
   return normalizeSearch(values.filter(Boolean).join(" "))
+}
+
+function buildItemSearchText(type, values) {
+  return buildSearchText([...(GROUP_SEARCH_TERMS[type] ?? []), ...values])
 }
 
 function getInitials(value) {
@@ -130,7 +142,7 @@ export function GlobalSearch({ open, onOpenChange }) {
       meta: maquina.status,
       image: maquina.imagem,
       href: `/dashboard/maquinas?machineId=${encodeURIComponent(maquina.id)}`,
-      searchText: buildSearchText([
+      searchText: buildItemSearchText("maquina", [
         maquina.nome,
         maquina.setor,
         maquina.tipo,
@@ -147,7 +159,7 @@ export function GlobalSearch({ open, onOpenChange }) {
       meta: tecnico.status,
       image: tecnico.foto,
       href: `/dashboard/tecnicos?tecnicoId=${encodeURIComponent(tecnico.id)}`,
-      searchText: buildSearchText([
+      searchText: buildItemSearchText("tecnico", [
         tecnico.nome,
         tecnico.email,
         tecnico.telefone,
@@ -164,14 +176,11 @@ export function GlobalSearch({ open, onOpenChange }) {
       meta: admin.status,
       image: admin.foto,
       href: `/dashboard/admins?adminId=${encodeURIComponent(admin.id)}`,
-      searchText: buildSearchText([
+      searchText: buildItemSearchText("admin", [
         admin.nome,
         admin.email,
         admin.telefone,
         admin.status,
-        "admin",
-        "administrador",
-        "administradores",
       ]),
     }))
 
@@ -182,7 +191,7 @@ export function GlobalSearch({ open, onOpenChange }) {
       subtitle: sensor.maquinaId ? sensor.maquinaNome : "Sem máquina vinculada",
       meta: sensor.status,
       href: `/dashboard/sensores?sensorId=${encodeURIComponent(sensor.id)}`,
-      searchText: buildSearchText([
+      searchText: buildItemSearchText("sensor", [
         sensor.tipo,
         sensor.maquinaNome,
         sensor.status,
@@ -197,7 +206,7 @@ export function GlobalSearch({ open, onOpenChange }) {
       subtitle: alerta.mensagem,
       meta: alerta.status,
       href: `/dashboard/alertas?alertaId=${encodeURIComponent(alerta.id)}`,
-      searchText: buildSearchText([
+      searchText: buildItemSearchText("alerta", [
         alerta.maquinaNome,
         alerta.sensorNome,
         alerta.mensagem,
@@ -216,7 +225,7 @@ export function GlobalSearch({ open, onOpenChange }) {
       return []
     }
 
-    return items.filter((item) => matchesSearch(item, query)).slice(0, 24)
+    return items.filter((item) => matchesSearch(item, query))
   }, [items, query])
 
   const groupedResults = React.useMemo(
@@ -261,7 +270,12 @@ export function GlobalSearch({ open, onOpenChange }) {
           </Button>
         </div>
 
-        <div className={cn("max-h-[260px] overflow-y-auto px-2 py-2", query.trim() || loading ? "border-t" : "")}>
+        <div
+          className={cn(
+            "max-h-[min(640px,calc(100vh-8rem))] overflow-y-auto px-2 py-2 transition-[max-height,opacity,border-color] duration-300 ease-out",
+            query.trim() || loading ? "border-t opacity-100" : "opacity-95"
+          )}
+        >
           {loading ? (
             <div className="grid gap-2 p-2">
               {Array.from({ length: 5 }).map((_, index) => (
@@ -294,7 +308,7 @@ export function GlobalSearch({ open, onOpenChange }) {
                       key={item.id}
                       type="button"
                       onClick={() => handleSelect(item)}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+                      className="flex w-full animate-in fade-in-0 slide-in-from-top-1 items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
                     >
                       <ResultIcon item={item} />
                       <span className="min-w-0 flex-1">
