@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
 import { useAlertas } from "@/components/context/alertas-context"
-import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,16 +14,20 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import { SiteHeader } from "@/components/site-header"
 import {
   AlertTriangleIcon,
+  ClockIcon,
   EllipsisVerticalIcon,
   ArrowLeftIcon,
   EyeIcon,
+  HistoryIcon,
+  Loader2Icon,
+  MessageSquareTextIcon,
+  RotateCcwIcon,
   SearchIcon,
   ChevronsLeftIcon,
   ChevronLeftIcon,
@@ -34,6 +37,7 @@ import {
   CircleXIcon,
   RefreshCcwIcon,
   ShieldAlertIcon,
+  WrenchIcon,
 } from "lucide-react"
 import {
   flexRender,
@@ -42,6 +46,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
+import { getAuthSession } from "@/lib/auth-session"
+import { extractCollection, requestDashboardJson } from "@/lib/dashboard-api"
 import { tempoRelativo } from "@/lib/utils"
 
 const TIPOS_ALERTA = ["LIMITE_ULTRAPASSADO", "TENDENCIA_CURTA", "TENDENCIA_LONGA", "DEGRADACAO_ACELERADA", "INSTABILIDADE"]
@@ -60,6 +66,16 @@ const STATUS_ALERTA_LABEL = {
   CANCELADO: "Cancelado",
 }
 
+const EVENTO_STATUS_LABEL = {
+  ATIVO: "Em aberto",
+  EM_ANDAMENTO: "Em andamento",
+  RESOLVIDO: "Resolvido",
+  CANCELADO: "Cancelado",
+  ENCERRADO_SEM_SOLUCAO: "Sem solucao",
+}
+
+const EVENTOS_COM_MANUTENCAO = new Set(["ACEITO", "ATUALIZADO", "REABERTO", "RESOLVIDO", "CANCELADO"])
+
 const formVazio = {
   tipo: "LIMITE_ULTRAPASSADO",
   maquinaId: "",
@@ -68,10 +84,6 @@ const formVazio = {
   sensorNome: "",
   severidade: "MEDIA",
   mensagem: "",
-}
-
-function getStatusActionKey(id, status) {
-  return `${id}:${status}`
 }
 
 function SeveridadeBadge({ value }) {
@@ -125,10 +137,6 @@ function TipoAlertaBadge({ value }) {
   )
 }
 
-function isStatusCancelavel(status) {
-  return status === "ATIVO" || status === "EM_ANDAMENTO"
-}
-
 function isStatusAberto(status) {
   return status === "ATIVO" || status === "EM_ANDAMENTO"
 }
@@ -150,6 +158,360 @@ function compareAlertaRecente(a, b) {
   return getAlertaTimestamp(b) - getAlertaTimestamp(a)
 }
 
+function normalizeUppercase(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_")
+}
+
+function normalizeDateValue(value) {
+  const date = new Date(value)
+  return Number.isFinite(date.getTime()) ? date.toISOString() : ""
+}
+
+function formatAbsoluteDate(value) {
+  const date = new Date(value)
+
+  if (!Number.isFinite(date.getTime())) {
+    return "Data nao informada"
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date)
+}
+
+function formatTimeOnly(value) {
+  const date = new Date(value)
+
+  if (!Number.isFinite(date.getTime())) {
+    return ""
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeStyle: "short",
+  }).format(date)
+}
+
+function isSameLocalDate(firstValue, secondValue) {
+  const firstDate = new Date(firstValue)
+  const secondDate = new Date(secondValue)
+
+  if (!Number.isFinite(firstDate.getTime()) || !Number.isFinite(secondDate.getTime())) {
+    return false
+  }
+
+  return firstDate.toLocaleDateString("pt-BR") === secondDate.toLocaleDateString("pt-BR")
+}
+
+function formatTimelineDateRange(item) {
+  if (!item.ultimoCriadoEm || item.ultimoCriadoEm === item.criadoEm) {
+    return formatAbsoluteDate(item.criadoEm)
+  }
+
+  if (isSameLocalDate(item.criadoEm, item.ultimoCriadoEm)) {
+    return `${formatAbsoluteDate(item.criadoEm)} - ${formatTimeOnly(item.ultimoCriadoEm)}`
+  }
+
+  return `${formatAbsoluteDate(item.criadoEm)} - ${formatAbsoluteDate(item.ultimoCriadoEm)}`
+}
+
+function getUsuarioResumo(source) {
+  const usuario = source?.usuario ?? source?.tecnico ?? source?.responsavel
+
+  if (usuario && typeof usuario === "object") {
+    return {
+      id: usuario.id ?? source?.usuarioId ?? source?.tecnicoId ?? null,
+      nome: usuario.nome || usuario.name || "Tecnico nao informado",
+      role: normalizeUppercase(usuario.role),
+    }
+  }
+
+  return {
+    id: source?.usuarioId ?? source?.tecnicoId ?? null,
+    nome: source?.usuarioNome || source?.tecnicoNome || source?.nomeTecnico || "Tecnico nao informado",
+    role: "",
+  }
+}
+
+function getEventoUsuario(source) {
+  if (source?.usuario && typeof source.usuario === "object") {
+    return getUsuarioResumo(source)
+  }
+
+  if (source?.manutencao?.usuario && typeof source.manutencao.usuario === "object") {
+    return getUsuarioResumo(source.manutencao)
+  }
+
+  const usuarioId = source?.usuarioId ?? source?.manutencao?.usuarioId
+
+  if (usuarioId) {
+    return {
+      id: usuarioId,
+      nome: source?.usuarioNome || source?.tecnicoNome || source?.manutencao?.usuarioNome || "Tecnico nao informado",
+      role: "TECNICO",
+    }
+  }
+
+  return { id: null, nome: "Sistema", role: "" }
+}
+
+function normalizeManutencao(item) {
+  if (!item || typeof item !== "object") {
+    return null
+  }
+
+  const id = Number(item.id ?? item.manutencaoId)
+  const alertaId = Number(item.alertaId ?? item.alerta?.id)
+
+  if (!Number.isFinite(id)) {
+    return null
+  }
+
+  return {
+    id,
+    alertaId: Number.isFinite(alertaId) ? alertaId : null,
+    usuario: getUsuarioResumo(item),
+    observacao: String(item.observacao ?? item.descricao ?? "").trim(),
+    status: normalizeUppercase(item.status || "EM_ANDAMENTO"),
+    criadoEm: normalizeDateValue(item.criadoEm ?? item.createdAt ?? item.dataCriacao),
+  }
+}
+
+function normalizeEventoAlerta(item) {
+  if (!item || typeof item !== "object") {
+    return null
+  }
+
+  const id = Number(item.id ?? item.eventoId)
+  const manutencaoId = Number(item.manutencaoId ?? item.manutencao?.id)
+  const alertaId = Number(item.alertaId ?? item.alerta?.id)
+  const manutencao = item.manutencao ? normalizeManutencao(item.manutencao) : null
+
+  return {
+    id: Number.isFinite(id) ? id : null,
+    alertaId: Number.isFinite(alertaId) ? alertaId : null,
+    manutencaoId: Number.isFinite(manutencaoId) ? manutencaoId : null,
+    manutencao,
+    usuario: getEventoUsuario(item),
+    tipo: normalizeUppercase(item.tipo),
+    statusAnterior: normalizeUppercase(item.statusAnterior),
+    statusNovo: normalizeUppercase(item.statusNovo ?? item.status),
+    descricao: String(item.descricao ?? item.observacao ?? item.mensagem ?? "").trim(),
+    mensagem: String(item.mensagem ?? "").trim(),
+    criadoEm: normalizeDateValue(item.criadoEm ?? item.createdAt ?? item.dataCriacao),
+  }
+}
+
+function extractEventosFromAlertaPayload(payload) {
+  const candidates = [
+    payload?.eventos,
+    payload?.dados?.eventos,
+    payload?.data?.eventos,
+    payload?.resultado?.eventos,
+  ]
+  const eventos = candidates.find(Array.isArray)
+
+  if (eventos) {
+    return eventos
+  }
+
+  return extractCollection(payload)
+}
+
+function compareTimelineDate(a, b) {
+  return (Date.parse(a.criadoEm) || 0) - (Date.parse(b.criadoEm) || 0)
+}
+
+function getManutencaoStatusTone(status) {
+  if (status === "RESOLVIDO") {
+    return "success"
+  }
+
+  if (status === "ENCERRADO_SEM_SOLUCAO" || status === "ATIVO" || status === "REABERTO") {
+    return "warning"
+  }
+
+  return "active"
+}
+
+function getTimelineIcon(tipo) {
+  if (tipo === "alerta") return ShieldAlertIcon
+  if (tipo === "inicio") return WrenchIcon
+  if (tipo === "encerramento") return CircleCheckIcon
+  if (tipo === "cancelamento") return CircleXIcon
+  if (tipo === "sem_solucao") return RotateCcwIcon
+  return MessageSquareTextIcon
+}
+
+function createTimelineItem({ tipo, titulo, usuario, criadoEm, descricao, status, mensagem, manutencaoId = null }) {
+  return {
+    key: `${tipo}-${criadoEm || "sem-data"}-${titulo}-${descricao || ""}`,
+    tipo,
+    titulo,
+    manutencaoId,
+    usuario: usuario?.nome || "Sistema",
+    criadoEm,
+    descricao,
+    mensagem,
+    status,
+    repeticoes: 1,
+    ultimoCriadoEm: criadoEm,
+  }
+}
+
+function normalizeTimelineText(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ").toLowerCase()
+}
+
+function getTimelineGroupKey(item) {
+  return [
+    item.tipo,
+    item.manutencaoId ?? "sem-manutencao",
+    item.titulo,
+    item.usuario,
+    item.status,
+    normalizeTimelineText(item.descricao),
+  ].join("|")
+}
+
+function compactRepeatedTimelineItems(items) {
+  const groupedItems = []
+  const groupedIndexes = new Map()
+
+  for (const item of items) {
+    const groupKey = getTimelineGroupKey(item)
+    const existingIndex = groupedIndexes.get(groupKey)
+
+    if (existingIndex !== undefined) {
+      const existingItem = groupedItems[existingIndex]
+      groupedItems[existingIndex] = {
+        ...existingItem,
+        key: `${existingItem.key}-x${existingItem.repeticoes + 1}`,
+        repeticoes: existingItem.repeticoes + 1,
+        ultimoCriadoEm: item.ultimoCriadoEm || item.criadoEm || existingItem.ultimoCriadoEm,
+      }
+      continue
+    }
+
+    groupedIndexes.set(groupKey, groupedItems.length)
+    groupedItems.push(item)
+  }
+
+  return groupedItems
+}
+
+function getEventoDescricao(evento) {
+  return evento.descricao || evento.manutencao?.observacao || evento.mensagem || ""
+}
+
+function getEventoStatus(evento) {
+  if (evento.tipo === "REABERTO") return "ENCERRADO_SEM_SOLUCAO"
+  if (evento.tipo === "ACEITO") return "EM_ANDAMENTO"
+  return evento.statusNovo || evento.manutencao?.status || ""
+}
+
+function isEventoDeManutencao(evento) {
+  return EVENTOS_COM_MANUTENCAO.has(evento.tipo) && Boolean(evento.manutencaoId || evento.manutencao)
+}
+
+function createTimelineItemFromEvento(evento) {
+  if (evento.tipo === "CRIADO") {
+    return createTimelineItem({
+      tipo: "alerta",
+      titulo: "Alerta aberto",
+      usuario: evento.usuario,
+      criadoEm: evento.criadoEm,
+      descricao: getEventoDescricao(evento),
+      status: evento.statusNovo || "ATIVO",
+    })
+  }
+
+  if (evento.tipo === "ACEITO") {
+    return createTimelineItem({
+      tipo: "inicio",
+      titulo: "Manutencao iniciada",
+      usuario: evento.usuario,
+      criadoEm: evento.criadoEm || evento.manutencao?.criadoEm,
+      descricao: getEventoDescricao(evento),
+      status: "EM_ANDAMENTO",
+      manutencaoId: evento.manutencaoId,
+    })
+  }
+
+  if (evento.tipo === "REABERTO") {
+    return createTimelineItem({
+      tipo: "sem_solucao",
+      titulo: "Manutencao encerrada sem solucao",
+      usuario: evento.usuario,
+      criadoEm: evento.criadoEm,
+      descricao: getEventoDescricao(evento),
+      status: "ENCERRADO_SEM_SOLUCAO",
+      manutencaoId: evento.manutencaoId,
+    })
+  }
+
+  if (evento.tipo === "RESOLVIDO") {
+    return createTimelineItem({
+      tipo: "encerramento",
+      titulo: "Manutencao encerrada",
+      usuario: evento.usuario,
+      criadoEm: evento.criadoEm,
+      descricao: getEventoDescricao(evento),
+      status: "RESOLVIDO",
+      manutencaoId: evento.manutencaoId,
+    })
+  }
+
+  if (evento.tipo === "CANCELADO") {
+    return createTimelineItem({
+      tipo: "cancelamento",
+      titulo: "Alerta cancelado",
+      usuario: evento.usuario,
+      criadoEm: evento.criadoEm,
+      descricao: getEventoDescricao(evento),
+      status: "CANCELADO",
+      manutencaoId: evento.manutencaoId,
+    })
+  }
+
+  const isManutencao = isEventoDeManutencao(evento)
+
+  return createTimelineItem({
+    tipo: isManutencao ? "atualizacao" : "alerta_atualizado",
+    titulo: isManutencao ? "Atualizacao da manutencao" : "Alerta atualizado",
+    usuario: evento.usuario,
+    criadoEm: evento.criadoEm,
+    descricao: getEventoDescricao(evento),
+    status: getEventoStatus(evento),
+    manutencaoId: evento.manutencaoId,
+  })
+}
+
+function buildHistoricoTimeline(alerta, eventos) {
+  const eventosOrdenados = [...eventos].sort(compareTimelineDate)
+  const items = eventosOrdenados
+    .map(createTimelineItemFromEvento)
+    .filter(Boolean)
+
+  if (!items.some((item) => item.tipo === "alerta")) {
+    items.unshift(createTimelineItem({
+      tipo: "alerta",
+      titulo: "Alerta aberto",
+      usuario: { nome: "Sistema" },
+      criadoEm: normalizeDateValue(alerta?.criadoEm),
+      descricao: alerta?.mensagem,
+      status: alerta?.status || "ATIVO",
+    }))
+  }
+
+  return compactRepeatedTimelineItems(items.filter((item) => item.criadoEm || item.tipo === "alerta"))
+}
+
 function StatePanel({ message, tone = "muted" }) {
   return (
     <div
@@ -164,8 +526,107 @@ function StatePanel({ message, tone = "muted" }) {
   )
 }
 
-function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, canStartAlertStatus, canResolveAlertStatus, statusActionKey }) {
+function HistoricoManutencaoPanel({
+  alerta,
+  eventos,
+  status,
+  mensagem,
+  onRetry,
+}) {
+  const timeline = React.useMemo(
+    () => buildHistoricoTimeline(alerta, eventos),
+    [alerta, eventos]
+  )
+  const hasEventosManutencao = eventos.some(isEventoDeManutencao)
+  const hasOnlyAlertaAberto = timeline.every((item) => item.tipo === "alerta")
+
+  return (
+    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+      <div className="rounded-lg border bg-muted/20 px-3 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">{alerta?.maquinaNome || "Maquina nao informada"}</p>
+            <p className="truncate text-xs text-muted-foreground">{alerta?.sensorNome || "Sensor nao informado"}</p>
+          </div>
+          <Badge variant="outline" className="shrink-0 text-muted-foreground">
+            Somente leitura
+          </Badge>
+        </div>
+      </div>
+
+      {status === "loading" ? (
+        <div className="flex items-center gap-2 rounded-md bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+          <Loader2Icon className="size-4 animate-spin" />
+          Carregando historico de manutencao...
+        </div>
+      ) : status === "error" ? (
+        <div className="grid gap-3 rounded-md border border-destructive/25 bg-destructive/5 px-3 py-3 text-sm text-destructive">
+          <span>{mensagem || "Nao foi possivel carregar o historico de manutencao."}</span>
+          <Button type="button" variant="outline" size="sm" className="w-fit" onClick={onRetry}>
+            <RefreshCcwIcon className="mr-1 size-4" />
+            Tentar novamente
+          </Button>
+        </div>
+      ) : (
+        <div className="relative grid gap-4">
+          {timeline.map((item, index) => {
+            const Icon = getTimelineIcon(item.tipo)
+            const tone = getManutencaoStatusTone(item.status)
+
+            return (
+              <div key={`${item.key}-${index}`} className="relative grid grid-cols-[28px_1fr] gap-3">
+                {index < timeline.length - 1 ? (
+                  <span className="absolute left-[13px] top-8 h-[calc(100%+0.5rem)] w-px bg-border" />
+                ) : null}
+                <span
+                  className={`relative z-10 flex size-7 items-center justify-center rounded-full border bg-background ${
+                    tone === "success"
+                      ? "text-green-700 dark:text-green-300"
+                      : tone === "warning"
+                        ? "text-orange-700 dark:text-orange-300"
+                        : "text-[#3B2867] dark:text-white"
+                  }`}
+                >
+                  <Icon className="size-3.5" />
+                </span>
+                <div className="min-w-0 rounded-md border bg-muted/20 px-3 py-2">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <span className="text-sm font-medium text-foreground">{item.titulo}</span>
+                  </div>
+                  <span className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <ClockIcon className="size-3" />
+                    {formatTimelineDateRange(item)}
+                  </span>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span>{item.tipo === "alerta" || item.usuario === "Sistema" ? item.usuario : `Tecnico: ${item.usuario}`}</span>
+                    {item.status ? (
+                      <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-muted-foreground">
+                        {EVENTO_STATUS_LABEL[item.status] ?? item.status}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  {item.descricao ? (
+                    <p className="mt-2 text-sm leading-relaxed text-foreground">{item.descricao}</p>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
+
+          {!hasEventosManutencao && hasOnlyAlertaAberto ? (
+            <div className="rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground">
+              Nenhum evento de manutencao foi registrado para este alerta.
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AlertasTable({ data, onVer }) {
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
+  const [openActionMenuId, setOpenActionMenuId] = React.useState(null)
   const columns = React.useMemo(() => [
     {
       accessorKey: "maquinaNome",
@@ -216,17 +677,13 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
       id: "actions",
       cell: ({ row }) => {
         const chamado = row.original
-        const statusActionPending = Boolean(statusActionKey)
-        const startActionKey = getStatusActionKey(chamado.id, "EM_ANDAMENTO")
-        const resolveActionKey = getStatusActionKey(chamado.id, "RESOLVIDO")
-        const isStarting = statusActionKey === startActionKey
-        const isResolving = statusActionKey === resolveActionKey
-        const canIniciar = canStartAlertStatus && chamado.status === "ATIVO"
-        const canResolver = canResolveAlertStatus && chamado.status === "EM_ANDAMENTO"
-        const canCancelar = canCancelAlertas && isStatusCancelavel(chamado.status)
+        const menuId = String(chamado.id ?? row.id)
 
         return (
-          <DropdownMenu>
+          <DropdownMenu
+            open={openActionMenuId === menuId}
+            onOpenChange={(open) => setOpenActionMenuId(open ? menuId : null)}
+          >
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
                 <EllipsisVerticalIcon />
@@ -236,28 +693,12 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
               <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => onVer(chamado))}>
                 <EyeIcon className="mr-1 size-4" /> Ver detalhes
               </DropdownMenuItem>
-              {canIniciar || canResolver || canCancelar ? <DropdownMenuSeparator /> : null}
-              {canIniciar ? (
-                <DropdownMenuItem disabled={statusActionPending} onSelect={() => runAfterCurrentOverlayCloses(() => onStatus(chamado.id, "EM_ANDAMENTO"))}>
-                  <AlertTriangleIcon className="mr-1 size-4 text-yellow-600 dark:text-yellow-300" /> {isStarting ? "Iniciando..." : "Iniciar atendimento"}
-                </DropdownMenuItem>
-              ) : null}
-              {canResolver ? (
-                <DropdownMenuItem disabled={statusActionPending} onSelect={() => runAfterCurrentOverlayCloses(() => onStatus(chamado.id, "RESOLVIDO"))}>
-                  <CircleCheckIcon className="mr-1 size-4 text-green-600 dark:text-green-300" /> {isResolving ? "Resolvendo..." : "Resolver chamado"}
-                </DropdownMenuItem>
-              ) : null}
-              {canCancelar ? (
-                <DropdownMenuItem variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => onCancelar(chamado))}>
-                  <CircleXIcon className="mr-1 size-4" /> Cancelar chamado
-                </DropdownMenuItem>
-              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         )
       },
     },
-  ], [canCancelAlertas, canResolveAlertStatus, canStartAlertStatus, onVer, onCancelar, onStatus, statusActionKey])
+  ], [onVer, openActionMenuId])
 
   const table = useReactTable({
     data,
@@ -295,7 +736,7 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  Nenhum chamado encontrado.
+                  Nenhum alerta encontrado.
                 </TableCell>
               </TableRow>
             )}
@@ -327,7 +768,6 @@ function AlertasTable({ data, onVer, onCancelar, onStatus, canCancelAlertas, can
 export default function AlertasPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const permissions = useDashboardPermissions()
   const {
     alertas,
     status,
@@ -335,8 +775,6 @@ export default function AlertasPage() {
     carregando = false,
     salvando,
     adicionarAlerta,
-    atualizarStatus,
-    cancelarAlerta,
     recarregarAlertas,
   } = useAlertas()
 
@@ -345,14 +783,12 @@ export default function AlertasPage() {
   const [modoSheet, setModoSheet] = React.useState("criar")
   const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
   const [form, setForm] = React.useState(formVazio)
-  const [dialogCancelar, setDialogCancelar] = React.useState(false)
-  const [alertaCancelar, setAlertaCancelar] = React.useState(null)
-  const [statusPendente, setStatusPendente] = React.useState(null)
-  const statusPendenteRef = React.useRef(null)
+  const [historicoAberto, setHistoricoAberto] = React.useState(false)
+  const [historicoStatus, setHistoricoStatus] = React.useState("idle")
+  const [historicoMensagem, setHistoricoMensagem] = React.useState("")
+  const [historicoEventos, setHistoricoEventos] = React.useState([])
+  const historicoRequestIdRef = React.useRef(0)
   const alertaAbertoPelaUrlRef = React.useRef(null)
-  const canCancelAlertas = false
-  const canStartAlertStatus = permissions.canUpdateAlertStatus
-  const canResolveAlertStatus = permissions.canUpdateAlertStatus
   const loadingInicial = useDashboardMetricsLoading(carregando && alertas.length === 0)
   const errorSemDados = status === "error" && alertas.length === 0
 
@@ -401,6 +837,7 @@ export default function AlertasPage() {
   }, [alertas, searchParams])
 
   function abrirCriar() {
+    resetarHistoricoManutencao()
     setModoSheet("criar")
     setForm(formVazio)
     setAlertaSelecionado(null)
@@ -408,62 +845,77 @@ export default function AlertasPage() {
   }
 
   function abrirVer(alerta) {
+    resetarHistoricoManutencao()
     setModoSheet("ver")
     setAlertaSelecionado(alerta)
     setSheetAberto(true)
   }
 
-  function confirmarCancelar(alerta) {
-    if (!canCancelAlertas || !isStatusCancelavel(alerta.status)) {
+  function resetarHistoricoManutencao() {
+    historicoRequestIdRef.current += 1
+    setHistoricoAberto(false)
+    setHistoricoStatus("idle")
+    setHistoricoMensagem("")
+    setHistoricoEventos([])
+  }
+
+  async function carregarHistoricoManutencao(alertaId) {
+    const session = getAuthSession()
+    const requestId = historicoRequestIdRef.current + 1
+    historicoRequestIdRef.current = requestId
+
+    if (!session?.accessToken) {
+      setHistoricoStatus("error")
+      setHistoricoMensagem("Faca login para carregar o historico de manutencao.")
       return
     }
 
-    setAlertaCancelar(alerta)
-    setDialogCancelar(true)
-  }
-
-  async function cancelar() {
-    if (!alertaCancelar) {
-      return
-    }
+    setHistoricoStatus("loading")
+    setHistoricoMensagem("")
 
     try {
-      await cancelarAlerta(alertaCancelar.id)
-      toast.success("Chamado cancelado.")
-      setDialogCancelar(false)
-      setSheetAberto(false)
-      setAlertaCancelar(null)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível cancelar o chamado.")
-    }
-  }
+      const eventosPayload = await requestDashboardJson(
+        `/alertas/${alertaId}/eventos`,
+        session.accessToken,
+        "os eventos do alerta"
+      )
 
-  async function handleStatus(id, status) {
-    const actionKey = getStatusActionKey(id, status)
-
-    if (statusPendenteRef.current) {
-      return false
-    }
-
-    statusPendenteRef.current = actionKey
-    setStatusPendente(actionKey)
-
-    try {
-      await atualizarStatus(id, status)
-      const labels = {
-        EM_ANDAMENTO: "atendimento iniciado",
-        RESOLVIDO: "resolvido",
+      if (historicoRequestIdRef.current !== requestId) {
+        return
       }
 
-      toast.success(`Chamado ${labels[status] ?? "atualizado"}.`)
-      return true
+      const eventos = extractEventosFromAlertaPayload(eventosPayload)
+        .map(normalizeEventoAlerta)
+        .filter(Boolean)
+
+      setHistoricoEventos(eventos)
+      setHistoricoStatus("success")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível atualizar o chamado.")
-      return false
-    } finally {
-      statusPendenteRef.current = null
-      setStatusPendente(null)
+      if (historicoRequestIdRef.current !== requestId) {
+        return
+      }
+
+      setHistoricoStatus("error")
+      setHistoricoMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar o historico de manutencao.")
     }
+  }
+
+  function abrirHistoricoManutencao() {
+    if (!alertaSelecionado?.id) {
+      return
+    }
+
+    setSheetAberto(false)
+    setHistoricoAberto(true)
+
+    if (historicoStatus === "idle") {
+      carregarHistoricoManutencao(alertaSelecionado.id)
+    }
+  }
+
+  function voltarParaDetalhesAlerta() {
+    setHistoricoAberto(false)
+    setSheetAberto(true)
   }
 
   async function salvar() {
@@ -478,10 +930,10 @@ export default function AlertasPage() {
         maquinaId: form.maquinaId ? Number(form.maquinaId) : null,
         sensorId: form.sensorId ? Number(form.sensorId) : null,
       })
-      toast.success("Chamado registrado com sucesso!")
+      toast.success("Alerta registrado com sucesso!")
       setSheetAberto(false)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível registrar o chamado.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível registrar o alerta.")
     }
   }
 
@@ -507,12 +959,6 @@ export default function AlertasPage() {
 
   const tableProps = {
     onVer: abrirVer,
-    onCancelar: confirmarCancelar,
-    onStatus: handleStatus,
-    canCancelAlertas,
-    canStartAlertStatus,
-    canResolveAlertStatus,
-    statusActionKey: statusPendente,
   }
 
   return (
@@ -627,7 +1073,15 @@ export default function AlertasPage() {
           </Tabs>
         )}
 
-        <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
+        <Sheet
+          open={sheetAberto}
+          onOpenChange={(open) => {
+            setSheetAberto(open)
+            if (!open) {
+              resetarHistoricoManutencao()
+            }
+          }}
+        >
           <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
             <SheetHeader>
               <SheetTitle>{modoSheet === "criar" ? "Registrar chamado manual" : "Detalhes do chamado"}</SheetTitle>
@@ -686,37 +1140,21 @@ export default function AlertasPage() {
                     </div>
                   </div>
                   <Separator />
-                  <div className="flex flex-col gap-2">
-                    {canStartAlertStatus && alertaSelecionado.status === "ATIVO" ? (
-                      <Button
-                        className="cursor-pointer w-full"
-                        disabled={Boolean(statusPendente)}
-                        onClick={async () => {
-                          const updated = await handleStatus(alertaSelecionado.id, "EM_ANDAMENTO")
-                          if (updated) setSheetAberto(false)
-                        }}
-                      >
-                        <AlertTriangleIcon className="mr-1 size-4" /> {statusPendente === getStatusActionKey(alertaSelecionado.id, "EM_ANDAMENTO") ? "Iniciando..." : "Iniciar atendimento"}
-                      </Button>
-                    ) : null}
-                    {canResolveAlertStatus && alertaSelecionado.status === "EM_ANDAMENTO" ? (
-                      <Button
-                        className="cursor-pointer w-full"
-                        disabled={Boolean(statusPendente)}
-                        onClick={async () => {
-                          const updated = await handleStatus(alertaSelecionado.id, "RESOLVIDO")
-                          if (updated) setSheetAberto(false)
-                        }}
-                      >
-                        <CircleCheckIcon className="mr-1 size-4" /> {statusPendente === getStatusActionKey(alertaSelecionado.id, "RESOLVIDO") ? "Resolvendo..." : "Resolver chamado"}
-                      </Button>
-                    ) : null}
-                    {canCancelAlertas && isStatusCancelavel(alertaSelecionado.status) ? (
-                      <Button variant="destructive" className="cursor-pointer w-full" onClick={() => confirmarCancelar(alertaSelecionado)}>
-                        <CircleXIcon className="mr-1 size-4" /> Cancelar chamado
-                      </Button>
-                    ) : null}
-                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-auto w-full cursor-pointer justify-between gap-3 px-3 py-3 text-left"
+                    onClick={abrirHistoricoManutencao}
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <HistoryIcon className="size-4 shrink-0 text-[#3B2867] dark:text-white" />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium">Historico de Manutencao</span>
+                        <span className="block truncate text-xs text-muted-foreground">Abrir cronofluxo de eventos</span>
+                      </span>
+                    </span>
+                    <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                  </Button>
                 </>
               ) : (
                 <>
@@ -770,20 +1208,44 @@ export default function AlertasPage() {
           </SheetContent>
         </Sheet>
 
-        <Dialog open={dialogCancelar} onOpenChange={setDialogCancelar}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Confirmar cancelamento</DialogTitle>
-              <DialogDescription>
-                Tem certeza que deseja cancelar o chamado de <strong>{alertaCancelar?.maquinaNome}</strong>? O registro será mantido como cancelado.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" className="cursor-pointer" onClick={() => setDialogCancelar(false)}>Voltar</Button>
-              <Button variant="destructive" className="cursor-pointer" onClick={cancelar}>Cancelar chamado</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Sheet
+          open={historicoAberto}
+          onOpenChange={(open) => {
+            setHistoricoAberto(open)
+            if (!open) {
+              resetarHistoricoManutencao()
+            }
+          }}
+        >
+          <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
+            <SheetHeader>
+              <div className="flex items-start gap-3">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="mt-0.5 cursor-pointer"
+                  aria-label="Voltar para detalhes do alerta"
+                  onClick={voltarParaDetalhesAlerta}
+                >
+                  <ArrowLeftIcon className="size-4" />
+                </Button>
+                <div className="min-w-0">
+                  <SheetTitle>Historico de Manutencao</SheetTitle>
+                  <SheetDescription>Eventos registrados para este alerta.</SheetDescription>
+                </div>
+              </div>
+            </SheetHeader>
+            <HistoricoManutencaoPanel
+              alerta={alertaSelecionado}
+              eventos={historicoEventos}
+              status={historicoStatus}
+              mensagem={historicoMensagem}
+              onRetry={() => alertaSelecionado?.id ? carregarHistoricoManutencao(alertaSelecionado.id) : null}
+            />
+          </SheetContent>
+        </Sheet>
+
       </div>
     </>
   )
