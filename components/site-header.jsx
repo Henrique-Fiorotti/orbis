@@ -79,6 +79,10 @@ function getSaudacao() {
   return "Boa noite"
 }
 
+function getPrimeiroNome(nome) {
+  return String(nome ?? "").trim().split(/\s+/)[0] || "usuário"
+}
+
 function formatBreadcrumbLabel(segment) {
   return BREADCRUMB_LABELS[segment] || decodeURIComponent(segment).replaceAll("-", " ")
 }
@@ -212,7 +216,7 @@ export function SiteHeader({ tourId }) {
     function syncUserName() {
       const usuario = getAuthSessionUser()
 
-      setNomeUsuario(usuario?.nome || "usuário")
+      setNomeUsuario(getPrimeiroNome(usuario?.nome))
       setNotificationStorageKey(getNotificationStorageKey(usuario))
     }
 

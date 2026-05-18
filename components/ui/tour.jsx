@@ -1320,7 +1320,7 @@ function TourClose(props) {
       type="button"
       aria-label="Close tour"
       className={cn(
-        "absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "absolute top-4 right-4 cursor-pointer rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       onClick={onClick}
@@ -1331,7 +1331,7 @@ function TourClose(props) {
 }
 
 function TourPrev(props) {
-  const { children, onClick: onClickProp, ...prevButtonProps } = props;
+  const { children, className, onClick: onClickProp, ...prevButtonProps } = props;
 
   const store = useStoreContext(PREV_NAME);
   const value = useStore((state) => state.value);
@@ -1351,6 +1351,7 @@ function TourPrev(props) {
       aria-label="Previous step"
       data-slot="tour-prev"
       variant="outline"
+      className={cn("cursor-pointer", className)}
       {...prevButtonProps}
       onClick={onClick}
       disabled={value === 0}>
@@ -1365,7 +1366,7 @@ function TourPrev(props) {
 }
 
 function TourNext(props) {
-  const { children, onClick: onClickProp, ...nextButtonProps } = props;
+  const { children, className, onClick: onClickProp, ...nextButtonProps } = props;
   const store = useStoreContext(NEXT_NAME);
   const value = useStore((state) => state.value);
   const steps = useStore((state) => state.steps);
@@ -1384,6 +1385,7 @@ function TourNext(props) {
       type="button"
       aria-label="Next step"
       data-slot="tour-next"
+      className={cn("cursor-pointer", className)}
       {...nextButtonProps}
       onClick={onClick}>
       {children ?? (
@@ -1397,7 +1399,7 @@ function TourNext(props) {
 }
 
 function TourSkip(props) {
-  const { children, onClick: onClickProp, ...skipButtonProps } = props;
+  const { children, className, onClick: onClickProp, ...skipButtonProps } = props;
 
   const store = useStoreContext(SKIP_NAME);
 
@@ -1414,6 +1416,7 @@ function TourSkip(props) {
       aria-label="Skip tour"
       data-slot="tour-skip"
       variant="outline"
+      className={cn("cursor-pointer", className)}
       {...skipButtonProps}
       onClick={onClick}>
       {children ?? "Pular"}

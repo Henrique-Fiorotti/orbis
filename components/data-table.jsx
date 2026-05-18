@@ -66,7 +66,7 @@ function StatusBadge({ value }) {
 }
 
 function IntegridadeBar({ value, inactive = false }) {
-  const normalizedValue = Number(value)
+  const normalizedValue = Math.round(Number(value))
 
   if (inactive || !Number.isFinite(normalizedValue)) {
     return (
@@ -459,7 +459,7 @@ function TableCellViewer({ item, sensores, sensorError = "", onViewAlerts }) {
       trigger={(
         <Button
           variant="ghost"
-          className="h-auto w-fit justify-start gap-3 !p-0 text-left text-foreground hover:bg-transparent hover:text-primary"
+          className="h-auto w-fit cursor-pointer justify-start gap-3 !p-0 text-left text-foreground hover:bg-transparent hover:text-primary"
         >
           <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted text-muted-foreground">
             {item.imagem ? (
@@ -468,7 +468,7 @@ function TableCellViewer({ item, sensores, sensorError = "", onViewAlerts }) {
               <ImageIcon className="size-4" />
             )}
           </span>
-          <span className="text-sm font-medium hover:underline">{item.nome}</span>
+          <span className="cursor-pointer text-sm font-medium hover:underline">{item.nome}</span>
         </Button>
       )}
     />

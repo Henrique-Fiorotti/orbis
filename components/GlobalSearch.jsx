@@ -23,7 +23,6 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 const GROUP_LABELS = {
@@ -40,6 +39,14 @@ const GROUP_ICONS = {
   admin: ShieldCheckIcon,
   sensor: NfcIcon,
   alerta: AlertTriangleIcon,
+}
+
+const GROUP_SEARCH_TERMS = {
+  maquina: ["maquina", "maquinas", "máquina", "máquinas"],
+  tecnico: ["tecnico", "tecnicos", "técnico", "técnicos"],
+  admin: ["admin", "admins", "administrador", "administradores"],
+  sensor: ["sensor", "sensores"],
+  alerta: ["alerta", "alertas", "chamado", "chamados"],
 }
 
 function normalizeSearch(value) {
@@ -61,6 +68,10 @@ function matchesSearch(item, query) {
 
 function buildSearchText(values) {
   return normalizeSearch(values.filter(Boolean).join(" "))
+}
+
+function buildItemSearchText(type, values) {
+  return buildSearchText([...(GROUP_SEARCH_TERMS[type] ?? []), ...values])
 }
 
 function getInitials(value) {
@@ -102,7 +113,10 @@ function ResultIcon({ item }) {
 export function GlobalSearch({ open, onOpenChange }) {
   const router = useRouter()
   const inputRef = React.useRef(null)
+  const resultsContentRef = React.useRef(null)
   const [query, setQuery] = React.useState("")
+  const [resultsPanelHeight, setResultsPanelHeight] = React.useState(0)
+  const [resultsPanelScrollable, setResultsPanelScrollable] = React.useState(false)
   const { admins, carregando: carregandoAdmins } = useAdmins()
   const { maquinas, carregando: carregandoMaquinas } = useMaquinas()
   const { sensores, carregando: carregandoSensores } = useSensores()
@@ -130,7 +144,7 @@ export function GlobalSearch({ open, onOpenChange }) {
       meta: maquina.status,
       image: maquina.imagem,
       href: `/dashboard/maquinas?machineId=${encodeURIComponent(maquina.id)}`,
-      searchText: buildSearchText([
+      searchText: buildItemSearchText("maquina", [
         maquina.nome,
         maquina.setor,
         maquina.tipo,
@@ -147,7 +161,7 @@ export function GlobalSearch({ open, onOpenChange }) {
       meta: tecnico.status,
       image: tecnico.foto,
       href: `/dashboard/tecnicos?tecnicoId=${encodeURIComponent(tecnico.id)}`,
-      searchText: buildSearchText([
+      searchText: buildItemSearchText("tecnico", [
         tecnico.nome,
         tecnico.email,
         tecnico.telefone,
@@ -164,14 +178,11 @@ export function GlobalSearch({ open, onOpenChange }) {
       meta: admin.status,
       image: admin.foto,
       href: `/dashboard/admins?adminId=${encodeURIComponent(admin.id)}`,
-      searchText: buildSearchText([
+      searchText: buildItemSearchText("admin", [
         admin.nome,
         admin.email,
         admin.telefone,
         admin.status,
-        "admin",
-        "administrador",
-        "administradores",
       ]),
     }))
 
@@ -182,7 +193,7 @@ export function GlobalSearch({ open, onOpenChange }) {
       subtitle: sensor.maquinaId ? sensor.maquinaNome : "Sem máquina vinculada",
       meta: sensor.status,
       href: `/dashboard/sensores?sensorId=${encodeURIComponent(sensor.id)}`,
-      searchText: buildSearchText([
+      searchText: buildItemSearchText("sensor", [
         sensor.tipo,
         sensor.maquinaNome,
         sensor.status,
@@ -197,7 +208,7 @@ export function GlobalSearch({ open, onOpenChange }) {
       subtitle: alerta.mensagem,
       meta: alerta.status,
       href: `/dashboard/alertas?alertaId=${encodeURIComponent(alerta.id)}`,
-      searchText: buildSearchText([
+      searchText: buildItemSearchText("alerta", [
         alerta.maquinaNome,
         alerta.sensorNome,
         alerta.mensagem,
@@ -216,7 +227,7 @@ export function GlobalSearch({ open, onOpenChange }) {
       return []
     }
 
-    return items.filter((item) => matchesSearch(item, query)).slice(0, 24)
+    return items.filter((item) => matchesSearch(item, query))
   }, [items, query])
 
   const groupedResults = React.useMemo(
@@ -231,6 +242,33 @@ export function GlobalSearch({ open, onOpenChange }) {
       }, {}),
     [results]
   )
+
+  React.useLayoutEffect(() => {
+    if (!open || !resultsContentRef.current) {
+      setResultsPanelHeight(0)
+      setResultsPanelScrollable(false)
+      return
+    }
+
+    function updateResultsPanelHeight() {
+      const maxHeight = Math.max(160, Math.min(640, window.innerHeight - 128))
+      const contentHeight = resultsContentRef.current?.scrollHeight ?? 0
+
+      setResultsPanelHeight(Math.min(contentHeight, maxHeight))
+      setResultsPanelScrollable(contentHeight > maxHeight)
+    }
+
+    updateResultsPanelHeight()
+
+    const resizeObserver = new ResizeObserver(updateResultsPanelHeight)
+    resizeObserver.observe(resultsContentRef.current)
+    window.addEventListener("resize", updateResultsPanelHeight)
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener("resize", updateResultsPanelHeight)
+    }
+  }, [groupedResults, loading, open, query, results.length])
 
   function handleSelect(item) {
     onOpenChange(false)
@@ -261,7 +299,15 @@ export function GlobalSearch({ open, onOpenChange }) {
           </Button>
         </div>
 
-        <div className={cn("max-h-[260px] overflow-y-auto px-2 py-2", query.trim() || loading ? "border-t" : "")}>
+        <div
+          className={cn(
+            "overflow-hidden transition-[height,opacity,border-color] duration-300 ease-out",
+            resultsPanelScrollable ? "overflow-y-auto" : "",
+            query.trim() || loading ? "border-t opacity-100" : "opacity-95"
+          )}
+          style={{ height: resultsPanelHeight }}
+        >
+          <div ref={resultsContentRef} className="px-2 py-2">
           {loading ? (
             <div className="grid gap-2 p-2">
               {Array.from({ length: 5 }).map((_, index) => (
@@ -294,7 +340,7 @@ export function GlobalSearch({ open, onOpenChange }) {
                       key={item.id}
                       type="button"
                       onClick={() => handleSelect(item)}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+                      className="flex w-full animate-in fade-in-0 slide-in-from-top-1 items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
                     >
                       <ResultIcon item={item} />
                       <span className="min-w-0 flex-1">
@@ -319,6 +365,7 @@ export function GlobalSearch({ open, onOpenChange }) {
               </div>
             ))
           )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
