@@ -965,7 +965,7 @@ function RelatorioOperacional({
     : integridadeMedia >= 75
       ? "Frota Estavel"
       : integridadeMedia >= 50
-        ? "Atencao Necessaria"
+        ? "Atenção Necessaria"
         : "Estado Critico"
   const maquinasVisiveis = maquinas.slice(0, 15)
   const alertasVisiveis = alertas.slice(0, 10)
