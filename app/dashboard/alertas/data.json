@@ -74,7 +74,7 @@
     "sensorNome": "Sensor Temp C3-01",
     "severidade": "BAIXA",
     "status": "CANCELADO",
-    "mensagem": "Leve tendência de alta na temperatura. Chamado cancelado pelo administrador após revisão.",
+    "mensagem": "Leve tendência de alta na temperatura. Alerta cancelado pelo administrador após revisão.",
     "criadoEm": "2026-03-22T16:20:00Z"
   }
 ]

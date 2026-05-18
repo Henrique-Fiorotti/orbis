@@ -166,6 +166,7 @@ export default function MaquinasPage() {
   const [sorting, setSorting] = React.useState([])
   const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
+  const [openActionMenuId, setOpenActionMenuId] = React.useState(null)
   const maquinaAbertaPelaUrlRef = React.useRef(null)
 
   const loadingInicial = useDashboardMetricsLoading(carregando && maquinas.length === 0)
@@ -459,31 +460,38 @@ export default function MaquinasPage() {
     },
     {
       id: "actions",
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
-              <EllipsisVerticalIcon />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}>
-              <EyeIcon className="mr-1 size-4" /> Ver detalhes
-            </DropdownMenuItem>
-            {canManageMaquinas ? (
-              <>
-                <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirEditar(row.original))}>
-                  <PencilIcon className="mr-1 size-4" /> Editar
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => confirmarExcluir(row.original))}>
-                  <Trash2Icon className="mr-1 size-4" /> Excluir
-                </DropdownMenuItem>
-              </>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      cell: ({ row }) => {
+        const menuId = String(row.original.id ?? row.id)
+
+        return (
+          <DropdownMenu
+            open={openActionMenuId === menuId}
+            onOpenChange={(open) => setOpenActionMenuId(open ? menuId : null)}
+          >
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+                <EllipsisVerticalIcon />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}>
+                <EyeIcon className="mr-1 size-4" /> Ver detalhes
+              </DropdownMenuItem>
+              {canManageMaquinas ? (
+                <>
+                  <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirEditar(row.original))}>
+                    <PencilIcon className="mr-1 size-4" /> Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer" variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => confirmarExcluir(row.original))}>
+                    <Trash2Icon className="mr-1 size-4" /> Excluir
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
     },
   ]
 
