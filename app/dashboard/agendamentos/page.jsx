@@ -36,6 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { SiteHeader } from "@/components/site-header"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useMaquinas } from "@/components/context/maquinas-context"
@@ -152,19 +153,62 @@ function formatHorario(hora, minuto) {
   return `${String(safeHora).padStart(2, "0")}:${String(safeMinuto).padStart(2, "0")}`
 }
 
-function formatDateTime(value) {
-  if (!value) return "-"
+function getTimezoneDateParts(value, timezone = TIMEZONE) {
+  if (!value) return null
 
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "-"
+  if (Number.isNaN(date.getTime())) return null
 
-  return date.toLocaleDateString("pt-BR", {
+  const formatter = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: timezone,
     day: "2-digit",
     month: "2-digit",
     year: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
   })
+  const parts = Object.fromEntries(formatter.formatToParts(date).map((part) => [part.type, part.value]))
+
+  return {
+    day: parts.day,
+    month: parts.month,
+    year: parts.year,
+    fullYear: Number(parts.year) + 2000,
+  }
+}
+
+function getScheduledDateParts(agendamento) {
+  if (!agendamento?.proximoEnvioEm) return null
+
+  const date = new Date(agendamento.proximoEnvioEm)
+  if (Number.isNaN(date.getTime())) return null
+
+  const utcLooksLikeLocalSchedule =
+    date.getUTCHours() === Number(agendamento.hora) &&
+    date.getUTCMinutes() === Number(agendamento.minuto)
+
+  if (utcLooksLikeLocalSchedule) {
+    return {
+      day: String(date.getUTCDate()).padStart(2, "0"),
+      month: String(date.getUTCMonth() + 1).padStart(2, "0"),
+      year: String(date.getUTCFullYear()).slice(-2),
+      fullYear: date.getUTCFullYear(),
+    }
+  }
+
+  return getTimezoneDateParts(agendamento.proximoEnvioEm, agendamento.timezone)
+}
+
+function formatScheduledNextRun(agendamento) {
+  const parts = getScheduledDateParts(agendamento)
+  if (!parts) return "-"
+
+  return `${parts.day}/${parts.month}/${parts.year}, ${formatHorario(agendamento.hora, agendamento.minuto)}`
+}
+
+function getScheduledNextRunSortValue(agendamento) {
+  const parts = getScheduledDateParts(agendamento)
+  if (!parts) return Number.POSITIVE_INFINITY
+
+  return Date.UTC(parts.fullYear, Number(parts.month) - 1, Number(parts.day), Number(agendamento.hora), Number(agendamento.minuto))
 }
 
 function getFrequencyLabel(value) {
@@ -313,16 +357,18 @@ function MetricCard({ label, value, sub, icon: Icon }) {
   )
 }
 
+
+
 function ScheduleDescription({ agendamento }) {
   if (agendamento.frequencia === "DIARIO") {
-    return <>Todos os dias as {formatHorario(agendamento.hora, agendamento.minuto)}</>
+    return <>Todos os dias, às {formatHorario(agendamento.hora, agendamento.minuto)}</>
   }
 
   if (agendamento.frequencia === "SEMANAL") {
-    return <>{getWeekdayLabel(agendamento.diaSemana)} as {formatHorario(agendamento.hora, agendamento.minuto)}</>
+    return <>{getWeekdayLabel(agendamento.diaSemana)+","} às {formatHorario(agendamento.hora, agendamento.minuto)}</>
   }
 
-  return <>Dia {agendamento.diaMes ?? "-"} as {formatHorario(agendamento.hora, agendamento.minuto)}</>
+  return <>Dia {agendamento.diaMes+"," ?? "-"} às {formatHorario(agendamento.hora, agendamento.minuto)}</>
 }
 
 function AgendamentoForm({ form, setForm, maquinas, salvando, modo }) {
@@ -538,13 +584,13 @@ export default function AgendamentosPage() {
     const pausados = agendamentos.filter((item) => item.status === "PAUSADO").length
     const proximos = agendamentos
       .filter((item) => item.status === "ATIVO" && item.proximoEnvioEm)
-      .sort((a, b) => Date.parse(a.proximoEnvioEm) - Date.parse(b.proximoEnvioEm))
+      .sort((a, b) => getScheduledNextRunSortValue(a) - getScheduledNextRunSortValue(b))
 
     return {
       total: agendamentos.length,
       ativos,
       pausados,
-      proximo: proximos[0] ? formatDateTime(proximos[0].proximoEnvioEm) : "-",
+      proximo: proximos[0] ? formatScheduledNextRun(proximos[0]) : "-",
     }
   }, [agendamentos])
 
@@ -819,7 +865,7 @@ export default function AgendamentosPage() {
                       <TableCell className="text-muted-foreground">
                         <ScheduleDescription agendamento={agendamento} />
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{formatDateTime(agendamento.proximoEnvioEm)}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatScheduledNextRun(agendamento)}</TableCell>
                       <TableCell>
                         <StatusBadge status={agendamento.status} />
                       </TableCell>
