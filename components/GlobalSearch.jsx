@@ -56,6 +56,15 @@ function normalizeSearch(value) {
     .toLowerCase()
 }
 
+const SECRET_GIF_URL =
+  "https://i.redd.it/on-the-day-after-the-12th-anniversary-of-bti-i-cant-help-v0-eg9quxqqfm6g1.gif?width=480&auto=webp&s=9e4a1bb0dbe441f4c785afe108a9e00782975bee"
+
+function isSecretSearch(value) {
+  const normalizedValue = normalizeSearch(value).trim().replace(/\s+/g, " ")
+
+  return normalizedValue === "six seven" || normalizedValue === "67"
+}
+
 function matchesSearch(item, query) {
   const normalizedQuery = normalizeSearch(query)
 
@@ -115,6 +124,7 @@ export function GlobalSearch({ open, onOpenChange }) {
   const inputRef = React.useRef(null)
   const resultsContentRef = React.useRef(null)
   const [query, setQuery] = React.useState("")
+  const [secretOpen, setSecretOpen] = React.useState(false)
   const [resultsPanelHeight, setResultsPanelHeight] = React.useState(0)
   const [resultsPanelScrollable, setResultsPanelScrollable] = React.useState(false)
   const { admins, carregando: carregandoAdmins } = useAdmins()
@@ -275,7 +285,18 @@ export function GlobalSearch({ open, onOpenChange }) {
     router.push(item.href)
   }
 
+  function handleSearchKeyDown(event) {
+    if (event.key !== "Enter" || !isSecretSearch(query)) {
+      return
+    }
+
+    event.preventDefault()
+    onOpenChange(false)
+    setSecretOpen(true)
+  }
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
@@ -289,6 +310,7 @@ export function GlobalSearch({ open, onOpenChange }) {
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={handleSearchKeyDown}
             placeholder="Pesquisar máquinas, técnicos, administradores, sensores e alertas..."
             className="h-12 flex-1 bg-transparent px-0 text-[17px] outline-none placeholder:text-muted-foreground"
           />
@@ -369,5 +391,17 @@ export function GlobalSearch({ open, onOpenChange }) {
         </div>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={secretOpen} onOpenChange={setSecretOpen}>
+      <DialogContent className="w-[min(480px,calc(100vw-2rem))]! max-w-none! overflow-hidden rounded-[12px]! p-0">
+        <DialogTitle className="sr-only">six seven</DialogTitle>
+        <img
+          src={SECRET_GIF_URL}
+          alt="six seven"
+          className="block aspect-video w-full bg-muted object-cover"
+        />
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
