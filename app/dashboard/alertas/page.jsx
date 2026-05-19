@@ -1292,14 +1292,14 @@ export default function AlertasPage() {
                     <ArrowLeftIcon className="size-4" />
                   </Button>
                   <div className="min-w-0">
-                    <SheetTitle>Detalhes do chamado</SheetTitle>
-                    <SheetDescription>Informações completas do chamado.</SheetDescription>
+                    <SheetTitle>Detalhes do alerta</SheetTitle>
+                    <SheetDescription>Informações completas do alerta.</SheetDescription>
                   </div>
                 </div>
               ) : (
                 <>
-                  <SheetTitle>{modoSheet === "criar" ? "Registrar chamado manual" : "Detalhes do chamado"}</SheetTitle>
-                  <SheetDescription>{modoSheet === "criar" ? "Registre um chamado manualmente para acompanhamento." : "Informações completas do chamado."}</SheetDescription>
+                  <SheetTitle>{modoSheet === "criar" ? "Registrar alerta manual" : "Detalhes do alerta"}</SheetTitle>
+                  <SheetDescription>{modoSheet === "criar" ? "Registre um alerta manualmente para acompanhamento." : "Informações completas do alerta."}</SheetDescription>
                 </>
               )}
             </SheetHeader>
@@ -1385,7 +1385,7 @@ export default function AlertasPage() {
               ) : (
                 <>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="tipo">Tipo de chamado</Label>
+                    <Label htmlFor="tipo">Tipo de alerta</Label>
                     <Select value={form.tipo} onValueChange={(value) => setForm((current) => ({ ...current, tipo: value }))}>
                       <SelectTrigger id="tipo" className="w-full">
                         <SelectValue />
@@ -1428,7 +1428,7 @@ export default function AlertasPage() {
             {modoSheet !== "ver" ? (
               <SheetFooter className="px-4 pb-4">
                 <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)}>Cancelar</Button>
-                <Button className="cursor-pointer" onClick={salvar}>Registrar chamado</Button>
+                <Button className="cursor-pointer" onClick={salvar}>Registrar alerta</Button>
               </SheetFooter>
             ) : null}
           </SheetContent>
