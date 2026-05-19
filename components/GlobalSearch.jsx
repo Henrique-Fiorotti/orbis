@@ -59,10 +59,37 @@ function normalizeSearch(value) {
 const SECRET_GIF_URL =
   "https://i.redd.it/on-the-day-after-the-12th-anniversary-of-bti-i-cant-help-v0-eg9quxqqfm6g1.gif?width=480&auto=webp&s=9e4a1bb0dbe441f4c785afe108a9e00782975bee"
 
-function isSecretSearch(value) {
+const SECRET_SEARCHES = [
+  {
+    terms: ["six seven", "67"],
+    title: "six seven",
+    src: SECRET_GIF_URL,
+    className: "aspect-video object-cover",
+  },
+  {
+    terms: ["fofinho"],
+    title: "fofinho",
+    src: "/fofinho.jpeg",
+    className: "max-h-[80vh] object-contain",
+  },
+  {
+    terms: ["guga", "guguinha gameplays"],
+    title: "guga",
+    src: "/guga.jpeg",
+    className: "max-h-[80vh] object-contain",
+  },
+  {
+    terms: ["doom"],
+    title: "doom",
+    type: "game",
+    src: "https://silentspacemarine.com/"
+  }
+]
+
+function getSecretSearch(value) {
   const normalizedValue = normalizeSearch(value).trim().replace(/\s+/g, " ")
 
-  return normalizedValue === "six seven" || normalizedValue === "67"
+  return SECRET_SEARCHES.find((secret) => secret.terms.includes(normalizedValue))
 }
 
 function matchesSearch(item, query) {
@@ -125,6 +152,7 @@ export function GlobalSearch({ open, onOpenChange }) {
   const resultsContentRef = React.useRef(null)
   const [query, setQuery] = React.useState("")
   const [secretOpen, setSecretOpen] = React.useState(false)
+  const [activeSecret, setActiveSecret] = React.useState(null)
   const [resultsPanelHeight, setResultsPanelHeight] = React.useState(0)
   const [resultsPanelScrollable, setResultsPanelScrollable] = React.useState(false)
   const { admins, carregando: carregandoAdmins } = useAdmins()
@@ -286,122 +314,144 @@ export function GlobalSearch({ open, onOpenChange }) {
   }
 
   function handleSearchKeyDown(event) {
-    if (event.key !== "Enter" || !isSecretSearch(query)) {
+    const secret = getSecretSearch(query)
+
+    if (event.key !== "Enter" || !secret) {
       return
     }
 
     event.preventDefault()
     onOpenChange(false)
+    setActiveSecret(secret)
     setSecretOpen(true)
   }
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        className="top-6 w-[min(900px,calc(100vw-2rem))]! max-h-[min(820px,calc(100vh-2rem))] max-w-none! translate-y-0 overflow-hidden rounded-[28px]! border bg-background/95 p-0 shadow-2xl backdrop-blur-xl transition-all duration-300 ease-out data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-top-8 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-top-6 data-closed:zoom-out-95"
-      >
-        <DialogTitle className="sr-only ">Pesquisar</DialogTitle>
-        <div className="flex items-center gap-3 px-5 py-1.5">
-          <SearchIcon className="size-5 shrink-0 text-muted-foreground " />
-
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            placeholder="Pesquisar máquinas, técnicos, administradores, sensores e alertas..."
-            className="h-12 flex-1 bg-transparent px-0 text-[17px] outline-none placeholder:text-muted-foreground"
-          />
-
-          <Button variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
-            <XIcon className="size-4" />
-            <span className="sr-only">Fechar</span>
-          </Button>
-        </div>
-
-        <div
-          className={cn(
-            "overflow-hidden transition-[height,opacity,border-color] duration-300 ease-out",
-            resultsPanelScrollable ? "overflow-y-auto" : "",
-            query.trim() || loading ? "border-t opacity-100" : "opacity-95"
-          )}
-          style={{ height: resultsPanelHeight }}
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          showCloseButton={false}
+          className="top-6 w-[min(900px,calc(100vw-2rem))]! max-h-[min(820px,calc(100vh-2rem))] max-w-none! translate-y-0 overflow-hidden rounded-[28px]! border bg-background/95 p-0 shadow-2xl backdrop-blur-xl transition-all duration-300 ease-out data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-top-8 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-top-6 data-closed:zoom-out-95"
         >
-          <div ref={resultsContentRef} className="px-2 py-2">
-          {loading ? (
-            <div className="grid gap-2 p-2">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="flex items-center gap-3 rounded-lg px-3 py-2">
-                  <span className="size-9 animate-pulse rounded-lg bg-muted" />
-                  <span className="flex flex-1 flex-col gap-2">
-                    <span className="h-4 w-1/2 animate-pulse rounded bg-muted" />
-                    <span className="h-3 w-2/3 animate-pulse rounded bg-muted" />
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : !query.trim() ? (
-            <div className="flex min-h-28 items-center justify-center px-4 text-center text-sm text-muted-foreground">
-              Digite para encontrar máquinas, técnicos, administradores, sensores ou alertas.
-            </div>
-          ) : results.length === 0 ? (
-            <div className="flex min-h-32 items-center justify-center px-4 text-center text-sm text-muted-foreground">
-              Nenhum resultado encontrado.
-            </div>
-          ) : (
-            Object.entries(groupedResults).map(([type, group]) => (
-              <div key={type} className="py-1">
-                <div className="px-3 py-2 text-xs font-semibold uppercase text-muted-foreground">
-                  {GROUP_LABELS[type] ?? type}
-                </div>
-                <div className="grid gap-1">
-                  {group.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleSelect(item)}
-                      className="flex w-full animate-in fade-in-0 slide-in-from-top-1 items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
-                    >
-                      <ResultIcon item={item} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-foreground">{item.title}</span>
-                        <span className="block truncate text-xs text-muted-foreground">{item.subtitle}</span>
+          <DialogTitle className="sr-only ">Pesquisar</DialogTitle>
+          <div className="flex items-center gap-3 px-5 py-1.5">
+            <SearchIcon className="size-5 shrink-0 text-muted-foreground " />
+
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Pesquisar máquinas, técnicos, administradores, sensores e alertas..."
+              className="h-12 flex-1 bg-transparent px-0 text-[17px] outline-none placeholder:text-muted-foreground"
+            />
+
+            <Button variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
+              <XIcon className="size-4" />
+              <span className="sr-only">Fechar</span>
+            </Button>
+          </div>
+
+          <div
+            className={cn(
+              "overflow-hidden transition-[height,opacity,border-color] duration-300 ease-out",
+              resultsPanelScrollable ? "overflow-y-auto" : "",
+              query.trim() || loading ? "border-t opacity-100" : "opacity-95"
+            )}
+            style={{ height: resultsPanelHeight }}
+          >
+            <div ref={resultsContentRef} className="px-2 py-2">
+              {loading ? (
+                <div className="grid gap-2 p-2">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div key={index} className="flex items-center gap-3 rounded-lg px-3 py-2">
+                      <span className="size-9 animate-pulse rounded-lg bg-muted" />
+                      <span className="flex flex-1 flex-col gap-2">
+                        <span className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+                        <span className="h-3 w-2/3 animate-pulse rounded bg-muted" />
                       </span>
-                      {item.meta ? (
-                        <span
-                          className={cn(
-                            "hidden shrink-0 rounded-full border px-2 py-0.5 text-xs text-muted-foreground sm:inline-flex",
-                            item.type === "alerta" && item.meta === "ATIVO"
-                              ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
-                              : ""
-                          )}
-                        >
-                          {item.meta}
-                        </span>
-                      ) : null}
-                    </button>
+                    </div>
                   ))}
                 </div>
-              </div>
-            ))
-          )}
+              ) : !query.trim() ? (
+                <div className="flex min-h-28 items-center justify-center px-4 text-center text-sm text-muted-foreground">
+                  Digite para encontrar máquinas, técnicos, administradores, sensores ou alertas.
+                </div>
+              ) : results.length === 0 ? (
+                <div className="flex min-h-32 items-center justify-center px-4 text-center text-sm text-muted-foreground">
+                  Nenhum resultado encontrado.
+                </div>
+              ) : (
+                Object.entries(groupedResults).map(([type, group]) => (
+                  <div key={type} className="py-1">
+                    <div className="px-3 py-2 text-xs font-semibold uppercase text-muted-foreground">
+                      {GROUP_LABELS[type] ?? type}
+                    </div>
+                    <div className="grid gap-1">
+                      {group.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => handleSelect(item)}
+                          className="flex w-full animate-in fade-in-0 slide-in-from-top-1 items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-[background-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:bg-muted focus-visible:bg-muted focus-visible:outline-none"
+                        >
+                          <ResultIcon item={item} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium text-foreground">{item.title}</span>
+                            <span className="block truncate text-xs text-muted-foreground">{item.subtitle}</span>
+                          </span>
+                          {item.meta ? (
+                            <span
+                              className={cn(
+                                "hidden shrink-0 rounded-full border px-2 py-0.5 text-xs text-muted-foreground sm:inline-flex",
+                                item.type === "alerta" && item.meta === "ATIVO"
+                                  ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+                                  : ""
+                              )}
+                            >
+                              {item.meta}
+                            </span>
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
 
-    <Dialog open={secretOpen} onOpenChange={setSecretOpen}>
-      <DialogContent className="w-[min(480px,calc(100vw-2rem))]! max-w-none! overflow-hidden rounded-[12px]! p-0">
-        <DialogTitle className="sr-only">six seven</DialogTitle>
-        <img
-          src={SECRET_GIF_URL}
-          alt="six seven"
-          className="block aspect-video w-full bg-muted object-cover"
-        />
-      </DialogContent>
-    </Dialog>
+      <Dialog open={secretOpen} onOpenChange={setSecretOpen}>
+        <DialogContent
+          className={cn(
+            "max-w-none! overflow-hidden rounded-[12px]! p-0",
+            activeSecret?.type === "game"
+              ? "w-[min(800px,calc(100vw-2rem))]!"
+              : "w-[min(480px,calc(100vw-2rem))]!"
+          )}
+        >
+          <DialogTitle className="sr-only">{activeSecret?.title ?? "segredo"}</DialogTitle>
+          {activeSecret ? (
+            activeSecret.type === "game" ? (
+              <iframe
+                src={activeSecret.src}
+                title={activeSecret.title}
+                className="block w-full bg-muted"
+                style={{ height: "700px", border: "none" }}
+                allowFullScreen
+              />
+            ) : (
+              <img
+                src={activeSecret.src}
+                alt={activeSecret.title}
+                className={cn("block w-full bg-muted", activeSecret.className)}
+              />
+            )
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

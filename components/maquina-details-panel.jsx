@@ -8,10 +8,17 @@ import {
   CircleHelpIcon,
   CircleMinusIcon,
   ImageIcon,
+  Maximize2Icon,
   ThermometerIcon,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -134,10 +141,60 @@ function IntegridadeBar({ value, inactive = false }) {
 }
 
 export function MaquinaImagePreview({ maquina, className = "" }) {
+  const [fullImageOpen, setFullImageOpen] = React.useState(false)
+  const imageSrc = maquina?.imagem
+  const imageAlt = maquina?.nome ? `Foto da máquina ${maquina.nome}` : "Foto da máquina"
+
+  return (
+    <>
+      <div className={cn("relative aspect-video w-full overflow-hidden rounded-lg border bg-muted", className)}>
+        {imageSrc ? (
+          <>
+            <img src={imageSrc} alt={imageAlt} className="size-full object-contain" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon-sm"
+                  className="absolute left-2 top-2 shadow-sm"
+                  onClick={() => setFullImageOpen(true)}
+                >
+                  <Maximize2Icon className="size-4" />
+                  <span className="sr-only">Ver foto inteira</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Ver foto inteira</TooltipContent>
+            </Tooltip>
+          </>
+        ) : (
+          <div className="flex size-full items-center justify-center text-muted-foreground">
+            <ImageIcon className="size-8" />
+          </div>
+        )}
+      </div>
+
+      <Dialog open={fullImageOpen} onOpenChange={setFullImageOpen}>
+        <DialogContent className="w-[min(960px,calc(100vw-2rem))]! max-w-none! overflow-hidden p-0">
+          <DialogTitle className="sr-only">{imageAlt}</DialogTitle>
+          {imageSrc ? (
+            <img
+              src={imageSrc}
+              alt={imageAlt}
+              className="block max-h-[calc(100vh-4rem)] w-full bg-muted object-contain"
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+export function MaquinaUploadImagePreview({ src, alt = "Imagem da máquina", className = "" }) {
   return (
     <div className={cn("aspect-video w-full overflow-hidden rounded-lg border bg-muted", className)}>
-      {maquina?.imagem ? (
-        <img src={maquina.imagem} alt="" className="size-full object-cover" />
+      {src ? (
+        <img src={src} alt={alt} className="size-full object-contain" />
       ) : (
         <div className="flex size-full items-center justify-center text-muted-foreground">
           <ImageIcon className="size-8" />
