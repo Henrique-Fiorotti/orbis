@@ -22,6 +22,7 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
@@ -204,6 +205,22 @@ function formatScheduledNextRun(agendamento) {
   return `${parts.day}/${parts.month}/${parts.year}, ${formatHorario(agendamento.hora, agendamento.minuto)}`
 }
 
+function formatMetricNextRun(value) {
+  if (!value || value === "-") return { content: value || "-", title: value || "-" }
+
+  const [date, time] = String(value).split(",").map((part) => part.trim())
+
+  return {
+    title: value,
+    content: (
+      <span className="flex flex-col leading-tight">
+        <span>{date}</span>
+        {time ? <span className="text-base @[250px]/card:text-lg">{time}</span> : null}
+      </span>
+    ),
+  }
+}
+
 function getScheduledNextRunSortValue(agendamento) {
   const parts = getScheduledDateParts(agendamento)
   if (!parts) return Number.POSITIVE_INFINITY
@@ -344,16 +361,37 @@ function StatusBadge({ status }) {
   )
 }
 
-function MetricCard({ label, value, sub, icon: Icon }) {
+function MetricCard({ label, value, valueTitle, sub, detail, badge, icon: Icon, featured = false, compactValue = false }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-muted-foreground">{label}</span>
-        <Icon className="size-4 text-[#3B2867] dark:text-white" />
-      </div>
-      <span className="text-3xl font-bold text-[#3B2867] dark:text-white">{value}</span>
-      <span className="text-xs text-muted-foreground">{sub}</span>
-    </div>
+    <Card
+      className={`@container/card transition-colors flex-col justify-between hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10 
+      }`}
+    >
+      <CardHeader className="min-h-[82px]">
+        <CardDescription className={featured ? "" : "text-black! dark:text-white!"}>{label}</CardDescription>
+        <CardTitle
+          className={`font-semibold tabular-nums ${
+            featured ? "text-[#5E17EB]!" : ""
+          } ${compactValue ? "text-xl @[250px]/card:text-2xl" : "text-2xl @[250px]/card:text-3xl"}`}
+          title={valueTitle ?? (typeof value === "string" || typeof value === "number" ? String(value) : undefined)}
+        >
+          {value}
+        </CardTitle>
+        <CardAction>
+          <Badge variant="outline">
+            <Icon className="size-3.5" />
+            {badge}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        <div className="line-clamp-1 items-center flex gap-2 font-medium ">
+          {sub}
+          <Icon className="size-4 flex " />
+        </div>
+        {/* {detail ? <div className="text-muted-foreground">{detail}</div> : null} */}
+      </CardFooter>
+    </Card>
   )
 }
 
@@ -717,6 +755,7 @@ export default function AgendamentosPage() {
 
   const loadingInicial = status === "loading"
   const refreshing = status === "refreshing"
+  const proximoEnvioMetric = formatMetricNextRun(loadingInicial ? "--" : totais.proximo)
 
   return (
     <>
@@ -766,11 +805,39 @@ export default function AgendamentosPage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={CalendarClockIcon} label="Total" value={loadingInicial ? "--" : totais.total} sub="Agendamentos cadastrados" />
-          <MetricCard icon={CheckCircle2Icon} label="Ativos" value={loadingInicial ? "--" : totais.ativos} sub="Prontos para envio automatico" />
-          <MetricCard icon={PauseCircleIcon} label="Pausados" value={loadingInicial ? "--" : totais.pausados} sub="Envios cancelados temporariamente" />
-          <MetricCard icon={ClockIcon} label="Proximo envio" value={loadingInicial ? "--" : totais.proximo} sub="Entre os agendamentos ativos" />
+        <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs sm:grid-cols-2 xl:grid-cols-4 dark:*:data-[slot=card]:bg-card">
+          <MetricCard
+            featured
+            icon={CalendarClockIcon}
+            label="Total"
+            value={loadingInicial ? "--" : totais.total}
+            badge={loadingInicial ? "Atualizando" : `${totais.ativos} ativos`}
+            sub={loadingInicial ? "Carregando agendamentos" : `${totais.total} agendamentos cadastrados`}
+          />
+          <MetricCard
+            icon={CheckCircle2Icon}
+            label="Ativos"
+            value={loadingInicial ? "--" : totais.ativos}
+            badge={loadingInicial ? "Atualizando" : "Prontos"}
+            sub={loadingInicial ? "Conferindo envios ativos" : `${totais.ativos} prontos para envio`}
+          />
+          <MetricCard
+            icon={PauseCircleIcon}
+            label="Pausados"
+            value={loadingInicial ? "--" : totais.pausados}
+            badge={loadingInicial ? "Atualizando" : "Em pausa"}
+            sub={loadingInicial ? "Conferindo pausas" : `${totais.pausados} envios interrompidos`}
+          />
+          <MetricCard
+            compactValue
+            icon={ClockIcon}
+            label="Proximo envio"
+            value={proximoEnvioMetric.content}
+            valueTitle={proximoEnvioMetric.title}
+            badge={loadingInicial ? "Atualizando" : "Agenda"}
+            sub={loadingInicial ? "Calculando proxima execucao" : "Entre os agendamentos ativos"}
+            detail={totais.proximo === "-" ? "Nenhum envio ativo encontrado" : "Baseado na recorrencia configurada"}
+          />
         </div>
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
