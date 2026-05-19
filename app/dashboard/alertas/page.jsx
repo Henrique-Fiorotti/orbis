@@ -8,6 +8,7 @@ import { useAlertas } from "@/components/context/alertas-context"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -189,6 +190,47 @@ function FieldLabelWithHelp({ children, help, helpLabel }) {
 
 function isStatusAberto(status) {
   return status === "ATIVO" || status === "EM_ANDAMENTO"
+}
+
+function AlertaMetricCard({ label, value, badge, badgeClass = "", footer, icon: Icon, selected = false, featured = false, onClick }) {
+  function handleKeyDown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      onClick?.()
+    }
+  }
+
+  return (
+    <Card
+      role="button"
+      tabIndex={0}
+      aria-pressed={selected}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      className={`@container/card cursor-pointer transition-colors hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-visible:border-[#5E17EB]! focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 focus-visible:outline-none ${
+        selected ? "border-[#5E17EB]! ring-2 ring-[#5E17EB]/30" : ""
+      }`}
+    >
+      <CardHeader className="min-h-[76px]">
+        <CardDescription className={featured ? "" : "text-black! dark:text-white!"}>{label}</CardDescription>
+        <CardTitle className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${featured ? "text-[#5E17EB]!" : ""}`}>
+          {value}
+        </CardTitle>
+        <CardAction>
+          <Badge variant="outline" className={badgeClass}>
+            <Icon className="size-3.5" />
+            {badge}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        <div className="line-clamp-1 flex items-center gap-2 font-medium">
+          {footer}
+          <Icon className="size-4" />
+        </div>
+      </CardFooter>
+    </Card>
+  )
 }
 
 function getUltimaOcorrencia(alerta) {
@@ -940,6 +982,7 @@ export default function AlertasPage() {
   const [historicoStatus, setHistoricoStatus] = React.useState("idle")
   const [historicoMensagem, setHistoricoMensagem] = React.useState("")
   const [historicoEventos, setHistoricoEventos] = React.useState([])
+  const [filtroResumo, setFiltroResumo] = React.useState("em-aberto")
   const historicoRequestIdRef = React.useRef(0)
   const alertaAbertoPelaUrlRef = React.useRef(null)
   const loadingInicial = useDashboardMetricsLoading(carregando && alertas.length === 0)
@@ -948,6 +991,7 @@ export default function AlertasPage() {
   const alertasOrdenados = React.useMemo(() => [...alertas].sort(compareAlertaRecente), [alertas])
   const totalEmAberto = React.useMemo(() => alertasOrdenados.filter((alerta) => alerta.status === "ATIVO").length, [alertasOrdenados])
   const totalEmAndamento = React.useMemo(() => alertasOrdenados.filter((alerta) => alerta.status === "EM_ANDAMENTO").length, [alertasOrdenados])
+  const totalRepetidos = React.useMemo(() => alertasOrdenados.filter((alerta) => isStatusAberto(alerta.status) && isAlertaRepetido(alerta)).length, [alertasOrdenados])
   const totalConcluidos = React.useMemo(() => alertasOrdenados.filter((alerta) => alerta.status === "RESOLVIDO").length, [alertasOrdenados])
 
   React.useEffect(() => {
@@ -1185,36 +1229,51 @@ export default function AlertasPage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="cursor-pointer flex min-h-[116px] flex-col justify-between rounded-lg border border-red-100 bg-card p-4 shadow-sm dark:border-red-900/40">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-muted-foreground">Em aberto</span>
-              <ShieldAlertIcon className="size-4 text-red-600 dark:text-red-300" />
-            </div>
-            <span className="text-3xl font-semibold text-[#3B2867] dark:text-white">
-              <MetricValue value={totalEmAberto} loading={loadingInicial} />
-            </span>
-          </div>
+        <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs sm:grid-cols-2 xl:grid-cols-4 dark:*:data-[slot=card]:bg-card">
+          <AlertaMetricCard
+            featured
+            icon={ShieldAlertIcon}
+            label="Em aberto"
+            value={<MetricValue value={totalEmAberto} loading={loadingInicial} />}
+            badge={loadingInicial ? "Atualizando" : "Abertos"}
+            badgeClass={totalEmAberto > 0 ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : ""}
+            footer={loadingInicial ? "Conferindo alertas..." : `${totalEmAberto} aguardando triagem`}
+            selected={filtroResumo === "em-aberto"}
+            onClick={() => setFiltroResumo("em-aberto")}
+          />
 
-          <div className="flex min-h-[116px] flex-col justify-between rounded-lg border border-yellow-100 bg-card p-4 shadow-sm dark:border-yellow-900/40">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-muted-foreground">Em andamento</span>
-              <AlertTriangleIcon className="size-4 text-yellow-700 dark:text-yellow-300" />
-            </div>
-            <span className="text-3xl font-semibold text-[#3B2867] dark:text-white">
-              <MetricValue value={totalEmAndamento} loading={loadingInicial} />
-            </span>
-          </div>
+          <AlertaMetricCard
+            icon={WrenchIcon}
+            label="Em andamento"
+            value={<MetricValue value={totalEmAndamento} loading={loadingInicial} />}
+            badge={loadingInicial ? "Atualizando" : "Em curso"}
+            badgeClass={totalEmAndamento > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : ""}
+            footer={loadingInicial ? "Sincronizando status..." : `${totalEmAndamento} em atendimento`}
+            selected={filtroResumo === "em-andamento"}
+            onClick={() => setFiltroResumo("em-andamento")}
+          />
 
-          <div className="flex min-h-[116px] flex-col justify-between rounded-lg border border-green-100 bg-card p-4 shadow-sm dark:border-green-900/40">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-muted-foreground">Concluidos</span>
-              <CircleCheckIcon className="size-4 text-green-700 dark:text-green-300" />
-            </div>
-            <span className="text-3xl font-semibold text-[#3B2867] dark:text-white">
-              <MetricValue value={totalConcluidos} loading={loadingInicial} />
-            </span>
-          </div>
+          <AlertaMetricCard
+            icon={RotateCcwIcon}
+            label="Repetidos"
+            value={<MetricValue value={totalRepetidos} loading={loadingInicial} />}
+            badge={loadingInicial ? "Atualizando" : "Recorrentes"}
+            badgeClass={totalRepetidos > 0 ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : ""}
+            footer={loadingInicial ? "Agrupando ocorrências..." : `${totalRepetidos} com recorrência`}
+            selected={filtroResumo === "repetidos"}
+            onClick={() => setFiltroResumo("repetidos")}
+          />
+
+          <AlertaMetricCard
+            icon={CircleCheckIcon}
+            label="Concluídos"
+            value={<MetricValue value={totalConcluidos} loading={loadingInicial} />}
+            badge={loadingInicial ? "Atualizando" : "Resolvidos"}
+            badgeClass={totalConcluidos > 0 ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300" : ""}
+            footer={loadingInicial ? "Conferindo histórico..." : `${totalConcluidos} finalizados`}
+            selected={filtroResumo === "concluidos"}
+            onClick={() => setFiltroResumo("concluidos")}
+          />
         </div>
 
         <div className="relative w-full max-w-sm">
@@ -1227,7 +1286,7 @@ export default function AlertasPage() {
         ) : errorSemDados ? (
           <StatePanel message={mensagem || "Não foi possível carregar os alertas."} tone="error" />
         ) : (
-          <Tabs defaultValue="em-aberto" className="min-w-0 w-full flex-col gap-4">
+          <Tabs value={filtroResumo} onValueChange={setFiltroResumo} className="min-w-0 w-full flex-col gap-4">
             <TabsList className="w-full max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <TabsTrigger value="em-aberto" className="cursor-pointer shrink-0 flex-none">
                 Em aberto{emAberto.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{emAberto.length}</Badge>}
