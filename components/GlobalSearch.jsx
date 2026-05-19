@@ -79,11 +79,17 @@ const SECRET_SEARCHES = [
     className: "max-h-[80vh] object-contain",
   },
   {
+    terms: ["ferrer", "carneirinho"],
+    title: "ferrer",
+    src: "/ferrer.jpeg",
+    className: "max-h-[80vh] object-contain",
+  },
+  {
     terms: ["doom"],
     title: "doom",
     type: "game",
     src: "https://silentspacemarine.com/"
-  }
+  },
 ]
 
 function getSecretSearch(value) {
