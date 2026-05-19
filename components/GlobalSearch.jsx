@@ -72,6 +72,12 @@ const SECRET_SEARCHES = [
     src: "/fofinho.jpeg",
     className: "max-h-[80vh] object-contain",
   },
+  {
+    terms: ["guga", "guguinha gameplays"],
+    title: "guga",
+    src: "/guga.jpeg",
+    className: "max-h-[80vh] object-contain",
+  }
 ]
 
 function getSecretSearch(value) {
