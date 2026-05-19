@@ -125,6 +125,11 @@ function formatarTelefoneExibicao(value) {
   return String(value ?? "").trim() || "Não informado"
 }
 
+function formatarCadastroTecnico(value) {
+  const cadastro = tempoRelativo(value)
+  return cadastro === "Sem leitura" ? "Não informado" : cadastro
+}
+
 export default function TecnicosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -697,7 +702,7 @@ export default function TecnicosPage() {
                     {[
                       ["E-mail", tecnicoSelecionado.email],
                       ["Telefone", formatarTelefoneExibicao(tecnicoSelecionado.telefone)],
-                      ["Cadastrado", tempoRelativo(tecnicoSelecionado.criadoEm)],
+                      ["Cadastrado", formatarCadastroTecnico(tecnicoSelecionado.criadoEm)],
                     ].map(([label, value]) => (
                       <div key={label} className="flex flex-col gap-1">
                         <Label className="text-muted-foreground text-xs">{label}</Label>
