@@ -105,7 +105,7 @@ function StatePanel({ message, tone = "muted" }) {
   )
 }
 
-function TecnicoMetricCard({ label, value, badge, footer, icon: Icon, selected = false, featured = false, onClick }) {
+function TecnicoMetricCard({ label, value, badge, badgeClass = "", footer, icon: Icon, selected = false, featured = false, onClick }) {
   function handleKeyDown(event) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault()
@@ -130,7 +130,7 @@ function TecnicoMetricCard({ label, value, badge, footer, icon: Icon, selected =
           {value}
         </CardTitle>
         <CardAction>
-          <Badge variant="outline">
+          <Badge variant="outline" className={badgeClass}>
             <Icon className="size-3.5" />
             {badge}
           </Badge>
@@ -558,6 +558,7 @@ export default function TecnicosPage() {
             label="Técnicos ativos"
             value={<MetricValue value={totalAtivos} loading={loadingInicial} />}
             badge="Operando"
+            badgeClass={totalAtivos > 0 ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300" : ""}
             footer={loadingInicial ? "Atualizando equipe..." : `${totalAtivos} disponíveis`}
             selected={filtroResumo === "ATIVO"}
             onClick={() => setFiltroResumo("ATIVO")}
@@ -568,6 +569,7 @@ export default function TecnicosPage() {
             label="Técnicos inativos"
             value={<MetricValue value={totalInativos} loading={loadingInicial} />}
             badge="Fora da escala"
+            badgeClass={totalInativos > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : ""}
             footer={loadingInicial ? "Conferindo status..." : `${totalInativos} sem operação ativa`}
             selected={filtroResumo === "INATIVO"}
             onClick={() => setFiltroResumo("INATIVO")}
@@ -578,6 +580,7 @@ export default function TecnicosPage() {
             label="Com alertas ativos"
             value={<MetricValue value={tecnicosComAlertas} loading={loadingInicial} />}
             badge="Hoje"
+            badgeClass={tecnicosComAlertas > 0 ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : ""}
             footer={loadingInicial ? "Sincronizando disponibilidade" : `${Math.max(totalAtivos - tecnicosComAlertas, 0)} disponíveis`}
             selected={filtroResumo === "COM_ALERTAS"}
             onClick={() => setFiltroResumo("COM_ALERTAS")}

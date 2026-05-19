@@ -124,7 +124,7 @@ function StatePanel({ message, tone = "muted" }) {
   )
 }
 
-function MaquinaMetricCard({ label, value, badge, footer, icon: Icon, featured = false, children }) {
+function MaquinaMetricCard({ label, value, badge, badgeClass = "", footer, icon: Icon, featured = false, children }) {
   return (
     <Card
       className={`@container/card transition-colors hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10 `}
@@ -135,7 +135,7 @@ function MaquinaMetricCard({ label, value, badge, footer, icon: Icon, featured =
           {value}
         </CardTitle>
         <CardAction>
-          <Badge variant="outline">
+          <Badge variant="outline" className={badgeClass}>
             <Icon className="size-3.5" />
             {badge}
           </Badge>
@@ -209,6 +209,7 @@ export default function MaquinasPage() {
     !salvando
 
   const totalOk = React.useMemo(() => maquinas.filter((maquina) => maquina.status === "OK").length, [maquinas])
+  const totalAlerta = React.useMemo(() => maquinas.filter((maquina) => maquina.status !== "OK").length, [maquinas])
   const criticasAlta = React.useMemo(() => maquinas.filter((maquina) => maquina.criticidade === "ALTA").length, [maquinas])
   const criticasAltaAlerta = React.useMemo(
     () => maquinas.filter((maquina) => maquina.criticidade === "ALTA" && maquina.status !== "OK").length,
@@ -594,7 +595,8 @@ export default function MaquinasPage() {
             icon={WashingMachineIcon}
             label="Total de máquinas"
             value={<MetricValue value={maquinas.length} loading={loadingInicial} />}
-            badge={loadingInicial ? "Sincronizando" : `${maquinas.length} cadastradas`}
+            badge={loadingInicial ? "Sincronizando" : totalAlerta > 0 ? `${totalAlerta} em alerta` : `${maquinas.length} cadastradas`}
+            badgeClass={totalAlerta > 0 ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : ""}
             footer={loadingInicial ? "Atualizando operação..." : `${totalOk} operando normalmente`}
           />
 
@@ -603,6 +605,7 @@ export default function MaquinasPage() {
             label="Alta importância"
             value={<MetricValue value={criticasAlta} loading={loadingInicial} />}
             badge={loadingInicial ? "Atualizando" : "Atenção"}
+            badgeClass={criticasAltaAlerta > 0 ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : ""}
             footer={loadingInicial ? "Verificando status..." : `${criticasAltaAlerta} em alerta agora`}
           />
 
@@ -611,6 +614,15 @@ export default function MaquinasPage() {
             label="Integridade média"
             value={<MetricValue value={integridadeMedia} loading={loadingInicial} suffix="%" />}
             badge={loadingInicial ? "Atualizando" : integridadeMedia >= 75 ? "Estável" : integridadeMedia >= 50 ? "Atenção" : "Crítico"}
+            badgeClass={
+              loadingInicial
+                ? ""
+                : integridadeMedia >= 75
+                  ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
+                  : integridadeMedia >= 50
+                    ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300"
+                    : "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+            }
             footer={loadingInicial ? "Calculando integridade..." : "Média de integridade da frota"}
           >
             <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-muted">

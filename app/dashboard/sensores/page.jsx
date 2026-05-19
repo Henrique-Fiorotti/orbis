@@ -149,7 +149,7 @@ function StatePanel({ message, tone = "muted" }) {
   )
 }
 
-function SensorMetricCard({ label, value, badge, footer, icon: Icon, featured = false }) {
+function SensorMetricCard({ label, value, badge, badgeClass = "", footer, icon: Icon, featured = false }) {
   return (
     <Card
       className={`@container/card transition-colors hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10 
@@ -161,7 +161,7 @@ function SensorMetricCard({ label, value, badge, footer, icon: Icon, featured = 
           {value}
         </CardTitle>
         <CardAction>
-          <Badge variant="outline">
+          <Badge variant="outline" className={badgeClass}>
             <Icon className="size-3.5" />
             {badge}
           </Badge>
@@ -729,6 +729,7 @@ export default function SensoresPage() {
             label="Fora do limite"
             value={<MetricValue value={foraDoLimite} loading={loadingInicial} />}
             badge={loadingInicial ? "Atualizando" : foraDoLimite > 0 ? "Alerta" : "Normal"}
+            badgeClass={foraDoLimite > 0 ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : ""}
             footer={loadingInicial ? "Verificando limites..." : `${Math.max(sensores.length - foraDoLimite, 0)} dentro dos limites`}
           />
 
@@ -737,6 +738,7 @@ export default function SensoresPage() {
             label="Sem máquina vinculada"
             value={<MetricValue value={semMaquina} loading={loadingInicial} />}
             badge={loadingInicial ? "Atualizando" : "Inativos"}
+            badgeClass={semMaquina > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : ""}
             footer={loadingInicial ? "Conferindo vínculos..." : `${semMaquina} sem vínculo operacional`}
           />
         </div>

@@ -361,7 +361,7 @@ function StatusBadge({ status }) {
   )
 }
 
-function MetricCard({ label, value, valueTitle, sub, detail, badge, icon: Icon, featured = false, compactValue = false }) {
+function MetricCard({ label, value, valueTitle, sub, detail, badge, badgeClass = "", icon: Icon, featured = false, compactValue = false }) {
   return (
     <Card
       className={`@container/card transition-colors flex-col justify-between hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10 
@@ -378,7 +378,7 @@ function MetricCard({ label, value, valueTitle, sub, detail, badge, icon: Icon, 
           {value}
         </CardTitle>
         <CardAction>
-          <Badge variant="outline">
+          <Badge variant="outline" className={badgeClass}>
             <Icon className="size-3.5" />
             {badge}
           </Badge>
@@ -819,6 +819,7 @@ export default function AgendamentosPage() {
             label="Ativos"
             value={loadingInicial ? "--" : totais.ativos}
             badge={loadingInicial ? "Atualizando" : "Prontos"}
+            badgeClass={totais.ativos > 0 ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300" : ""}
             sub={loadingInicial ? "Conferindo envios ativos" : `${totais.ativos} prontos para envio`}
           />
           <MetricCard
@@ -826,6 +827,7 @@ export default function AgendamentosPage() {
             label="Pausados"
             value={loadingInicial ? "--" : totais.pausados}
             badge={loadingInicial ? "Atualizando" : "Em pausa"}
+            badgeClass={totais.pausados > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : ""}
             sub={loadingInicial ? "Conferindo pausas" : `${totais.pausados} envios interrompidos`}
           />
           <MetricCard
