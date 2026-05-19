@@ -18,7 +18,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MaquinaDetailsPanel, MaquinaImagePreview } from "@/components/maquina-details-panel"
+import { MaquinaDetailsPanel, MaquinaImagePreview, MaquinaUploadImagePreview } from "@/components/maquina-details-panel"
 import { SiteHeader } from "@/components/site-header"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
@@ -721,15 +721,10 @@ export default function MaquinasPage() {
                 <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="imagem-maquina">Imagem da máquina</Label>
-                    <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
-                      {imagemPreview || maquinaSelecionada?.imagem ? (
-                        <img src={imagemPreview || maquinaSelecionada?.imagem} alt="" className="size-full object-cover" />
-                      ) : (
-                        <div className="flex size-full items-center justify-center text-muted-foreground">
-                          <ImageIcon className="size-8" />
-                        </div>
-                      )}
-                    </div>
+                    <MaquinaUploadImagePreview
+                      src={imagemPreview || maquinaSelecionada?.imagem}
+                      alt={maquinaSelecionada?.nome ? `Imagem da máquina ${maquinaSelecionada.nome}` : "Imagem da máquina"}
+                    />
                     <Input
                       id="imagem-maquina"
                       type="file"
