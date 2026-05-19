@@ -4,12 +4,16 @@ import * as React from "react"
 import { usePathname } from "next/navigation"
 import {
   AlertTriangleIcon,
-  LucideEye,
   FileTextIcon,
+  HistoryIcon,
   Loader2Icon,
+  LucideEye,
+  MessageSquareIcon,
   PlusIcon,
   SendIcon,
   SparklesIcon,
+  SquareIcon,
+  Trash2Icon,
   XIcon,
 } from "lucide-react"
 import Image from "next/image"
@@ -29,6 +33,8 @@ import { cn } from "@/lib/utils"
 
 const MIN_QUESTION_LENGTH = 3
 const MAX_QUESTION_LENGTH = 500
+const CHAT_HISTORY_STORAGE_KEY = "orbis-orb-chat-history"
+const MAX_CHAT_HISTORY_ITEMS = 12
 
 const PAGE_CONTEXTS = [
   {
@@ -101,6 +107,70 @@ function createMessage(role, content, extras = {}) {
   }
 }
 
+function createChat(messages = []) {
+  const now = new Date().toISOString()
+  const firstQuestion = messages.find((message) => message.role === "user")?.content ?? "Nova conversa"
+
+  return {
+    id: `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    title: firstQuestion.length > 44 ? `${firstQuestion.slice(0, 44).trim()}...` : firstQuestion,
+    messages,
+    createdAt: now,
+    updatedAt: now,
+  }
+}
+
+function normalizeStoredMessages(messages) {
+  if (!Array.isArray(messages)) {
+    return []
+  }
+
+  return messages.map((message) =>
+    // CORRIGIDO: era `message.animated !== false` (undefined !== false = true, marcava msgs nunca animadas como animated:true)
+    // Agora só preserva animated:true quando foi explicitamente salvo como true
+    message?.role === "assistant" && message.animated === true
+      ? { ...message, animated: true }
+      : message
+  )
+}
+
+function loadChatHistory() {
+  if (typeof window === "undefined") {
+    return { chats: [], activeChatId: null }
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(CHAT_HISTORY_STORAGE_KEY) || "{}")
+    const chats = Array.isArray(parsed.chats)
+      ? parsed.chats.map((chat) => ({
+          ...chat,
+          messages: normalizeStoredMessages(chat.messages),
+        }))
+      : []
+    const activeChatId = typeof parsed.activeChatId === "string" ? parsed.activeChatId : chats[0]?.id ?? null
+
+    return { chats, activeChatId }
+  } catch {
+    return { chats: [], activeChatId: null }
+  }
+}
+
+function saveChatHistory(chats, activeChatId) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(
+      CHAT_HISTORY_STORAGE_KEY,
+      JSON.stringify({
+        chats: chats.slice(0, MAX_CHAT_HISTORY_ITEMS),
+        activeChatId,
+      })
+    )
+  } catch {}
+}
+
 function formatMessageTime(value) {
   try {
     return new Intl.DateTimeFormat("pt-BR", {
@@ -113,6 +183,10 @@ function formatMessageTime(value) {
 }
 
 function getErrorMessage(error) {
+  if (error?.name === "AbortError") {
+    return "Resposta cancelada."
+  }
+
   if (error instanceof Error && error.message) {
     return error.message
   }
@@ -148,13 +222,51 @@ function buildPromptPayload(question, contexts) {
   return lines.join("\n")
 }
 
-function ChatMessage({ message, animate = false }) {
+function useTypewriter(text, speed = 18) {
+  const [displayed, setDisplayed] = React.useState("")
+  // CORRIGIDO: era `useState(true)` — com isDone=true no primeiro render, isTyping=false e o cursor não aparecia;
+  // agora inicializa false quando há texto, evitando o frame inicial sem animação
+  const [isDone, setIsDone] = React.useState(!text)
+
+  // CORRIGIDO: era `useEffect` — trocado por `useLayoutEffect` para o intervalo começar
+  // antes do paint, eliminando o race condition onde um re-render descartava o componente
+  // antes do efeito disparar
+  React.useLayoutEffect(() => {
+    if (!text) {
+      setIsDone(true)
+      setDisplayed("")
+      return
+    }
+    setDisplayed("")
+    setIsDone(false)
+    let index = 0
+    const interval = setInterval(() => {
+      index++
+      setDisplayed(text.slice(0, index))
+      if (index >= text.length) {
+        clearInterval(interval)
+        setIsDone(true)
+      }
+    }, speed)
+    return () => clearInterval(interval)
+  }, [text, speed])
+
+  return { displayed, isDone }
+}
+
+function ChatMessage({ message, animate = false, onAnimationComplete }) {
   const isUser = message.role === "user"
   const isError = message.role === "error"
 
   const { displayed, isDone } = useTypewriter(animate ? message.content : "")
   const content = animate ? displayed : message.content
   const isTyping = animate && !isDone
+
+  React.useEffect(() => {
+    if (animate && isDone) {
+      onAnimationComplete?.()
+    }
+  }, [animate, isDone, onAnimationComplete])
 
   return (
     <div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
@@ -233,41 +345,23 @@ function EmptyPromptState({ onSelectPrompt }) {
   )
 }
 
-// Cola esse hook fora do componente, antes do export function DashboardAiAssistant
-function useTypewriter(text, speed = 18) {
-  const [displayed, setDisplayed] = React.useState("")
-  const [isDone, setIsDone] = React.useState(true)
-
-  React.useEffect(() => {
-    if (!text) return
-    setDisplayed("")
-    setIsDone(false)
-    let index = 0
-    const interval = setInterval(() => {
-      index++
-      setDisplayed(text.slice(0, index))
-      if (index >= text.length) {
-        clearInterval(interval)
-        setIsDone(true)
-      }
-    }, speed)
-    return () => clearInterval(interval)
-  }, [text, speed])
-
-  return { displayed, isDone }
-}
-
 export function DashboardAiAssistant() {
   const pathname = usePathname()
   const [open, setOpen] = React.useState(false)
   const [input, setInput] = React.useState("")
   const [messages, setMessages] = React.useState([])
+  const [chatHistory, setChatHistory] = React.useState([])
+  const [activeChatId, setActiveChatId] = React.useState(null)
+  const [historyLoaded, setHistoryLoaded] = React.useState(false)
   const [pageContexts, setPageContexts] = React.useState([])
   const [inlineError, setInlineError] = React.useState("")
   const [lastFailedRequest, setLastFailedRequest] = React.useState(null)
   const [loading, setLoading] = React.useState(false)
   const messagesEndRef = React.useRef(null)
   const textareaRef = React.useRef(null)
+  const abortControllerRef = React.useRef(null)
+  const messagesRef = React.useRef([])
+  const activeChatIdRef = React.useRef(null)
 
   const trimmedInput = input.trim()
   const promptPayload = React.useMemo(
@@ -280,6 +374,29 @@ export function DashboardAiAssistant() {
     !loading &&
     trimmedInput.length >= MIN_QUESTION_LENGTH &&
     promptPayload.length <= MAX_QUESTION_LENGTH
+
+  React.useEffect(() => {
+    const stored = loadChatHistory()
+    const activeChat =
+      stored.chats.find((chat) => chat.id === stored.activeChatId) ??
+      stored.chats[0] ??
+      null
+
+    setChatHistory(stored.chats)
+    setActiveChatId(activeChat?.id ?? null)
+    setMessages(activeChat?.messages ?? [])
+    activeChatIdRef.current = activeChat?.id ?? null
+    messagesRef.current = activeChat?.messages ?? []
+    setHistoryLoaded(true)
+  }, [])
+
+  React.useEffect(() => {
+    if (!historyLoaded) {
+      return
+    }
+
+    saveChatHistory(chatHistory, activeChatId)
+  }, [activeChatId, chatHistory, historyLoaded])
 
   React.useEffect(() => {
     if (!open) {
@@ -296,6 +413,119 @@ export function DashboardAiAssistant() {
 
     messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" })
   }, [messages, loading, open])
+
+  React.useEffect(() => {
+    return () => abortControllerRef.current?.abort()
+  }, [])
+
+  function syncActiveChat(nextMessages) {
+    messagesRef.current = nextMessages
+    setMessages(nextMessages)
+
+    if (nextMessages.length === 0) {
+      return null
+    }
+
+    let resolvedChatId = activeChatIdRef.current
+
+    if (!resolvedChatId) {
+      const created = createChat(nextMessages)
+      resolvedChatId = created.id
+      activeChatIdRef.current = created.id
+      setActiveChatId(created.id)
+      setChatHistory((current) => [created, ...current].slice(0, MAX_CHAT_HISTORY_ITEMS))
+      return created.id
+    }
+
+    setChatHistory((current) => {
+      const now = new Date().toISOString()
+      const existingIndex = current.findIndex((chat) => chat.id === resolvedChatId)
+      if (existingIndex >= 0) {
+        const existing = current[existingIndex]
+        const updated = {
+          ...existing,
+          title: createChat(nextMessages).title,
+          messages: nextMessages,
+          updatedAt: now,
+        }
+        return [
+          updated,
+          ...current.slice(0, existingIndex),
+          ...current.slice(existingIndex + 1),
+        ].slice(0, MAX_CHAT_HISTORY_ITEMS)
+      }
+
+      const created = createChat(nextMessages)
+      return [created, ...current].slice(0, MAX_CHAT_HISTORY_ITEMS)
+    })
+
+    return resolvedChatId
+  }
+
+  function appendMessages(...nextItems) {
+    const nextMessages = [...messagesRef.current, ...nextItems]
+    syncActiveChat(nextMessages)
+  }
+
+  function startNewChat() {
+    if (loading) {
+      abortControllerRef.current?.abort()
+    }
+
+    abortControllerRef.current = null
+    setLoading(false)
+    setInput("")
+    setPageContexts([])
+    setInlineError("")
+    setLastFailedRequest(null)
+    setActiveChatId(null)
+    activeChatIdRef.current = null
+    messagesRef.current = []
+    setMessages([])
+  }
+
+  function openChat(chatId) {
+    if (loading) {
+      abortControllerRef.current?.abort()
+    }
+
+    const chat = chatHistory.find((item) => item.id === chatId)
+    if (!chat) {
+      return
+    }
+
+    abortControllerRef.current = null
+    setLoading(false)
+    setInlineError("")
+    setLastFailedRequest(null)
+    setActiveChatId(chat.id)
+    activeChatIdRef.current = chat.id
+    messagesRef.current = chat.messages
+    setMessages(chat.messages)
+  }
+
+  function deleteChat(chatId) {
+    setChatHistory((current) => current.filter((chat) => chat.id !== chatId))
+
+    if (activeChatId === chatId) {
+      setActiveChatId(null)
+      activeChatIdRef.current = null
+      messagesRef.current = []
+      setMessages([])
+    }
+  }
+
+  function cancelResponse() {
+    abortControllerRef.current?.abort()
+  }
+
+  function markMessageAnimated(messageId) {
+    const nextMessages = messagesRef.current.map((message) =>
+      message.id === messageId ? { ...message, animated: true } : message
+    )
+
+    syncActiveChat(nextMessages)
+  }
 
   async function sendQuestion({ question, contexts = [], showUserMessage = true }) {
     const normalizedQuestion = question.trim()
@@ -318,28 +548,38 @@ export function DashboardAiAssistant() {
       return
     }
 
+    const abortController = new AbortController()
+
     setInlineError("")
     setLastFailedRequest(null)
+    const userMessage = createMessage("user", normalizedQuestion, {
+      contexts,
+    })
     if (showUserMessage) {
-      setMessages((current) => [
-        ...current,
-        createMessage("user", normalizedQuestion, {
-          contexts,
-        }),
-      ])
+      appendMessages(userMessage)
     }
+    abortControllerRef.current = abortController
     setLoading(true)
 
     try {
-      const payload = await askDashboardAi(payloadQuestion, session.accessToken)
+      const payload = await askDashboardAi(payloadQuestion, session.accessToken, {
+        signal: abortController.signal,
+      })
       const answer = payload.resposta?.trim()
 
       if (!answer) {
         throw new Error("A IA retornou uma resposta vazia. Tente novamente.")
       }
 
-      setMessages((current) => [...current, createMessage("assistant", answer)])
+      const baseMessages = showUserMessage ? [...messagesRef.current] : messagesRef.current
+      syncActiveChat([...baseMessages, createMessage("assistant", answer)])
     } catch (error) {
+      if (error?.name === "AbortError") {
+        const baseMessages = showUserMessage ? [...messagesRef.current] : messagesRef.current
+        syncActiveChat([...baseMessages, createMessage("error", "Resposta cancelada.")])
+        return
+      }
+
       if (getHttpErrorStatus(error) === 401) {
         clearAuthSession()
       }
@@ -348,11 +588,10 @@ export function DashboardAiAssistant() {
         question: normalizedQuestion,
         contexts,
       })
-      setMessages((current) => [
-        ...current,
-        createMessage("error", getErrorMessage(error)),
-      ])
+      const baseMessages = showUserMessage ? [...messagesRef.current] : messagesRef.current
+      syncActiveChat([...baseMessages, createMessage("error", getErrorMessage(error))])
     } finally {
+      abortControllerRef.current = null
       setLoading(false)
     }
   }
@@ -429,6 +668,52 @@ export function DashboardAiAssistant() {
             <div className="min-w-0 flex-1">
               <h2 className="m-0 truncate text-sm font-semibold">Orb - IA Preditiva</h2>
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="p-0!"
+                  aria-label="Histórico de chats"
+                >
+                  <HistoryIcon className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                <DropdownMenuItem onSelect={startNewChat}>
+                  <MessageSquareIcon className="size-4" />
+                  Nova conversa
+                </DropdownMenuItem>
+                {chatHistory.length > 0 ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    {chatHistory.map((chat) => (
+                      <DropdownMenuItem
+                        key={chat.id}
+                        onSelect={() => openChat(chat.id)}
+                        className={cn("gap-2", activeChatId === chat.id && "bg-muted")}
+                      >
+                        <MessageSquareIcon className="size-4 shrink-0" />
+                        <span className="min-w-0 flex-1 truncate">{chat.title}</span>
+                        <button
+                          type="button"
+                          className="rounded p-1 text-muted-foreground hover:text-destructive"
+                          onClick={(event) => {
+                            event.preventDefault()
+                            event.stopPropagation()
+                            deleteChat(chat.id)
+                          }}
+                          aria-label={`Excluir conversa ${chat.title}`}
+                        >
+                          <Trash2Icon className="size-3.5" />
+                        </button>
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               type="button"
               variant="ghost"
@@ -448,7 +733,14 @@ export function DashboardAiAssistant() {
             {messages.length === 0 ? (
               <EmptyPromptState onSelectPrompt={handleSuggestedPrompt} />
             ) : (
-              messages.map((message, index) => <ChatMessage key={message.id} message={message} animate={message.role === "assistant" && index === messages.length - 1} />)
+              messages.map((message, index) => (
+                <ChatMessage
+                  key={message.id}
+                  message={message}
+                  animate={message.role === "assistant" && index === messages.length - 1 && !message.animated}
+                  onAnimationComplete={() => markMessageAnimated(message.id)}
+                />
+              ))
             )}
             {loading ? (
               <div className="flex justify-start">
@@ -556,13 +848,14 @@ export function DashboardAiAssistant() {
                 </span>
               </div>
               <Button
-                type="submit"
+                type={loading ? "button" : "submit"}
                 size="icon-lg"
                 className="mb-4 p-0!"
-                disabled={!canSend}
-                aria-label="Enviar pergunta"
+                disabled={loading ? false : !canSend}
+                onClick={loading ? cancelResponse : undefined}
+                aria-label={loading ? "Cancelar resposta" : "Enviar pergunta"}
               >
-                {loading ? <Loader2Icon className="size-4 animate-spin" /> : <SendIcon className="size-4" />}
+                {loading ? <SquareIcon className="size-4 fill-current" /> : <SendIcon className="size-4" />}
               </Button>
             </div>
           </form>
