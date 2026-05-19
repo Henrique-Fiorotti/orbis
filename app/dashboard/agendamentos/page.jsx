@@ -40,6 +40,7 @@ import { SiteHeader } from "@/components/site-header"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { MetricValue } from "@/components/animated-metric"
 import { useMaquinas } from "@/components/context/maquinas-context"
 import { extractCollection, requestDashboardJson } from "@/lib/dashboard-api"
 import { getAuthSession } from "@/lib/auth-session"
@@ -206,18 +207,30 @@ function formatScheduledNextRun(agendamento) {
 }
 
 function formatMetricNextRun(value) {
-  if (!value || value === "-") return { content: value || "-", title: value || "-" }
+  if (!value || value === "-") {
+    const fallbackValue = value || "-"
+
+    return {
+      content: (
+        <span key={fallbackValue} className="inline-block animate-in fade-in slide-in-from-bottom-1 duration-500">
+          {fallbackValue}
+        </span>
+      ),
+      title: fallbackValue,
+      time: "",
+    }
+  }
 
   const [date, time] = String(value).split(",").map((part) => part.trim())
 
   return {
     title: value,
     content: (
-      <span className="flex flex-col leading-tight">
-        <span>{date}</span>
-        {time ? <span className="text-base @[250px]/card:text-lg">{time}</span> : null}
+      <span key={value} className="inline-block animate-in leading-tight fade-in slide-in-from-bottom-1 duration-500">
+        {date}
       </span>
     ),
+    time: time || "",
   }
 }
 
@@ -810,14 +823,14 @@ export default function AgendamentosPage() {
             featured
             icon={CalendarClockIcon}
             label="Total"
-            value={loadingInicial ? "--" : totais.total}
+            value={<MetricValue value={totais.total} loading={loadingInicial} />}
             badge={loadingInicial ? "Atualizando" : `${totais.ativos} ativos`}
             sub={loadingInicial ? "Carregando agendamentos" : `${totais.total} agendamentos cadastrados`}
           />
           <MetricCard
             icon={CheckCircle2Icon}
             label="Ativos"
-            value={loadingInicial ? "--" : totais.ativos}
+            value={<MetricValue value={totais.ativos} loading={loadingInicial} />}
             badge={loadingInicial ? "Atualizando" : "Prontos"}
             badgeClass={totais.ativos > 0 ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300" : ""}
             sub={loadingInicial ? "Conferindo envios ativos" : `${totais.ativos} prontos para envio`}
@@ -825,7 +838,7 @@ export default function AgendamentosPage() {
           <MetricCard
             icon={PauseCircleIcon}
             label="Pausados"
-            value={loadingInicial ? "--" : totais.pausados}
+            value={<MetricValue value={totais.pausados} loading={loadingInicial} />}
             badge={loadingInicial ? "Atualizando" : "Em pausa"}
             badgeClass={totais.pausados > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : ""}
             sub={loadingInicial ? "Conferindo pausas" : `${totais.pausados} envios interrompidos`}
@@ -837,7 +850,7 @@ export default function AgendamentosPage() {
             value={proximoEnvioMetric.content}
             valueTitle={proximoEnvioMetric.title}
             badge={loadingInicial ? "Atualizando" : "Agenda"}
-            sub={loadingInicial ? "Calculando proxima execucao" : "Entre os agendamentos ativos"}
+            sub={loadingInicial ? "Calculando proxima execucao" : proximoEnvioMetric.time ? `Às ${proximoEnvioMetric.time} horas` : "Sem horário programado"}
             detail={totais.proximo === "-" ? "Nenhum envio ativo encontrado" : "Baseado na recorrencia configurada"}
           />
         </div>
