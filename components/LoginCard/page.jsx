@@ -5,7 +5,7 @@ import Link from "next/link";
 import { loginAction } from "@/app/actions/auth.actions";
 import { useLandingLanguage } from "@/components/landing/language-provider";
 import { saveAuthSession } from "@/lib/auth-session";
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, LoaderCircle } from 'lucide-react'
 import { useTheme } from "next-themes";
 import { getValidAuthSession } from "@/lib/auth-session";
 
@@ -121,6 +121,8 @@ export default function LoginCard({isDark}) {
   const { resolvedTheme } = useTheme()
   const [showPassword, setShowPassword] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
   const [mounted, setMounted] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
 
@@ -151,20 +153,45 @@ export default function LoginCard({isDark}) {
   }
 
   async function handleSubmit(formData) {
-    const result = await loginAction(formData)
-    if (result.error) {
-      alert(result.error)
+    if (isLoading) {
       return
     }
 
-    const session = saveAuthSession(result, { remember: rememberMe })
+    setIsLoading(true)
+    setErrorMessage("")
 
-    if (!session?.accessToken) {
-      alert(login.sessionError)
+    try {
+      const result = await loginAction(formData)
+
+      if (result.error) {
+        setErrorMessage(result.error)
+        setIsLoading(false)
+        return
+      }
+
+      const session = saveAuthSession(result, { remember: rememberMe })
+
+      if (!session?.accessToken) {
+        setErrorMessage(login.sessionError)
+        setIsLoading(false)
+        return
+      }
+
+      window.location.href = "/dashboard"
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : login.sessionError)
+      setIsLoading(false)
+    }
+  }
+
+  function handleFormSubmit(event) {
+    event.preventDefault()
+
+    if (isLoading) {
       return
     }
 
-    window.location.href = "/dashboard"
+    handleSubmit(new FormData(event.currentTarget))
   }
 
   return (
@@ -285,10 +312,40 @@ export default function LoginCard({isDark}) {
           cursor: pointer;
           transition: background 0.2s, transform 0.1s;
           letter-spacing: 0.01em;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          min-height: 46px;
         }
 
         .orbis-btn:hover { background: #7a3fe0; }
         .orbis-btn:active { transform: scale(0.99); }
+        .orbis-btn:disabled {
+          cursor: wait;
+          background: #7a3fe0;
+          opacity: 0.92;
+          transform: none;
+        }
+
+        .orbis-btn-loader {
+          animation: orbisSpin 0.75s linear infinite;
+        }
+
+        .orbis-login-error {
+          margin: 12px 0 0;
+          border: 1px solid rgba(239,68,68,0.22);
+          border-radius: 10px;
+          background: ${darkMode ? "rgba(127,29,29,0.22)" : "rgba(254,242,242,0.9)"};
+          color: ${darkMode ? "#fca5a5" : "#b91c1c"};
+          padding: 10px 12px;
+          font-size: 12px;
+          line-height: 1.45;
+        }
+
+        @keyframes orbisSpin {
+          to { transform: rotate(360deg); }
+        }
 
         .orbis-remember {
           display: flex;
@@ -335,7 +392,7 @@ export default function LoginCard({isDark}) {
           <p className="orbis-sub">{login.subtitle}</p>
         </div>
 
-        <form action={handleSubmit}>
+        <form onSubmit={handleFormSubmit}>
           <div className="orbis-body">
             <div style={{ marginBottom: "16px" }}>
               <p className="orbis-label">{login.fields.email}</p>
@@ -343,6 +400,7 @@ export default function LoginCard({isDark}) {
                 id="email"
                 name="email"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -356,12 +414,14 @@ export default function LoginCard({isDark}) {
                   id="password"
                   name="password"
                   required
+                  disabled={isLoading}
                   style={{ paddingRight: "40px" }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? login.hidePassword : login.showPassword}
+                  disabled={isLoading}
                   style={{
                     position: "absolute",
                     right: "10px",
@@ -372,6 +432,7 @@ export default function LoginCard({isDark}) {
                     cursor: "pointer",
                     color: darkMode ? "#52525b" : "#71717a",
                     padding: 0,
+                    opacity: isLoading ? 0.55 : 1,
                   }}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -389,12 +450,30 @@ export default function LoginCard({isDark}) {
                 name="rememberMe"
                 type="checkbox"
                 checked={rememberMe}
+                disabled={isLoading}
                 onChange={(event) => setRememberMe(event.target.checked)}
               />
               <span>Lembrar de mim</span>
             </label>
 
-            <button type="submit" className="orbis-btn" style={{ marginTop: "20px" }}>{login.submit}</button>
+            {errorMessage ? (
+              <p className="orbis-login-error" role="alert">{errorMessage}</p>
+            ) : null}
+
+            <button
+              type="submit"
+              className="orbis-btn"
+              disabled={isLoading}
+              aria-busy={isLoading}
+              style={{ marginTop: "20px" }}
+            >
+              {isLoading ? (
+                <>
+                  <LoaderCircle className="orbis-btn-loader" size={18} aria-hidden="true" />
+                  {/* <span>Validando acesso</span> */}
+                </>
+              ) : login.submit}
+            </button>
           </div>
         </form>
 
