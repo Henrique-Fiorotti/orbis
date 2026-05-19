@@ -47,6 +47,7 @@ import {
 } from "@tanstack/react-table"
 import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { getAuthSession } from "@/lib/auth-session"
+import { groupAlertasByMaquina } from "@/lib/alertas-grouping"
 import { extractCollection, requestDashboardJson } from "@/lib/dashboard-api"
 import { tempoRelativo } from "@/lib/utils"
 
@@ -624,40 +625,154 @@ function HistoricoManutencaoPanel({
   )
 }
 
-function AlertasTable({ data, onVer }) {
+function GrupoTiposResumo({ tipos = [] }) {
+  const visiveis = tipos.slice(0, 2)
+  const restante = Math.max(tipos.length - visiveis.length, 0)
+
+  return (
+    <div className="flex min-w-[180px] flex-wrap items-center gap-1.5">
+      {visiveis.map((tipo) => (
+        <TipoAlertaBadge key={tipo} value={tipo} />
+      ))}
+      {restante > 0 ? (
+        <Badge variant="outline" className="px-1.5 text-xs font-normal text-muted-foreground">
+          +{restante}
+        </Badge>
+      ) : null}
+    </div>
+  )
+}
+
+function GrupoSensoresResumo({ sensores = [] }) {
+  const visiveis = sensores.slice(0, 2)
+  const restante = Math.max(sensores.length - visiveis.length, 0)
+
+  if (visiveis.length === 0) {
+    return <span className="text-sm text-muted-foreground">Sensor nao informado</span>
+  }
+
+  return (
+    <div className="flex min-w-[160px] flex-col gap-0.5">
+      {visiveis.map((sensor) => (
+        <span key={sensor} className="text-sm text-muted-foreground">
+          {sensor}
+        </span>
+      ))}
+      {restante > 0 ? (
+        <span className="text-xs text-muted-foreground">+{restante} sensor(es)</span>
+      ) : null}
+    </div>
+  )
+}
+
+function GrupoAlertasSheet({ grupo, open, onOpenChange, onVerAlerta }) {
+  const alertas = grupo?.alertas ?? []
+  const tipos = grupo?.tipos ?? []
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-[520px]! max-w-none! sm:max-w-none!">
+        <SheetHeader>
+          <SheetTitle>{grupo?.maquinaNome || "Ocorrencias da maquina"}</SheetTitle>
+          <SheetDescription>
+            {grupo
+              ? `${grupo.totalAlertas} alerta(s), ${grupo.totalOcorrencias} ocorrencia(s) registradas.`
+              : "Alertas agrupados por maquina."}
+          </SheetDescription>
+        </SheetHeader>
+        <div data-lenis-prevent className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
+          {grupo ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusAlertaBadge value={grupo.principalStatus} />
+              {grupo.temRepetidos ? (
+                <Badge variant="outline" className="border-orange-200 bg-orange-50 px-1.5 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300">
+                  Repetido
+                </Badge>
+              ) : null}
+              {tipos.slice(0, 3).map((tipo) => (
+                <TipoAlertaBadge key={tipo} value={tipo} />
+              ))}
+            </div>
+          ) : null}
+
+          <div className="flex flex-col gap-3">
+            {alertas.map((alerta) => (
+              <div key={alerta.id} className="rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+                <div className="flex flex-wrap items-center gap-2">
+                  <TipoAlertaBadge value={alerta.tipo} />
+                  <StatusAlertaBadge value={alerta.status} />
+                  <SeveridadeBadge value={alerta.severidade} />
+                </div>
+                <div className="mt-3 flex flex-col gap-1">
+                  <span className="text-sm font-medium text-foreground">{alerta.sensorNome}</span>
+                  <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{alerta.mensagem}</p>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <ClockIcon className="size-3" />
+                      {tempoRelativo(getUltimaOcorrencia(alerta))}
+                    </span>
+                    <Badge variant="outline" className={`px-1.5 text-xs ${isAlertaRepetido(alerta) ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
+                      {Math.max(Number(alerta.ocorrencias) || 1, 1)} ocorr.
+                    </Badge>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" className="cursor-pointer" onClick={() => onVerAlerta(alerta)}>
+                    <EyeIcon className="mr-1 size-4" />
+                    Ver detalhes
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {alertas.length === 0 ? (
+            <div className="rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground">
+              Nenhuma ocorrencia encontrada para esta maquina.
+            </div>
+          ) : null}
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+function AlertasTable({ data, onVerGrupo }) {
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const [openActionMenuId, setOpenActionMenuId] = React.useState(null)
+  const grupos = React.useMemo(() => groupAlertasByMaquina(data), [data])
   const columns = React.useMemo(() => [
     {
       accessorKey: "maquinaNome",
       header: "Máquina",
       cell: ({ row }) => (
         <button
-          onClick={() => onVer(row.original)}
-          className="cursor-pointer text-left text-sm font-medium transition-colors hover:text-primary hover:underline"
+          onClick={() => onVerGrupo(row.original)}
+          className="flex cursor-pointer flex-col text-left transition-colors hover:text-primary hover:underline"
         >
-          {row.original.maquinaNome}
+          <span className="text-sm font-medium">{row.original.maquinaNome}</span>
+          <span className="text-xs text-muted-foreground">{row.original.totalAlertas} alerta(s)</span>
         </button>
       ),
     },
     {
-      accessorKey: "tipo",
-      header: "Tipo",
-      cell: ({ row }) => <TipoAlertaBadge value={row.original.tipo} />,
+      id: "tipos",
+      header: "Tipos",
+      cell: ({ row }) => <GrupoTiposResumo tipos={row.original.tipos} />,
     },
     {
-      accessorKey: "status",
+      accessorKey: "principalStatus",
       header: "Status",
-      cell: ({ row }) => <StatusAlertaBadge value={row.original.status} />,
+      cell: ({ row }) => <StatusAlertaBadge value={row.original.principalStatus} />,
     },
-    { accessorKey: "sensorNome", header: "Sensor", cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.sensorNome}</span> },
+    { id: "sensores", header: "Sensores", cell: ({ row }) => <GrupoSensoresResumo sensores={row.original.sensores} /> },
     {
       id: "recencia",
       accessorKey: "ultimaOcorrenciaEm",
       header: "Ultima ocorrencia",
       cell: ({ row }) => (
         <div className="flex min-w-[120px] flex-col gap-1">
-          <span className="text-sm text-muted-foreground">{tempoRelativo(getUltimaOcorrencia(row.original))}</span>
+          <span className="text-sm text-muted-foreground">{tempoRelativo(row.original.ultimaOcorrenciaEm)}</span>
           <span className={`w-fit rounded-full px-2 py-0.5 text-[10px] font-medium ${row.original.recencia === "RECENTE" ? "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300" : "bg-muted text-muted-foreground"}`}>
             {row.original.recencia === "RECENTE" ? "Recente" : "Antigo"}
           </span>
@@ -665,19 +780,19 @@ function AlertasTable({ data, onVer }) {
       ),
     },
     {
-      accessorKey: "ocorrencias",
+      accessorKey: "totalOcorrencias",
       header: "Ocorrencias",
       cell: ({ row }) => (
-        <Badge variant="outline" className={`px-1.5 ${isAlertaRepetido(row.original) ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
-          {Math.max(Number(row.original.ocorrencias) || 1, 1)}
+        <Badge variant="outline" className={`px-1.5 ${row.original.temRepetidos ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
+          {Math.max(Number(row.original.totalOcorrencias) || 1, 1)}
         </Badge>
       ),
     },
     {
       id: "actions",
       cell: ({ row }) => {
-        const chamado = row.original
-        const menuId = String(chamado.id ?? row.id)
+        const grupo = row.original
+        const menuId = String(grupo.id ?? row.id)
 
         return (
           <DropdownMenu
@@ -690,18 +805,18 @@ function AlertasTable({ data, onVer }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => onVer(chamado))}>
-                <EyeIcon className="mr-1 size-4" /> Ver detalhes
+              <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => onVerGrupo(grupo))}>
+                <EyeIcon className="mr-1 size-4" /> Ver ocorrencias
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )
       },
     },
-  ], [onVer, openActionMenuId])
+  ], [onVerGrupo, openActionMenuId])
 
   const table = useReactTable({
-    data,
+    data: grupos,
     columns,
     state: { pagination },
     onPaginationChange: setPagination,
@@ -736,7 +851,7 @@ function AlertasTable({ data, onVer }) {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  Nenhum alerta encontrado.
+                  Nenhuma maquina com alertas encontrada.
                 </TableCell>
               </TableRow>
             )}
@@ -744,7 +859,7 @@ function AlertasTable({ data, onVer }) {
         </Table>
       </div>
       <div className="flex items-center justify-between px-4">
-        <span className="text-sm text-muted-foreground">{data.length} resultado(s)</span>
+        <span className="text-sm text-muted-foreground">{grupos.length} maquina(s)</span>
         <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
           <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
             <ChevronsLeftIcon className="size-4" />
@@ -782,6 +897,8 @@ export default function AlertasPage() {
   const [sheetAberto, setSheetAberto] = React.useState(false)
   const [modoSheet, setModoSheet] = React.useState("criar")
   const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
+  const [grupoAlertasAberto, setGrupoAlertasAberto] = React.useState(false)
+  const [grupoAlertasSelecionado, setGrupoAlertasSelecionado] = React.useState(null)
   const [form, setForm] = React.useState(formVazio)
   const [historicoAberto, setHistoricoAberto] = React.useState(false)
   const [historicoStatus, setHistoricoStatus] = React.useState("idle")
@@ -849,6 +966,17 @@ export default function AlertasPage() {
     setModoSheet("ver")
     setAlertaSelecionado(alerta)
     setSheetAberto(true)
+  }
+
+  function abrirGrupoAlertas(grupo) {
+    resetarHistoricoManutencao()
+    setGrupoAlertasSelecionado(grupo)
+    setGrupoAlertasAberto(true)
+  }
+
+  function abrirAlertaDoGrupo(alerta) {
+    setGrupoAlertasAberto(false)
+    runAfterCurrentOverlayCloses(() => abrirVer(alerta))
   }
 
   function resetarHistoricoManutencao() {
@@ -958,7 +1086,7 @@ export default function AlertasPage() {
   const concluidos = dadosFiltrados.filter((a) => a.status === "RESOLVIDO")
 
   const tableProps = {
-    onVer: abrirVer,
+    onVerGrupo: abrirGrupoAlertas,
   }
 
   return (
@@ -1072,6 +1200,18 @@ export default function AlertasPage() {
             ))}
           </Tabs>
         )}
+
+        <GrupoAlertasSheet
+          grupo={grupoAlertasSelecionado}
+          open={grupoAlertasAberto}
+          onOpenChange={(open) => {
+            setGrupoAlertasAberto(open)
+            if (!open) {
+              setGrupoAlertasSelecionado(null)
+            }
+          }}
+          onVerAlerta={abrirAlertaDoGrupo}
+        />
 
         <Sheet
           open={sheetAberto}
