@@ -16,11 +16,13 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import { SiteHeader } from "@/components/site-header"
 import {
   AlertTriangleIcon,
   ClockIcon,
+  CircleHelpIcon,
   EllipsisVerticalIcon,
   ArrowLeftIcon,
   EyeIcon,
@@ -58,6 +60,20 @@ const TIPOS_ALERTA_LABEL = {
   TENDENCIA_LONGA: "Tendência Longa",
   DEGRADACAO_ACELERADA: "Degradação Acelerada",
   INSTABILIDADE: "Instabilidade",
+}
+
+const TIPOS_ALERTA_HELP = {
+  LIMITE_ULTRAPASSADO: "Alguma leitura passou do limite seguro configurado.",
+  TENDENCIA_CURTA: "A leitura mudou rápido e pode exigir atenção em breve.",
+  TENDENCIA_LONGA: "A leitura vem piorando de forma gradual ao longo do tempo.",
+  DEGRADACAO_ACELERADA: "O equipamento está perdendo estabilidade mais rápido que o esperado.",
+  INSTABILIDADE: "As leituras estão oscilando fora do padrão ideal.",
+}
+
+const SEVERIDADE_HELP = {
+  ALTA: "A gravidade do problema é alta e pede prioridade.",
+  MEDIA: "A gravidade é moderada e deve ser acompanhada.",
+  BAIXA: "A gravidade é baixa, com menor risco imediato.",
 }
 
 const STATUS_ALERTA_LABEL = {
@@ -135,6 +151,39 @@ function TipoAlertaBadge({ value }) {
     <Badge variant="outline" className="border-purple-200 bg-purple-50 px-1.5 text-xs font-normal text-[#3B2867] dark:border-primary/40 dark:bg-primary/10 dark:text-primary-foreground">
       {TIPOS_ALERTA_LABEL[value] ?? value}
     </Badge>
+  )
+}
+
+function HelpTooltip({ label, content }) {
+  if (!content) {
+    return null
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          role="img"
+          tabIndex={0}
+          aria-label={label}
+          className="inline-flex size-4 cursor-help items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/40"
+        >
+          <CircleHelpIcon className="size-3.5" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6} className="max-w-56 text-left leading-relaxed">
+        {content}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+function FieldLabelWithHelp({ children, help, helpLabel }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <Label className="text-xs text-muted-foreground">{children}</Label>
+      <HelpTooltip label={helpLabel} content={help} />
+    </div>
   )
 }
 
@@ -667,34 +716,14 @@ function GrupoSensoresResumo({ sensores = [] }) {
 
 function GrupoAlertasSheet({ grupo, open, onOpenChange, onVerAlerta }) {
   const alertas = grupo?.alertas ?? []
-  const tipos = grupo?.tipos ?? []
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[520px]! max-w-none! sm:max-w-none!">
         <SheetHeader>
           <SheetTitle>{grupo?.maquinaNome || "Ocorrencias da maquina"}</SheetTitle>
-          <SheetDescription>
-            {grupo
-              ? `${grupo.totalAlertas} alerta(s), ${grupo.totalOcorrencias} ocorrencia(s) registradas.`
-              : "Alertas agrupados por maquina."}
-          </SheetDescription>
         </SheetHeader>
         <div data-lenis-prevent className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
-          {grupo ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusAlertaBadge value={grupo.principalStatus} />
-              {grupo.temRepetidos ? (
-                <Badge variant="outline" className="border-orange-200 bg-orange-50 px-1.5 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300">
-                  Repetido
-                </Badge>
-              ) : null}
-              {tipos.slice(0, 3).map((tipo) => (
-                <TipoAlertaBadge key={tipo} value={tipo} />
-              ))}
-            </div>
-          ) : null}
-
           <div className="flex flex-col gap-3">
             {alertas.map((alerta) => (
               <div key={alerta.id} className="rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
@@ -717,7 +746,13 @@ function GrupoAlertasSheet({ grupo, open, onOpenChange, onVerAlerta }) {
                       {Math.max(Number(alerta.ocorrencias) || 1, 1)} ocorr.
                     </Badge>
                   </div>
-                  <Button type="button" variant="outline" size="sm" className="cursor-pointer" onClick={() => onVerAlerta(alerta)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer hover:border-[#5E17EB] hover:bg-[#5E17EB] hover:text-white dark:hover:border-[#5E17EB] dark:hover:bg-[#5E17EB] dark:hover:text-white"
+                    onClick={() => onVerAlerta(alerta)}
+                  >
                     <EyeIcon className="mr-1 size-4" />
                     Ver detalhes
                   </Button>
@@ -859,7 +894,7 @@ function AlertasTable({ data, onVerGrupo }) {
         </Table>
       </div>
       <div className="flex items-center justify-between px-4">
-        <span className="text-sm text-muted-foreground">{grupos.length} maquina(s)</span>
+        <span className="text-sm text-muted-foreground">{grupos.length} alerta(s)</span>
         <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
           <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
             <ChevronsLeftIcon className="size-4" />
@@ -899,6 +934,7 @@ export default function AlertasPage() {
   const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
   const [grupoAlertasAberto, setGrupoAlertasAberto] = React.useState(false)
   const [grupoAlertasSelecionado, setGrupoAlertasSelecionado] = React.useState(null)
+  const [grupoRetornoDetalhes, setGrupoRetornoDetalhes] = React.useState(null)
   const [form, setForm] = React.useState(formVazio)
   const [historicoAberto, setHistoricoAberto] = React.useState(false)
   const [historicoStatus, setHistoricoStatus] = React.useState("idle")
@@ -955,14 +991,16 @@ export default function AlertasPage() {
 
   function abrirCriar() {
     resetarHistoricoManutencao()
+    setGrupoRetornoDetalhes(null)
     setModoSheet("criar")
     setForm(formVazio)
     setAlertaSelecionado(null)
     setSheetAberto(true)
   }
 
-  function abrirVer(alerta) {
+  function abrirVer(alerta, grupoRetorno = null) {
     resetarHistoricoManutencao()
+    setGrupoRetornoDetalhes(grupoRetorno)
     setModoSheet("ver")
     setAlertaSelecionado(alerta)
     setSheetAberto(true)
@@ -975,8 +1013,9 @@ export default function AlertasPage() {
   }
 
   function abrirAlertaDoGrupo(alerta) {
+    const grupoRetorno = grupoAlertasSelecionado
     setGrupoAlertasAberto(false)
-    runAfterCurrentOverlayCloses(() => abrirVer(alerta))
+    runAfterCurrentOverlayCloses(() => abrirVer(alerta, grupoRetorno))
   }
 
   function resetarHistoricoManutencao() {
@@ -1044,6 +1083,21 @@ export default function AlertasPage() {
   function voltarParaDetalhesAlerta() {
     setHistoricoAberto(false)
     setSheetAberto(true)
+  }
+
+  function voltarParaAlertasDaMaquina() {
+    if (!grupoRetornoDetalhes) {
+      return
+    }
+
+    const grupoRetorno = grupoRetornoDetalhes
+
+    setSheetAberto(false)
+    setGrupoRetornoDetalhes(null)
+    runAfterCurrentOverlayCloses(() => {
+      setGrupoAlertasSelecionado(grupoRetorno)
+      setGrupoAlertasAberto(true)
+    })
   }
 
   async function salvar() {
@@ -1219,24 +1273,56 @@ export default function AlertasPage() {
             setSheetAberto(open)
             if (!open) {
               resetarHistoricoManutencao()
+              setGrupoRetornoDetalhes(null)
             }
           }}
         >
           <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
             <SheetHeader>
-              <SheetTitle>{modoSheet === "criar" ? "Registrar chamado manual" : "Detalhes do chamado"}</SheetTitle>
-              <SheetDescription>{modoSheet === "criar" ? "Registre um chamado manualmente para acompanhamento." : "Informações completas do chamado."}</SheetDescription>
+              {modoSheet === "ver" && grupoRetornoDetalhes ? (
+                <div className="flex items-start gap-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="mt-0.5 cursor-pointer"
+                    aria-label="Voltar para alertas da máquina"
+                    onClick={voltarParaAlertasDaMaquina}
+                  >
+                    <ArrowLeftIcon className="size-4" />
+                  </Button>
+                  <div className="min-w-0">
+                    <SheetTitle>Detalhes do chamado</SheetTitle>
+                    <SheetDescription>Informações completas do chamado.</SheetDescription>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <SheetTitle>{modoSheet === "criar" ? "Registrar chamado manual" : "Detalhes do chamado"}</SheetTitle>
+                  <SheetDescription>{modoSheet === "criar" ? "Registre um chamado manualmente para acompanhamento." : "Informações completas do chamado."}</SheetDescription>
+                </>
+              )}
             </SheetHeader>
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
               {modoSheet === "ver" && alertaSelecionado ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Tipo</Label>
+                      <FieldLabelWithHelp
+                        help={TIPOS_ALERTA_HELP[alertaSelecionado.tipo]}
+                        helpLabel={`Ajuda sobre tipo ${TIPOS_ALERTA_LABEL[alertaSelecionado.tipo] ?? alertaSelecionado.tipo}`}
+                      >
+                        Tipo
+                      </FieldLabelWithHelp>
                       <TipoAlertaBadge value={alertaSelecionado.tipo} />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Severidade</Label>
+                      <FieldLabelWithHelp
+                        help={SEVERIDADE_HELP[alertaSelecionado.severidade]}
+                        helpLabel={`Ajuda sobre severidade ${alertaSelecionado.severidade}`}
+                      >
+                        Severidade
+                      </FieldLabelWithHelp>
                       <SeveridadeBadge value={alertaSelecionado.severidade} />
                     </div>
                     <div className="col-span-2 flex flex-col gap-1">
