@@ -60,7 +60,7 @@ function EmptyState({ message, tone = "muted" }) {
 export function ChartPieDonut() {
   const { status, mensagem, maquinas: dashboardMaquinas, errors } = useDashboardCharts()
   const { maquinas: maquinasCadastradas, status: maquinasStatus, mensagem: maquinasMensagem } = useMaquinas()
-  const { alertas } = useAlertas()
+  const { alertas, status: alertasStatus } = useAlertas()
   const maquinasBase = maquinasCadastradas.length > 0 ? maquinasCadastradas : dashboardMaquinas
   const maquinas = React.useMemo(() => withMaquinaAlertasStatus(maquinasBase, alertas), [alertas, maquinasBase])
   const chartData = React.useMemo(() => getDistribuicaoStatusMaquinas(maquinas), [maquinas])
@@ -69,7 +69,7 @@ export function ChartPieDonut() {
     [chartData]
   )
 
-  const loading = status === "loading" && maquinasStatus === "loading" && maquinas.length === 0
+  const loading = status === "loading" || maquinasStatus === "loading" || alertasStatus === "loading"
   const errorMessage = errors.maquinas || (maquinasStatus === "error" ? maquinasMensagem : "") || (status === "error" && maquinas.length === 0 ? mensagem : "")
   const hoje = React.useMemo(
     () =>
@@ -117,6 +117,10 @@ export function ChartPieDonut() {
                 innerRadius={60}
                 outerRadius={92}
                 paddingAngle={3}
+                isAnimationActive
+                animationBegin={120}
+                animationDuration={900}
+                animationEasing="ease-out"
               >
                 {chartData.map((entry) => (
                   <Cell key={entry.status} fill={entry.fill} />
