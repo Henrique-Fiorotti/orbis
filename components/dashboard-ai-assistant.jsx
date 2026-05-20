@@ -2,13 +2,17 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
+import Lenis from "lenis"
 import {
   AlertTriangleIcon,
   FileTextIcon,
   HistoryIcon,
   Loader2Icon,
   LucideEye,
+  Maximize2Icon,
   MessageSquareIcon,
+  Minimize2Icon,
+  PanelLeftIcon,
   PlusIcon,
   SendIcon,
   SparklesIcon,
@@ -27,14 +31,53 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useOptionalDashboardPreferences } from "@/components/context/dashboard-preferences-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { askDashboardAi, getHttpErrorStatus } from "@/lib/dashboard-api"
+import { setSmoothScrollLock } from "@/lib/scroll-lock"
 import { cn } from "@/lib/utils"
 
 const MIN_QUESTION_LENGTH = 3
 const MAX_QUESTION_LENGTH = 500
 const CHAT_HISTORY_STORAGE_KEY = "orbis-orb-chat-history"
 const MAX_CHAT_HISTORY_ITEMS = 12
+const ORB_FULLSCREEN_SCROLL_LOCK = "orb-fullscreen"
+
+const CHAT_TITLE_STOPWORDS = new Set([
+  "a",
+  "agora",
+  "ai",
+  "algo",
+  "as",
+  "com",
+  "como",
+  "da",
+  "das",
+  "de",
+  "do",
+  "dos",
+  "e",
+  "em",
+  "eu",
+  "ia",
+  "me",
+  "meu",
+  "minha",
+  "na",
+  "nas",
+  "no",
+  "nos",
+  "o",
+  "os",
+  "para",
+  "por",
+  "que",
+  "quais",
+  "qual",
+  "sobre",
+  "um",
+  "uma",
+])
 
 const PAGE_CONTEXTS = [
   {
@@ -107,13 +150,44 @@ function createMessage(role, content, extras = {}) {
   }
 }
 
+function getChatTitleFromQuestion(question) {
+  const words = String(question || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .match(/[a-z0-9]+/g) ?? []
+
+  const keywords = []
+  const seen = new Set()
+
+  for (const word of words) {
+    if (word.length < 3 || CHAT_TITLE_STOPWORDS.has(word) || seen.has(word)) {
+      continue
+    }
+
+    seen.add(word)
+    keywords.push(word.charAt(0).toUpperCase() + word.slice(1))
+
+    if (keywords.length >= 3) {
+      break
+    }
+  }
+
+  if (keywords.length > 0) {
+    return keywords.join(" ").slice(0, 28)
+  }
+
+  const fallback = String(question || "Nova conversa").trim()
+  return fallback.length > 28 ? `${fallback.slice(0, 25).trim()}...` : fallback || "Nova conversa"
+}
+
 function createChat(messages = []) {
   const now = new Date().toISOString()
   const firstQuestion = messages.find((message) => message.role === "user")?.content ?? "Nova conversa"
 
   return {
     id: `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    title: firstQuestion.length > 44 ? `${firstQuestion.slice(0, 44).trim()}...` : firstQuestion,
+    title: getChatTitleFromQuestion(firstQuestion),
     messages,
     createdAt: now,
     updatedAt: now,
@@ -222,6 +296,90 @@ function buildPromptPayload(question, contexts) {
   return lines.join("\n")
 }
 
+function buildBackendHistory(messages) {
+  if (!Array.isArray(messages)) {
+    return []
+  }
+
+  return messages
+    .filter((message) => message?.role === "user" || message?.role === "assistant")
+    .map((message) => ({
+      role: message.role,
+      content: String(message.content || "").trim(),
+    }))
+    .filter((message) => message.content.length > 0)
+}
+
+function renderInlineMarkdown(text, keyPrefix) {
+  const value = String(text || "")
+  const parts = value.split(/(\*\*[^*\n]+\*\*|\*[^*\n]+\*)/g)
+
+  return parts.map((part, index) => {
+    const key = `${keyPrefix}-${index}`
+    const isDoubleBold = part.startsWith("**") && part.endsWith("**") && part.length > 4
+    const isSingleBold = part.startsWith("*") && part.endsWith("*") && part.length > 2
+
+    if (isDoubleBold || isSingleBold) {
+      const offset = isDoubleBold ? 2 : 1
+      return (
+        <strong key={key} className="font-semibold text-foreground">
+          {part.slice(offset, -offset)}
+        </strong>
+      )
+    }
+
+    return <React.Fragment key={key}>{part}</React.Fragment>
+  })
+}
+
+function FormattedMessageContent({ content, isTyping }) {
+  const blocks = String(content || "")
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+
+  if (blocks.length === 0) {
+    return (
+      <p className="m-0 text-sm leading-relaxed">
+        {isTyping ? <span className="inline-block h-[1em] w-0.5 animate-pulse bg-current align-middle" /> : null}
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-2 text-sm leading-relaxed">
+      {blocks.map((block, blockIndex) => {
+        const lines = block.split("\n").map((line) => line.trim()).filter(Boolean)
+        const isList = lines.length > 0 && lines.every((line) => /^[-*]\s+/.test(line) || /^\d+[.)]\s+/.test(line))
+
+        if (isList) {
+          return (
+            <ul key={`block-${blockIndex}`} className="m-0 list-disc space-y-1 pl-4">
+              {lines.map((line, lineIndex) => (
+                <li key={`line-${blockIndex}-${lineIndex}`} className="pl-1">
+                  {renderInlineMarkdown(line.replace(/^[-*]\s+/, "").replace(/^\d+[.)]\s+/, ""), `list-${blockIndex}-${lineIndex}`)}
+                  {isTyping && blockIndex === blocks.length - 1 && lineIndex === lines.length - 1 ? (
+                    <span className="ml-0.5 inline-block h-[1em] w-0.5 animate-pulse bg-current align-middle" />
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+
+        return (
+          <p key={`block-${blockIndex}`} className="m-0 whitespace-pre-wrap break-words">
+            {renderInlineMarkdown(block, `paragraph-${blockIndex}`)}
+            {isTyping && blockIndex === blocks.length - 1 ? (
+              <span className="ml-0.5 inline-block h-[1em] w-0.5 animate-pulse bg-current align-middle" />
+            ) : null}
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
 function useTypewriter(text, speed = 18) {
   const [displayed, setDisplayed] = React.useState("")
   // CORRIGIDO: era `useState(true)` — com isDone=true no primeiro render, isTyping=false e o cursor não aparecia;
@@ -279,12 +437,9 @@ function ChatMessage({ message, animate = false, onAnimationComplete }) {
         <div className="flex items-start gap-2">
           {isError && <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />}
           {!isUser && !isError && <LucideEye className="mt-0.5 size-4 shrink-0 text-primary" />}
-          <p className="m-0 whitespace-pre-wrap break-words text-sm leading-relaxed">
-            {content}
-            {isTyping && (
-              <span className="ml-0.5 inline-block h-[1em] w-0.5 animate-pulse bg-current align-middle" />
-            )}
-          </p>
+          <div className="min-w-0 flex-1 break-words">
+            <FormattedMessageContent content={content} isTyping={isTyping} />
+          </div>
         </div>
         {message.contexts?.length ? (
           <div className="mt-2 flex flex-wrap gap-1">
@@ -347,7 +502,11 @@ function EmptyPromptState({ onSelectPrompt }) {
 
 export function DashboardAiAssistant() {
   const pathname = usePathname()
+  const dashboardPreferences = useOptionalDashboardPreferences()
+  const smoothScrollEnabled = dashboardPreferences?.preferences.smoothScrollEnabled ?? true
   const [open, setOpen] = React.useState(false)
+  const [fullscreen, setFullscreen] = React.useState(false)
+  const [historySidebarOpen, setHistorySidebarOpen] = React.useState(false)
   const [input, setInput] = React.useState("")
   const [messages, setMessages] = React.useState([])
   const [chatHistory, setChatHistory] = React.useState([])
@@ -358,6 +517,9 @@ export function DashboardAiAssistant() {
   const [lastFailedRequest, setLastFailedRequest] = React.useState(null)
   const [loading, setLoading] = React.useState(false)
   const messagesEndRef = React.useRef(null)
+  const chatScrollRef = React.useRef(null)
+  const chatContentRef = React.useRef(null)
+  const chatLenisRef = React.useRef(null)
   const textareaRef = React.useRef(null)
   const abortControllerRef = React.useRef(null)
   const messagesRef = React.useRef([])
@@ -400,6 +562,8 @@ export function DashboardAiAssistant() {
 
   React.useEffect(() => {
     if (!open) {
+      setFullscreen(false)
+      setHistorySidebarOpen(false)
       return
     }
 
@@ -407,12 +571,114 @@ export function DashboardAiAssistant() {
   }, [open])
 
   React.useEffect(() => {
+    if (fullscreen) {
+      setHistorySidebarOpen(true)
+    }
+  }, [fullscreen])
+
+  React.useEffect(() => {
+    if (!open || !fullscreen) {
+      setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, false)
+      return
+    }
+
+    const html = document.documentElement
+    const body = document.body
+    const previousHtmlOverflow = html.style.overflow
+    const previousBodyOverflow = body.style.overflow
+    const previousBodyOverscroll = body.style.overscrollBehavior
+
+    setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, true)
+    html.style.overflow = "hidden"
+    body.style.overflow = "hidden"
+    body.style.overscrollBehavior = "none"
+
+    return () => {
+      html.style.overflow = previousHtmlOverflow
+      body.style.overflow = previousBodyOverflow
+      body.style.overscrollBehavior = previousBodyOverscroll
+      setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, false)
+    }
+  }, [open, fullscreen])
+
+  React.useEffect(() => {
+    if (!open || !smoothScrollEnabled) {
+      chatLenisRef.current?.destroy()
+      chatLenisRef.current = null
+      return
+    }
+
+    const wrapper = chatScrollRef.current
+    const content = chatContentRef.current
+
+    if (!wrapper || !content) {
+      return
+    }
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const connection = navigator.connection
+
+    if (prefersReducedMotion || connection?.saveData) {
+      return
+    }
+
+    const lenis = new Lenis({
+      wrapper,
+      content,
+      duration: 1,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+    })
+    let rafId = 0
+
+    const raf = (time) => {
+      lenis.raf(time)
+      rafId = requestAnimationFrame(raf)
+    }
+
+    chatLenisRef.current = lenis
+    rafId = requestAnimationFrame(raf)
+
+    return () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId)
+      }
+
+      lenis.destroy()
+
+      if (chatLenisRef.current === lenis) {
+        chatLenisRef.current = null
+      }
+    }
+  }, [open, smoothScrollEnabled])
+
+  React.useEffect(() => {
     if (!open) {
       return
     }
 
-    messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" })
-  }, [messages, loading, open])
+    const scrollElement = chatScrollRef.current
+
+    if (scrollElement) {
+      const target = scrollElement.scrollHeight
+
+      if (chatLenisRef.current && smoothScrollEnabled) {
+        chatLenisRef.current.resize()
+        chatLenisRef.current.scrollTo(target, { duration: 0.45 })
+      } else {
+        scrollElement.scrollTo({
+          top: target,
+          behavior: smoothScrollEnabled ? "smooth" : "auto",
+        })
+      }
+      return
+    }
+
+    messagesEndRef.current?.scrollIntoView({
+      block: "end",
+      behavior: smoothScrollEnabled ? "smooth" : "auto",
+    })
+  }, [messages, loading, open, smoothScrollEnabled])
 
   React.useEffect(() => {
     return () => abortControllerRef.current?.abort()
@@ -562,8 +828,10 @@ export function DashboardAiAssistant() {
     setLoading(true)
 
     try {
+      const historico = buildBackendHistory(messagesRef.current)
       const payload = await askDashboardAi(payloadQuestion, session.accessToken, {
         signal: abortController.signal,
+        historico,
       })
       const answer = payload.resposta?.trim()
 
@@ -657,29 +925,119 @@ export function DashboardAiAssistant() {
     window.setTimeout(() => textareaRef.current?.focus(), 0)
   }
 
+  function handleAssistantWheelCapture(event) {
+    const scrollElement = chatScrollRef.current
+
+    if (chatLenisRef.current || !scrollElement || event.deltaY === 0) {
+      return
+    }
+
+    if (event.target instanceof HTMLElement && event.target.closest("textarea")) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    scrollElement.scrollTop += event.deltaY
+  }
+
+  function toggleFullscreen() {
+    setFullscreen((current) => !current)
+  }
+
+  function renderHistoryButton(chat, variant = "dropdown") {
+    const isActive = activeChatId === chat.id
+    const commonContent = (
+      <>
+        <MessageSquareIcon className="size-4 shrink-0" />
+        <span className="min-w-0 flex-1 truncate">{chat.title}</span>
+        <button
+          type="button"
+          className="rounded p-1 text-muted-foreground transition hover:text-destructive"
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            deleteChat(chat.id)
+          }}
+          aria-label={`Excluir conversa ${chat.title}`}
+        >
+          <Trash2Icon className="size-3.5" />
+        </button>
+      </>
+    )
+
+    if (variant === "sidebar") {
+      return (
+        <div
+          key={chat.id}
+          className={cn(
+            "flex w-full items-center gap-2 rounded-[8px] px-2 py-2 text-left text-sm transition",
+            isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          <button
+            type="button"
+            onClick={() => openChat(chat.id)}
+            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+          >
+            <MessageSquareIcon className="size-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate">{chat.title}</span>
+          </button>
+          <button
+            type="button"
+            className="rounded p-1 text-muted-foreground transition hover:text-destructive"
+            onClick={() => deleteChat(chat.id)}
+            aria-label={`Excluir conversa ${chat.title}`}
+          >
+            <Trash2Icon className="size-3.5" />
+          </button>
+        </div>
+      )
+    }
+
+    return (
+      <DropdownMenuItem
+        key={chat.id}
+        onSelect={() => openChat(chat.id)}
+        className={cn("gap-2", isActive && "bg-muted")}
+      >
+        {commonContent}
+      </DropdownMenuItem>
+    )
+  }
+
   return (
     <>
       {open ? (
         <section
           aria-label="Orb"
-          className="fixed inset-x-3 bottom-20 z-40 flex h-[min(620px,calc(100svh-7rem))] flex-col overflow-hidden rounded-[8px] border bg-popover text-popover-foreground shadow-2xl sm:inset-x-auto sm:right-5 sm:w-[420px]"
+          onWheelCapture={handleAssistantWheelCapture}
+          className={cn(
+            "fixed z-40 flex transform-gpu flex-col overflow-hidden overscroll-contain border bg-popover text-popover-foreground shadow-2xl transition-[inset,width,height,border-radius,box-shadow,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[inset,width,height,transform]",
+            fullscreen
+              ? "inset-0 h-auto w-auto scale-100 rounded-none sm:inset-4 sm:rounded-[8px]"
+              : "inset-x-3 bottom-20 h-[min(620px,calc(100svh-7rem))] w-[calc(100vw-1.5rem)] scale-100 rounded-[8px] sm:inset-x-auto sm:right-5 sm:w-[420px]"
+          )}
         >
           <header className="flex items-center gap-3 border-b px-4 py-3">
+            {fullscreen ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="p-0!"
+                onClick={() => setHistorySidebarOpen((current) => !current)}
+                aria-label={historySidebarOpen ? "Ocultar histórico" : "Mostrar histórico"}
+                aria-expanded={historySidebarOpen}
+              >
+                <PanelLeftIcon className="size-4" />
+              </Button>
+            ) : null}
             <div className="min-w-0 flex-1">
               <h2 className="m-0 truncate text-sm font-semibold">Orb - IA Preditiva</h2>
             </div>
+            {!fullscreen ? (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className="p-0!"
-                  aria-label="Histórico de chats"
-                >
-                  <HistoryIcon className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-72">
                 <DropdownMenuItem onSelect={startNewChat}>
                   <MessageSquareIcon className="size-4" />
@@ -688,32 +1046,22 @@ export function DashboardAiAssistant() {
                 {chatHistory.length > 0 ? (
                   <>
                     <DropdownMenuSeparator />
-                    {chatHistory.map((chat) => (
-                      <DropdownMenuItem
-                        key={chat.id}
-                        onSelect={() => openChat(chat.id)}
-                        className={cn("gap-2", activeChatId === chat.id && "bg-muted")}
-                      >
-                        <MessageSquareIcon className="size-4 shrink-0" />
-                        <span className="min-w-0 flex-1 truncate">{chat.title}</span>
-                        <button
-                          type="button"
-                          className="rounded p-1 text-muted-foreground hover:text-destructive"
-                          onClick={(event) => {
-                            event.preventDefault()
-                            event.stopPropagation()
-                            deleteChat(chat.id)
-                          }}
-                          aria-label={`Excluir conversa ${chat.title}`}
-                        >
-                          <Trash2Icon className="size-3.5" />
-                        </button>
-                      </DropdownMenuItem>
-                    ))}
+                    {chatHistory.map((chat) => renderHistoryButton(chat))}
                   </>
                 ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="p-0!"
+              onClick={toggleFullscreen}
+              aria-label={fullscreen ? "Sair da tela cheia" : "Expandir IA"}
+            >
+              {fullscreen ? <Minimize2Icon className="size-4" /> : <Maximize2Icon className="size-4" />}
+            </Button>
             <Button
               type="button"
               variant="ghost"
@@ -726,34 +1074,83 @@ export function DashboardAiAssistant() {
             </Button>
           </header>
 
-          <div
-            aria-live="polite"
-            className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
-          >
-            {messages.length === 0 ? (
-              <EmptyPromptState onSelectPrompt={handleSuggestedPrompt} />
-            ) : (
-              messages.map((message, index) => (
-                <ChatMessage
-                  key={message.id}
-                  message={message}
-                  animate={message.role === "assistant" && index === messages.length - 1 && !message.animated}
-                  onAnimationComplete={() => markMessageAnimated(message.id)}
-                />
-              ))
-            )}
-            {loading ? (
-              <div className="flex justify-start">
-                <div className="flex max-w-[86%] items-center gap-2 rounded-[8px] border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                  <Loader2Icon className="size-4 animate-spin" />
-                  Processando...
+          <div className="flex min-h-0 flex-1">
+            {fullscreen ? (
+              <aside
+                className={cn(
+                  "min-h-0 shrink-0 overflow-hidden border-r bg-muted/20 transition-[width,opacity] duration-300 ease-out",
+                  historySidebarOpen ? "w-72 opacity-100" : "w-0 opacity-0"
+                )}
+                aria-hidden={!historySidebarOpen}
+              >
+                <div className="flex h-full w-72 flex-col gap-3 p-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="justify-start"
+                    onClick={startNewChat}
+                  >
+                    <MessageSquareIcon className="size-4" />
+                    Nova conversa
+                  </Button>
+                  <div className="min-h-0 flex-1 overflow-y-auto">
+                    {chatHistory.length > 0 ? (
+                      <div className="grid gap-1">
+                        {chatHistory.map((chat) => renderHistoryButton(chat, "sidebar"))}
+                      </div>
+                    ) : (
+                      <p className="m-0 px-2 py-3 text-sm text-muted-foreground">Nenhuma conversa salva.</p>
+                    )}
+                  </div>
+                </div>
+              </aside>
+            ) : null}
+
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div
+                ref={chatScrollRef}
+                aria-live="polite"
+                className={cn(
+                  "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4",
+                  fullscreen && "md:px-8 lg:px-10"
+                )}
+              >
+                <div
+                  ref={chatContentRef}
+                  className={cn(
+                    "mx-auto flex min-h-full w-full flex-col gap-3",
+                    fullscreen ? "max-w-3xl" : "max-w-none"
+                  )}
+                >
+                  {messages.length === 0 ? (
+                    <EmptyPromptState onSelectPrompt={handleSuggestedPrompt} />
+                  ) : (
+                    messages.map((message, index) => (
+                      <ChatMessage
+                        key={message.id}
+                        message={message}
+                        animate={message.role === "assistant" && index === messages.length - 1 && !message.animated}
+                        onAnimationComplete={() => markMessageAnimated(message.id)}
+                      />
+                    ))
+                  )}
+                  {loading ? (
+                    <div className="flex justify-start">
+                      <div className="flex max-w-[86%] items-center gap-2 rounded-[8px] border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                        <Loader2Icon className="size-4 animate-spin" />
+                        Processando...
+                      </div>
+                    </div>
+                  ) : null}
+                  <div ref={messagesEndRef} />
                 </div>
               </div>
-            ) : null}
-            <div ref={messagesEndRef} />
-          </div>
 
-          <form onSubmit={handleSubmit} className="border-t bg-muted/20 px-3 py-3">
+          <form onSubmit={handleSubmit} className={cn(
+            "border-t bg-muted/20 px-3 py-3",
+            fullscreen && "px-4 md:px-8 lg:px-10"
+          )}>
             {inlineError ? (
               <p className="m-0 mb-2 text-xs text-destructive">{inlineError}</p>
             ) : null}
@@ -786,21 +1183,21 @@ export function DashboardAiAssistant() {
                 </Button>
               </div>
             ) : null}
-            <div className="flex items-end gap-2">
+            <div className={cn("flex items-start gap-2", fullscreen && "mx-auto max-w-3xl")}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     type="button"
                     variant="outline"
                     size="icon-lg"
-                    className="mb-4 p-0!"
+                    className="size-12 shrink-0 p-0!"
                     disabled={loading}
                     aria-label="Adicionar contexto"
                   >
                     <PlusIcon className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" side="top" className="w-56">
+                <DropdownMenuContent align="start" side="top" className="w-45">
                   <DropdownMenuItem onSelect={addCurrentPageContext}>
                     <FileTextIcon className="size-4" />
                     Contexto da página
@@ -821,7 +1218,7 @@ export function DashboardAiAssistant() {
                   ) : null}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0  flex-1">
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -831,9 +1228,9 @@ export function DashboardAiAssistant() {
                   }}
                   onKeyDown={handleKeyDown}
                   maxLength={MAX_QUESTION_LENGTH}
-                  rows={2}
+                  rows={1}
                   placeholder="Pergunte sobre máquinas, sensores ou alertas..."
-                  className="max-h-28 min-h-12 w-full resize-none rounded-[8px] border bg-background px-3 py-2 text-sm leading-relaxed outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="block h-12 max-h-28 min-h-12 w-full resize-none rounded-[8px] border bg-background px-3 py-2 text-sm leading-relaxed outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={loading}
                   aria-label="Pergunta para a IA"
                 />
@@ -850,7 +1247,7 @@ export function DashboardAiAssistant() {
               <Button
                 type={loading ? "button" : "submit"}
                 size="icon-lg"
-                className="mb-4 p-0!"
+                className="size-12 shrink-0 p-0!"
                 disabled={loading ? false : !canSend}
                 onClick={loading ? cancelResponse : undefined}
                 aria-label={loading ? "Cancelar resposta" : "Enviar pergunta"}
@@ -859,9 +1256,12 @@ export function DashboardAiAssistant() {
               </Button>
             </div>
           </form>
+            </div>
+          </div>
         </section>
       ) : null}
 
+      {!open ? (
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -877,6 +1277,7 @@ export function DashboardAiAssistant() {
         </TooltipTrigger>
         <TooltipContent side="left" sideOffset={8}>Converse com o Orb!</TooltipContent>
       </Tooltip>
+      ) : null}
     </>
   )
 }
