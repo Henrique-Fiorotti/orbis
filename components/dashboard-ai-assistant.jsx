@@ -6,7 +6,6 @@ import Lenis from "lenis"
 import {
   AlertTriangleIcon,
   FileTextIcon,
-  HistoryIcon,
   Loader2Icon,
   LucideEye,
   Maximize2Icon,
@@ -487,7 +486,7 @@ function EmptyPromptState({ onSelectPrompt }) {
                 key={item.label}
                 type="button"
                 onClick={() => onSelectPrompt(item.prompt)}
-                className="group flex w-full items-center gap-3 rounded-[8px] px-2 py-2 text-left text-sm text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+                className="group flex w-full cursor-pointer items-center gap-3 rounded-[8px] px-2 py-2 text-left text-sm text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
               >
                 <Icon className="size-4 shrink-0 text-muted-foreground transition group-hover:text-primary" />
                 <span className="truncate">{item.label}</span>
@@ -949,11 +948,11 @@ export function DashboardAiAssistant() {
     const isActive = activeChatId === chat.id
     const commonContent = (
       <>
-        <MessageSquareIcon className="size-4 shrink-0" />
+        <MessageSquareIcon className="size-4 shrink-0 " />
         <span className="min-w-0 flex-1 truncate">{chat.title}</span>
         <button
           type="button"
-          className="rounded p-1 text-muted-foreground transition hover:text-destructive"
+          className="cursor-pointer rounded p-1 text-muted-foreground transition hover:text-destructive"
           onClick={(event) => {
             event.preventDefault()
             event.stopPropagation()
@@ -961,7 +960,7 @@ export function DashboardAiAssistant() {
           }}
           aria-label={`Excluir conversa ${chat.title}`}
         >
-          <Trash2Icon className="size-3.5" />
+          <Trash2Icon className="size-3.5 cursor-pointer!" />
         </button>
       </>
     )
@@ -978,14 +977,14 @@ export function DashboardAiAssistant() {
           <button
             type="button"
             onClick={() => openChat(chat.id)}
-            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+            className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
           >
             <MessageSquareIcon className="size-4 shrink-0" />
             <span className="min-w-0 flex-1 truncate">{chat.title}</span>
           </button>
           <button
             type="button"
-            className="rounded p-1 text-muted-foreground transition hover:text-destructive"
+            className="cursor-pointer rounded p-1 text-muted-foreground transition hover:text-destructive"
             onClick={() => deleteChat(chat.id)}
             aria-label={`Excluir conversa ${chat.title}`}
           >
@@ -999,7 +998,7 @@ export function DashboardAiAssistant() {
       <DropdownMenuItem
         key={chat.id}
         onSelect={() => openChat(chat.id)}
-        className={cn("gap-2", isActive && "bg-muted")}
+        className={cn("cursor-pointer gap-2", isActive && "bg-muted")}
       >
         {commonContent}
       </DropdownMenuItem>
@@ -1025,7 +1024,7 @@ export function DashboardAiAssistant() {
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                className="p-0!"
+                className="cursor-pointer p-0!"
                 onClick={() => setHistorySidebarOpen((current) => !current)}
                 aria-label={historySidebarOpen ? "Ocultar histórico" : "Mostrar histórico"}
                 aria-expanded={historySidebarOpen}
@@ -1039,8 +1038,8 @@ export function DashboardAiAssistant() {
             {!fullscreen ? (
             <DropdownMenu>
               <DropdownMenuContent align="end" className="w-72">
-                <DropdownMenuItem onSelect={startNewChat}>
-                  <MessageSquareIcon className="size-4" />
+                <DropdownMenuItem className="cursor-pointer" onSelect={startNewChat}>
+                  <PlusIcon className="size-4" />
                   Nova conversa
                 </DropdownMenuItem>
                 {chatHistory.length > 0 ? (
@@ -1056,17 +1055,17 @@ export function DashboardAiAssistant() {
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="p-0!"
+              className="cursor-pointer p-0!"
               onClick={toggleFullscreen}
               aria-label={fullscreen ? "Sair da tela cheia" : "Expandir IA"}
             >
-              {fullscreen ? <Minimize2Icon className="size-4" /> : <Maximize2Icon className="size-4" />}
+              {fullscreen ? <Minimize2Icon className="size-4 " /> : <Maximize2Icon className="size-4" />}
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="p-0!"
+              className="cursor-pointer p-0!"
               onClick={() => setOpen(false)}
               aria-label="Fechar Orbis IA"
             >
@@ -1088,10 +1087,10 @@ export function DashboardAiAssistant() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="justify-start"
+                    className="cursor-pointer justify-start"
                     onClick={startNewChat}
                   >
-                    <MessageSquareIcon className="size-4" />
+                    <PlusIcon className="size-4" />
                     Nova conversa
                   </Button>
                   <div className="min-h-0 flex-1 overflow-y-auto">
@@ -1161,7 +1160,7 @@ export function DashboardAiAssistant() {
                     key={context.id}
                     type="button"
                     onClick={() => removePageContext(context.id)}
-                    className="inline-flex max-w-full items-center gap-1 rounded-[8px] border bg-background px-2 py-1 text-xs text-muted-foreground"
+                    className="inline-flex max-w-full cursor-pointer items-center gap-1 rounded-[8px] border bg-background px-2 py-1 text-xs text-muted-foreground"
                   >
                     <FileTextIcon className="size-3.5 shrink-0" />
                     <span className="truncate">{context.label}</span>
@@ -1176,7 +1175,7 @@ export function DashboardAiAssistant() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-7 px-2! py-0!"
+                  className="h-7 cursor-pointer px-2! py-0!"
                   onClick={handleRetry}
                 >
                   Tentar novamente
@@ -1190,7 +1189,7 @@ export function DashboardAiAssistant() {
                     type="button"
                     variant="outline"
                     size="icon-lg"
-                    className="size-12 shrink-0 p-0!"
+                    className="size-12 shrink-0 cursor-pointer p-0! disabled:cursor-not-allowed"
                     disabled={loading}
                     aria-label="Adicionar contexto"
                   >
@@ -1198,7 +1197,7 @@ export function DashboardAiAssistant() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" side="top" className="w-45">
-                  <DropdownMenuItem onSelect={addCurrentPageContext}>
+                  <DropdownMenuItem className="cursor-pointer" onSelect={addCurrentPageContext}>
                     <FileTextIcon className="size-4" />
                     Contexto da página
                   </DropdownMenuItem>
@@ -1206,6 +1205,7 @@ export function DashboardAiAssistant() {
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
+                        className="cursor-pointer"
                         variant="destructive"
                         onSelect={() => {
                           setPageContexts([])
@@ -1230,7 +1230,7 @@ export function DashboardAiAssistant() {
                   maxLength={MAX_QUESTION_LENGTH}
                   rows={1}
                   placeholder="Pergunte sobre máquinas, sensores ou alertas..."
-                  className="block h-12 max-h-28 min-h-12 w-full resize-none rounded-[8px] border bg-background px-3 py-2 text-sm leading-relaxed outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="block h-12 max-h-28 min-h-12 w-full resize-none overflow-y-hidden rounded-[8px] border bg-background px-3 py-1 text-sm leading-5 outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={loading}
                   aria-label="Pergunta para a IA"
                 />
@@ -1247,7 +1247,7 @@ export function DashboardAiAssistant() {
               <Button
                 type={loading ? "button" : "submit"}
                 size="icon-lg"
-                className="size-12 shrink-0 p-0!"
+                className="size-12 shrink-0 cursor-pointer p-0! disabled:cursor-not-allowed"
                 disabled={loading ? false : !canSend}
                 onClick={loading ? cancelResponse : undefined}
                 aria-label={loading ? "Cancelar resposta" : "Enviar pergunta"}
@@ -1262,12 +1262,12 @@ export function DashboardAiAssistant() {
       ) : null}
 
       {!open ? (
-      <Tooltip>
+      <Tooltip className="">
         <TooltipTrigger asChild>
           <Button
             type="button"
             size="icon-lg"
-            className="fixed dark:bg-[#1e2939] bottom-5 right-5 z-40 size-12 rounded-full! p-0! hover:scale-[1.06] border-1 border-black/30 bg-white"
+            className="cursor-pointer fixed dark:bg-[#1e2939] bottom-5 right-5 z-40 size-12 rounded-full! p-0! hover:scale-[1.06] border-1 border-black/30 bg-white"
             onClick={() => setOpen((current) => !current)}
             aria-label="Agente Orb"
             aria-expanded={open}
