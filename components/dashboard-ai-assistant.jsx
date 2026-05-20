@@ -222,6 +222,20 @@ function buildPromptPayload(question, contexts) {
   return lines.join("\n")
 }
 
+function buildBackendHistory(messages) {
+  if (!Array.isArray(messages)) {
+    return []
+  }
+
+  return messages
+    .filter((message) => message?.role === "user" || message?.role === "assistant")
+    .map((message) => ({
+      role: message.role,
+      content: String(message.content || "").trim(),
+    }))
+    .filter((message) => message.content.length > 0)
+}
+
 function useTypewriter(text, speed = 18) {
   const [displayed, setDisplayed] = React.useState("")
   // CORRIGIDO: era `useState(true)` — com isDone=true no primeiro render, isTyping=false e o cursor não aparecia;
@@ -562,8 +576,10 @@ export function DashboardAiAssistant() {
     setLoading(true)
 
     try {
+      const historico = buildBackendHistory(messagesRef.current)
       const payload = await askDashboardAi(payloadQuestion, session.accessToken, {
         signal: abortController.signal,
+        historico,
       })
       const answer = payload.resposta?.trim()
 
