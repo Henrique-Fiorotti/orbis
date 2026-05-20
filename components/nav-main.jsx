@@ -3,10 +3,10 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
+import { AUTH_SESSION_UPDATED_EVENT, getAuthSessionUser } from "@/lib/auth-session"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -29,11 +29,16 @@ function isSidebarItemActive(pathname, url) {
   return pathname === url || pathname?.startsWith(`${url}/`)
 }
 
+function getShortName(name) {
+  return String(name ?? "").trim().split(/\s+/)[0] ?? ""
+}
+
 export function NavMain({ items, pathname }) {
   const router = useRouter()
   const permissions = useDashboardPermissions()
   const { isMobile, setOpenMobile } = useSidebar()
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false)
+  const [userName, setUserName] = React.useState(() => getAuthSessionUser()?.nome || "")
 
   const createOptions = [
     permissions.canManageMaquinas
@@ -87,6 +92,22 @@ export function NavMain({ items, pathname }) {
     router.push(href)
   }
 
+  React.useEffect(() => {
+    function syncUserName() {
+      setUserName(getAuthSessionUser()?.nome || "")
+    }
+
+    syncUserName()
+
+    window.addEventListener("storage", syncUserName)
+    window.addEventListener(AUTH_SESSION_UPDATED_EVENT, syncUserName)
+
+    return () => {
+      window.removeEventListener("storage", syncUserName)
+      window.removeEventListener(AUTH_SESSION_UPDATED_EVENT, syncUserName)
+    }
+  }, [])
+
   return (
     <>
       <SidebarGroup>
@@ -130,10 +151,14 @@ export function NavMain({ items, pathname }) {
       </SidebarGroup>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader className="flex flex-row">
-            <CirclePlusIcon />
-            <DialogTitle className="text-[22px]"> O que você deseja <span className="text-[#5E17EB]">adicionar</span>?</DialogTitle>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader className="flex flex-row items-center gap-2">
+            <CirclePlusIcon className="size-5 shrink-0" />
+            <DialogTitle className="flex flex-wrap items-center gap-x-1.5 text-[22px]">
+              <span>O que você deseja</span>
+              <span className="text-[#5E17EB]">adicionar,</span>
+              <span>{userName ? `${getShortName(userName)}?` : "?"}</span>
+            </DialogTitle>
           </DialogHeader>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -141,14 +166,14 @@ export function NavMain({ items, pathname }) {
               <button
                 key={href}
                 type="button"
-                className="flex min-h-[112px] cursor-pointer flex-col items-start gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] hover:bg-[#5E17EB]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/40 dark:border-gray-700! dark:bg-[#0F172A]"
+                className="group flex min-h-[112px] cursor-pointer flex-col items-start gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#5E17EB] hover:bg-[#5E17EB]/10 hover:shadow-lg hover:shadow-[#5E17EB]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/40 dark:border-gray-700! dark:bg-[#0F172A] dark:hover:border-[#8B5CF6] dark:hover:bg-[#5E17EB]/15"
                 onClick={() => goToCreateFlow(href)}
               >
-                <span className="inline-flex size-9 items-center justify-center rounded-lg border border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200">
-                  <Icon className="size-4" />
+                <span className="inline-flex size-9 items-center justify-center rounded-lg border border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] transition-colors duration-200 group-hover:border-[#5E17EB] group-hover:bg-[#5E17EB] group-hover:text-white dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200">
+                  <Icon className="size-4 transition-transform duration-200 group-hover:scale-110" />
                 </span>
                 <span className="flex flex-col gap-1">
-                  <span className="text-sm font-semibold text-[#3B2867] dark:text-white">{title}</span>
+                  <span className="text-sm font-semibold text-[#3B2867] transition-colors duration-200 group-hover:text-[#5E17EB] dark:text-white dark:group-hover:text-[#C5A3FF]">{title}</span>
                   <span className="text-xs leading-relaxed text-muted-foreground">{description}</span>
                 </span>
               </button>
