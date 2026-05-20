@@ -576,7 +576,7 @@ export default function MaquinasPage() {
             <div className="flex flex-col gap-0.5 text-sm">
               <span className="text-red-600 dark:text-red-300 flex items-center gap-1">
                 <ShieldAlertIcon className="size-3.5" />
-                {loadingInicial ? "Verificando status..." : `${criticasAltaAlerta} em alerta agora`}
+                {loadingInicial ? "Verificando status..." : `${criticasAltaAlerta} Em alerta agora`}
               </span>
               <span className="text-muted-foreground text-xs">
                 {loadingInicial ? "Classificando importância" : `${Math.max(criticasAlta - criticasAltaAlerta, 0)} Operando normalmente`}

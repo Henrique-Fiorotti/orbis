@@ -1004,7 +1004,7 @@ function RelatorioOperacional({
                 </div>
               ) : (
                 <div className="mt-3 grid grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
-                  <EmailMetric label="Maquinas ativas" value={resumo.totalMaquinas} sub={`${resumo.maquinasFuncionando} OK - ${resumo.maquinasEmAlerta} em alerta`} />
+                  <EmailMetric label="Maquinas ativas" value={resumo.totalMaquinas} sub={`${resumo.maquinasFuncionando} OK - ${resumo.maquinasEmAlerta} Em alerta`} />
                   <EmailMetric label="Alta importancia" value={resumo.maquinasAltaImportancia} sub="Maquinas criticas" />
                   <EmailMetric label="Integridade media" value={`${integridadeMedia}%`} sub="Media de toda a frota" />
                   <EmailMetric label="Chamados abertos" value={resumo.alertasAtivos} sub={`${resumo.alertasAtendidosHoje} atendidos hoje`} />
