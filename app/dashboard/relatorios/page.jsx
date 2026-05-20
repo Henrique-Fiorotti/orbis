@@ -13,7 +13,6 @@ import {
   MailIcon,
   MenuIcon,
   PrinterIcon,
-  RefreshCcwIcon,
   SendIcon,
   ShieldAlertIcon,
   SlidersHorizontalIcon,
@@ -32,6 +31,8 @@ import { useAlertas } from "@/components/context/alertas-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
 import { useSensores } from "@/components/context/sensores-context"
 import { useTecnicos } from "@/components/context/tecnicos-context"
+import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
+import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { getAuthSession } from "@/lib/auth-session"
 import { requestDashboardJson } from "@/lib/dashboard-api"
 import { tempoRelativo } from "@/lib/utils"
@@ -1058,10 +1059,13 @@ function ReportActionsPanel({ onRefresh, onPrint, refreshDisabled, printDisabled
   return (
     <div className="print:hidden hidden rounded-xl border bg-card p-4 shadow-sm sm:block">
       <div className="grid grid-cols-2 gap-2">
-        <Button type="button" variant="outline" className="cursor-pointer h-10" onClick={onRefresh} disabled={refreshDisabled}>
-          <RefreshCcwIcon className="mr-1 size-4" />
-          Atualizar
-        </Button>
+        <RefreshTooltipButton
+          className="cursor-pointer"
+          size="icon-lg"
+          onClick={onRefresh}
+          disabled={refreshDisabled}
+          successMessage="Atualização dos relatórios concluída."
+        />
         <Button
           type="button"
           className="cursor-pointer h-10 bg-primary text-primary-foreground hover:bg-primary/90"
@@ -1391,6 +1395,7 @@ function RelatorioOperacional({
 
 export default function RelatoriosPage() {
   const router = useRouter()
+  const permissions = useDashboardPermissions()
   const {
     maquinas,
     status: maquinasStatus,
@@ -1433,6 +1438,7 @@ export default function RelatoriosPage() {
   const [emailDiaSemana, setEmailDiaSemana] = React.useState("segunda")
   const [emailDiaMes, setEmailDiaMes] = React.useState("1")
   const [geradoEm, setGeradoEm] = React.useState(formatDate())
+  const canManageAgendamentos = permissions.canManageAgendamentos
 
   React.useEffect(() => {
     if (!maquinaId && maquinas.length > 0) {
@@ -1580,6 +1586,11 @@ export default function RelatoriosPage() {
   }
 
   async function salvarRascunhoEmail() {
+    if (!canManageAgendamentos) {
+      toast.error("Apenas administradores podem criar agendamentos.")
+      return
+    }
+
     const payload = getEmailAutomationPayload()
     const validationMessage = validarPayloadEmail(payload)
 
@@ -1708,10 +1719,11 @@ export default function RelatoriosPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            <Button variant="outline" size="sm" className="cursor-pointer" onClick={recarregar} disabled={carregandoTudo}>
-              <RefreshCcwIcon className="mr-1 size-4" />
-              Atualizar
-            </Button>
+            <RefreshTooltipButton
+              onClick={recarregar}
+              disabled={carregandoTudo}
+              successMessage="Atualização dos relatórios concluída."
+            />
             <Button
               size="sm"
               className="cursor-pointer w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
@@ -1740,25 +1752,27 @@ export default function RelatoriosPage() {
               onToggleSecao={onToggleSecao}
             />
 
-            <EmailAutomationPanel
-              nome={emailNome}
-              onNomeChange={setEmailNome}
-              assunto={emailAssunto}
-              onAssuntoChange={setEmailAssunto}
-              destinatarios={emailDestinatarios}
-              onDestinatariosChange={setEmailDestinatarios}
-              frequencia={emailFrequencia}
-              onFrequenciaChange={setEmailFrequencia}
-              horario={emailHorario}
-              onHorarioChange={setEmailHorario}
-              diaSemana={emailDiaSemana}
-              onDiaSemanaChange={setEmailDiaSemana}
-              diaMes={emailDiaMes}
-              onDiaMesChange={setEmailDiaMes}
-              reportPeriodLabel={periodoLabel}
-              onSaveDraft={salvarRascunhoEmail}
-              onSendNow={enviarRelatorioAgora}
-            />
+            {canManageAgendamentos ? (
+              <EmailAutomationPanel
+                nome={emailNome}
+                onNomeChange={setEmailNome}
+                assunto={emailAssunto}
+                onAssuntoChange={setEmailAssunto}
+                destinatarios={emailDestinatarios}
+                onDestinatariosChange={setEmailDestinatarios}
+                frequencia={emailFrequencia}
+                onFrequenciaChange={setEmailFrequencia}
+                horario={emailHorario}
+                onHorarioChange={setEmailHorario}
+                diaSemana={emailDiaSemana}
+                onDiaSemanaChange={setEmailDiaSemana}
+                diaMes={emailDiaMes}
+                onDiaMesChange={setEmailDiaMes}
+                reportPeriodLabel={periodoLabel}
+                onSaveDraft={salvarRascunhoEmail}
+                onSendNow={enviarRelatorioAgora}
+              />
+            ) : null}
 
             <ReportActionsPanel
               onRefresh={recarregar}
@@ -2160,7 +2174,7 @@ function RelatorioMaquina({
           <div className="mb-6 print:mb-4">
             <SectionTitle>Resumo da Máquina</SectionTitle>
             <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
-              <MetricCard icon={GaugeIcon} label="Integridade" value={`${metricas.integridade}%`} sub="Valor atual" color={metricas.integridade >= 75 ? COLORS.ok : metricas.integridade >= 50 ? COLORS.medio : COLORS.alerta} />
+              <MetricCard icon={WashingMachineIcon} label="Integridade" value={`${metricas.integridade}%`} sub="Valor atual" color={metricas.integridade >= 75 ? COLORS.ok : metricas.integridade >= 50 ? COLORS.medio : COLORS.alerta} />
               <MetricCard icon={ActivityIcon} label="Estabilidade" value={`${metricas.estabilidade}%`} sub="Score operacional" color={metricas.estabilidade >= 75 ? COLORS.ok : metricas.estabilidade >= 50 ? COLORS.medio : COLORS.alerta} />
               <MetricCard icon={WashingMachineIcon} label="Sensores" value={metricas.sensoresTotal} sub={`${metricas.sensoresOnline} online`} />
               <MetricCard icon={ZapIcon} label="Alertas abertos" value={metricas.chamadosAbertos} sub={`${metricas.chamadosResolvidos} resolvidos`} color={metricas.chamadosAbertos > 0 ? COLORS.medio : COLORS.ok} />

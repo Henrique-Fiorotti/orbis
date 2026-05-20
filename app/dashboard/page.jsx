@@ -12,9 +12,9 @@ import {
   ClipboardListIcon,
   GaugeIcon,
   Loader2Icon,
-  RefreshCcwIcon,
   ShieldAlertIcon,
   WrenchIcon,
+  WashingMachineIcon,
 } from "lucide-react"
 
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
@@ -23,6 +23,7 @@ import { useAlertas } from "@/components/context/alertas-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
 import { useSensores } from "@/components/context/sensores-context"
 import { DataTable } from "@/components/data-table"
+import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
@@ -351,10 +352,11 @@ function TechnicianDashboard() {
               Prioridades de atendimento, máquinas com alertas e seus alertas em andamento.
             </p>
           </div>
-          <Button variant="outline" className="w-fit cursor-pointer" onClick={refreshAll} disabled={loading || salvando}>
-            <RefreshCcwIcon className="mr-1 size-4" />
-            Atualizar
-          </Button>
+          <RefreshTooltipButton
+            onClick={refreshAll}
+            disabled={loading || salvando}
+            successMessage="Atualização do painel técnico concluída."
+          />
         </div>
 
         <div id="tour-technician-metrics" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -466,7 +468,7 @@ function TechnicianDashboard() {
           </Button>
           <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/maquinas")}>
             <span className="flex items-center gap-2">
-              <GaugeIcon className="size-4 text-[#5E17EB]" />
+              <WashingMachineIcon className="size-4 text-[#5E17EB]" />
               Máquinas
             </span>
             <ArrowRightIcon className="size-4" />

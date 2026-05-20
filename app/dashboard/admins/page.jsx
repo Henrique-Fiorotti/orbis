@@ -23,7 +23,6 @@ import {
   ImageIcon,
   PencilIcon,
   PlusIcon,
-  RefreshCcwIcon,
   SearchIcon,
   ShieldCheckIcon,
   Trash2Icon,
@@ -41,6 +40,7 @@ import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { SiteHeader } from "@/components/site-header"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { fetchDashboardJson, getHttpErrorStatus, normalizeAdminCollection, requestDashboardJson } from "@/lib/dashboard-api"
@@ -678,10 +678,11 @@ export default function AdminsPage() {
           >
             <div className="flex items-center justify-between gap-3">
               <span>{mensagem}</span>
-              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => carregarAdmins(paginaAtual, limiteItems)} disabled={status === "loading" || salvando}>
-                <RefreshCcwIcon className="mr-1 size-4" />
-                Atualizar
-              </Button>
+              <RefreshTooltipButton
+                onClick={() => carregarAdmins(paginaAtual, limiteItems)}
+                disabled={status === "loading" || salvando}
+                successMessage="Atualização dos administradores concluída."
+              />
             </div>
           </div>
         ) : null}

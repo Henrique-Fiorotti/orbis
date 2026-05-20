@@ -121,7 +121,8 @@ export default function HomePage() {
             backgroundImage:
               "radial-gradient(circle, var(--landing-grid-dot) 1px, transparent 1px)",
             backgroundSize: "53px 36px",
-            opacity: 0.35,
+            zIndex: 0,
+            opacity: "var(--landing-grid-opacity)",
           }}
         />
 

@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
+import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import {
@@ -36,7 +37,6 @@ import {
   NfcIcon,
   PencilIcon,
   PlusIcon,
-  RefreshCcwIcon,
   SearchIcon,
   ThermometerIcon,
   Trash2Icon,
@@ -706,10 +706,11 @@ export default function SensoresPage() {
           >
             <div className="flex items-center justify-between gap-3">
               <span>{mensagem}</span>
-              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => recarregarSensores()} disabled={carregando || salvando}>
-                <RefreshCcwIcon className="mr-1 size-4" />
-                Atualizar
-              </Button>
+              <RefreshTooltipButton
+                onClick={() => recarregarSensores()}
+                disabled={carregando || salvando}
+                successMessage="Atualização dos sensores concluída."
+              />
             </div>
           </div>
         ) : null}
