@@ -62,6 +62,24 @@ function StatusBadge({ value }) {
     )
   }
 
+  if (value === "EM_ANDAMENTO") {
+    return (
+      <Badge variant="outline" className="px-1.5 border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300">
+        <AlertTriangleIcon className="text-orange-500 dark:text-orange-300" />
+        Em andamento
+      </Badge>
+    )
+  }
+
+  if (value === "COM_ALERTA") {
+    return (
+      <Badge variant="outline" className="px-1.5 border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
+        <AlertTriangleIcon className="text-red-500 dark:text-red-300" />
+        Com alerta
+      </Badge>
+    )
+  }
+
   return (
     <Badge variant="outline" className="px-1.5 text-muted-foreground">
       {value === "OK" ? <CircleCheckIcon className="fill-[#5E17EB]!" /> : <AlertTriangleIcon className="text-red-500" />}

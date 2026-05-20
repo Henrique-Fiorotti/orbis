@@ -6,6 +6,7 @@ import { flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues
 
 import { useDashboardCharts } from "./context/dashboard-charts-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
+import { useAlertas } from "@/components/context/alertas-context"
 import { DashboardTableSkeleton } from "@/components/dashboard-skeletons"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -36,6 +37,7 @@ import {
   integridadeMaquinaFilterFn as integridadeFilterFn,
   selectMaquinaFilterFn as selectFilterFn,
   statusMaquinaSortFn,
+  withMaquinaAlertasStatus,
 } from "@/lib/maquinas-table"
 
 function CriticidadeBadge({ value }) {
@@ -53,6 +55,24 @@ function StatusBadge({ value }) {
       <Badge variant="outline" className="px-1.5 text-muted-foreground">
         <CircleMinusIcon className="text-muted-foreground" />
         Sem sensor
+      </Badge>
+    )
+  }
+
+  if (value === "EM_ANDAMENTO") {
+    return (
+      <Badge variant="outline" className="px-1.5 border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300">
+        <AlertTriangleIcon className="text-orange-500 dark:text-orange-300" />
+        Em andamento
+      </Badge>
+    )
+  }
+
+  if (value === "COM_ALERTA") {
+    return (
+      <Badge variant="outline" className="px-1.5 border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
+        <AlertTriangleIcon className="text-red-500 dark:text-red-300" />
+        Com alerta
       </Badge>
     )
   }
@@ -360,8 +380,13 @@ export function DataTable() {
     mensagem: maquinasMensagem,
     maquinas: maquinasCadastradas,
   } = useMaquinas()
-  const maquinas = maquinasCadastradas.length > 0 ? maquinasCadastradas : dashboardMaquinas
-  const emAlerta = React.useMemo(() => maquinas.filter((maquina) => maquina.status === "ALERTA"), [maquinas])
+  const { alertas } = useAlertas()
+  const maquinasBase = maquinasCadastradas.length > 0 ? maquinasCadastradas : dashboardMaquinas
+  const maquinas = React.useMemo(() => withMaquinaAlertasStatus(maquinasBase, alertas), [alertas, maquinasBase])
+  const emAlerta = React.useMemo(
+    () => maquinas.filter((maquina) => ["COM_ALERTA", "EM_ANDAMENTO"].includes(getMaquinaStatusExibicao(maquina))),
+    [maquinas]
+  )
   const loading =
     maquinasStatus === "loading" &&
     dashboardStatus === "loading" &&

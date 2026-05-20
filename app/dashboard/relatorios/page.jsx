@@ -7,9 +7,11 @@ import {
   ActivityIcon,
   AlertTriangleIcon,
   ArrowLeftIcon,
+  ChevronDownIcon,
   CircleCheckIcon,
   GaugeIcon,
   MailIcon,
+  MenuIcon,
   PrinterIcon,
   RefreshCcwIcon,
   SendIcon,
@@ -745,7 +747,7 @@ function ConfigPanel({
   )
 }
 
-function EmailAutomationPanel({
+function EmailAutomationPanelLegacy({
   nome,
   onNomeChange,
   assunto,
@@ -879,6 +881,175 @@ function EmailAutomationPanel({
         {frequencia === "semanal" ? `, ${getWeekdayLabel(diaSemana)}` : ""}
         {frequencia === "mensal" ? `, dia ${diaMes}` : ""} as {horario || "08:00"}. Periodo do relatorio: {reportPeriodLabel}. O relatorio usara os filtros configurados acima.
       </div>
+    </div>
+  )
+}
+
+function EmailAutomationPanel({
+  nome,
+  onNomeChange,
+  assunto,
+  onAssuntoChange,
+  destinatarios,
+  onDestinatariosChange,
+  frequencia,
+  onFrequenciaChange,
+  horario,
+  onHorarioChange,
+  diaSemana,
+  onDiaSemanaChange,
+  diaMes,
+  onDiaMesChange,
+  reportPeriodLabel,
+  onSaveDraft,
+  onSendNow,
+}) {
+  const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
+  const [open, setOpen] = React.useState(false)
+  const [scheduleOpen, setScheduleOpen] = React.useState(false)
+  const hasDestinatarios = destinatarios.trim().length > 0
+  const frequencyLabel = selectedFrequency?.label ?? "Recorrencia"
+
+  return (
+    <div className="print:hidden rounded-xl border bg-card shadow-sm">
+      <button
+        type="button"
+        className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <MenuIcon className="size-4 text-muted-foreground" />
+          <MailIcon className="size-5 text-foreground" />
+          <span className="m-0 text-sm font-semibold text-[#3B2867] dark:text-white">
+            Envio por E-mail
+          </span>
+        </span>
+        <ChevronDownIcon className={`size-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open ? (
+        <div className="grid gap-3 border-t px-4 py-4">
+          <div className="grid gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Destinatario(s)</span>
+            <Input
+              value={destinatarios}
+              onChange={(event) => onDestinatariosChange(event.target.value)}
+              placeholder="email@empresa.com"
+              className="h-9"
+              type="email"
+              inputMode="email"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="cursor-pointer h-9 border-primary text-primary hover:bg-primary/10 hover:text-primary"
+              onClick={onSendNow}
+            >
+              <SendIcon className="mr-1 size-4" />
+              Enviar agora
+            </Button>
+          </div>
+
+          <div className="rounded-lg border bg-muted/10">
+            <button
+              type="button"
+              className="flex w-full cursor-pointer items-center justify-between gap-2 px-3 py-2 text-left text-sm font-medium text-foreground"
+              onClick={() => setScheduleOpen((current) => !current)}
+              aria-expanded={scheduleOpen}
+            >
+              <span>Salvar agendamento</span>
+              <ChevronDownIcon className={`size-4 text-muted-foreground transition-transform ${scheduleOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {scheduleOpen ? (
+              <div className="grid gap-2 border-t p-3">
+                <Input
+                  value={nome}
+                  onChange={(event) => onNomeChange(event.target.value)}
+                  placeholder="Nome do relatorio"
+                  className="h-9"
+                />
+
+                <Input
+                  value={assunto}
+                  onChange={(event) => onAssuntoChange(event.target.value)}
+                  placeholder="Assunto do e-mail"
+                  className="h-9"
+                />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={frequencia} onValueChange={onFrequenciaChange}>
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Periodo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EMAIL_FREQUENCY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    value={horario}
+                    onChange={(event) => onHorarioChange(event.target.value)}
+                    className="h-9"
+                    type="time"
+                    aria-label="Horario do envio"
+                  />
+                </div>
+
+                {frequencia === "semanal" && (
+                  <Select value={diaSemana} onValueChange={onDiaSemanaChange}>
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Dia da semana" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WEEKDAY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {frequencia === "mensal" && (
+                  <Select value={diaMes} onValueChange={onDiaMesChange}>
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Dia do mes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MONTH_DAY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                <div className="rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                  Proximo envio: {frequencyLabel}
+                  {frequencia === "semanal" ? `, ${getWeekdayLabel(diaSemana)}` : ""}
+                  {frequencia === "mensal" ? `, dia ${diaMes}` : ""} as {horario || "08:00"}. Dados do relatorio: {reportPeriodLabel}.
+                </div>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="cursor-pointer h-9 bg-muted text-muted-foreground hover:bg-muted"
+                  onClick={onSaveDraft}
+                  disabled={!hasDestinatarios}
+                >
+                  Salvar agendamento
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -1118,7 +1289,7 @@ function RelatorioOperacional({
 
         <div className="px-4 pb-6 sm:px-6 print:px-4">
           {secoes.resumo && (
-            <div className="mb-6 print:mb-4">
+            <div className="report-print-section mb-6 print:mb-4">
               <SectionTitle>Visao Geral da Frota</SectionTitle>
               {isLoading ? (
                 <div className="mt-3">
@@ -1135,7 +1306,7 @@ function RelatorioOperacional({
             </div>
           )}
 
-          <div className="mb-6 print:mb-4">
+          <div className="report-print-section mb-6 print:mb-4">
             <div className="border border-stone-200 bg-white p-4 print:border-stone-300">
               <div className="mb-2 flex items-center justify-between gap-4">
                 <span className="text-xs font-semibold uppercase tracking-widest text-stone-500">Integridade da frota</span>
@@ -1148,7 +1319,7 @@ function RelatorioOperacional({
           </div>
 
           {secoes.indicadores && (
-            <div className="mb-6 print:mb-4">
+            <div className="report-print-section mb-6 print:mb-4">
               <SectionTitle>Indicadores Operacionais</SectionTitle>
               {isLoading ? (
                 <div className="mt-3">
@@ -1166,9 +1337,9 @@ function RelatorioOperacional({
           )}
 
           {secoes.maquinas && (
-            <div className="mb-6 print:mb-4">
+            <div className="report-print-table-section mb-6 print:mb-4">
               <SectionTitle>Inventario de Maquinas</SectionTitle>
-              <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
+              <div className="report-print-table-shell mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
                 {isLoading ? (
                   <Estado msg="Carregando maquinas..." />
                 ) : maquinasVisiveis.length === 0 ? (
@@ -1188,9 +1359,9 @@ function RelatorioOperacional({
           )}
 
           {secoes.chamados && (
-            <div className="mb-6 print:mb-4">
+            <div className="report-print-table-section mb-6 print:mb-4">
               <SectionTitle>Chamados Tecnicos</SectionTitle>
-              <div className="mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
+              <div className="report-print-table-shell mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
                 {isLoading ? (
                   <Estado msg="Carregando chamados..." />
                 ) : alertasVisiveis.length === 0 ? (
@@ -1209,7 +1380,7 @@ function RelatorioOperacional({
             </div>
           )}
 
-          <div className="border-t border-stone-200 bg-stone-50 px-4 py-3 text-xs text-stone-500 print:border-stone-300">
+          <div className="report-print-section border-t border-stone-200 bg-stone-50 px-4 py-3 text-xs text-stone-500 print:border-stone-300">
             Este relatorio foi gerado automaticamente pelo sistema Orbis.
           </div>
         </div>
@@ -1745,6 +1916,31 @@ export default function RelatoriosPage() {
             overflow: visible !important;
           }
 
+          #relatorio-conteudo .report-print-section {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          #relatorio-conteudo .report-print-table-section {
+            break-inside: auto;
+            page-break-inside: auto;
+          }
+
+          #relatorio-conteudo .report-print-table-section + .report-print-table-section {
+            break-before: page;
+            page-break-before: always;
+          }
+
+          #relatorio-conteudo .report-print-table-section > :first-child {
+            break-after: avoid;
+            page-break-after: avoid;
+          }
+
+          #relatorio-conteudo .report-print-table-shell {
+            break-inside: auto;
+            page-break-inside: auto;
+          }
+
           #relatorio-conteudo table {
             border-collapse: collapse !important;
             font-size: 7.2pt !important;
@@ -1762,6 +1958,11 @@ export default function RelatoriosPage() {
 
           #relatorio-conteudo thead {
             display: table-header-group;
+          }
+
+          #relatorio-conteudo tbody {
+            break-inside: auto;
+            page-break-inside: auto;
           }
 
           #relatorio-conteudo tfoot {

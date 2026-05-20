@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { useMaquinas } from "@/components/context/maquinas-context"
+import { useAlertas } from "@/components/context/alertas-context"
 import { useSensores } from "@/components/context/sensores-context"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 
@@ -51,6 +52,7 @@ import {
   integridadeMaquinaFilterFn as integridadeFilterFn,
   selectMaquinaFilterFn as selectFilterFn,
   statusMaquinaSortFn,
+  withMaquinaAlertasStatus,
 } from "@/lib/maquinas-table"
 
 const formVazio = { nome: "", setor: "", tipo: "", criticidade: "MEDIA" }
@@ -70,6 +72,24 @@ function StatusBadge({ value }) {
       <Badge variant="outline" className="px-1.5 text-muted-foreground">
         <CircleMinusIcon className="text-muted-foreground" />
         Sem sensor
+      </Badge>
+    )
+  }
+
+  if (value === "EM_ANDAMENTO") {
+    return (
+      <Badge variant="outline" className="px-1.5 border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300">
+        <AlertTriangleIcon className="text-orange-500 dark:text-orange-300" />
+        Em andamento
+      </Badge>
+    )
+  }
+
+  if (value === "COM_ALERTA") {
+    return (
+      <Badge variant="outline" className="px-1.5 border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
+        <AlertTriangleIcon className="text-red-500 dark:text-red-300" />
+        Com alerta
       </Badge>
     )
   }
@@ -176,6 +196,7 @@ export default function MaquinasPage() {
     atualizarImagemMaquina,
     recarregarMaquinas,
   } = useMaquinas()
+  const { alertas } = useAlertas()
   const {
     sensores,
     status: sensoresStatus,
@@ -208,18 +229,19 @@ export default function MaquinasPage() {
     confirmacaoExclusao === maquinaExcluir?.nome &&
     !salvando
 
-  const totalOk = React.useMemo(() => maquinas.filter((maquina) => maquina.status === "OK").length, [maquinas])
-  const totalAlerta = React.useMemo(() => maquinas.filter((maquina) => maquina.status !== "OK").length, [maquinas])
-  const criticasAlta = React.useMemo(() => maquinas.filter((maquina) => maquina.criticidade === "ALTA").length, [maquinas])
+  const maquinasComStatus = React.useMemo(() => withMaquinaAlertasStatus(maquinas, alertas), [alertas, maquinas])
+  const totalOk = React.useMemo(() => maquinasComStatus.filter((maquina) => getMaquinaStatusExibicao(maquina) === "OK").length, [maquinasComStatus])
+  const totalAlerta = React.useMemo(() => maquinasComStatus.filter((maquina) => ["COM_ALERTA", "EM_ANDAMENTO"].includes(getMaquinaStatusExibicao(maquina))).length, [maquinasComStatus])
+  const criticasAlta = React.useMemo(() => maquinasComStatus.filter((maquina) => maquina.criticidade === "ALTA").length, [maquinasComStatus])
   const criticasAltaAlerta = React.useMemo(
-    () => maquinas.filter((maquina) => maquina.criticidade === "ALTA" && maquina.status !== "OK").length,
-    [maquinas]
+    () => maquinasComStatus.filter((maquina) => maquina.criticidade === "ALTA" && ["COM_ALERTA", "EM_ANDAMENTO"].includes(getMaquinaStatusExibicao(maquina))).length,
+    [maquinasComStatus]
   )
   const integridadeMedia = React.useMemo(
-    () => maquinas.length
-      ? Math.round(maquinas.reduce((acc, maquina) => acc + (maquina.integridade ?? 0), 0) / maquinas.length)
+    () => maquinasComStatus.length
+      ? Math.round(maquinasComStatus.reduce((acc, maquina) => acc + (maquina.integridade ?? 0), 0) / maquinasComStatus.length)
       : 0,
-    [maquinas]
+    [maquinasComStatus]
   )
 
   React.useEffect(() => {
@@ -248,7 +270,7 @@ export default function MaquinasPage() {
   React.useEffect(() => {
     const machineIdParam = searchParams.get("machineId")
 
-    if (!machineIdParam || maquinas.length === 0) {
+    if (!machineIdParam || maquinasComStatus.length === 0) {
       if (!machineIdParam) {
         maquinaAbertaPelaUrlRef.current = null
       }
@@ -261,13 +283,13 @@ export default function MaquinasPage() {
       return
     }
 
-    const maquina = maquinas.find((item) => String(item.id) === String(machineIdParam))
+    const maquina = maquinasComStatus.find((item) => String(item.id) === String(machineIdParam))
 
     if (maquina) {
       maquinaAbertaPelaUrlRef.current = machineIdKey
       abrirVer(maquina)
     }
-  }, [maquinas, searchParams])
+  }, [maquinasComStatus, searchParams])
 
   function abrirCriar() {
     if (!canManageMaquinas) {
@@ -400,12 +422,12 @@ export default function MaquinasPage() {
   }
 
   const dadosFiltrados = React.useMemo(() =>
-    maquinas.filter((maquina) =>
+    maquinasComStatus.filter((maquina) =>
       maquina.nome.toLowerCase().includes(busca.toLowerCase()) ||
       maquina.setor.toLowerCase().includes(busca.toLowerCase()) ||
       maquina.tipo.toLowerCase().includes(busca.toLowerCase())
     ),
-  [maquinas, busca])
+  [maquinasComStatus, busca])
 
   const columns = [
     {
