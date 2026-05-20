@@ -159,6 +159,8 @@ export function GlobalSearch({ open, onOpenChange }) {
   const [query, setQuery] = React.useState("")
   const [secretOpen, setSecretOpen] = React.useState(false)
   const [activeSecret, setActiveSecret] = React.useState(null)
+  const [secretGameSrc, setSecretGameSrc] = React.useState("")
+  const [multiplayerLink, setMultiplayerLink] = React.useState("")
   const [resultsPanelHeight, setResultsPanelHeight] = React.useState(0)
   const [resultsPanelScrollable, setResultsPanelScrollable] = React.useState(false)
   const { admins, carregando: carregandoAdmins } = useAdmins()
@@ -329,7 +331,29 @@ export function GlobalSearch({ open, onOpenChange }) {
     event.preventDefault()
     onOpenChange(false)
     setActiveSecret(secret)
+    setSecretGameSrc(secret.src)
+    setMultiplayerLink("")
     setSecretOpen(true)
+  }
+
+  function handleSecretOpenChange(nextOpen) {
+    setSecretOpen(nextOpen)
+
+    if (!nextOpen) {
+      setSecretGameSrc(activeSecret?.src ?? "")
+      setMultiplayerLink("")
+    }
+  }
+
+  function handleMultiplayerSubmit(event) {
+    event.preventDefault()
+
+    const nextLink = multiplayerLink.trim()
+    if (!nextLink) {
+      return
+    }
+
+    setSecretGameSrc(nextLink)
   }
 
   return (
@@ -429,7 +453,7 @@ export function GlobalSearch({ open, onOpenChange }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={secretOpen} onOpenChange={setSecretOpen}>
+      <Dialog open={secretOpen} onOpenChange={handleSecretOpenChange}>
         <DialogContent
           className={cn(
             "max-w-none! overflow-hidden rounded-[12px]! p-0",
@@ -441,13 +465,29 @@ export function GlobalSearch({ open, onOpenChange }) {
           <DialogTitle className="sr-only">{activeSecret?.title ?? "segredo"}</DialogTitle>
           {activeSecret ? (
             activeSecret.type === "game" ? (
-              <iframe
-                src={activeSecret.src}
-                title={activeSecret.title}
-                className="block w-full bg-muted"
-                style={{ height: "700px", border: "none" }}
-                allowFullScreen
-              />
+              <>
+                <iframe
+                  src={secretGameSrc || activeSecret.src}
+                  title={activeSecret.title}
+                  className="block w-full bg-muted"
+                  style={{ height: "700px", border: "none" }}
+                  allowFullScreen
+                />
+                <form onSubmit={handleMultiplayerSubmit} className="flex items-end gap-2 border-t bg-background p-3">
+                  <label className="min-w-0 flex-1">
+                    <span className="mb-1 block text-xs font-medium text-muted-foreground">Link multiplayer</span>
+                    <input
+                      value={multiplayerLink}
+                      onChange={(event) => setMultiplayerLink(event.target.value)}
+                      placeholder="Cole o link multiplayer do Doom..."
+                      className="h-10 w-full rounded-[8px] border bg-background px-3 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+                    />
+                  </label>
+                  <Button type="submit" className="h-10 cursor-pointer px-4">
+                    Go
+                  </Button>
+                </form>
+              </>
             ) : (
               <img
                 src={activeSecret.src}

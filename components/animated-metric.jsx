@@ -76,7 +76,7 @@ export function useAnimatedNumber(target, { duration = 1400, decimals = 0 } = {}
   return value
 }
 /* Componente que exibe o valor animado */
-export function AnimatedMetric({ value, suffix = "", decimals = 0, duration = 1400 }) {
+export function AnimatedMetric({ value, suffix = "", decimals = 0, duration = 900 }) {
   const animatedValue = useAnimatedNumber(value, { decimals, duration })
   const formattedValue = decimals > 0 ? animatedValue.toFixed(decimals) : animatedValue
 
