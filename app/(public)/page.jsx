@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import SobreInformativo from "@/components/sobre-informativo";
 import SAQ from "@/components/saq";
 import SlideOpacity from "@/components/carousel-10";
+import CreativeTeamSection from "@/components/creative-team-section";
 
 import styles from "./page.module.css";
 import Image from "next/image";
@@ -468,6 +469,10 @@ export default function HomePage() {
       <section id="contact" >
         <SAQ />
       </section>
+
+      <RevealOnScroll>
+        <CreativeTeamSection />
+      </RevealOnScroll>
 
     </div>
 
