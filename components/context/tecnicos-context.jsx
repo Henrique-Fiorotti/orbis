@@ -431,6 +431,7 @@ export function TecnicosProvider({ children }) {
         senha: dados.senha,
         role: dados.role || "TECNICO",
       },
+      contextLabel: "o cadastro do técnico",
     })
   }, [executarMutacao])
 
@@ -442,6 +443,7 @@ export function TecnicosProvider({ children }) {
     await executarMutacao(`/usuarios/${id}`, {
       method: "PUT",
       body: dados,
+      contextLabel: "a atualização do técnico",
     })
   }, [executarMutacao])
 
@@ -451,6 +453,7 @@ export function TecnicosProvider({ children }) {
   const excluirTecnico = React.useCallback(async (id) => {
     await executarMutacao(`/usuarios/${id}`, {
       method: "DELETE",
+      contextLabel: "a exclusão do técnico",
     })
   }, [executarMutacao])
 

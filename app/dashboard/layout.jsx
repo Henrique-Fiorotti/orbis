@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }) {
                     <AppSidebar variant="inset" />
                     <SidebarInset>
                       <SmoothScroll>
-                        <TooltipProvider>{children}</TooltipProvider>
+                        {children}
                       </SmoothScroll>
                       <Toaster position="top-left" />
                     </SidebarInset>

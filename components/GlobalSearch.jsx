@@ -182,6 +182,10 @@ export function GlobalSearch({ open, onOpenChange }) {
   }, [open])
 
   const items = React.useMemo(() => {
+    if (!open) {
+      return []
+    }
+
     const machineItems = maquinas.map((maquina) => ({
       id: `maquina-${maquina.id}`,
       type: "maquina",
@@ -266,7 +270,7 @@ export function GlobalSearch({ open, onOpenChange }) {
     }))
 
     return [...machineItems, ...tecnicoItems, ...adminItems, ...sensorItems, ...alertaItems]
-  }, [admins, alertas, maquinas, sensores, tecnicos])
+  }, [admins, alertas, maquinas, open, sensores, tecnicos])
 
   const results = React.useMemo(() => {
     if (!query.trim()) {

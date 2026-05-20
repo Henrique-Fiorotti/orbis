@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { loginAction } from "@/app/actions/auth.actions";
 import { useLandingLanguage } from "@/components/landing/language-provider";
-import { saveAuthSession } from "@/lib/auth-session";
+import { getValidAuthSession, saveAuthSession } from "@/lib/auth-session";
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react'
 import { useTheme } from "next-themes";
-import { getValidAuthSession } from "@/lib/auth-session";
 
 function PrivacyModal({ onClose, privacy, darkMode }) {
   useEffect(() => {
