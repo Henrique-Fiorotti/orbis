@@ -23,7 +23,6 @@ export async function loginAction(formData) {
     }
     const data = await response.json()
 
-    console.log("[loginAction] response data:", data)
     return data
   
   }
