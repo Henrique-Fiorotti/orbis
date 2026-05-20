@@ -1267,7 +1267,7 @@ export function DashboardAiAssistant() {
           <Button
             type="button"
             size="icon-lg"
-            className="fixed bg-red-500! dark:bg-[#1e2939] bottom-5 right-5 z-40 size-12 rounded-full! p-0! hover:scale-[1.06] border-1 border-black/30 bg-white"
+            className="fixed dark:bg-[#1e2939] bottom-5 right-5 z-40 size-12 rounded-full! p-0! hover:scale-[1.06] border-1 border-black/30 bg-white"
             onClick={() => setOpen((current) => !current)}
             aria-label="Agente Orb"
             aria-expanded={open}
