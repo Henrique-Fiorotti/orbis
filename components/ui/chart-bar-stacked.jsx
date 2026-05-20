@@ -67,7 +67,7 @@ function EmptyState({ message, tone = "muted" }) {
 export function ChartBarStacked() {
   const { status, mensagem, maquinas: dashboardMaquinas, errors } = useDashboardCharts()
   const { maquinas: maquinasCadastradas, status: maquinasStatus, mensagem: maquinasMensagem } = useMaquinas()
-  const { alertas } = useAlertas()
+  const { alertas, status: alertasStatus } = useAlertas()
   const maquinasBase = maquinasCadastradas.length > 0 ? maquinasCadastradas : dashboardMaquinas
   const maquinas = React.useMemo(() => withMaquinaAlertasStatus(maquinasBase, alertas), [alertas, maquinasBase])
   const chartData = React.useMemo(() => getHistoricoStatusMaquinas(maquinas, alertas), [alertas, maquinas])
@@ -84,7 +84,7 @@ export function ChartBarStacked() {
     [chartData]
   )
 
-  const loading = status === "loading" && maquinasStatus === "loading" && maquinas.length === 0
+  const loading = status === "loading" || maquinasStatus === "loading" || alertasStatus === "loading"
   const errorMessage = errors.maquinas || (maquinasStatus === "error" ? maquinasMensagem : "") || (status === "error" && maquinas.length === 0 ? mensagem : "")
 
   if (loading) {
@@ -130,10 +130,46 @@ export function ChartBarStacked() {
                 }
               />
               <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="ok" stackId="status" fill="var(--color-ok)" radius={[0, 0, 4, 4]} />
-              <Bar dataKey="semSensor" stackId="status" fill="var(--color-semSensor)" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="emAndamento" stackId="status" fill="var(--color-emAndamento)" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="emAlerta" stackId="status" fill="var(--color-emAlerta)" radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="ok"
+                stackId="status"
+                fill="var(--color-ok)"
+                radius={[0, 0, 4, 4]}
+                isAnimationActive
+                animationBegin={120}
+                animationDuration={900}
+                animationEasing="ease-out"
+              />
+              <Bar
+                dataKey="semSensor"
+                stackId="status"
+                fill="var(--color-semSensor)"
+                radius={[0, 0, 0, 0]}
+                isAnimationActive
+                animationBegin={180}
+                animationDuration={900}
+                animationEasing="ease-out"
+              />
+              <Bar
+                dataKey="emAndamento"
+                stackId="status"
+                fill="var(--color-emAndamento)"
+                radius={[0, 0, 0, 0]}
+                isAnimationActive
+                animationBegin={240}
+                animationDuration={900}
+                animationEasing="ease-out"
+              />
+              <Bar
+                dataKey="emAlerta"
+                stackId="status"
+                fill="var(--color-emAlerta)"
+                radius={[4, 4, 0, 0]}
+                isAnimationActive
+                animationBegin={300}
+                animationDuration={900}
+                animationEasing="ease-out"
+              />
             </BarChart>
           </ChartContainer>
         )}
