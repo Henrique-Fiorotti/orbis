@@ -18,6 +18,7 @@ import {
   SearchIcon,
   SendIcon,
   SlidersHorizontalIcon,
+  Trash2Icon,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -33,17 +34,25 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { SiteHeader } from "@/components/site-header"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import { MetricValue } from "@/components/animated-metric"
 import { useMaquinas } from "@/components/context/maquinas-context"
 import { extractCollection, requestDashboardJson } from "@/lib/dashboard-api"
 import { getAuthSession } from "@/lib/auth-session"
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table"
 
 const TIMEZONE = "America/Sao_Paulo"
 
@@ -92,15 +101,30 @@ const FREQUENCY_OPTIONS = [
 ]
 
 const STATUS_FILTER_OPTIONS = [
-  { value: "todos", label: "Todos" },
   { value: "ATIVO", label: "Ativos" },
   { value: "PAUSADO", label: "Pausados" },
 ]
 
 const FREQUENCY_FILTER_OPTIONS = [
-  { value: "todos", label: "Todas" },
   ...FREQUENCY_OPTIONS,
 ]
+
+const STATUS_SORT_OPTIONS = [
+  { value: "asc", label: "Ativos primeiro", desc: false },
+  { value: "desc", label: "Pausados primeiro", desc: true },
+]
+
+const FREQUENCY_SORT_OPTIONS = [
+  { value: "asc", label: "Diario primeiro", desc: false },
+  { value: "desc", label: "Mensal primeiro", desc: true },
+]
+
+const NEXT_RUN_SORT_OPTIONS = [
+  { value: "asc", label: "Mais proximos", desc: false },
+  { value: "desc", label: "Menos proximos", desc: true },
+]
+
+const NEXT_RUN_SOON_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 
 const EMPTY_FORM = {
   nome: "",
@@ -239,6 +263,57 @@ function getScheduledNextRunSortValue(agendamento) {
   if (!parts) return Number.POSITIVE_INFINITY
 
   return Date.UTC(parts.fullYear, Number(parts.month) - 1, Number(parts.day), Number(agendamento.hora), Number(agendamento.minuto))
+}
+
+function selectFilterFn(row, columnId, value) {
+  if (!value) return true
+
+  return row.getValue(columnId) === value
+}
+
+function orderedValueSortFn(order) {
+  return (rowA, rowB, columnId) => {
+    const valueA = order[rowA.getValue(columnId)] ?? 0
+    const valueB = order[rowB.getValue(columnId)] ?? 0
+
+    return valueA - valueB
+  }
+}
+
+const frequencySortFn = orderedValueSortFn({ DIARIO: 1, SEMANAL: 2, MENSAL: 3 })
+const statusSortFn = orderedValueSortFn({ ATIVO: 1, PAUSADO: 2 })
+
+function getNextRunTone(agendamento, firstNextRunValue) {
+  const nextRunValue = getScheduledNextRunSortValue(agendamento)
+
+  if (agendamento.status !== "ATIVO" || !Number.isFinite(nextRunValue) || !Number.isFinite(firstNextRunValue)) {
+    return "neutral"
+  }
+
+  if (nextRunValue === firstNextRunValue) {
+    return "current"
+  }
+
+  if (nextRunValue - firstNextRunValue <= NEXT_RUN_SOON_WINDOW_MS) {
+    return "soon"
+  }
+
+  return "neutral"
+}
+
+function NextRunBadge({ agendamento, firstNextRunValue }) {
+  const tone = getNextRunTone(agendamento, firstNextRunValue)
+  const toneClass = {
+    current: "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
+    soon: "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300",
+    neutral: "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300",
+  }[tone]
+
+  return (
+    <Badge variant="outline" className={toneClass}>
+      {formatScheduledNextRun(agendamento)}
+    </Badge>
+  )
 }
 
 function getFrequencyLabel(value) {
@@ -595,11 +670,13 @@ export default function AgendamentosPage() {
   const [status, setStatus] = React.useState("loading")
   const [mensagem, setMensagem] = React.useState("")
   const [busca, setBusca] = React.useState("")
-  const [statusFiltro, setStatusFiltro] = React.useState("todos")
-  const [frequenciaFiltro, setFrequenciaFiltro] = React.useState("todos")
+  const [sorting, setSorting] = React.useState([])
+  const [columnFilters, setColumnFilters] = React.useState([])
   const [sheetAberto, setSheetAberto] = React.useState(false)
   const [modoSheet, setModoSheet] = React.useState("criar")
   const [agendamentoSelecionado, setAgendamentoSelecionado] = React.useState(null)
+  const [dialogExcluir, setDialogExcluir] = React.useState(false)
+  const [agendamentoExcluir, setAgendamentoExcluir] = React.useState(null)
   const [form, setForm] = React.useState(EMPTY_FORM)
   const [salvando, setSalvando] = React.useState(false)
   const [acaoPendenteId, setAcaoPendenteId] = React.useState(null)
@@ -649,8 +726,6 @@ export default function AgendamentosPage() {
     const termo = busca.trim().toLowerCase()
 
     return agendamentos.filter((item) => {
-      const matchesStatus = statusFiltro === "todos" || item.status === statusFiltro
-      const matchesFrequency = frequenciaFiltro === "todos" || item.frequencia === frequenciaFiltro
       const searchable = [
         item.nome,
         item.assunto,
@@ -658,9 +733,18 @@ export default function AgendamentosPage() {
         getFrequencyLabel(item.frequencia),
       ].join(" ").toLowerCase()
 
-      return matchesStatus && matchesFrequency && (!termo || searchable.includes(termo))
+      return !termo || searchable.includes(termo)
     })
-  }, [agendamentos, busca, frequenciaFiltro, statusFiltro])
+  }, [agendamentos, busca])
+
+  const firstNextRunValue = React.useMemo(() => {
+    const values = agendamentos
+      .filter((item) => item.status === "ATIVO")
+      .map(getScheduledNextRunSortValue)
+      .filter(Number.isFinite)
+
+    return values.length > 0 ? Math.min(...values) : Number.POSITIVE_INFINITY
+  }, [agendamentos])
 
   function abrirCriar() {
     setModoSheet("criar")
@@ -678,6 +762,23 @@ export default function AgendamentosPage() {
     setAgendamentoSelecionado(agendamento)
     setForm(buildFormFromAgendamento(agendamento))
     setSheetAberto(true)
+  }
+
+  function confirmarExcluir(agendamento) {
+    setAgendamentoExcluir(agendamento)
+    setDialogExcluir(true)
+  }
+
+  function alternarDialogExcluir(open) {
+    if (!open && acaoPendenteId === agendamentoExcluir?.id) {
+      return
+    }
+
+    setDialogExcluir(open)
+
+    if (!open) {
+      setAgendamentoExcluir(null)
+    }
   }
 
   async function salvarAgendamento() {
@@ -765,6 +866,171 @@ export default function AgendamentosPage() {
       setAcaoPendenteId(null)
     }
   }
+
+  async function excluirAgendamento() {
+    if (!agendamentoExcluir?.id) {
+      return
+    }
+
+    const session = getAuthSession()
+    if (!session?.accessToken) {
+      toast.error("Sua sessao expirou. Faca login novamente.")
+      return
+    }
+
+    setAcaoPendenteId(agendamentoExcluir.id)
+
+    try {
+      await requestDashboardJson(`/relatorios/agendamentos/${agendamentoExcluir.id}`, session.accessToken, "o agendamento", {
+        method: "DELETE",
+      })
+      toast.success("Agendamento excluido.")
+      setDialogExcluir(false)
+      setAgendamentoExcluir(null)
+
+      if (agendamentoSelecionado?.id === agendamentoExcluir.id) {
+        setSheetAberto(false)
+        setAgendamentoSelecionado(null)
+      }
+
+      await carregarAgendamentos()
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Nao foi possivel excluir o agendamento."))
+    } finally {
+      setAcaoPendenteId(null)
+    }
+  }
+
+  const columns = [
+    {
+      accessorKey: "nome",
+      header: "Nome",
+      cell: ({ row }) => (
+        <div className="flex min-w-[220px] flex-col gap-1">
+          <span className="font-medium text-foreground">{row.original.nome}</span>
+          <span className="text-xs text-muted-foreground">{row.original.assunto}</span>
+        </div>
+      ),
+    },
+    {
+      id: "destinatarios",
+      header: "Destinatarios",
+      cell: ({ row }) => (
+        <div className="flex max-w-[260px] flex-col gap-1">
+          <span className="truncate text-sm text-foreground">{row.original.destinatariosLista[0] ?? "-"}</span>
+          {row.original.destinatariosLista.length > 1 ? (
+            <span className="text-xs text-muted-foreground">+ {row.original.destinatariosLista.length - 1} destinatario(s)</span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "frequencia",
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Frequencia"
+          filterOptions={FREQUENCY_FILTER_OPTIONS}
+          sortOptions={FREQUENCY_SORT_OPTIONS}
+        />
+      ),
+      cell: ({ row }) => (
+        <Badge variant="outline" className="text-muted-foreground">
+          {getFrequencyLabel(row.original.frequencia)}
+        </Badge>
+      ),
+      filterFn: selectFilterFn,
+      sortingFn: frequencySortFn,
+    },
+    {
+      id: "horario",
+      header: "Horario",
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          <ScheduleDescription agendamento={row.original} />
+        </span>
+      ),
+    },
+    {
+      id: "proximoEnvio",
+      accessorFn: getScheduledNextRunSortValue,
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Proximo Envio"
+          sortOptions={NEXT_RUN_SORT_OPTIONS}
+        />
+      ),
+      cell: ({ row }) => <NextRunBadge agendamento={row.original} firstNextRunValue={firstNextRunValue} />,
+      sortingFn: "basic",
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => (
+        <TableColumnHeaderMenu
+          column={column}
+          label="Status"
+          filterOptions={STATUS_FILTER_OPTIONS}
+          sortOptions={STATUS_SORT_OPTIONS}
+        />
+      ),
+      cell: ({ row }) => <StatusBadge status={row.original.status} />,
+      filterFn: selectFilterFn,
+      sortingFn: statusSortFn,
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const agendamento = row.original
+        const pending = acaoPendenteId === agendamento.id
+
+        return (
+          <div className="text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="cursor-pointer size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon" disabled={pending}>
+                  <EllipsisVerticalIcon className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem className="cursor-pointer" onSelect={() => abrirEditar(agendamento)}>
+                  <PencilIcon className="mr-1 size-4" /> Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onSelect={() => executarAgora(agendamento)}>
+                  <SendIcon className="mr-1 size-4" /> Enviar agora
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {agendamento.status === "ATIVO" ? (
+                  <DropdownMenuItem className="cursor-pointer" onSelect={() => atualizarStatusAgendamento(agendamento, "PAUSADO")}>
+                    <PauseCircleIcon className="mr-1 size-4" /> Cancelar envios
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem className="cursor-pointer" onSelect={() => atualizarStatusAgendamento(agendamento, "ATIVO")}>
+                    <PlayCircleIcon className="mr-1 size-4" /> Reativar
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer" variant="destructive" onSelect={() => confirmarExcluir(agendamento)}>
+                  <Trash2Icon className="mr-1 size-4" /> Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )
+      },
+    },
+  ]
+
+  const table = useReactTable({
+    data: dadosFiltrados,
+    columns,
+    state: { sorting, columnFilters },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  })
 
   const loadingInicial = status === "loading"
   const refreshing = status === "refreshing"
@@ -855,139 +1121,57 @@ export default function AgendamentosPage() {
           />
         </div>
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative w-full lg:max-w-sm">
-            <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome, assunto ou e-mail..."
-              value={busca}
-              onChange={(event) => setBusca(event.target.value)}
-              className="pl-8"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            <Select value={statusFiltro} onValueChange={setStatusFiltro}>
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_FILTER_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={frequenciaFiltro} onValueChange={setFrequenciaFiltro}>
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {FREQUENCY_FILTER_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="relative w-full max-w-sm">
+          <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome, assunto ou e-mail..."
+            value={busca}
+            onChange={(event) => setBusca(event.target.value)}
+            className="pl-8"
+          />
         </div>
 
         <div className="min-h-[420px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-muted">
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Destinatários</TableHead>
-                <TableHead>Frequência</TableHead>
-                <TableHead>Horário</TableHead>
-                <TableHead>Próximo Envio</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-12 text-right"></TableHead>
-              </TableRow>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className={header.column.id === "actions" ? "w-12 text-right" : undefined}>
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
             </TableHeader>
             <TableBody>
               {loadingInicial ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground">
                     Carregando agendamentos...
                   </TableCell>
                 </TableRow>
-              ) : dadosFiltrados.length === 0 ? (
+              ) : table.getRowModel().rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground">
                     Nenhum agendamento encontrado.
                   </TableCell>
                 </TableRow>
               ) : (
-                dadosFiltrados.map((agendamento) => {
-                  const pending = acaoPendenteId === agendamento.id
-
-                  return (
-                    <TableRow key={agendamento.id} className="relative z-0">
-                      <TableCell>
-                        <div className="flex min-w-[220px] flex-col gap-1">
-                          <span className="font-medium text-foreground">{agendamento.nome}</span>
-                          <span className="text-xs text-muted-foreground">{agendamento.assunto}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex max-w-[260px] flex-col gap-1">
-                          <span className="truncate text-sm text-foreground">{agendamento.destinatariosLista[0] ?? "-"}</span>
-                          {agendamento.destinatariosLista.length > 1 ? (
-                            <span className="text-xs text-muted-foreground">+ {agendamento.destinatariosLista.length - 1} destinatario(s)</span>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-muted-foreground">
-                          {getFrequencyLabel(agendamento.frequencia)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <ScheduleDescription agendamento={agendamento} />
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{formatScheduledNextRun(agendamento)}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={agendamento.status} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="cursor-pointer size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon" disabled={pending}>
-                              <EllipsisVerticalIcon className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem className="cursor-pointer" onSelect={() => abrirEditar(agendamento)}>
-                              <PencilIcon className="mr-1 size-4" /> Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer" onSelect={() => executarAgora(agendamento)}>
-                              <SendIcon className="mr-1 size-4" /> Enviar agora
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {agendamento.status === "ATIVO" ? (
-                              <DropdownMenuItem className="cursor-pointer" onSelect={() => atualizarStatusAgendamento(agendamento, "PAUSADO")}>
-                                <PauseCircleIcon className="mr-1 size-4" /> Cancelar envios
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem className="cursor-pointer" onSelect={() => atualizarStatusAgendamento(agendamento, "ATIVO")}>
-                                <PlayCircleIcon className="mr-1 size-4" /> Reativar
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} className="relative z-0">
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                    ))}
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
         </div>
 
         <div className="text-sm text-muted-foreground">
-          {dadosFiltrados.length} resultado(s)
+          {table.getFilteredRowModel().rows.length} resultado(s)
         </div>
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
@@ -1009,6 +1193,25 @@ export default function AgendamentosPage() {
             </SheetFooter>
           </SheetContent>
         </Sheet>
+
+        <Dialog open={dialogExcluir} onOpenChange={alternarDialogExcluir}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirmar exclusao</DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja excluir <strong>{agendamentoExcluir?.nome}</strong>? Esta acao nao pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" className="cursor-pointer" onClick={() => alternarDialogExcluir(false)} disabled={acaoPendenteId === agendamentoExcluir?.id}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" className="cursor-pointer" onClick={excluirAgendamento} disabled={acaoPendenteId === agendamentoExcluir?.id}>
+                {acaoPendenteId === agendamentoExcluir?.id ? "Excluindo..." : "Excluir"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   )

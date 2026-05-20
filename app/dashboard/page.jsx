@@ -62,6 +62,16 @@ const STATUS_LABEL = {
   CANCELADO: "Cancelado",
 }
 
+const MACHINE_ALERT_STATUS_BADGE_CLASS = {
+  COM_ALERTA: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
+  EM_ANDAMENTO: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300",
+}
+
+const MACHINE_ALERT_STATUS_LABEL = {
+  COM_ALERTA: "Com alerta",
+  EM_ANDAMENTO: "Em andamento",
+}
+
 function normalizeText(value) {
   return String(value ?? "")
     .normalize("NFD")
@@ -208,7 +218,12 @@ function MachineAttentionItem({ item, onOpen }) {
           <p className="truncate text-sm font-semibold text-[#3B2867] dark:text-white">{item.maquinaNome}</p>
           <p className="text-xs text-muted-foreground">{item.sensores.size} sensor(es) em atenção</p>
         </div>
-        <SeveridadeBadge value={item.severidade} />
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <Badge variant="outline" className={`px-1.5 ${MACHINE_ALERT_STATUS_BADGE_CLASS[item.statusMaquina] ?? MACHINE_ALERT_STATUS_BADGE_CLASS.COM_ALERTA}`}>
+            {MACHINE_ALERT_STATUS_LABEL[item.statusMaquina] ?? "Com alerta"}
+          </Badge>
+          <SeveridadeBadge value={item.severidade} />
+        </div>
       </div>
       <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
         <span>{item.total} alerta(s)</span>
@@ -267,12 +282,17 @@ function TechnicianDashboard() {
         maquinaNome: alerta.maquinaNome,
         sensores: new Set(),
         total: 0,
+        statusMaquina: "EM_ANDAMENTO",
         severidade: alerta.severidade,
         ultimaOcorrenciaEm: getAlertDate(alerta),
       }
 
       existing.total += 1
       existing.sensores.add(alerta.sensorNome)
+
+      if (alerta.status === "ATIVO") {
+        existing.statusMaquina = "COM_ALERTA"
+      }
 
       if ((SEVERIDADE_ORDEM[alerta.severidade] ?? 0) > (SEVERIDADE_ORDEM[existing.severidade] ?? 0)) {
         existing.severidade = alerta.severidade
