@@ -3,6 +3,7 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -24,6 +25,16 @@ export function NavSecondary({
     }
   }
 
+  function handleAction(action) {
+    if (!isMobile) {
+      action()
+      return
+    }
+
+    closeMobileSidebar()
+    runAfterCurrentOverlayCloses(action)
+  }
+
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
@@ -35,8 +46,7 @@ export function NavSecondary({
                   <button
                     type="button"
                     onClick={() => {
-                      item.onClick()
-                      closeMobileSidebar()
+                      handleAction(item.onClick)
                     }}
                     aria-label={item.title}
                     className={cn(

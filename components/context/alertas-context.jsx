@@ -178,7 +178,7 @@ export function AlertasProvider({ children }) {
         clearAuthSession()
       }
 
-      const message = error instanceof Error ? error.message : "Não foi possível atualizar o chamado."
+      const message = error instanceof Error ? error.message : "Não foi possível atualizar o alerta."
       setStatus((current) => (current === "loading" ? "error" : current))
       setMensagem(message)
       throw error instanceof Error ? error : new Error(message)
@@ -213,18 +213,18 @@ export function AlertasProvider({ children }) {
 
     if (novoStatus === "RESOLVIDO") {
       return await executarMutacao(async (accessToken) => {
-        const manutencoes = await fetchDashboardJson(`/manutencoes/alerta/${id}`, accessToken, "as manutencoes do chamado")
+        const manutencoes = await fetchDashboardJson(`/manutencoes/alerta/${id}`, accessToken, "as manutencoes do alerta")
         const manutencao = getOpenMaintenance(manutencoes)
 
         if (!manutencao?.id) {
-          throw new Error("Não foi encontrada uma manutenção em andamento para este chamado.")
+          throw new Error("Não foi encontrada uma manutenção em andamento para este alerta.")
         }
 
-        return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "a resolução do chamado", {
+        return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "a resolução do alerta", {
           method: "PUT",
           body: {
             status: "RESOLVIDO",
-            observacao: manutencao.observacao || "Chamado resolvido pelo dashboard.",
+            observacao: manutencao.observacao || "Alerta resolvido pelo dashboard.",
           },
         })
       })

@@ -10,6 +10,7 @@ import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -50,6 +51,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 
+import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { tempoRelativo } from "@/lib/utils"
 import { parseDecimalInput, sanitizeDecimalInput } from "@/lib/form-formatters"
 
@@ -144,6 +146,34 @@ function StatePanel({ message, tone = "muted" }) {
     >
       {message}
     </div>
+  )
+}
+
+function SensorMetricCard({ label, value, badge, badgeClass = "", footer, icon: Icon, featured = false }) {
+  return (
+    <Card
+      className={`@container/card transition-colors hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10 
+      `}
+    >
+      <CardHeader className="min-h-[76px]">
+        <CardDescription className={featured ? "" : "text-black! dark:text-white!"}>{label}</CardDescription>
+        <CardTitle className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${featured ? "text-[#5E17EB]!" : ""}`}>
+          {value}
+        </CardTitle>
+        <CardAction>
+          <Badge variant="outline" className={badgeClass}>
+            <Icon className="size-3.5" />
+            {badge}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        <div className="line-clamp-1 items-center flex gap-2 font-medium">
+          {footer}
+          <Icon className="size-4" />
+        </div>
+      </CardFooter>
+    </Card>
   )
 }
 
@@ -266,13 +296,13 @@ export default function SensoresPage() {
   const [sorting, setSorting] = React.useState([])
   const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
+  const sensorAbertoPelaUrlRef = React.useRef(null)
 
   const loadingInicial = useDashboardMetricsLoading(carregando && sensores.length === 0)
   const errorSemDados = status === "error" && sensores.length === 0
   const canManageSensores = permissions.canManageSensores
 
   const totalOnline = React.useMemo(() => sensores.filter((sensor) => sensor.status === "ONLINE").length, [sensores])
-  const totalOffline = React.useMemo(() => sensores.filter((sensor) => sensor.status !== "ONLINE").length, [sensores])
   const semMaquina = React.useMemo(() => sensores.filter((sensor) => !sensor.maquinaId).length, [sensores])
   const foraDoLimite = React.useMemo(() => sensores.filter((sensor) => {
     if (!isSensorTransmitindo(sensor)) {
@@ -306,12 +336,22 @@ export default function SensoresPage() {
     const sensorIdParam = searchParams.get("sensorId")
 
     if (!sensorIdParam || sensores.length === 0) {
+      if (!sensorIdParam) {
+        sensorAbertoPelaUrlRef.current = null
+      }
+      return
+    }
+
+    const sensorIdKey = String(sensorIdParam)
+
+    if (sensorAbertoPelaUrlRef.current === sensorIdKey) {
       return
     }
 
     const sensor = sensores.find((item) => String(item.id) === String(sensorIdParam))
 
     if (sensor) {
+      sensorAbertoPelaUrlRef.current = sensorIdKey
       abrirVer(sensor)
     }
   }, [searchParams, sensores])
@@ -599,16 +639,16 @@ export default function SensoresPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}>
+            <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}>
               <EyeIcon className="mr-1 size-4" /> Ver detalhes
             </DropdownMenuItem>
             {canManageSensores ? (
               <>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}>
+                <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirEditar(row.original))}>
                   <PencilIcon className="mr-1 size-4" /> Editar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}>
+                <DropdownMenuItem className="cursor-pointer" variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => confirmarExcluir(row.original))}>
                   <Trash2Icon className="mr-1 size-4" /> Excluir
                 </DropdownMenuItem>
               </>
@@ -674,61 +714,33 @@ export default function SensoresPage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Sensores online</span>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                {loadingInicial ? "Sincronizando" : `${sensores.length} Total`}
-              </span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={totalOnline} loading={loadingInicial} />
-            </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="flex items-center gap-1 text-green-700 dark:text-green-300">
-                <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {loadingInicial ? "Atualizando sensores..." : `${totalOnline} Transmitindo normalmente`}
-              </span>
-              <span className="flex items-center gap-1 text-red-600 dark:text-red-300">
-                <WifiOffIcon className="size-3.5" />
-                {loadingInicial ? "Lendo inativos..." : `${totalOffline} Offline ou inativos`}
-              </span>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs sm:grid-cols-2 lg:grid-cols-3 dark:*:data-[slot=card]:bg-card">
+          <SensorMetricCard
+            featured
+            icon={CircleCheckIcon}
+            label="Sensores online"
+            value={<MetricValue value={totalOnline} loading={loadingInicial} />}
+            badge={loadingInicial ? "Sincronizando" : `${sensores.length} total`}
+            footer={loadingInicial ? "Atualizando sensores..." : `${totalOnline} transmitindo agora`}
+          />
 
-          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]!">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Leituras fora do limite</span>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${foraDoLimite > 0 ? "border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : "border border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"}`}>
-                {loadingInicial ? "..." : foraDoLimite > 0 ? "Alerta" : "Normal"}
-              </span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={foraDoLimite} loading={loadingInicial} />
-            </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-muted-foreground">
-                {loadingInicial ? "Verificando limites..." : `${Math.max(sensores.length - foraDoLimite, 0)} dentro dos limites`}
-              </span>
-              <span className="text-xs text-muted-foreground">Temperatura ou vibração acima do limite.</span>
-            </div>
-          </div>
+          <SensorMetricCard
+            icon={AlertTriangleIcon}
+            label="Fora do limite"
+            value={<MetricValue value={foraDoLimite} loading={loadingInicial} />}
+            badge={loadingInicial ? "Atualizando" : foraDoLimite > 0 ? "Alerta" : "Normal"}
+            badgeClass={foraDoLimite > 0 ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : ""}
+            footer={loadingInicial ? "Verificando limites..." : `${Math.max(sensores.length - foraDoLimite, 0)} dentro dos limites`}
+          />
 
-          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Sem máquina vinculada</span>
-              <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
-                Inativos
-              </span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={semMaquina} loading={loadingInicial} />
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {loadingInicial ? "Conferindo vínculos..." : "Sensores sem máquina são cadastrados como OFFLINE."}
-            </span>
-          </div>
+          <SensorMetricCard
+            icon={NfcIcon}
+            label="Sem máquina vinculada"
+            value={<MetricValue value={semMaquina} loading={loadingInicial} />}
+            badge={loadingInicial ? "Atualizando" : "Inativos"}
+            badgeClass={semMaquina > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : ""}
+            footer={loadingInicial ? "Conferindo vínculos..." : `${semMaquina} sem vínculo operacional`}
+          />
         </div>
 
         <div className="relative w-full max-w-sm">

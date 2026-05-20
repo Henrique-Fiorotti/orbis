@@ -26,9 +26,12 @@ import { Separator } from "@/components/ui/separator"
 import { SiteHeader } from "@/components/site-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useAlertas } from "@/components/context/alertas-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
+import { useSensores } from "@/components/context/sensores-context"
+import { useTecnicos } from "@/components/context/tecnicos-context"
 import { getAuthSession } from "@/lib/auth-session"
-import { getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
+import { requestDashboardJson } from "@/lib/dashboard-api"
 import { tempoRelativo } from "@/lib/utils"
 
 const COLORS = {
@@ -68,8 +71,6 @@ const DEFAULT_REPORT_CONFIG = {
 }
 
 const EMAIL_DRAFT_STORAGE_KEY = "orbis-report-email-draft"
-
-const REPORT_ENDPOINTS = ["/relatorios/gerar", "/relatorios"]
 
 const EMAIL_FREQUENCY_OPTIONS = [
   { value: "diario", label: "Diario", detail: "Todos os dias as 08:00" },
@@ -138,6 +139,44 @@ function getWeekdayLabel(value) {
   return WEEKDAY_OPTIONS.find((option) => option.value === value)?.label ?? "Segunda-feira"
 }
 
+function getWeekdayApiValue(value) {
+  return {
+    domingo: 0,
+    segunda: 1,
+    terca: 2,
+    quarta: 3,
+    quinta: 4,
+    sexta: 5,
+    sabado: 6,
+  }[value] ?? 1
+}
+
+function getFrequencyApiValue(value) {
+  return {
+    diario: "DIARIO",
+    semanal: "SEMANAL",
+    mensal: "MENSAL",
+  }[value] ?? "SEMANAL"
+}
+
+function parseTimeParts(value) {
+  const [hourValue, minuteValue] = String(value || "").split(":")
+  const hora = Number(hourValue)
+  const minuto = Number(minuteValue)
+
+  return {
+    hora: Number.isInteger(hora) ? hora : NaN,
+    minuto: Number.isInteger(minuto) ? minuto : NaN,
+  }
+}
+
+function parseEmailList(value) {
+  return String(value || "")
+    .split(/[;,\s]+/)
+    .map((email) => email.trim())
+    .filter(Boolean)
+}
+
 function formatDate(date = new Date()) {
   return date.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -195,6 +234,20 @@ function getEnabledSections(secoes) {
     .map(([secao]) => secao)
 }
 
+function getReportApiSections(secoes) {
+  const enabled = new Set(getEnabledSections(secoes))
+  const apiSections = []
+
+  if (enabled.has("resumo")) apiSections.push("resumo")
+  if (enabled.has("indicadores")) {
+    apiSections.push("desempenho", "sensores", "historicoTendencia")
+  }
+  if (enabled.has("maquinas")) apiSections.push("desempenho")
+  if (enabled.has("chamados")) apiSections.push("chamados")
+
+  return Array.from(new Set(apiSections))
+}
+
 function buildReportPayload({ tipoRelatorio, maquinaId, periodo, secoes }) {
   const periodoDias = getPeriodDays(periodo)
   const isMaquina = tipoRelatorio === "maquina" && maquinaId
@@ -209,7 +262,9 @@ function buildReportPayload({ tipoRelatorio, maquinaId, periodo, secoes }) {
     },
     filtros: {
       maquinasIds: isMaquina ? [Number(maquinaId)] : [],
-      secoes: getEnabledSections(secoes),
+      sensoresIds: [],
+      usuariosIds: [],
+      secoes: getReportApiSections(secoes),
     },
     config: {
       periodo: periodoLabel,
@@ -306,29 +361,6 @@ function normalizeReportPayload(payload, fallbackPeriodLabel = "30 dias") {
         }))
       : [],
   }
-}
-
-async function requestRelatorio(payload, accessToken) {
-  let lastError = null
-
-  for (const endpoint of REPORT_ENDPOINTS) {
-    try {
-      return await requestDashboardJson(endpoint, accessToken, "o relatorio", {
-        method: "POST",
-        body: payload,
-      })
-    } catch (error) {
-      lastError = error
-
-      if (getHttpErrorStatus(error) === 404) {
-        continue
-      }
-
-      throw error
-    }
-  }
-
-  throw lastError ?? new Error("Endpoint de relatorio nao encontrado.")
 }
 
 function isWithinPeriod(dateValue, days) {
@@ -428,6 +460,78 @@ function montarTendenciaChamados(chamados, days) {
       alertas,
     }))
     .filter((item) => item.alertas > 0)
+}
+
+function buildRealtimeReport({ tipoRelatorio, selectedMaquina, maquinas, sensores, alertas, tecnicos, periodo, secoes }) {
+  const periodoDias = getPeriodDays(periodo)
+  const isMaquina = tipoRelatorio === "maquina" && selectedMaquina
+  const maquinasEscopo = isMaquina ? [selectedMaquina] : maquinas
+  const sensoresEscopo = isMaquina ? filtrarSensoresPorMaquina(sensores, selectedMaquina.id) : sensores
+  const alertasEscopo = isMaquina
+    ? filtrarChamadosPorMaquina(alertas, selectedMaquina.id, periodoDias)
+    : alertas.filter((alerta) => isWithinPeriod(alerta.criadoEm ?? alerta.createdAt, periodoDias))
+  const totalMaquinas = maquinasEscopo.length
+  const maquinasFuncionando = maquinasEscopo.filter((maquina) => maquina.status === "OK").length
+  const maquinasEmAlerta = totalMaquinas - maquinasFuncionando
+  const integridadeMedia = totalMaquinas
+    ? Math.round(maquinasEscopo.reduce((acc, maquina) => acc + toReportNumber(maquina.integridade), 0) / totalMaquinas)
+    : 0
+  const chamadosAbertos = alertasEscopo.filter((alerta) => ["ATIVO", "EM_ANDAMENTO", "ABERTO", "DISPONIVEL"].includes(alerta.status)).length
+  const chamadosResolvidos = alertasEscopo.filter((alerta) => ["RESOLVIDO", "ENCERRADO"].includes(alerta.status)).length
+  const todayKey = new Date().toISOString().slice(0, 10)
+  const alertasHoje = alertasEscopo.filter((alerta) => String(alerta.criadoEm ?? alerta.createdAt ?? "").startsWith(todayKey)).length
+  const sensoresOnline = sensoresEscopo.filter((sensor) => sensor.status === "ONLINE").length
+  const tecnicosAtivos = tecnicos.filter((tecnico) => tecnico.status === "ATIVO").length
+  const tendencia = montarTendenciaChamados(alertasEscopo, periodoDias).map((item) => ({
+    data: item.data,
+    quantidade: item.alertas,
+  }))
+
+  return normalizeReportPayload(
+    {
+      periodoLabel: getPeriodLabel(periodo),
+      resumo: {
+        totalMaquinas,
+        maquinasAtivas: totalMaquinas,
+        maquinasFuncionando,
+        maquinasEmAlerta,
+        maquinasAltaImportancia: maquinasEscopo.filter((maquina) => maquina.criticidade === "ALTA").length,
+        integridadeMedia,
+        chamadosAbertos,
+        alertasAtivos: chamadosAbertos,
+        alertasHoje,
+        alertaSemAtendimento: alertasEscopo.filter((alerta) => alerta.status === "ATIVO").length,
+        alertasAtendidosHoje: chamadosResolvidos,
+        sensoresOnline,
+        tecnicosAtivos,
+      },
+      desempenho: {
+        statusDasMaquinas: {
+          operando: maquinasFuncionando,
+          emAlerta: maquinasEmAlerta,
+          inativa: 0,
+        },
+        maquinasPorImportancia: {
+          alta: maquinasEscopo.filter((maquina) => maquina.criticidade === "ALTA").length,
+          media: maquinasEscopo.filter((maquina) => maquina.criticidade === "MEDIA").length,
+          baixa: maquinasEscopo.filter((maquina) => maquina.criticidade === "BAIXA").length,
+        },
+      },
+      sensores: {
+        online: sensoresOnline,
+        offline: sensoresEscopo.filter((sensor) => sensor.status === "OFFLINE").length,
+        inativo: sensoresEscopo.filter((sensor) => sensor.status === "INATIVO").length,
+      },
+      maquinas: maquinasEscopo,
+      chamados: alertasEscopo,
+      historicoTendencia: tendencia,
+      config: {
+        periodo: getPeriodLabel(periodo),
+        tipo: isMaquina ? "maquina" : "geral",
+      },
+    },
+    getPeriodLabel(periodo)
+  )
 }
 
 function CriticidadeBadge({ value }) {
@@ -642,6 +746,10 @@ function ConfigPanel({
 }
 
 function EmailAutomationPanel({
+  nome,
+  onNomeChange,
+  assunto,
+  onAssuntoChange,
   destinatarios,
   onDestinatariosChange,
   frequencia,
@@ -670,6 +778,20 @@ function EmailAutomationPanel({
       </div>
 
       <div className="grid gap-2">
+        <Input
+          value={nome}
+          onChange={(event) => onNomeChange(event.target.value)}
+          placeholder="Nome do agendamento"
+          className="h-9"
+        />
+
+        <Input
+          value={assunto}
+          onChange={(event) => onAssuntoChange(event.target.value)}
+          placeholder="Assunto do e-mail"
+          className="h-9"
+        />
+
         <Input
           value={destinatarios}
           onChange={(event) => onDestinatariosChange(event.target.value)}
@@ -988,9 +1110,9 @@ function RelatorioOperacional({
           statusSub={isLoading ? "Aguardando dados do backend" : `Integridade media: ${integridadeMedia}%`}
         />
 
-        {mensagem && status === "error" && (
+        {mensagem && status !== "loading" && (
           <div className="mb-6">
-            <Estado msg={mensagem} tone="error" />
+            <Estado msg={mensagem} tone={status === "error" ? "error" : "muted"} />
           </div>
         )}
 
@@ -1105,22 +1227,41 @@ export default function RelatoriosPage() {
     carregando: loadingMaquinas,
     recarregarMaquinas,
   } = useMaquinas()
+  const {
+    sensores,
+    status: sensoresStatus,
+    mensagem: sensoresMensagem,
+    carregando: loadingSensores,
+    recarregarSensores,
+  } = useSensores()
+  const {
+    alertas,
+    status: alertasStatus,
+    mensagem: alertasMensagem,
+    carregando: loadingAlertas,
+    recarregarAlertas,
+  } = useAlertas()
+  const {
+    tecnicos,
+    status: tecnicosStatus,
+    mensagem: tecnicosMensagem,
+    carregando: loadingTecnicos,
+    recarregarTecnicos,
+  } = useTecnicos()
 
   const [tipoRelatorio, setTipoRelatorio] = React.useState("geral")
   const [maquinaId, setMaquinaId] = React.useState("")
   const [periodo, setPeriodo] = React.useState("30d")
   const [secoes, setSecoes] = React.useState(DEFAULT_SECTIONS)
-  const [relatorio, setRelatorio] = React.useState(() => normalizeReportPayload(null, getPeriodLabel("30d")))
-  const [relatorioStatus, setRelatorioStatus] = React.useState("idle")
-  const [relatorioMensagem, setRelatorioMensagem] = React.useState("")
   const [refreshError, setRefreshError] = React.useState(null)
+  const [emailNome, setEmailNome] = React.useState("Relatorio Operacional")
+  const [emailAssunto, setEmailAssunto] = React.useState("Relatorio Operacional Orbis")
   const [emailDestinatarios, setEmailDestinatarios] = React.useState("")
   const [emailFrequencia, setEmailFrequencia] = React.useState("semanal")
   const [emailHorario, setEmailHorario] = React.useState("08:00")
   const [emailDiaSemana, setEmailDiaSemana] = React.useState("segunda")
   const [emailDiaMes, setEmailDiaMes] = React.useState("1")
   const [geradoEm, setGeradoEm] = React.useState(formatDate())
-  const relatorioRequestIdRef = React.useRef(0)
 
   React.useEffect(() => {
     if (!maquinaId && maquinas.length > 0) {
@@ -1134,8 +1275,27 @@ export default function RelatoriosPage() {
     [maquinaId, maquinas]
   )
   const periodoLabel = getPeriodLabel(periodo)
-  const isRelatorioMaquina = tipoRelatorio === "maquina"
-  const canFetchRelatorio = tipoRelatorio !== "maquina" || Boolean(selectedMaquina)
+  const relatorioStatus =
+    tipoRelatorio === "maquina" && !selectedMaquina
+      ? "idle"
+      : loadingMaquinas || loadingSensores || loadingAlertas || loadingTecnicos
+        ? "loading"
+        : "success"
+  const relatorioMensagem = tipoRelatorio === "maquina" && !selectedMaquina ? "Selecione uma maquina para gerar o relatorio." : ""
+  const relatorio = React.useMemo(
+    () =>
+      buildRealtimeReport({
+        tipoRelatorio,
+        selectedMaquina,
+        maquinas,
+        sensores,
+        alertas,
+        tecnicos,
+        periodo,
+        secoes,
+      }),
+    [alertas, maquinas, periodo, secoes, selectedMaquina, sensores, tecnicos, tipoRelatorio]
+  )
 
   React.useEffect(() => {
     try {
@@ -1146,6 +1306,14 @@ export default function RelatoriosPage() {
       }
 
       const draft = JSON.parse(saved)
+
+      if (typeof draft.nome === "string") {
+        setEmailNome(draft.nome)
+      }
+
+      if (typeof draft.assunto === "string") {
+        setEmailAssunto(draft.assunto)
+      }
 
       if (typeof draft.destinatarios === "string") {
         setEmailDestinatarios(draft.destinatarios)
@@ -1172,62 +1340,18 @@ export default function RelatoriosPage() {
     }
   }, [])
 
-  const carregarRelatorio = React.useCallback(async () => {
-    const requestId = relatorioRequestIdRef.current + 1
-    relatorioRequestIdRef.current = requestId
-
-    if (!canFetchRelatorio) {
-      setRelatorio(normalizeReportPayload(null, periodoLabel))
-      setRelatorioStatus("idle")
-      setRelatorioMensagem("Selecione uma maquina para gerar o relatorio.")
-      return
-    }
-
-    const session = getAuthSession()
-    if (!session?.accessToken) {
-      setRelatorioStatus("error")
-      setRelatorioMensagem("Sua sessao expirou. Faca login novamente.")
-      return
-    }
-
-    setRelatorioStatus("loading")
-    setRelatorioMensagem("")
-
-    try {
-      const requestPayload = buildReportPayload({
-        tipoRelatorio,
-        maquinaId: selectedMaquina?.id ?? maquinaId,
-        periodo,
-        secoes,
-      })
-      const payload = await requestRelatorio(requestPayload, session.accessToken)
-
-      if (relatorioRequestIdRef.current !== requestId) return
-      setRelatorio(normalizeReportPayload(payload, periodoLabel))
-      setGeradoEm(formatDate())
-      setRelatorioStatus("success")
-    } catch (error) {
-      if (relatorioRequestIdRef.current !== requestId) return
-      setRelatorioStatus("error")
-      setRelatorioMensagem(error instanceof Error ? error.message : "Falha ao carregar relatorio.")
-    }
-  }, [canFetchRelatorio, maquinaId, periodo, periodoLabel, secoes, selectedMaquina, tipoRelatorio])
-
-  React.useEffect(() => {
-    carregarRelatorio()
-  }, [carregarRelatorio])
-
   function onToggleSecao(secao, checked) {
     setSecoes((current) => ({ ...current, [secao]: checked }))
   }
 
   function recarregar() {
     setRefreshError(null)
-    Promise.allSettled([recarregarMaquinas(), carregarRelatorio()]).then((results) => {
+    Promise.allSettled([recarregarMaquinas(), recarregarSensores(), recarregarAlertas(), recarregarTecnicos()]).then((results) => {
       const rejected = results.find((result) => result.status === "rejected")
       if (rejected) {
       setRefreshError(rejected.reason instanceof Error ? rejected.reason.message : "Falha ao atualizar relatório")
       }
+      setGeradoEm(formatDate())
     })
   }
 
@@ -1239,9 +1363,15 @@ export default function RelatoriosPage() {
       periodo,
       secoes,
     })
+    const { hora, minuto } = parseTimeParts(emailHorario)
+    const frequenciaApi = getFrequencyApiValue(emailFrequencia)
+    const destinatarios = parseEmailList(emailDestinatarios)
 
     return {
       ...relatorioPayload,
+      nome: emailNome.trim() || relatorioPayload.nome,
+      assunto: emailAssunto.trim() || relatorioPayload.assunto,
+      emailsDestino: destinatarios,
       janelaDados: {
         ...dataWindow,
         label: getPeriodLabel(periodo),
@@ -1252,19 +1382,53 @@ export default function RelatoriosPage() {
       horario: emailHorario,
       diaSemana: emailFrequencia === "semanal" ? emailDiaSemana : null,
       diaMes: emailFrequencia === "mensal" ? Number(emailDiaMes) : null,
-      destinatarios: emailDestinatarios
-        .split(/[;,]/)
-        .map((email) => email.trim())
-        .filter(Boolean),
+      destinatarios,
+      agendamento: {
+        frequencia: frequenciaApi,
+        diaSemana: frequenciaApi === "SEMANAL" ? getWeekdayApiValue(emailDiaSemana) : null,
+        diaMes: frequenciaApi === "MENSAL" ? Number(emailDiaMes) : null,
+        hora,
+        minuto,
+        timezone: "America/Sao_Paulo",
+      },
     }
   }
 
-  function salvarRascunhoEmail() {
+  function validarPayloadEmail(payload) {
+    const { hora, minuto } = payload.agendamento
+
+    if (!payload.nome.trim()) return "Informe o nome do agendamento."
+    if (!payload.assunto.trim()) return "Informe o assunto do e-mail."
+    if (payload.emailsDestino.length === 0) return "Informe pelo menos um destinatario."
+    if (payload.emailsDestino.length > 10) return "Informe no maximo 10 destinatarios."
+    if (!payload.emailsDestino.every((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) return "Revise os e-mails informados."
+    if (tipoRelatorio === "maquina" && payload.filtros.maquinasIds.length === 0) return "Selecione a maquina do relatorio por e-mail."
+    if (!Number.isInteger(hora) || !Number.isInteger(minuto) || hora < 0 || hora > 23 || minuto < 0 || minuto > 59) return "Informe um horario valido."
+
+    return ""
+  }
+
+  async function salvarRascunhoEmail() {
     const payload = getEmailAutomationPayload()
+    const validationMessage = validarPayloadEmail(payload)
+
+    if (validationMessage) {
+      toast.error(validationMessage)
+      return
+    }
+
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      toast.error("Sua sessao expirou. Faca login novamente.")
+      return
+    }
 
     window.localStorage.setItem(
       EMAIL_DRAFT_STORAGE_KEY,
       JSON.stringify({
+        nome: emailNome,
+        assunto: emailAssunto,
         destinatarios: emailDestinatarios,
         frequencia: emailFrequencia,
         horario: emailHorario,
@@ -1281,28 +1445,70 @@ export default function RelatoriosPage() {
       })
     )
 
-    toast.success("Agendamento de e-mail atualizado.")
+    try {
+      await requestDashboardJson("/relatorios/agendamentos", session.accessToken, "o agendamento do relatorio", {
+        method: "POST",
+        body: {
+          nome: payload.nome,
+          emailsDestino: payload.emailsDestino,
+          assunto: payload.assunto,
+          periodo: payload.periodo,
+          filtros: payload.filtros,
+          agendamento: payload.agendamento,
+        },
+      })
+
+      toast.success("Agendamento de e-mail criado.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar o agendamento.")
+    }
   }
 
-  function enviarRelatorioAgora() {
+  async function enviarRelatorioAgora() {
     const payload = getEmailAutomationPayload()
-    const destinatarios = payload.destinatarios
+    const validationMessage = validarPayloadEmail(payload)
 
-    if (destinatarios.length === 0) {
-      toast.error("Informe pelo menos um destinatario.")
+    if (validationMessage) {
+      toast.error(validationMessage)
       return
     }
 
-    if (tipoRelatorio === "maquina" && payload.filtros.maquinasIds.length === 0) {
-      toast.error("Selecione a maquina do relatorio por e-mail.")
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      toast.error("Sua sessao expirou. Faca login novamente.")
       return
     }
 
-    toast.success(`Solicitacao pronta para enviar a ${destinatarios.length} destinatario(s) quando o backend estiver conectado.`)
+    try {
+      await requestDashboardJson("/relatorios/enviar-agora", session.accessToken, "o envio do relatorio", {
+        method: "POST",
+        body: {
+          emailsDestino: payload.emailsDestino,
+          nome: payload.nome,
+          assunto: payload.assunto,
+          periodo: payload.periodo,
+          filtros: payload.filtros,
+        },
+      })
+
+      toast.success(`Relatorio enviado para ${payload.emailsDestino.length} destinatario(s).`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel enviar o relatorio.")
+    }
   }
 
-  const errorMsg = relatorioStatus === "error" ? relatorioMensagem : maquinasStatus === "error" ? maquinasMensagem : refreshError
-  const carregandoTudo = loadingMaquinas || relatorioStatus === "loading"
+  const errorMsg =
+    maquinasStatus === "error"
+      ? maquinasMensagem
+      : sensoresStatus === "error"
+        ? sensoresMensagem
+        : alertasStatus === "error"
+          ? alertasMensagem
+          : tecnicosStatus === "error"
+            ? tecnicosMensagem
+            : refreshError
+  const carregandoTudo = loadingMaquinas || loadingSensores || loadingAlertas || loadingTecnicos
 
   return (
     <>
@@ -1364,6 +1570,10 @@ export default function RelatoriosPage() {
             />
 
             <EmailAutomationPanel
+              nome={emailNome}
+              onNomeChange={setEmailNome}
+              assunto={emailAssunto}
+              onAssuntoChange={setEmailAssunto}
               destinatarios={emailDestinatarios}
               onDestinatariosChange={setEmailDestinatarios}
               frequencia={emailFrequencia}
@@ -1445,7 +1655,7 @@ export default function RelatoriosPage() {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 1cm 1.2cm;
+            margin: 0.8cm;
           }
 
           html,
@@ -1477,6 +1687,9 @@ export default function RelatoriosPage() {
           nav,
           aside,
           [data-sidebar],
+          [aria-label="Orb"],
+          [aria-label="Agente Orb"],
+          .fixed,
           [data-radix-popper-content-wrapper],
           .print\\:hidden {
             display: none !important;
@@ -1485,7 +1698,10 @@ export default function RelatoriosPage() {
           body {
             background: white !important;
             color: black !important;
-            font-size: 10pt !important;
+            font-size: 9pt !important;
+            margin: 0 !important;
+            min-width: 0 !important;
+            overflow: visible !important;
           }
 
           #relatorio-conteudo :is(h1, h2, h3, h4, h5, h6, p, span, td, th, label) {
@@ -1498,18 +1714,69 @@ export default function RelatoriosPage() {
           }
 
           #relatorio-conteudo {
-            padding-top: 0.6cm !important;
-            padding-bottom: 0.6cm !important;
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            max-width: none !important;
+            padding: 0 !important;
+            width: 100% !important;
           }
 
           #relatorio-conteudo > div {
             break-inside: auto;
           }
 
-          table { page-break-inside: auto; }
-          tr    { page-break-inside: avoid; page-break-after: auto; }
-          thead { display: table-header-group; }
-          tfoot { display: table-footer-group; }
+          #relatorio-conteudo .report-preview-page {
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            max-width: none !important;
+            padding: 0 !important;
+            width: 100% !important;
+          }
+
+          #relatorio-conteudo .report-preview-page > div {
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            max-width: none !important;
+            width: 100% !important;
+          }
+
+          #relatorio-conteudo .overflow-x-auto,
+          #relatorio-conteudo [class*="overflow-x-auto"] {
+            overflow: visible !important;
+          }
+
+          #relatorio-conteudo table {
+            border-collapse: collapse !important;
+            font-size: 7.2pt !important;
+            min-width: 0 !important;
+            page-break-inside: auto;
+            table-layout: fixed !important;
+            width: 100% !important;
+          }
+
+          #relatorio-conteudo tr {
+            break-inside: avoid;
+            page-break-after: auto;
+            page-break-inside: avoid;
+          }
+
+          #relatorio-conteudo thead {
+            display: table-header-group;
+          }
+
+          #relatorio-conteudo tfoot {
+            display: table-footer-group;
+          }
+
+          #relatorio-conteudo th,
+          #relatorio-conteudo td {
+            box-sizing: border-box !important;
+            max-width: none !important;
+            overflow-wrap: anywhere !important;
+            padding: 4px 5px !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+          }
 
           .border {
             border-color: #D1D5DB !important;

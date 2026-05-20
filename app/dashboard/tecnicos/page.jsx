@@ -10,6 +10,7 @@ import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -30,6 +31,7 @@ import {
   flexRender, getCoreRowModel, getFilteredRowModel,
   getSortedRowModel, useReactTable,
 } from "@tanstack/react-table"
+import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { tempoRelativo } from "@/lib/utils"
 import { getWhatsappUrl } from "@/lib/whatsapp-url.mjs"
 import {
@@ -52,8 +54,6 @@ const formVazio = {
   nome: "", email: "", senha: "", telefone: "",
   especialidade: "Elétrica Industrial", status: "ATIVO", foto: "",
 }
-
-const cardResumoBaseClass = "rounded-xl border bg-card p-4 flex flex-col gap-3 text-left shadow-sm transition-colors"
 
 function getInitials(nome) {
   return nome
@@ -105,6 +105,47 @@ function StatePanel({ message, tone = "muted" }) {
   )
 }
 
+function TecnicoMetricCard({ label, value, badge, badgeClass = "", footer, icon: Icon, selected = false, featured = false, onClick }) {
+  function handleKeyDown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      onClick?.()
+    }
+  }
+
+  return (
+    <Card
+      role="button"
+      tabIndex={0}
+      aria-pressed={selected}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      className={`@container/card cursor-pointer transition-colors hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-visible:border-[#5E17EB]! focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 focus-visible:outline-none ${
+        selected ? "border-[#5E17EB]! ring-2 ring-[#5E17EB]/30" : ""
+      }`}
+    >
+      <CardHeader className="min-h-[76px]">
+        <CardDescription className={featured ? "" : "text-black! dark:text-white!"}>{label}</CardDescription>
+        <CardTitle className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${featured ? "text-[#5E17EB]!" : ""}`}>
+          {value}
+        </CardTitle>
+        <CardAction>
+          <Badge variant="outline" className={badgeClass}>
+            <Icon className="size-3.5" />
+            {badge}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        <div className="line-clamp-1 flex items-center gap-2 font-medium">
+          {footer}
+          <Icon className="size-4" />
+        </div>
+      </CardFooter>
+    </Card>
+  )
+}
+
 function formatMetric(value, loading, suffix = "") {
   if (loading) {
     return "--"
@@ -122,6 +163,11 @@ function normalizarBusca(value) {
 
 function formatarTelefoneExibicao(value) {
   return String(value ?? "").trim() || "Não informado"
+}
+
+function formatarCadastroTecnico(value) {
+  const cadastro = tempoRelativo(value)
+  return cadastro === "Sem leitura" ? "Não informado" : cadastro
 }
 
 export default function TecnicosPage() {
@@ -151,6 +197,7 @@ export default function TecnicosPage() {
   const [tecnicoExcluir, setTecnicoExcluir] = React.useState(null)
   const [limiteItems] = React.useState(10)
   const [filtroResumo, setFiltroResumo] = React.useState("TODOS")
+  const tecnicoAbertoPelaUrlRef = React.useRef(null)
 
   React.useEffect(() => {
     if (!permissions.canViewTecnicos) {
@@ -224,12 +271,22 @@ export default function TecnicosPage() {
     const tecnicoIdParam = searchParams.get("tecnicoId")
 
     if (!tecnicoIdParam || tecnicos.length === 0) {
+      if (!tecnicoIdParam) {
+        tecnicoAbertoPelaUrlRef.current = null
+      }
+      return
+    }
+
+    const tecnicoIdKey = String(tecnicoIdParam)
+
+    if (tecnicoAbertoPelaUrlRef.current === tecnicoIdKey) {
       return
     }
 
     const tecnico = tecnicos.find((item) => String(item.id) === String(tecnicoIdParam))
 
     if (tecnico) {
+      tecnicoAbertoPelaUrlRef.current = tecnicoIdKey
       abrirVer(tecnico)
     }
   }, [permissions.canViewTecnicos, searchParams, tecnicos])
@@ -413,12 +470,12 @@ export default function TecnicosPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
             {canManageTecnicos ? (
               <>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirEditar(row.original))}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => confirmarExcluir(row.original))}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
               </>
             ) : null}
           </DropdownMenuContent>
@@ -436,14 +493,6 @@ export default function TecnicosPage() {
 
   if (!permissions.canViewTecnicos) {
     return null
-  }
-
-  function getResumoCardClass(filtro) {
-    return `${cardResumoBaseClass} ${
-      filtroResumo === filtro
-        ? "border-[#5E17EB]! ring-2 ring-[#5E17EB]/30"
-        : "hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50"
-    }`
   }
 
   return (
@@ -492,78 +541,50 @@ export default function TecnicosPage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <button type="button" className={getResumoCardClass("TODOS")} onClick={() => setFiltroResumo("TODOS")}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Total de técnicos</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                {loadingInicial ? "Sincronizando" : `${totalAtivos} ativos`}
-              </span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={tecnicos.length} loading={loadingInicial} />
-            </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
-                <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} operando normalmente`}
-              </span>
-              <span className="text-muted-foreground flex items-center gap-1">
-                <CircleMinusIcon className="size-3.5 text-gray-400 dark:text-muted-foreground" />
-                {loadingInicial ? "Conferindo status..." : `${totalInativos} inativos`}
-              </span>
-            </div>
-          </button>
+        <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs sm:grid-cols-2 xl:grid-cols-4 dark:*:data-[slot=card]:bg-card">
+          <TecnicoMetricCard
+            featured
+            icon={UsersIcon}
+            label="Total de técnicos"
+            value={<MetricValue value={tecnicos.length} loading={loadingInicial} />}
+            badge={loadingInicial ? "Sincronizando" : `${totalAtivos} ativos`}
+            footer={loadingInicial ? "Atualizando equipe..." : `${totalAtivos} operando normalmente`}
+            selected={filtroResumo === "TODOS"}
+            onClick={() => setFiltroResumo("TODOS")}
+          />
 
-          <button type="button" className={getResumoCardClass("ATIVO")} onClick={() => setFiltroResumo("ATIVO")}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Técnicos ativos</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Operando</span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={totalAtivos} loading={loadingInicial} />
-            </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
-                <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {loadingInicial ? "Atualizando equipe..." : `${totalAtivos} disponíveis`}
-              </span>
-              <span className="text-muted-foreground text-xs">Clique para ver somente técnicos Ativos</span>
-            </div>
-          </button>
+          <TecnicoMetricCard
+            icon={CircleCheckIcon}
+            label="Técnicos ativos"
+            value={<MetricValue value={totalAtivos} loading={loadingInicial} />}
+            badge="Operando"
+            badgeClass={totalAtivos > 0 ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300" : ""}
+            footer={loadingInicial ? "Atualizando equipe..." : `${totalAtivos} disponíveis`}
+            selected={filtroResumo === "ATIVO"}
+            onClick={() => setFiltroResumo("ATIVO")}
+          />
 
-          <button type="button" className={getResumoCardClass("INATIVO")} onClick={() => setFiltroResumo("INATIVO")}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Técnicos inativos</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Fora da escala</span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={totalInativos} loading={loadingInicial} />
-            </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-muted-foreground flex items-center gap-1">
-                <CircleMinusIcon className="size-3.5 text-gray-400 dark:text-muted-foreground" />
-                {loadingInicial ? "Conferindo status..." : `${totalInativos} sem operação ativa`}
-              </span>
-              <span className="text-muted-foreground text-xs">Clique para ver somente técnicos inativos</span>
-            </div>
-          </button>
+          <TecnicoMetricCard
+            icon={CircleMinusIcon}
+            label="Técnicos inativos"
+            value={<MetricValue value={totalInativos} loading={loadingInicial} />}
+            badge="Fora da escala"
+            badgeClass={totalInativos > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : ""}
+            footer={loadingInicial ? "Conferindo status..." : `${totalInativos} sem operação ativa`}
+            selected={filtroResumo === "INATIVO"}
+            onClick={() => setFiltroResumo("INATIVO")}
+          />
 
-          <button type="button" className={getResumoCardClass("COM_ALERTAS")} onClick={() => setFiltroResumo("COM_ALERTAS")}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Com alertas ativos</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Hoje</span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={tecnicosComAlertas} loading={loadingInicial} />
-            </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-muted-foreground">
-                {loadingInicial ? "Sincronizando disponibilidade" : `${Math.max(totalAtivos - tecnicosComAlertas, 0)} disponíveis`}
-              </span>
-              <span className="text-muted-foreground text-xs">Técnicos ativos com atendimentos</span>
-            </div>
-          </button>
+          <TecnicoMetricCard
+            icon={RefreshCcwIcon}
+            label="Com alertas ativos"
+            value={<MetricValue value={tecnicosComAlertas} loading={loadingInicial} />}
+            badge="Hoje"
+            badgeClass={tecnicosComAlertas > 0 ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : ""}
+            footer={loadingInicial ? "Sincronizando disponibilidade" : `${Math.max(totalAtivos - tecnicosComAlertas, 0)} disponíveis`}
+            selected={filtroResumo === "COM_ALERTAS"}
+            onClick={() => setFiltroResumo("COM_ALERTAS")}
+          />
         </div>
 
         {/* Busca */}
@@ -685,7 +706,7 @@ export default function TecnicosPage() {
                     {[
                       ["E-mail", tecnicoSelecionado.email],
                       ["Telefone", formatarTelefoneExibicao(tecnicoSelecionado.telefone)],
-                      ["Cadastrado", tempoRelativo(tecnicoSelecionado.criadoEm)],
+                      ["Cadastrado", formatarCadastroTecnico(tecnicoSelecionado.criadoEm)],
                     ].map(([label, value]) => (
                       <div key={label} className="flex flex-col gap-1">
                         <Label className="text-muted-foreground text-xs">{label}</Label>

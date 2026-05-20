@@ -763,7 +763,7 @@ export default function PerfilPage() {
                   </p>
                 </div>
 
-                {/* <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5">
                   <Label htmlFor="especialidade" className="text-xs text-muted-foreground uppercase tracking-wide">
                     Especialidade
                   </Label>
@@ -773,7 +773,7 @@ export default function PerfilPage() {
                     disabled={loading || salvandoDados}
                     onChange={(e) => setForm((p) => ({ ...p, especialidade: e.target.value }))}
                   />
-                </div> */}
+                </div>
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1">

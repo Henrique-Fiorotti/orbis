@@ -44,6 +44,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { fetchDashboardJson, getHttpErrorStatus, normalizeAdminCollection, requestDashboardJson } from "@/lib/dashboard-api"
+import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import {
   formatBrazilianPhoneInput,
   isValidBackendPassword,
@@ -612,10 +613,10 @@ export default function AdminsPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-36">
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirEditar(row.original))}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => confirmarExcluir(row.original))}><Trash2Icon className="size-4 mr-1" /> Excluir</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ),

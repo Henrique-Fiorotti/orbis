@@ -10,6 +10,7 @@ import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -34,6 +35,7 @@ import {
   getPaginationRowModel, getSortedRowModel, useReactTable,
 } from "@tanstack/react-table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { tempoRelativo } from "@/lib/utils"
 import {
   MAQUINA_IMPORTANCIA_FILTER_OPTIONS as IMPORTANCIA_FILTER_OPTIONS,
@@ -122,6 +124,34 @@ function StatePanel({ message, tone = "muted" }) {
   )
 }
 
+function MaquinaMetricCard({ label, value, badge, badgeClass = "", footer, icon: Icon, featured = false, children }) {
+  return (
+    <Card
+      className={`@container/card transition-colors hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10 `}
+    >
+      <CardHeader className="min-h-[76px]">
+        <CardDescription className={featured ? "" : "text-black! dark:text-white!"}>{label}</CardDescription>
+        <CardTitle className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${featured ? "text-[#5E17EB]!" : ""}`}>
+          {value}
+        </CardTitle>
+        <CardAction>
+          <Badge variant="outline" className={badgeClass}>
+            <Icon className="size-3.5" />
+            {badge}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        <div className="line-clamp-1 flex items-center gap-2 font-medium">
+          {footer}
+          <Icon className="size-4" />
+        </div>
+        {children}
+      </CardFooter>
+    </Card>
+  )
+}
+
 function formatMetric(value, loading, suffix = "") {
   if (loading) {
     return "--"
@@ -165,6 +195,8 @@ export default function MaquinasPage() {
   const [sorting, setSorting] = React.useState([])
   const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
+  const [openActionMenuId, setOpenActionMenuId] = React.useState(null)
+  const maquinaAbertaPelaUrlRef = React.useRef(null)
 
   const loadingInicial = useDashboardMetricsLoading(carregando && maquinas.length === 0)
   const errorSemDados = status === "error" && maquinas.length === 0
@@ -217,12 +249,22 @@ export default function MaquinasPage() {
     const machineIdParam = searchParams.get("machineId")
 
     if (!machineIdParam || maquinas.length === 0) {
+      if (!machineIdParam) {
+        maquinaAbertaPelaUrlRef.current = null
+      }
+      return
+    }
+
+    const machineIdKey = String(machineIdParam)
+
+    if (maquinaAbertaPelaUrlRef.current === machineIdKey) {
       return
     }
 
     const maquina = maquinas.find((item) => String(item.id) === String(machineIdParam))
 
     if (maquina) {
+      maquinaAbertaPelaUrlRef.current = machineIdKey
       abrirVer(maquina)
     }
   }, [maquinas, searchParams])
@@ -447,31 +489,38 @@ export default function MaquinasPage() {
     },
     {
       id: "actions",
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
-              <EllipsisVerticalIcon />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem className="cursor-pointer" onClick={() => abrirVer(row.original)}>
-              <EyeIcon className="mr-1 size-4" /> Ver detalhes
-            </DropdownMenuItem>
-            {canManageMaquinas ? (
-              <>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => abrirEditar(row.original)}>
-                  <PencilIcon className="mr-1 size-4" /> Editar
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" variant="destructive" onClick={() => confirmarExcluir(row.original)}>
-                  <Trash2Icon className="mr-1 size-4" /> Excluir
-                </DropdownMenuItem>
-              </>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      cell: ({ row }) => {
+        const menuId = String(row.original.id ?? row.id)
+
+        return (
+          <DropdownMenu
+            open={openActionMenuId === menuId}
+            onOpenChange={(open) => setOpenActionMenuId(open ? menuId : null)}
+          >
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
+                <EllipsisVerticalIcon />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}>
+                <EyeIcon className="mr-1 size-4" /> Ver detalhes
+              </DropdownMenuItem>
+              {canManageMaquinas ? (
+                <>
+                  <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirEditar(row.original))}>
+                    <PencilIcon className="mr-1 size-4" /> Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer" variant="destructive" onSelect={() => runAfterCurrentOverlayCloses(() => confirmarExcluir(row.original))}>
+                    <Trash2Icon className="mr-1 size-4" /> Excluir
+                  </DropdownMenuItem>
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
     },
   ]
 
@@ -540,74 +589,51 @@ export default function MaquinasPage() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Total de máquinas</span>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                {loadingInicial ? "Sincronizando" : `${maquinas.length} Cadastradas`}
-              </span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={maquinas.length} loading={loadingInicial} />
-            </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-green-700 dark:text-green-300 flex items-center gap-1">
-                <CircleCheckIcon className="size-3.5 fill-green-600" />
-                {loadingInicial ? "Atualizando operação..." : `${totalOk} Operando normalmente`}
-              </span>
-              <span className="text-red-600 dark:text-red-300 flex items-center gap-1">
-                <AlertTriangleIcon className="size-3.5" />
-                {loadingInicial ? "Lendo alertas..." : `${totalAlerta} requerem atenção`}
-              </span>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs sm:grid-cols-2 lg:grid-cols-3 dark:*:data-[slot=card]:bg-card">
+          <MaquinaMetricCard
+            featured
+            icon={WashingMachineIcon}
+            label="Total de máquinas"
+            value={<MetricValue value={maquinas.length} loading={loadingInicial} />}
+            badge={loadingInicial ? "Sincronizando" : totalAlerta > 0 ? `${totalAlerta} em alerta` : `${maquinas.length} cadastradas`}
+            badgeClass={totalAlerta > 0 ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : ""}
+            footer={loadingInicial ? "Atualizando operação..." : `${totalOk} operando normalmente`}
+          />
 
-          <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]!">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Alta Importância</span>
-              <span className="text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full font-medium dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
-                Atenção
-              </span>
-            </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={criticasAlta} loading={loadingInicial} />
-            </span>
-            <div className="flex flex-col gap-0.5 text-sm">
-              <span className="text-red-600 dark:text-red-300 flex items-center gap-1">
-                <ShieldAlertIcon className="size-3.5" />
-                {loadingInicial ? "Verificando status..." : `${criticasAltaAlerta} Em alerta agora`}
-              </span>
-              <span className="text-muted-foreground text-xs">
-                {loadingInicial ? "Classificando importância" : `${Math.max(criticasAlta - criticasAltaAlerta, 0)} Operando normalmente`}
-              </span>
-            </div>
-          </div>
+          <MaquinaMetricCard
+            icon={ShieldAlertIcon}
+            label="Alta importância"
+            value={<MetricValue value={criticasAlta} loading={loadingInicial} />}
+            badge={loadingInicial ? "Atualizando" : "Atenção"}
+            badgeClass={criticasAltaAlerta > 0 ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : ""}
+            footer={loadingInicial ? "Verificando status..." : `${criticasAltaAlerta} em alerta agora`}
+          />
 
-          <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:border-[#5E17EB]! sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground font-medium">Integridade média</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${integridadeMedia >= 75 ? "text-green-700 bg-green-50 border border-green-200 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300" :
-                  integridadeMedia >= 50 ? "text-yellow-700 bg-yellow-50 border border-yellow-200 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" :
-                    "text-red-700 bg-red-50 border border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
-                }`}>
-                {integridadeMedia >= 75 ? "Estável" : integridadeMedia >= 50 ? "Atenção" : "Crítico"}
-              </span>
+          <MaquinaMetricCard
+            icon={CircleCheckIcon}
+            label="Integridade média"
+            value={<MetricValue value={integridadeMedia} loading={loadingInicial} suffix="%" />}
+            badge={loadingInicial ? "Atualizando" : integridadeMedia >= 75 ? "Estável" : integridadeMedia >= 50 ? "Atenção" : "Crítico"}
+            badgeClass={
+              loadingInicial
+                ? ""
+                : integridadeMedia >= 75
+                  ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
+                  : integridadeMedia >= 50
+                    ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300"
+                    : "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+            }
+            footer={loadingInicial ? "Calculando integridade..." : "Média de integridade da frota"}
+          >
+            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-muted">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  integridadeMedia >= 75 ? "bg-green-500" : integridadeMedia >= 50 ? "bg-yellow-400" : "bg-red-500"
+                }`}
+                style={{ width: `${loadingInicial ? 0 : integridadeMedia}%` }}
+              />
             </div>
-            <span className="text-3xl font-bold text-[#3B2867] dark:text-white">
-              <MetricValue value={integridadeMedia} loading={loadingInicial} suffix="%" />
-            </span>
-            <div className="flex flex-col gap-1.5">
-              <div className="h-2 w-50 bg-gray-200 dark:bg-muted rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${integridadeMedia >= 75 ? "bg-green-500" : integridadeMedia >= 50 ? "bg-yellow-400" : "bg-red-500"
-                    }`}
-                  style={{ width: `${integridadeMedia}%` }}
-                />
-              </div>
-              <span className="text-muted-foreground text-xs">Média de integridade da frota</span>
-            </div>
-          </div>
+          </MaquinaMetricCard>
         </div>
 
         <div className="relative w-full max-w-sm">

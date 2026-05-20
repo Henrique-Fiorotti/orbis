@@ -8,6 +8,7 @@ import {
   extractCollection,
   fetchDashboardJson,
   getHttpErrorStatus,
+  getUsuarioCriadoEm,
   normalizeTecnicoCollection,
   requestDashboardJson,
 } from "@/lib/dashboard-api"
@@ -73,7 +74,12 @@ function getTecnicoRecordId(item) {
     return null
   }
 
-  const id = Number(item.id ?? item.tecnicoId ?? item.usuarioId ?? item.usuario?.id)
+  const wrappedSource = [item.dados, item.data, item.resultado].find(
+    (source) => source && typeof source === "object" && !Array.isArray(source)
+  )
+  const source = wrappedSource || item
+  const id = Number(source.id ?? source.tecnicoId ?? source.usuarioId ?? source.usuario?.id ?? source.usuarioSemSenha?.id)
+
   return Number.isFinite(id) ? id : null
 }
 
@@ -98,6 +104,75 @@ function mergeTecnicoRecords(...groups) {
   }
 
   return Array.from(records.values())
+}
+
+async function fetchTecnicosCriadoEmPorId(accessToken, records) {
+  const normalizedRecords = normalizeTecnicoCollection({ dados: records })
+  const idsSemCadastro = Array.from(
+    new Set(
+      normalizedRecords
+        .filter((item) => !item.criadoEm)
+        .map((item) => item.id)
+        .filter((id) => Number.isFinite(id))
+    )
+  )
+
+  if (idsSemCadastro.length === 0) {
+    return new Map()
+  }
+
+  const criadosEm = new Map()
+
+  for (let index = 0; index < idsSemCadastro.length; index += 8) {
+    const batch = idsSemCadastro.slice(index, index + 8)
+    const results = await Promise.all(batch.map(async (id) => {
+      try {
+        return await fetchDashboardJson(`/usuarios/${id}`, accessToken, "o técnico")
+      } catch (error) {
+        const statusCode = getHttpErrorStatus(error)
+
+        if ([400, 403, 404, 500].includes(Number(statusCode))) {
+          return null
+        }
+
+        throw error
+      }
+    }))
+
+    for (const payload of results) {
+      if (!payload) {
+        continue
+      }
+
+      const id = getTecnicoRecordId(payload)
+      const criadoEm = getUsuarioCriadoEm(payload)
+
+      if (id !== null && criadoEm) {
+        criadosEm.set(id, criadoEm)
+      }
+    }
+  }
+
+  return criadosEm
+}
+
+function applyTecnicosCriadoEm(records, criadosEm) {
+  if (criadosEm.size === 0) {
+    return records
+  }
+
+  return records.map((record) => {
+    const id = getTecnicoRecordId(record)
+
+    if (id === null || getUsuarioCriadoEm(record) || !criadosEm.has(id)) {
+      return record
+    }
+
+    return {
+      ...record,
+      criadoEm: criadosEm.get(id),
+    }
+  })
 }
 
 function isTecnicoInativoRecord(item) {
@@ -252,7 +327,9 @@ export function TecnicosProvider({ children }) {
         tecnicosParaConferencia,
         totalTecnicos
       )
-      const normalizedTecnicos = normalizeTecnicoCollection(mergeTecnicoRecords(tecnicoItems, tecnicosInativos))
+      const mergedTecnicos = mergeTecnicoRecords(tecnicoItems, tecnicosInativos)
+      const criadosEm = await fetchTecnicosCriadoEmPorId(session.accessToken, mergedTecnicos)
+      const normalizedTecnicos = normalizeTecnicoCollection(applyTecnicosCriadoEm(mergedTecnicos, criadosEm))
 
       setTecnicos(normalizedTecnicos)
 
