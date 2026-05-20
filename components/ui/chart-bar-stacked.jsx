@@ -23,26 +23,30 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { ChartHelp } from "@/components/ui/chart-help"
-import { getMaquinasPorCriticidade } from "@/lib/orbis-dashboard"
 import { withMaquinaAlertasStatus } from "@/lib/maquinas-table"
+import { getHistoricoStatusMaquinas } from "@/lib/orbis-dashboard"
 
 /** @typedef {import("@/lib/orbis-types").ChartConfig} ChartConfig */
 
-export const description = "Distribuição de máquinas por importância e status"
+export const description = "Historico de maquinas por status"
 
 /** @type {ChartConfig} */
 const chartConfig = {
-  operando: {
-    label: "Operando",
-    color: "var(--chart-1)",
-  },
-  emAlerta: {
-    label: "Em alerta",
-    color: "var(--chart-2)",
+  ok: {
+    label: "OK",
+    color: "#8A00FF",
   },
   semSensor: {
     label: "Sem sensor",
-    color: "var(--muted-foreground)",
+    color: "#39297c",
+  },
+  emAndamento: {
+    label: "Em andamento",
+    color: "#FF914D",
+  },
+  emAlerta: {
+    label: "Em alerta",
+    color: "#FF3B3B",
   },
 }
 
@@ -66,13 +70,17 @@ export function ChartBarStacked() {
   const { alertas } = useAlertas()
   const maquinasBase = maquinasCadastradas.length > 0 ? maquinasCadastradas : dashboardMaquinas
   const maquinas = React.useMemo(() => withMaquinaAlertasStatus(maquinasBase, alertas), [alertas, maquinasBase])
-  const chartData = React.useMemo(() => getMaquinasPorCriticidade(maquinas), [maquinas])
+  const chartData = React.useMemo(() => getHistoricoStatusMaquinas(maquinas, alertas), [alertas, maquinas])
   const totalEmAlerta = React.useMemo(
     () => chartData.reduce((total, item) => total + item.emAlerta, 0),
     [chartData]
   )
+  const totalEmAndamento = React.useMemo(
+    () => chartData.reduce((total, item) => total + item.emAndamento, 0),
+    [chartData]
+  )
   const totalSemSensor = React.useMemo(
-    () => chartData.reduce((total, item) => total + item.semSensor, 0),
+    () => chartData[chartData.length - 1]?.semSensor ?? 0,
     [chartData]
   )
 
@@ -80,34 +88,36 @@ export function ChartBarStacked() {
   const errorMessage = errors.maquinas || (maquinasStatus === "error" ? maquinasMensagem : "") || (status === "error" && maquinas.length === 0 ? mensagem : "")
 
   if (loading) {
-    return <DashboardChartSkeleton variant="bar" className="w-full xl:w-1/2" height="h-[280px]" />
+    return <DashboardChartSkeleton variant="bar" className="w-full xl:w-3/5" height="h-[280px]" />
   }
 
   return (
-    <Card className="flex w-full xl:w-1/2">
+    <Card className="flex w-full xl:w-3/5">
       <CardHeader>
-        <CardTitle>Máquinas por Importância</CardTitle>
+        <CardTitle>Historico por Status</CardTitle>
         <CardDescription>
           {loading
-            ? "Carregando distribuição por importância..."
+            ? "Carregando historico por status..."
             : maquinas.length === 0
-              ? "Nenhuma máquina sincronizada no momento"
+              ? "Nenhuma maquina sincronizada no momento"
               : totalEmAlerta > 0
-                ? `${totalEmAlerta} ativos exigem atenção imediata`
-                : totalSemSensor > 0
-                  ? `${totalSemSensor} ativos aguardam sensores vinculados`
-                  : "Nenhum ativo em alerta no momento"}
+                ? `${totalEmAlerta} ocorrencia(s) em alerta na semana atual`
+                : totalEmAndamento > 0
+                  ? `${totalEmAndamento} ocorrencia(s) em atendimento na semana atual`
+                  : totalSemSensor > 0
+                    ? `${totalSemSensor} ativo(s) sem sensor hoje`
+                    : "Nenhum ativo em alerta no periodo"}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <EmptyState message="Sincronizando importância das máquinas com a API..." />
+          <EmptyState message="Sincronizando historico de status com a API..." />
         ) : errorMessage ? (
           <EmptyState message={errorMessage} tone="error" />
         ) : maquinas.length === 0 ? (
-          <EmptyState message="Não há máquinas disponíveis para compor o gráfico." />
+          <EmptyState message="Nao ha maquinas disponiveis para compor o grafico." />
         ) : (
-          <ChartContainer config={chartConfig}>
+          <ChartContainer config={chartConfig} className="h-[300px]">
             <BarChart accessibilityLayer data={chartData}>
               <CartesianGrid vertical={false} />
               <XAxis dataKey="label" tickLine={false} tickMargin={10} axisLine={false} />
@@ -120,31 +130,17 @@ export function ChartBarStacked() {
                 }
               />
               <ChartLegend content={<ChartLegendContent />} />
-              <Bar
-                dataKey="operando"
-                stackId="criticidade"
-                fill="var(--color-operando)"
-                radius={[0, 0, 4, 4]}
-              />
-              <Bar
-                dataKey="emAlerta"
-                stackId="criticidade"
-                fill="var(--color-emAlerta)"
-                radius={totalSemSensor > 0 ? [0, 0, 0, 0] : [4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="semSensor"
-                stackId="criticidade"
-                fill="var(--color-semSensor)"
-                radius={[4, 4, 0, 0]}
-              />
+              <Bar dataKey="ok" stackId="status" fill="var(--color-ok)" radius={[0, 0, 4, 4]} />
+              <Bar dataKey="semSensor" stackId="status" fill="var(--color-semSensor)" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="emAndamento" stackId="status" fill="var(--color-emAndamento)" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="emAlerta" stackId="status" fill="var(--color-emAlerta)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ChartContainer>
         )}
       </CardContent>
       <CardFooter className="justify-end border-t-0 bg-transparent pt-0">
         <ChartHelp>
-          Mostra onde há mais máquinas em alerta por importância.
+          Mostra o historico diario de status das maquinas. Cada barra soma o total de maquinas cadastradas.
         </ChartHelp>
       </CardFooter>
     </Card>

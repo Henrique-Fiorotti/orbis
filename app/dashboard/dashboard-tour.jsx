@@ -55,9 +55,9 @@ const ADMIN_TOUR_STEPS = [
   },
   {
     target: "#tour-charts-secondary",
-    title: "Setores e importância",
+    title: "Setores e status",
     description:
-      "O radar mostra a integridade por setor. As barras mostram alertas por importância.",
+      "O radar mostra a integridade por setor. As barras mostram o historico de status das maquinas.",
     side: "top",
     align: "center",
   },

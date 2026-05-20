@@ -350,6 +350,16 @@ export interface StatusDistribuicaoChartDatum {
   fill: string;
 }
 
+export interface StatusHistoricoChartDatum {
+  date: string;
+  label: string;
+  ok: number;
+  semSensor: number;
+  emAndamento: number;
+  emAlerta: number;
+  total: number;
+}
+
 export interface DashboardChartsContextValue {
   status: "loading" | "success" | "error";
   mensagem: string;

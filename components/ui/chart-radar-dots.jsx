@@ -54,11 +54,11 @@ export function ChartRadarDots() {
   const errorMessage = errors.maquinas || (status === "error" && maquinas.length === 0 ? mensagem : "")
 
   if (loading) {
-    return <DashboardChartSkeleton variant="radar" centeredHeader className="w-full xl:w-1/2" height="h-[280px]" />
+    return <DashboardChartSkeleton variant="radar" centeredHeader className="w-full xl:w-2/5" height="h-[280px]" />
   }
 
   return (
-    <Card className="w-full xl:w-1/2">
+    <Card className="w-full xl:w-2/5">
       <CardHeader className="items-center">
         <CardTitle>Integridade por setor</CardTitle>
         <CardDescription>
