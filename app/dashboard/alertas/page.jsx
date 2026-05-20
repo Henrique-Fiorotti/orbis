@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
+import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
 import {
   AlertTriangleIcon,
@@ -1203,10 +1204,11 @@ export default function AlertasPage() {
               </div>
             </div>
           </div>
-          <Button variant="outline" className={"cursor-pointer"} onClick={() => recarregarAlertas()} disabled={carregando || salvando}>
-            <RefreshCcwIcon className="mr-1 size-4" />
-            Atualizar
-          </Button>
+          <RefreshTooltipButton
+            onClick={() => recarregarAlertas()}
+            disabled={carregando || salvando}
+            successMessage="Atualização dos alertas concluída."
+          />
         </div>
 
         <Separator />
@@ -1221,10 +1223,11 @@ export default function AlertasPage() {
           >
             <div className="flex items-center justify-between gap-3">
               <span>{mensagem}</span>
-              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => recarregarAlertas()} disabled={carregando || salvando}>
-                <RefreshCcwIcon className="mr-1 size-4" />
-                Atualizar
-              </Button>
+              <RefreshTooltipButton
+                onClick={() => recarregarAlertas()}
+                disabled={carregando || salvando}
+                successMessage="Atualização dos alertas concluída."
+              />
             </div>
           </div>
         ) : null}

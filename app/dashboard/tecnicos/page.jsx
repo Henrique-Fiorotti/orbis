@@ -4,6 +4,7 @@ import * as React from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 
+import { useAlertas } from "@/components/context/alertas-context"
 import { useTecnicos } from "@/components/context/tecnicos-context"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 
@@ -20,6 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
+import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
 import {
   UsersIcon, EllipsisVerticalIcon, PlusIcon,
@@ -161,6 +163,41 @@ function normalizarBusca(value) {
     .toLowerCase()
 }
 
+function buildResolvedAlertsCountByTecnico(alertas) {
+  const byId = new Map()
+  const byName = new Map()
+
+  for (const alerta of alertas) {
+    if (alerta.status !== "RESOLVIDO") {
+      continue
+    }
+
+    if (alerta.tecnicoId !== null && alerta.tecnicoId !== undefined) {
+      const key = String(alerta.tecnicoId)
+      byId.set(key, (byId.get(key) ?? 0) + 1)
+      continue
+    }
+
+    const nomeKey = normalizarBusca(alerta.tecnicoNome)
+
+    if (nomeKey) {
+      byName.set(nomeKey, (byName.get(nomeKey) ?? 0) + 1)
+    }
+  }
+
+  return { byId, byName }
+}
+
+function getResolvedAlertsCountForTecnico(tecnico, counts) {
+  const idCount = counts.byId.get(String(tecnico.id))
+
+  if (idCount !== undefined) {
+    return idCount
+  }
+
+  return counts.byName.get(normalizarBusca(tecnico.nome)) ?? 0
+}
+
 function formatarTelefoneExibicao(value) {
   return String(value ?? "").trim() || "Não informado"
 }
@@ -187,6 +224,7 @@ export default function TecnicosPage() {
     excluirTecnico,
     recarregarTecnicos,
   } = useTecnicos()
+  const { alertas } = useAlertas()
 
   const [busca, setBusca] = React.useState("")
   const [sheetAberto, setSheetAberto] = React.useState(false)
@@ -209,20 +247,42 @@ export default function TecnicosPage() {
   const errorSemDados = status === "error" && tecnicos.length === 0
   const canManageTecnicos = permissions.canManageTecnicos
   const tecnicoWhatsappUrl = getWhatsappUrl(tecnicoSelecionado?.telefone)
-  const totalAtivos = React.useMemo(() => tecnicos.filter((tecnico) => tecnico.status === "ATIVO").length, [tecnicos])
-  const totalInativos = React.useMemo(() => tecnicos.filter((tecnico) => tecnico.status === "INATIVO").length, [tecnicos])
-  const tecnicosComAlertas = React.useMemo(
-    () => tecnicos.filter((tecnico) => tecnico.status === "ATIVO" && tecnico.alertasAtendidos > 0).length,
-    [tecnicos]
+  const resolvedAlertsByTecnico = React.useMemo(() => buildResolvedAlertsCountByTecnico(alertas), [alertas])
+  const tecnicosComAlertasAtendidos = React.useMemo(
+    () =>
+      tecnicos.map((tecnico) => ({
+        ...tecnico,
+        alertasAtendidos: getResolvedAlertsCountForTecnico(tecnico, resolvedAlertsByTecnico),
+      })),
+    [resolvedAlertsByTecnico, tecnicos]
   )
+  const totalAtivos = React.useMemo(() => tecnicosComAlertasAtendidos.filter((tecnico) => tecnico.status === "ATIVO").length, [tecnicosComAlertasAtendidos])
+  const totalInativos = React.useMemo(() => tecnicosComAlertasAtendidos.filter((tecnico) => tecnico.status === "INATIVO").length, [tecnicosComAlertasAtendidos])
+  const tecnicosComAtendimentosResolvidos = React.useMemo(
+    () => tecnicosComAlertasAtendidos.filter((tecnico) => tecnico.alertasAtendidos > 0).length,
+    [tecnicosComAlertasAtendidos]
+  )
+  const totalAlertasAtendidos = React.useMemo(
+    () => tecnicosComAlertasAtendidos.reduce((total, tecnico) => total + tecnico.alertasAtendidos, 0),
+    [tecnicosComAlertasAtendidos]
+  )
+  React.useEffect(() => {
+    setTecnicoSelecionado((current) => {
+      if (!current) {
+        return current
+      }
+
+      return tecnicosComAlertasAtendidos.find((tecnico) => String(tecnico.id) === String(current.id)) ?? current
+    })
+  }, [tecnicosComAlertasAtendidos])
   const tecnicosFiltrados = React.useMemo(() => {
     const termo = normalizarBusca(busca)
 
-    return tecnicos.filter((tecnico) => {
+    return tecnicosComAlertasAtendidos.filter((tecnico) => {
       const correspondeResumo =
         filtroResumo === "TODOS" ||
         tecnico.status === filtroResumo ||
-        (filtroResumo === "COM_ALERTAS" && tecnico.status === "ATIVO" && tecnico.alertasAtendidos > 0)
+        (filtroResumo === "COM_ALERTAS" && tecnico.alertasAtendidos > 0)
 
       if (!correspondeResumo) {
         return false
@@ -240,11 +300,11 @@ export default function TecnicosPage() {
         tecnico.status,
       ].some((value) => normalizarBusca(value).includes(termo))
     })
-  }, [busca, filtroResumo, tecnicos])
+  }, [busca, filtroResumo, tecnicosComAlertasAtendidos])
   const filtroResumoLabel = React.useMemo(() => {
     if (filtroResumo === "ATIVO") return "Ativos"
     if (filtroResumo === "INATIVO") return "Inativos"
-    if (filtroResumo === "COM_ALERTAS") return "Com alertas"
+    if (filtroResumo === "COM_ALERTAS") return "Com alertas resolvidos"
     return "todos"
   }, [filtroResumo])
 
@@ -270,7 +330,7 @@ export default function TecnicosPage() {
 
     const tecnicoIdParam = searchParams.get("tecnicoId")
 
-    if (!tecnicoIdParam || tecnicos.length === 0) {
+    if (!tecnicoIdParam || tecnicosComAlertasAtendidos.length === 0) {
       if (!tecnicoIdParam) {
         tecnicoAbertoPelaUrlRef.current = null
       }
@@ -283,13 +343,13 @@ export default function TecnicosPage() {
       return
     }
 
-    const tecnico = tecnicos.find((item) => String(item.id) === String(tecnicoIdParam))
+    const tecnico = tecnicosComAlertasAtendidos.find((item) => String(item.id) === String(tecnicoIdParam))
 
     if (tecnico) {
       tecnicoAbertoPelaUrlRef.current = tecnicoIdKey
       abrirVer(tecnico)
     }
-  }, [permissions.canViewTecnicos, searchParams, tecnicos])
+  }, [permissions.canViewTecnicos, searchParams, tecnicosComAlertasAtendidos])
 
   React.useEffect(() => {
     if (!permissions.canViewTecnicos) {
@@ -533,10 +593,11 @@ export default function TecnicosPage() {
           >
             <div className="flex items-center justify-between gap-3">
               <span>{mensagem}</span>
-              <Button variant="outline" size="sm" onClick={() => recarregarTecnicos()} disabled={carregando || salvando}>
-                <RefreshCcwIcon className="mr-1 size-4" />
-                Atualizar
-              </Button>
+              <RefreshTooltipButton
+                onClick={() => recarregarTecnicos()}
+                disabled={carregando || salvando}
+                successMessage="Atualização dos técnicos concluída."
+              />
             </div>
           </div>
         ) : null}
@@ -577,11 +638,11 @@ export default function TecnicosPage() {
 
           <TecnicoMetricCard
             icon={RefreshCcwIcon}
-            label="Com alertas ativos"
-            value={<MetricValue value={tecnicosComAlertas} loading={loadingInicial} />}
-            badge="Hoje"
-            badgeClass={tecnicosComAlertas > 0 ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : ""}
-            footer={loadingInicial ? "Sincronizando disponibilidade" : `${Math.max(totalAtivos - tecnicosComAlertas, 0)} disponíveis`}
+            label="Com alertas resolvidos"
+            value={<MetricValue value={tecnicosComAtendimentosResolvidos} loading={loadingInicial} />}
+            badge="Resolvidos"
+            badgeClass={tecnicosComAtendimentosResolvidos > 0 ? "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300" : ""}
+            footer={loadingInicial ? "Sincronizando atendimentos" : `${totalAlertasAtendidos} alertas atendidos`}
             selected={filtroResumo === "COM_ALERTAS"}
             onClick={() => setFiltroResumo("COM_ALERTAS")}
           />

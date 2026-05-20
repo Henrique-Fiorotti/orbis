@@ -9,7 +9,8 @@
   --landing-heading: #212121;
   --landing-muted: #6b7280;
   --landing-subtle: #9ca3af;
-  --landing-grid-dot: #e9d5ff;
+  --landing-grid-dot: #553cb9b0;
+  --landing-grid-opacity: 0.55;
   --landing-secondary-border: #e5e7eb;
   --landing-button-bg: #212121;
   --landing-button-fg: #ffffff;
@@ -37,7 +38,8 @@
   --landing-heading: #fafafa;
   --landing-muted: #a1a1aa;
   --landing-subtle: #71717a;
-  --landing-grid-dot: rgba(167, 139, 250, 0.35);
+  --landing-grid-dot: rgba(167, 139, 250, 0.651);
+  --landing-grid-opacity: 0.35;
   --landing-secondary-border: rgba(255, 255, 255, 0.12);
   --landing-button-bg: #f4f4f5;
   --landing-button-fg: #09090b;

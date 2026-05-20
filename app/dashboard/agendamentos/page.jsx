@@ -14,7 +14,6 @@ import {
   PencilIcon,
   PlayCircleIcon,
   PlusIcon,
-  RefreshCcwIcon,
   SearchIcon,
   SendIcon,
   SlidersHorizontalIcon,
@@ -42,6 +41,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { MetricValue } from "@/components/animated-metric"
 import { useMaquinas } from "@/components/context/maquinas-context"
+import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
+import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { extractCollection, requestDashboardJson } from "@/lib/dashboard-api"
 import { getAuthSession } from "@/lib/auth-session"
 
@@ -590,6 +591,7 @@ function AgendamentoForm({ form, setForm, maquinas, salvando, modo }) {
 
 export default function AgendamentosPage() {
   const router = useRouter()
+  const permissions = useDashboardPermissions()
   const { maquinas } = useMaquinas()
   const [agendamentos, setAgendamentos] = React.useState([])
   const [status, setStatus] = React.useState("loading")
@@ -603,8 +605,13 @@ export default function AgendamentosPage() {
   const [form, setForm] = React.useState(EMPTY_FORM)
   const [salvando, setSalvando] = React.useState(false)
   const [acaoPendenteId, setAcaoPendenteId] = React.useState(null)
+  const canViewAgendamentos = permissions.canViewAgendamentos
 
   const carregarAgendamentos = React.useCallback(async () => {
+    if (!canViewAgendamentos) {
+      return
+    }
+
     const session = getAuthSession()
 
     if (!session?.accessToken) {
@@ -624,11 +631,21 @@ export default function AgendamentosPage() {
       setStatus("error")
       setMensagem(getErrorMessage(error, "Nao foi possivel carregar os agendamentos."))
     }
-  }, [])
+  }, [canViewAgendamentos])
 
   React.useEffect(() => {
+    if (!canViewAgendamentos) {
+      router.replace("/dashboard")
+    }
+  }, [canViewAgendamentos, router])
+
+  React.useEffect(() => {
+    if (!canViewAgendamentos) {
+      return
+    }
+
     carregarAgendamentos()
-  }, [carregarAgendamentos])
+  }, [canViewAgendamentos, carregarAgendamentos])
 
   const totais = React.useMemo(() => {
     const ativos = agendamentos.filter((item) => item.status === "ATIVO").length
@@ -661,6 +678,10 @@ export default function AgendamentosPage() {
       return matchesStatus && matchesFrequency && (!termo || searchable.includes(termo))
     })
   }, [agendamentos, busca, frequenciaFiltro, statusFiltro])
+
+  if (!canViewAgendamentos) {
+    return null
+  }
 
   function abrirCriar() {
     setModoSheet("criar")
@@ -794,10 +815,11 @@ export default function AgendamentosPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            <Button variant="outline" size="sm" className="cursor-pointer" onClick={carregarAgendamentos} disabled={loadingInicial || refreshing}>
-              <RefreshCcwIcon className="mr-1 size-4" />
-              Atualizar
-            </Button>
+            <RefreshTooltipButton
+              onClick={carregarAgendamentos}
+              disabled={loadingInicial || refreshing}
+              successMessage="Atualização dos agendamentos concluída."
+            />
             <Button size="sm" className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={abrirCriar}>
               <PlusIcon className="mr-1 size-4" />
               Novo agendamento

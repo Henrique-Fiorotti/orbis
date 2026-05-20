@@ -17,10 +17,12 @@ export interface DashboardPermissions {
   canViewDashboard: boolean;
   canViewTecnicos: boolean;
   canViewAdmins: boolean;
+  canViewAgendamentos: boolean;
   canManageMaquinas: boolean;
   canManageSensores: boolean;
   canManageTecnicos: boolean;
   canManageAdmins: boolean;
+  canManageAgendamentos: boolean;
   canCreateAlertas: boolean;
   canDeleteAlertas: boolean;
   canUpdateAlertStatus: boolean;

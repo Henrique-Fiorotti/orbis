@@ -20,6 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MaquinaDetailsPanel, MaquinaImagePreview, MaquinaUploadImagePreview } from "@/components/maquina-details-panel"
+import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
@@ -27,7 +28,7 @@ import {
   CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, PlusIcon,
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
   ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon,
-  WashingMachineIcon, ShieldAlertIcon, RefreshCcwIcon, ImageIcon, UploadIcon,
+  WashingMachineIcon, ShieldAlertIcon, ImageIcon, UploadIcon,
   CircleMinusIcon,
 } from "lucide-react"
 import {
@@ -581,10 +582,11 @@ export default function MaquinasPage() {
           >
             <div className="flex items-center justify-between gap-3">
               <span>{mensagem}</span>
-              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => recarregarMaquinas()} disabled={carregando || salvando}>
-                <RefreshCcwIcon className="mr-1 size-4" />
-                Atualizar
-              </Button>
+              <RefreshTooltipButton
+                onClick={() => recarregarMaquinas()}
+                disabled={carregando || salvando}
+                successMessage="Atualização das máquinas concluída."
+              />
             </div>
           </div>
         ) : null}
