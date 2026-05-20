@@ -66,14 +66,13 @@ function getInitials(nome) {
     .join("")
 }
 
-function TecnicoAvatar({ tecnico, size = "default" }) {
+function TecnicoAvatar({ tecnico, size = "default", onClick }) {
   const sizeClass = size === "lg"
     ? "h-16 w-16 text-xl"
     : size === "sm"
       ? "h-18 w-18 text-xs"
       : "h-8 w-8 text-xs"
-
-  return (
+  const avatar = (
     <Avatar className={sizeClass}>
       <AvatarImage src={tecnico.foto || undefined} alt={tecnico.nome} />
       <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold dark:bg-primary/20 dark:text-primary-foreground">
@@ -81,6 +80,21 @@ function TecnicoAvatar({ tecnico, size = "default" }) {
       </AvatarFallback>
     </Avatar>
   )
+
+  if (tecnico.foto && typeof onClick === "function") {
+    return (
+      <button
+        type="button"
+        aria-label={`Ver foto de ${tecnico.nome} em tela cheia`}
+        className="cursor-pointer rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB] focus-visible:ring-offset-2"
+        onClick={onClick}
+      >
+        {avatar}
+      </button>
+    )
+  }
+
+  return avatar
 }
 
 function StatusTecnicoBadge({ value }) {
@@ -230,6 +244,7 @@ export default function TecnicosPage() {
   const [sheetAberto, setSheetAberto] = React.useState(false)
   const [modoSheet, setModoSheet] = React.useState("criar")
   const [tecnicoSelecionado, setTecnicoSelecionado] = React.useState(null)
+  const [fotoFullscreen, setFotoFullscreen] = React.useState(null)
   const [form, setForm] = React.useState(formVazio)
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [tecnicoExcluir, setTecnicoExcluir] = React.useState(null)
@@ -247,6 +262,16 @@ export default function TecnicosPage() {
   const errorSemDados = status === "error" && tecnicos.length === 0
   const canManageTecnicos = permissions.canManageTecnicos
   const tecnicoWhatsappUrl = getWhatsappUrl(tecnicoSelecionado?.telefone)
+
+  function abrirFotoFullscreen(tecnico) {
+    if (!tecnico?.foto) return
+
+    setFotoFullscreen({
+      src: tecnico.foto,
+      alt: tecnico.nome ? `Foto de ${tecnico.nome}` : "Foto do técnico",
+    })
+  }
+
   const resolvedAlertsByTecnico = React.useMemo(() => buildResolvedAlertsCountByTecnico(alertas), [alertas])
   const tecnicosComAlertasAtendidos = React.useMemo(
     () =>
@@ -753,7 +778,7 @@ export default function TecnicosPage() {
                 <>
                   {/* Avatar + nome em destaque */}
                   <div className="flex items-center gap-4 p-4 rounded-xl bg-linear-to-r from-purple-50 to-violet-50 border border-purple-100 dark:from-primary/10 dark:to-muted/30 dark:border-primary/30">
-                    <TecnicoAvatar tecnico={tecnicoSelecionado} size="lg" />
+                    <TecnicoAvatar tecnico={tecnicoSelecionado} size="lg" onClick={() => abrirFotoFullscreen(tecnicoSelecionado)} />
                     <div className="flex flex-col gap-1">
                       <span className="font-semibold text-base text-[#3B2867] dark:text-white">{tecnicoSelecionado.nome}</span>
                       <span className="text-sm text-muted-foreground">{tecnicoSelecionado.especialidade}</span>
@@ -935,6 +960,19 @@ export default function TecnicosPage() {
             )}
           </SheetContent>
         </Sheet>
+
+        <Dialog open={Boolean(fotoFullscreen)} onOpenChange={(open) => !open && setFotoFullscreen(null)}>
+          <DialogContent className="w-[min(960px,calc(100vw-2rem))]! max-w-none! overflow-hidden p-0">
+            <DialogTitle className="sr-only">{fotoFullscreen?.alt ?? "Foto do técnico"}</DialogTitle>
+            {fotoFullscreen ? (
+              <img
+                src={fotoFullscreen.src}
+                alt={fotoFullscreen.alt}
+                className="block max-h-[calc(100vh-4rem)] w-full bg-muted object-contain"
+              />
+            ) : null}
+          </DialogContent>
+        </Dialog>
 
         {/* Dialog confirmar exclusão */}
         <Dialog open={dialogExcluir} onOpenChange={alternarDialogExcluir}>
