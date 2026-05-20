@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
+import Lenis from "lenis"
 import {
   AlertTriangleIcon,
   FileTextIcon,
@@ -27,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useOptionalDashboardPreferences } from "@/components/context/dashboard-preferences-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { askDashboardAi, getHttpErrorStatus } from "@/lib/dashboard-api"
 import { cn } from "@/lib/utils"
@@ -361,6 +363,8 @@ function EmptyPromptState({ onSelectPrompt }) {
 
 export function DashboardAiAssistant() {
   const pathname = usePathname()
+  const dashboardPreferences = useOptionalDashboardPreferences()
+  const smoothScrollEnabled = dashboardPreferences?.preferences.smoothScrollEnabled ?? true
   const [open, setOpen] = React.useState(false)
   const [input, setInput] = React.useState("")
   const [messages, setMessages] = React.useState([])
@@ -372,6 +376,9 @@ export function DashboardAiAssistant() {
   const [lastFailedRequest, setLastFailedRequest] = React.useState(null)
   const [loading, setLoading] = React.useState(false)
   const messagesEndRef = React.useRef(null)
+  const chatScrollRef = React.useRef(null)
+  const chatContentRef = React.useRef(null)
+  const chatLenisRef = React.useRef(null)
   const textareaRef = React.useRef(null)
   const abortControllerRef = React.useRef(null)
   const messagesRef = React.useRef([])
@@ -421,12 +428,83 @@ export function DashboardAiAssistant() {
   }, [open])
 
   React.useEffect(() => {
+    if (!open || !smoothScrollEnabled) {
+      chatLenisRef.current?.destroy()
+      chatLenisRef.current = null
+      return
+    }
+
+    const wrapper = chatScrollRef.current
+    const content = chatContentRef.current
+
+    if (!wrapper || !content) {
+      return
+    }
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const connection = navigator.connection
+
+    if (prefersReducedMotion || connection?.saveData) {
+      return
+    }
+
+    const lenis = new Lenis({
+      wrapper,
+      content,
+      duration: 1,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+    })
+    let rafId = 0
+
+    const raf = (time) => {
+      lenis.raf(time)
+      rafId = requestAnimationFrame(raf)
+    }
+
+    chatLenisRef.current = lenis
+    rafId = requestAnimationFrame(raf)
+
+    return () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId)
+      }
+
+      lenis.destroy()
+
+      if (chatLenisRef.current === lenis) {
+        chatLenisRef.current = null
+      }
+    }
+  }, [open, smoothScrollEnabled])
+
+  React.useEffect(() => {
     if (!open) {
       return
     }
 
-    messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" })
-  }, [messages, loading, open])
+    const scrollElement = chatScrollRef.current
+
+    if (scrollElement) {
+      const target = scrollElement.scrollHeight
+
+      if (chatLenisRef.current && smoothScrollEnabled) {
+        chatLenisRef.current.resize()
+        chatLenisRef.current.scrollTo(target, { duration: 0.45 })
+      } else {
+        scrollElement.scrollTo({
+          top: target,
+          behavior: smoothScrollEnabled ? "smooth" : "auto",
+        })
+      }
+      return
+    }
+
+    messagesEndRef.current?.scrollIntoView({
+      block: "end",
+      behavior: smoothScrollEnabled ? "smooth" : "auto",
+    })
+  }, [messages, loading, open, smoothScrollEnabled])
 
   React.useEffect(() => {
     return () => abortControllerRef.current?.abort()
@@ -673,12 +751,29 @@ export function DashboardAiAssistant() {
     window.setTimeout(() => textareaRef.current?.focus(), 0)
   }
 
+  function handleAssistantWheelCapture(event) {
+    const scrollElement = chatScrollRef.current
+
+    if (chatLenisRef.current || !scrollElement || event.deltaY === 0) {
+      return
+    }
+
+    if (event.target instanceof HTMLElement && event.target.closest("textarea")) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    scrollElement.scrollTop += event.deltaY
+  }
+
   return (
     <>
       {open ? (
         <section
           aria-label="Orb"
-          className="fixed inset-x-3 bottom-20 z-40 flex h-[min(620px,calc(100svh-7rem))] flex-col overflow-hidden rounded-[8px] border bg-popover text-popover-foreground shadow-2xl sm:inset-x-auto sm:right-5 sm:w-[420px]"
+          onWheelCapture={handleAssistantWheelCapture}
+          className="fixed inset-x-3 bottom-20 z-40 flex h-[min(620px,calc(100svh-7rem))] flex-col overflow-hidden overscroll-contain rounded-[8px] border bg-popover text-popover-foreground shadow-2xl sm:inset-x-auto sm:right-5 sm:w-[420px]"
         >
           <header className="flex items-center gap-3 border-b px-4 py-3">
             <div className="min-w-0 flex-1">
@@ -743,30 +838,33 @@ export function DashboardAiAssistant() {
           </header>
 
           <div
+            ref={chatScrollRef}
             aria-live="polite"
-            className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4"
           >
-            {messages.length === 0 ? (
-              <EmptyPromptState onSelectPrompt={handleSuggestedPrompt} />
-            ) : (
-              messages.map((message, index) => (
-                <ChatMessage
-                  key={message.id}
-                  message={message}
-                  animate={message.role === "assistant" && index === messages.length - 1 && !message.animated}
-                  onAnimationComplete={() => markMessageAnimated(message.id)}
-                />
-              ))
-            )}
-            {loading ? (
-              <div className="flex justify-start">
-                <div className="flex max-w-[86%] items-center gap-2 rounded-[8px] border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                  <Loader2Icon className="size-4 animate-spin" />
-                  Processando...
+            <div ref={chatContentRef} className="flex min-h-full flex-col gap-3">
+              {messages.length === 0 ? (
+                <EmptyPromptState onSelectPrompt={handleSuggestedPrompt} />
+              ) : (
+                messages.map((message, index) => (
+                  <ChatMessage
+                    key={message.id}
+                    message={message}
+                    animate={message.role === "assistant" && index === messages.length - 1 && !message.animated}
+                    onAnimationComplete={() => markMessageAnimated(message.id)}
+                  />
+                ))
+              )}
+              {loading ? (
+                <div className="flex justify-start">
+                  <div className="flex max-w-[86%] items-center gap-2 rounded-[8px] border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                    <Loader2Icon className="size-4 animate-spin" />
+                    Processando...
+                  </div>
                 </div>
-              </div>
-            ) : null}
-            <div ref={messagesEndRef} />
+              ) : null}
+              <div ref={messagesEndRef} />
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="border-t bg-muted/20 px-3 py-3">
