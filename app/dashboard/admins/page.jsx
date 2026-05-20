@@ -171,14 +171,13 @@ async function fetchAdminsFromUsuariosCollection(accessToken) {
   return admins
 }
 
-function AdminAvatar({ admin, size = "default" }) {
+function AdminAvatar({ admin, size = "default", onClick }) {
   const sizeClass = size === "lg"
     ? "h-16 w-16 text-xl"
     : size === "sm"
       ? "h-18 w-18 text-xs"
       : "h-8 w-8 text-xs"
-
-  return (
+  const avatar = (
     <Avatar className={sizeClass}>
       <AvatarImage src={admin.foto || undefined} alt={admin.nome} />
       <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold dark:bg-primary/20 dark:text-primary-foreground">
@@ -186,6 +185,21 @@ function AdminAvatar({ admin, size = "default" }) {
       </AvatarFallback>
     </Avatar>
   )
+
+  if (admin.foto && typeof onClick === "function") {
+    return (
+      <button
+        type="button"
+        aria-label={`Ver foto de ${admin.nome} em tela cheia`}
+        className="cursor-pointer rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB] focus-visible:ring-offset-2"
+        onClick={onClick}
+      >
+        {avatar}
+      </button>
+    )
+  }
+
+  return avatar
 }
 
 function StatusAdminBadge({ value }) {
@@ -230,6 +244,7 @@ export default function AdminsPage() {
   const [sheetAberto, setSheetAberto] = React.useState(false)
   const [modoSheet, setModoSheet] = React.useState("criar")
   const [adminSelecionado, setAdminSelecionado] = React.useState(null)
+  const [fotoFullscreen, setFotoFullscreen] = React.useState(null)
   const [form, setForm] = React.useState(formVazio)
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [adminExcluir, setAdminExcluir] = React.useState(null)
@@ -247,6 +262,15 @@ export default function AdminsPage() {
   const adminWhatsappUrl = getWhatsappUrl(adminSelecionado?.telefone)
   const totalAtivos = React.useMemo(() => admins.filter((admin) => admin.status === "ATIVO").length, [admins])
   const totalInativos = React.useMemo(() => admins.filter((admin) => admin.status === "INATIVO").length, [admins])
+
+  function abrirFotoFullscreen(admin) {
+    if (!admin?.foto) return
+
+    setFotoFullscreen({
+      src: admin.foto,
+      alt: admin.nome ? `Foto de ${admin.nome}` : "Foto do administrador",
+    })
+  }
 
   const carregarAdmins = React.useCallback(async (page = 1, limit = ADMIN_PAGE_SIZE) => {
     const session = getAuthSession()
@@ -776,7 +800,7 @@ export default function AdminsPage() {
               {modoSheet === "ver" && adminSelecionado ? (
                 <>
                   <div className="flex items-center gap-4 p-4 rounded-xl bg-linear-to-r from-purple-50 to-violet-50 border border-purple-100 dark:from-primary/10 dark:to-muted/30 dark:border-primary/30">
-                    <AdminAvatar admin={adminSelecionado} size="lg" />
+                    <AdminAvatar admin={adminSelecionado} size="lg" onClick={() => abrirFotoFullscreen(adminSelecionado)} />
                     <div className="flex flex-col gap-1">
                       <span className="font-semibold text-base text-[#3B2867] dark:text-white">{adminSelecionado.nome}</span>
                       <span className="text-sm text-muted-foreground">Administrador</span>
@@ -927,6 +951,19 @@ export default function AdminsPage() {
             )}
           </SheetContent>
         </Sheet>
+
+        <Dialog open={Boolean(fotoFullscreen)} onOpenChange={(open) => !open && setFotoFullscreen(null)}>
+          <DialogContent className="w-[min(960px,calc(100vw-2rem))]! max-w-none! overflow-hidden p-0">
+            <DialogTitle className="sr-only">{fotoFullscreen?.alt ?? "Foto do administrador"}</DialogTitle>
+            {fotoFullscreen ? (
+              <img
+                src={fotoFullscreen.src}
+                alt={fotoFullscreen.alt}
+                className="block max-h-[calc(100vh-4rem)] w-full bg-muted object-contain"
+              />
+            ) : null}
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={dialogExcluir} onOpenChange={alternarDialogExcluir}>
           <DialogContent>
