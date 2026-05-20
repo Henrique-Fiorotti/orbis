@@ -319,9 +319,9 @@ function TechnicianDashboard() {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader tourId="tour-header" />
       <div className="flex min-w-0 flex-1 flex-col gap-6 p-4 sm:p-6">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div id="tour-technician-overview" className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
               <GaugeIcon className="size-5 text-[#3B2867] dark:text-white" />
@@ -337,7 +337,7 @@ function TechnicianDashboard() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div id="tour-technician-metrics" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard icon={WrenchIcon} label="Meus atendimentos" value={meusAtendimentos.length} sub="Alertas assumidos por você" tone="purple" />
           <MetricCard icon={ClipboardListIcon} label="Pendentes" value={alertasAtivos.length} sub="Disponíveis para iniciar" tone="red" />
           <MetricCard icon={CheckCircle2Icon} label="Resolvidos hoje" value={resolvidosHoje} sub="Finalizados no dia" tone="green" />
@@ -345,7 +345,7 @@ function TechnicianDashboard() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.75fr)]">
-          <section className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+          <section id="tour-technician-priority" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Prioridade agora</h2>
@@ -375,7 +375,7 @@ function TechnicianDashboard() {
           </section>
 
           <div className="flex flex-col gap-4">
-            <section className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+            <section id="tour-technician-active" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
               <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Meus alertas em andamento</h2>
               <p className="text-sm text-muted-foreground">Atendimentos vinculados ao seu usuário.</p>
               <Separator className="my-4" />
@@ -396,7 +396,7 @@ function TechnicianDashboard() {
               </div>
             </section>
 
-            <section className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+            <section id="tour-technician-operation" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
               <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Sinais da operação</h2>
               <p className="text-sm text-muted-foreground">Resumo rápido para orientar sua ronda.</p>
               <Separator className="my-4" />
@@ -414,7 +414,7 @@ function TechnicianDashboard() {
           </div>
         </div>
 
-        <section className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+        <section id="tour-technician-machines" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Máquinas sob atenção</h2>
@@ -436,7 +436,7 @@ function TechnicianDashboard() {
           )}
         </section>
 
-        <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <section id="tour-technician-shortcuts" className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/alertas")}>
             <span className="flex items-center gap-2">
               <CircleDotIcon className="size-4 text-[#5E17EB]" />
@@ -460,6 +460,8 @@ function TechnicianDashboard() {
           </Button>
         </section>
       </div>
+
+      <DashboardTour variant="tecnico" />
     </>
   )
 }
