@@ -4,7 +4,9 @@ import * as React from "react"
 import { Pie, PieChart, Cell } from "recharts"
 
 import { DashboardChartSkeleton } from "@/components/dashboard-skeletons"
+import { useAlertas } from "@/components/context/alertas-context"
 import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
+import { useMaquinas } from "@/components/context/maquinas-context"
 import {
   Card,
   CardContent,
@@ -22,6 +24,7 @@ import {
 } from "@/components/ui/chart"
 import { ChartHelp } from "@/components/ui/chart-help"
 import { getDistribuicaoStatusMaquinas } from "@/lib/orbis-dashboard"
+import { withMaquinaAlertasStatus } from "@/lib/maquinas-table"
 
 export const description = "Distribuição operacional das máquinas"
 
@@ -55,15 +58,19 @@ function EmptyState({ message, tone = "muted" }) {
 }
 
 export function ChartPieDonut() {
-  const { status, mensagem, maquinas, errors } = useDashboardCharts()
+  const { status, mensagem, maquinas: dashboardMaquinas, errors } = useDashboardCharts()
+  const { maquinas: maquinasCadastradas, status: maquinasStatus, mensagem: maquinasMensagem } = useMaquinas()
+  const { alertas } = useAlertas()
+  const maquinasBase = maquinasCadastradas.length > 0 ? maquinasCadastradas : dashboardMaquinas
+  const maquinas = React.useMemo(() => withMaquinaAlertasStatus(maquinasBase, alertas), [alertas, maquinasBase])
   const chartData = React.useMemo(() => getDistribuicaoStatusMaquinas(maquinas), [maquinas])
   const total = React.useMemo(
     () => chartData.reduce((acc, item) => acc + item.quantidade, 0),
     [chartData]
   )
 
-  const loading = status === "loading" && maquinas.length === 0
-  const errorMessage = errors.maquinas || (status === "error" && maquinas.length === 0 ? mensagem : "")
+  const loading = status === "loading" && maquinasStatus === "loading" && maquinas.length === 0
+  const errorMessage = errors.maquinas || (maquinasStatus === "error" ? maquinasMensagem : "") || (status === "error" && maquinas.length === 0 ? mensagem : "")
   const hoje = React.useMemo(
     () =>
       new Intl.DateTimeFormat("pt-BR", {

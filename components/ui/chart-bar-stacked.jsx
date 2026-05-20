@@ -4,7 +4,9 @@ import * as React from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 
 import { DashboardChartSkeleton } from "@/components/dashboard-skeletons"
+import { useAlertas } from "@/components/context/alertas-context"
 import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
+import { useMaquinas } from "@/components/context/maquinas-context"
 import {
   Card,
   CardContent,
@@ -22,6 +24,7 @@ import {
 } from "@/components/ui/chart"
 import { ChartHelp } from "@/components/ui/chart-help"
 import { getMaquinasPorCriticidade } from "@/lib/orbis-dashboard"
+import { withMaquinaAlertasStatus } from "@/lib/maquinas-table"
 
 /** @typedef {import("@/lib/orbis-types").ChartConfig} ChartConfig */
 
@@ -58,7 +61,11 @@ function EmptyState({ message, tone = "muted" }) {
 }
 
 export function ChartBarStacked() {
-  const { status, mensagem, maquinas, errors } = useDashboardCharts()
+  const { status, mensagem, maquinas: dashboardMaquinas, errors } = useDashboardCharts()
+  const { maquinas: maquinasCadastradas, status: maquinasStatus, mensagem: maquinasMensagem } = useMaquinas()
+  const { alertas } = useAlertas()
+  const maquinasBase = maquinasCadastradas.length > 0 ? maquinasCadastradas : dashboardMaquinas
+  const maquinas = React.useMemo(() => withMaquinaAlertasStatus(maquinasBase, alertas), [alertas, maquinasBase])
   const chartData = React.useMemo(() => getMaquinasPorCriticidade(maquinas), [maquinas])
   const totalEmAlerta = React.useMemo(
     () => chartData.reduce((total, item) => total + item.emAlerta, 0),
@@ -69,8 +76,8 @@ export function ChartBarStacked() {
     [chartData]
   )
 
-  const loading = status === "loading" && maquinas.length === 0
-  const errorMessage = errors.maquinas || (status === "error" && maquinas.length === 0 ? mensagem : "")
+  const loading = status === "loading" && maquinasStatus === "loading" && maquinas.length === 0
+  const errorMessage = errors.maquinas || (maquinasStatus === "error" ? maquinasMensagem : "") || (status === "error" && maquinas.length === 0 ? mensagem : "")
 
   if (loading) {
     return <DashboardChartSkeleton variant="bar" className="w-full xl:w-1/2" height="h-[280px]" />
