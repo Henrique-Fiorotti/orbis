@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/tour"
 import { useSidebar } from "@/components/ui/sidebar"
 
-const TOUR_STEPS = [
+const ADMIN_TOUR_STEPS = [
   {
     target: "#tour-header",
     title: "Cabeçalho do dashboard",
@@ -71,25 +71,111 @@ const TOUR_STEPS = [
   },
 ]
 
-const MOBILE_TOUR_STEPS = TOUR_STEPS.map((step) =>
-  step.target === "#tour-sidebar"
-    ? {
-        ...step,
-        target: "#tour-sidebar-trigger",
-        description:
-          "Toque no menu para alternar entre dashboard, máquinas, sensores, alertas e técnicos.",
-        side: "bottom",
-        align: "start",
-      }
-    : step
-)
+const TECHNICIAN_TOUR_STEPS = [
+  {
+    target: "#tour-header",
+    title: "Cabeçalho do dashboard",
+    description:
+      "Aqui ficam os atalhos principais: menu, notificações, tema e tour guiado.",
+    side: "bottom",
+    align: "start",
+  },
+  {
+    target: "#tour-sidebar",
+    title: "Menu de navegação",
+    description:
+      "Use o menu para alternar entre alertas, máquinas, sensores e demais áreas liberadas para o técnico.",
+    side: "right",
+    align: "start",
+  },
+  {
+    target: "#tour-technician-overview",
+    title: "Painel técnico",
+    description:
+      "Este cabeçalho mostra o contexto operacional e o botão para atualizar alertas, máquinas e sensores.",
+    side: "bottom",
+    align: "start",
+  },
+  {
+    target: "#tour-technician-metrics",
+    title: "Indicadores do plantão",
+    description:
+      "Acompanhe atendimentos em andamento, chamados pendentes, resolvidos hoje e alertas críticos.",
+    side: "bottom",
+    align: "center",
+  },
+  {
+    target: "#tour-technician-priority",
+    title: "Prioridade agora",
+    description:
+      "Os alertas abertos aparecem ordenados por severidade e recência para orientar o próximo atendimento.",
+    side: "top",
+    align: "center",
+  },
+  {
+    target: "#tour-technician-active",
+    title: "Meus alertas",
+    description:
+      "Aqui ficam os chamados já assumidos pelo técnico para continuar o acompanhamento.",
+    side: "top",
+    align: "start",
+  },
+  {
+    target: "#tour-technician-operation",
+    title: "Sinais da operação",
+    description:
+      "Use este resumo para conferir rapidamente máquinas cadastradas e sensores offline.",
+    side: "top",
+    align: "start",
+  },
+  {
+    target: "#tour-technician-machines",
+    title: "Máquinas sob atenção",
+    description:
+      "Veja equipamentos com alertas ativos ou em atendimento e abra o contexto filtrado quando necessário.",
+    side: "top",
+    align: "center",
+  },
+  {
+    target: "#tour-technician-shortcuts",
+    title: "Atalhos rápidos",
+    description:
+      "Acesse direto os alertas em aberto, máquinas e sensores para agir sem voltar pelo menu.",
+    side: "top",
+    align: "center",
+  },
+]
 
-export function DashboardTour() {
+const TOUR_STEPS_BY_VARIANT = {
+  admin: ADMIN_TOUR_STEPS,
+  tecnico: TECHNICIAN_TOUR_STEPS,
+}
+
+function getMobileTourSteps(steps) {
+  return steps.map((step) =>
+    step.target === "#tour-sidebar"
+      ? {
+          ...step,
+          target: "#tour-sidebar-trigger",
+          description:
+            "Toque no menu para alternar entre as áreas liberadas no dashboard.",
+          side: "bottom",
+          align: "start",
+        }
+      : step
+  )
+}
+
+export function DashboardTour({ variant = "admin" }) {
   const [open, setOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [tourInstanceKey, setTourInstanceKey] = useState(0)
   const { isMobile, open: sidebarOpen, setOpen: setSidebarOpen, openMobile, setOpenMobile } = useSidebar()
-  const tourSteps = useMemo(() => (isMobile ? MOBILE_TOUR_STEPS : TOUR_STEPS), [isMobile])
+  const baseTourSteps = TOUR_STEPS_BY_VARIANT[variant] ?? ADMIN_TOUR_STEPS
+  const tourSteps = useMemo(
+    () => (isMobile ? getMobileTourSteps(baseTourSteps) : baseTourSteps),
+    [baseTourSteps, isMobile]
+  )
   const sidebarStateRef = useRef({
     desktopOpen: true,
     mobileOpen: false,
