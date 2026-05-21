@@ -195,7 +195,7 @@ export function DashboardTableSkeleton({ className }) {
 
   return (
     <LoadingRegion label="Carregando tabela do dashboard" className={cn("flex flex-col gap-4", className)}>
-      <div className="min-h-[500px] overflow-auto rounded-lg border dark:bg-[#0F172A] dark:border-gray-700!">
+      <div className="min-h-[500px] max-w-full overflow-hidden rounded-lg border dark:bg-[#0F172A] dark:border-gray-700!">
         <div className="grid min-w-[900px] grid-cols-[48px_52px_1.8fr_1.2fr_120px_120px_140px_120px_48px] gap-4 border-b bg-muted px-4 py-3">
           {columnWidths.map((width, index) => (
             <Skeleton key={index} className={cn("h-4", width)} />
@@ -244,8 +244,8 @@ export function DashboardTableSkeleton({ className }) {
 
 export function DashboardPageSkeleton() {
   return (
-    <div className="@container/main flex min-w-0 flex-1 flex-col gap-2">
-      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+    <div className="@container/main flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-col gap-4 overflow-hidden py-4 md:gap-6 md:py-6">
         <DashboardMetricCardsSkeleton />
         <div className="flex min-w-0 flex-col gap-4 lg:gap-6 xl:flex-row xl:gap-0">
           <div className="w-full min-w-0 px-4 lg:px-6 xl:w-4/6">
@@ -271,10 +271,10 @@ export function DashboardPageSkeleton() {
 
 export function DashboardAuthSkeleton() {
   return (
-    <LoadingRegion label="Preparando dashboard" className="min-h-screen bg-background">
-      <div className="flex min-h-screen">
+    <LoadingRegion label="Preparando dashboard" className="h-dvh max-w-full overflow-hidden bg-background">
+      <div className="flex h-full max-w-full overflow-hidden">
         <SidebarSkeleton />
-        <main className="flex min-w-0 flex-1 flex-col">
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <DashboardHeaderSkeleton />
           <DashboardPageSkeleton />
         </main>
