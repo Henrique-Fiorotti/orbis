@@ -23,7 +23,9 @@
   font-family: "DM Sans", "Segoe UI", sans-serif;
   background: var(--landing-page-bg);
   color: var(--landing-text);
-  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
@@ -91,6 +93,16 @@
 }
 
 .heroSection {
+  --hero-title-size: clamp(2.8rem, 6vw, 3.6rem);
+  --hero-title-line-height: 1.05;
+  --hero-title-letter-spacing: 0;
+  --hero-title-margin: 28px;
+  --hero-subtitle-size: 1.4rem;
+  --hero-subtitle-line-height: 1.3;
+  --hero-subtitle-margin: 36px;
+  --hero-actions-gap: 14px;
+  --hero-actions-margin: 28px;
+  --hero-register-size: 1rem;
   min-height: 85vh;
   display: flex;
   flex-direction: row-reverse;
@@ -100,11 +112,40 @@
   padding: 180px 15% 100px;
   position: relative;
   background: var(--landing-section-bg);
-  object-fit: cover;
+  isolation: isolate;
   margin-top: var(--landing-header-offset);
+  overflow: visible;
+}
+
+.heroSection::after {
+  content: "";
+  position: absolute;
+  bottom: -12px;
+  left: 72.7%;
+  z-index: 0;
+  width: min(78vw, 980px);
+  height: clamp(220px, 26vw, 360px);
+  pointer-events: none;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(124, 58, 237, 0.288) 0%, rgba(124, 58, 237, 0.24) 34%, transparent 72%),
+    linear-gradient(to top, rgba(124, 58, 237, 0.34), rgba(124, 58, 237, 0.13) 42%, transparent 84%);
+  clip-path: polygon(38% 100%, 62% 100%, 82% 0, 18% 0);
+  filter: blur(25px);
+  opacity: 0.9;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 600px);
+  min-width: 0;
 }
 
 .heroImage {
+  width: clamp(320px, 28vw, 450px);
+  height: auto;
+  flex-shrink: 0;
   margin-bottom: 20px;
 }
 
@@ -190,7 +231,7 @@
   height: 30dvh;
   background: var(--landing-quote-bg);
   padding: 28px 8vw;
-  margin-top: 70px;
+  margin-top: 0;
 }
 
 .quoteContent {
@@ -394,16 +435,33 @@
   }
 
   .heroSection {
+    --hero-title-size: clamp(2.5rem, 11vw, 3rem);
+    --hero-title-line-height: 1.03;
+    --hero-title-margin: 22px;
+    --hero-subtitle-size: clamp(1.05rem, 4.3vw, 1.2rem);
+    --hero-subtitle-margin: 28px;
+    --hero-actions-margin: 24px;
+    --hero-register-size: 0.86rem;
     flex-direction: column;
-    min-height: calc(100dvh - var(--landing-header-offset));
+    min-height: calc(100svh - var(--landing-header-offset));
     align-items: flex-start;
-    padding: 56px 6vw 84px;
+    justify-content: center;
+    gap: clamp(20px, 4svh, 30px);
+    padding: clamp(36px, 7svh, 56px) 6vw clamp(72px, 9svh, 84px);
+  }
+
+  .heroSection::after {
+    bottom: -10px;
+    width: 92vw;
+    height: 220px;
+    clip-path: polygon(30% 100%, 70% 100%, 90% 0, 10% 0);
+    filter: blur(18px);
   }
 
   .heroImage {
     order: -1;
     display: block;
-    width: min(78vw, 300px);
+    width: clamp(220px, 62vw, 300px);
     height: auto;
     align-self: center;
     margin: 0;
@@ -414,7 +472,7 @@
   }
 
   .quoteSection {
-    margin-top: 40px;
+    margin-top: 0;
     padding: 36px 6vw;
   }
 
@@ -454,5 +512,64 @@
 
   .stepsList {
     gap: 24px;
+  }
+}
+
+@media (max-width: 390px) and (max-height: 740px) {
+  .heroSection {
+    --hero-title-size: clamp(2rem, 9vw, 2.25rem);
+    --hero-title-line-height: 1.02;
+    --hero-title-margin: 14px;
+    --hero-subtitle-size: 0.95rem;
+    --hero-subtitle-line-height: 1.25;
+    --hero-subtitle-margin: 16px;
+    --hero-actions-gap: 10px;
+    --hero-actions-margin: 14px;
+    --hero-register-size: 0.78rem;
+    gap: 12px;
+    justify-content: flex-start;
+    padding: 20px 6vw 54px;
+  }
+
+  .heroImage {
+    width: clamp(140px, 42vw, 164px);
+  }
+
+  .primaryCta,
+  .secondaryCta {
+    min-height: 42px;
+    padding: 10px 16px;
+    font-size: 0.78rem;
+  }
+
+  .scrollButton {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+@media (max-width: 360px) {
+  .heroActions {
+    width: 100%;
+  }
+
+  .primaryCta,
+  .secondaryCta {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (min-width: 1101px) and (max-height: 820px) {
+  .heroSection {
+    --hero-title-size: clamp(2.6rem, 5vw, 3.25rem);
+    --hero-subtitle-size: 1.2rem;
+    --hero-subtitle-margin: 28px;
+    min-height: calc(100svh - var(--landing-header-offset));
+    padding: clamp(96px, 14svh, 140px) 12% clamp(72px, 10svh, 96px);
+  }
+
+  .heroImage {
+    width: clamp(300px, 27vw, 390px);
   }
 }

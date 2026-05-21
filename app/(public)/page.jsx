@@ -136,16 +136,16 @@ export default function HomePage() {
           priority
         />
 
-        <div style={{ position: "relative", zIndex: 1, maxWidth: "600px" }}>
+        <div className={styles.heroContent}>
           <h1
             className={styles.heroTitle}
             style={{
               fontFamily: "'Poppins', sans-serif",
-              fontSize: "clamp(2.8rem, 6vw, 3.6rem)",
+              fontSize: "var(--hero-title-size)",
               fontWeight: 200,
-              lineHeight: 1.05,
-              letterSpacing: "-2px",
-              marginBottom: "28px",
+              lineHeight: "var(--hero-title-line-height)",
+              letterSpacing: "var(--hero-title-letter-spacing)",
+              marginBottom: "var(--hero-title-margin)",
               color: "var(--landing-heading)",
             }}
           >
@@ -162,12 +162,12 @@ export default function HomePage() {
           <p
             className={styles.heroSubtitle}
             style={{
-              fontSize: "1.4rem",
+              fontSize: "var(--hero-subtitle-size)",
               color: "var(--landing-muted)",
-              lineHeight: 1.3,
+              lineHeight: "var(--hero-subtitle-line-height)",
               fontFamily: "'Open Sans', 'Segoe UI', sans-serif",
               maxWidth: "420px",
-              marginBottom: "36px",
+              marginBottom: "var(--hero-subtitle-margin)",
             }}
           >
             {home.hero.subtitle}
@@ -177,9 +177,9 @@ export default function HomePage() {
             className={styles.heroActions}
             style={{
               display: "flex",
-              gap: "14px",
+              gap: "var(--hero-actions-gap)",
               flexWrap: "wrap",
-              marginBottom: "28px",
+              marginBottom: "var(--hero-actions-margin)",
             }}
           >
             <Link href="/login" prefetch={false} className={styles.primaryCta}>
@@ -193,17 +193,17 @@ export default function HomePage() {
           <div className={styles.heroRegister}>
             <p
               style={{
-                fontSize: "1rem",
+                fontSize: "var(--hero-register-size)",
                 color: "var(--landing-subtle)",
               }}
             >
               {home.hero.registerQuestion}
             </p>
             <Link
-              href="/registro"
+              href="/login"
               prefetch={false}
               className={styles.registerLink}
-              style={{ fontSize: "1rem" }}
+              style={{ fontSize: "var(--hero-register-size)" }}
             >
               {home.hero.registerCta}
               <svg
