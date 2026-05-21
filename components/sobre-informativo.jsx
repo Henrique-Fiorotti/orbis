@@ -1,10 +1,29 @@
 'use client'
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useLandingLanguage } from "@/components/landing/language-provider";
 import ThemeAwareImage from "@/components/landing/theme-aware-image";
 import Link from "next/link";
 
 import styles from "../app/(public)/page.module.css";
+
+const SR_ORBIS_MEDIA_QUERY = "(min-width: 1030px)";
+
+function useShowSrOrbis() {
+    const [showSrOrbis, setShowSrOrbis] = useState(false);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia(SR_ORBIS_MEDIA_QUERY);
+        const updateShowSrOrbis = () => setShowSrOrbis(mediaQuery.matches);
+
+        updateShowSrOrbis();
+        mediaQuery.addEventListener("change", updateShowSrOrbis);
+
+        return () => mediaQuery.removeEventListener("change", updateShowSrOrbis);
+    }, []);
+
+    return showSrOrbis;
+}
 
 function RichText({ parts }) {
     return parts.map((part, index) =>
@@ -21,26 +40,16 @@ function RichText({ parts }) {
 export default function SobreInformativo() {
     const { copy } = useLandingLanguage();
     const about = copy.about;
+    const showSrOrbis = useShowSrOrbis();
 
     return (
         <section
             style={{ background: "var(--landing-alt-bg)" }}
-            className="flex flex-col md:flex-row min-h-max bg-[#f0f0f056] dark:bg-zinc-900 md:ms-2 lg:ms-16 xl:ms-24 2xl:ms-90"
+            className="flex flex-col min-[1030px]:flex-row min-[1030px]:items-stretch min-h-max bg-[#f0f0f056] dark:bg-zinc-900 md:ms-2 lg:ms-16 xl:ms-24 2xl:ms-90 max-[1029px]:ms-0 max-[1029px]:items-center max-[1029px]:justify-center max-[1029px]:text-center"
         >
-            {/* Mobile: imagem decorativa no topo */}
-            <div className="hidden flex md:hidden w-full justify-center items-end h-[260px] sm:h-[300px] overflow-hidden">
-                <Image
-                    src="/SrOrbis2.png"
-                    alt={about.imageAlt}
-                    width={900}
-                    height={900}
-                    className="object-contain object-bottom h-full w-auto"
-                />
-            </div>
-
             {/* Lado esquerdo - conteúdo */}
-            <div className="w-full md:w-[460px] lg:w-[500px] md:flex-shrink-0 flex flex-col sm:items-left md:items-start px-8 sm:px-12 md:px-10 lg:px-8 py-8 md:py-20 gap-6 md:gap-10">
-                <div className="flex items-left gap-1">
+            <div className="w-full max-w-[460px] min-[1030px]:w-[500px] min-[1030px]:max-w-none min-[1030px]:flex-shrink-0 flex flex-col sm:items-left min-[1030px]:items-start px-8 sm:px-12 md:px-10 lg:px-8 py-8 md:py-20 gap-6 md:gap-10 max-[1029px]:mx-auto max-[1029px]:items-center max-[1029px]:text-center">
+                <div className="flex items-left gap-1 max-[1029px]:justify-center">
                     <ThemeAwareImage
                         lightSrc="/Orbis_extended.svg"
                         darkSrc="/LogoBrancaGrandeV3.png"
@@ -51,11 +60,11 @@ export default function SobreInformativo() {
                     />
                 </div>
 
-                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-left text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center">
+                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-left text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center max-[1029px]:text-center">
                     <RichText parts={about.paragraphs[0]} />
                 </p>
 
-                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-left text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center">
+                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-left text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center max-[1029px]:text-center">
                     <RichText parts={about.paragraphs[1]} />
                 </p>
 
@@ -63,21 +72,23 @@ export default function SobreInformativo() {
                     href="/login"
                     style={{ width: "170px" }}
                     prefetch={false}
-                    className={styles.primaryCta}
+                    className={`${styles.primaryCta} max-[1029px]:self-center`}
                 >
                     {about.cta}
                 </Link>
             </div>
 
-            <div className="hidden md:flex md:flex-1 md:items-center h-auto md:justify-center min-h-[auto] lg:min-h-[auto] px-4 lg:px-0 lg:me-10 xl:me-20">
-                <Image
-                    src="/SrOrbis2.png"
-                    alt={about.imageAlt}
-                    width={900}
-                    height={900}
-                    className="mt-7 object-contain w-full max-w-[300px] lg:max-w-[420px] xl:max-w-[540px]"
-                />
-            </div>
+            {showSrOrbis && (
+                <div className="hidden min-[1030px]:flex min-[1030px]:flex-1 min-[1030px]:items-end h-auto min-[1030px]:justify-center min-h-[auto] lg:min-h-[auto] px-4 lg:px-0 lg:me-10 xl:me-20">
+                    <Image
+                        src="/SrOrbis2.png"
+                        alt={about.imageAlt}
+                        width={900}
+                        height={900}
+                        className="object-contain object-bottom w-full max-w-[300px] lg:max-w-[420px] xl:max-w-[540px]"
+                    />
+                </div>
+            )}
         </section>
     );
 }

@@ -225,15 +225,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div
-          style={{
-            position: "absolute",
-            bottom: "36px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 1,
-          }}
-        >
+        <div className={styles.heroScrollAnchor}>
           <div className={styles.heroScroll}>
             <ScrollViewportButton
               ariaLabel={home.hero.scrollDownLabel}

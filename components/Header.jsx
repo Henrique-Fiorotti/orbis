@@ -143,7 +143,7 @@ export default function Header() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 h-[60px] grid grid-cols-[1fr_auto_1fr] items-center px-[5%] gap-6 bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08] transition-transform duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 flex h-[60px] items-center justify-between gap-3 px-[5%] bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08] transition-transform duration-300 md:grid md:grid-cols-[1fr_auto_1fr] md:gap-6 ${
           visible ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
@@ -175,7 +175,7 @@ export default function Header() {
           })}
         </nav>
 
-        <div className="flex items-center gap-2 justify-end">
+        <div className="ms-auto flex items-center gap-2 justify-end">
           <div className="hidden h-9 w-[134px] items-center gap-1 rounded-[10px] border border-black/[0.08] px-2 text-black/70 transition-all duration-150 hover:border-[#5e17eb]/20 hover:text-[#5e17eb] dark:border-white/[0.08] dark:text-white/70 sm:flex">
             <Globe2Icon size={15} aria-hidden="true" />
             <label htmlFor="landing-language-select" className="sr-only">
