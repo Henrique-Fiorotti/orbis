@@ -33,6 +33,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -47,7 +48,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import { MetricValue } from "@/components/animated-metric"
+import { useAdmins } from "@/components/context/admins-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
+import { useTecnicos } from "@/components/context/tecnicos-context"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { extractCollection, requestDashboardJson } from "@/lib/dashboard-api"
@@ -483,12 +486,55 @@ function isDuplicateAgendamento(form, agendamentos, ignoredId = null) {
   })
 }
 
-function MultiEmailInput({ id, value, onChange, disabled = false, placeholder = "email@empresa.com" }) {
+function getUniqueEmails(nextEmails) {
+  const seen = new Set()
+  const uniqueEmails = []
+
+  for (const rawEmail of nextEmails) {
+    const email = rawEmail.trim()
+    const key = email.toLowerCase()
+
+    if (!email || seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    uniqueEmails.push(email)
+  }
+
+  return uniqueEmails
+}
+
+function buildEmployeeEmailOptions(tecnicos = [], admins = []) {
+  const seen = new Set()
+  const options = []
+
+  for (const person of [...admins, ...tecnicos]) {
+    const email = String(person?.email ?? "").trim()
+    const key = email.toLowerCase()
+
+    if (!email || seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    options.push({
+      email,
+      nome: person?.nome || email,
+      role: person?.role === "ADMIN" ? "Administrador" : "Técnico",
+    })
+  }
+
+  return options.sort((a, b) => a.nome.localeCompare(b.nome))
+}
+
+function MultiEmailInput({ id, value, onChange, disabled = false, placeholder = "email@empresa.com", employeeOptions = [] }) {
   const [draft, setDraft] = React.useState("")
   const emails = React.useMemo(() => parseEmails(value), [value])
+  const selectedEmailKeys = React.useMemo(() => new Set(emails.map((email) => email.toLowerCase())), [emails])
 
   function updateEmails(nextEmails) {
-    const uniqueEmails = Array.from(new Set(nextEmails.map((email) => email.trim()).filter(Boolean)))
+    const uniqueEmails = getUniqueEmails(nextEmails)
     onChange(uniqueEmails.join(", "))
   }
 
@@ -505,6 +551,10 @@ function MultiEmailInput({ id, value, onChange, disabled = false, placeholder = 
 
   function removeEmail(emailToRemove) {
     updateEmails(emails.filter((email) => email !== emailToRemove))
+  }
+
+  function addEmployeeEmail(email) {
+    updateEmails([...emails, email])
   }
 
   function handleKeyDown(event) {
@@ -530,34 +580,66 @@ function MultiEmailInput({ id, value, onChange, disabled = false, placeholder = 
   }
 
   return (
-    <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-xs transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
-      {emails.map((email) => (
-        <span key={email} className="inline-flex max-w-full items-center gap-1 rounded-md border bg-muted px-2 py-1 text-xs text-foreground">
-          <span className="truncate">{email}</span>
-          <button
-            type="button"
-            className="cursor-pointer rounded-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            onClick={() => removeEmail(email)}
-            disabled={disabled}
-            aria-label={`Remover ${email}`}
-          >
-            <XIcon className="size-3" />
-          </button>
-        </span>
-      ))}
-      <input
-        id={id}
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={handleKeyDown}
-        onBlur={() => addEmails(draft)}
-        onPaste={handlePaste}
-        placeholder={emails.length === 0 ? placeholder : "Adicionar outro e-mail"}
-        disabled={disabled}
-        className="min-w-[180px] flex-1 bg-transparent py-1 outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-        type="email"
-        inputMode="email"
-      />
+    <div className="flex flex-col gap-2">
+      <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-xs transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
+        {emails.map((email) => (
+          <span key={email} className="inline-flex max-w-full items-center gap-1 rounded-md border bg-muted px-2 py-1 text-xs text-foreground">
+            <span className="truncate">{email}</span>
+            <button
+              type="button"
+              className="cursor-pointer rounded-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => removeEmail(email)}
+              disabled={disabled}
+              aria-label={`Remover ${email}`}
+            >
+              <XIcon className="size-3" />
+            </button>
+          </span>
+        ))}
+        <input
+          id={id}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => addEmails(draft)}
+          onPaste={handlePaste}
+          placeholder={emails.length === 0 ? placeholder : "Adicionar outro e-mail"}
+          disabled={disabled}
+          className="min-w-[180px] flex-1 bg-transparent py-1 outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          type="email"
+          inputMode="email"
+        />
+      </div>
+      {employeeOptions.length > 0 ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="w-fit cursor-pointer" disabled={disabled}>
+              <PlusIcon className="mr-1 size-4" />
+              Adicionar cadastrado
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="max-h-72 w-80 overflow-y-auto">
+            <DropdownMenuLabel>Funcionários cadastrados</DropdownMenuLabel>
+            {employeeOptions.map((employee) => {
+              const selected = selectedEmailKeys.has(employee.email.toLowerCase())
+
+              return (
+                <DropdownMenuItem
+                  key={employee.email}
+                  className="cursor-pointer"
+                  disabled={selected}
+                  onSelect={() => addEmployeeEmail(employee.email)}
+                >
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-medium">{employee.nome}</span>
+                    <span className="truncate text-xs text-muted-foreground">{employee.email} - {employee.role}</span>
+                  </div>
+                </DropdownMenuItem>
+              )
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
     </div>
   )
 }
@@ -624,7 +706,7 @@ function ScheduleDescription({ agendamento }) {
   return <>Dia {agendamento.diaMes+"," ?? "-"} às {formatHorario(agendamento.hora, agendamento.minuto)}</>
 }
 
-function AgendamentoForm({ form, setForm, maquinas, salvando, modo }) {
+function AgendamentoForm({ form, setForm, maquinas, salvando, modo, employeeEmailOptions }) {
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
   }
@@ -663,6 +745,7 @@ function AgendamentoForm({ form, setForm, maquinas, salvando, modo }) {
               onChange={(value) => updateField("emailsDestino", value)}
               placeholder="email@empresa.com"
               disabled={salvando}
+              employeeOptions={employeeEmailOptions}
             />
           </div>
         </div>
@@ -800,6 +883,8 @@ export default function AgendamentosPage() {
   const router = useRouter()
   const permissions = useDashboardPermissions()
   const { maquinas } = useMaquinas()
+  const { admins } = useAdmins()
+  const { tecnicos } = useTecnicos()
   const [agendamentos, setAgendamentos] = React.useState([])
   const [status, setStatus] = React.useState("loading")
   const [mensagem, setMensagem] = React.useState("")
@@ -815,7 +900,9 @@ export default function AgendamentosPage() {
   const [form, setForm] = React.useState(EMPTY_FORM)
   const [salvando, setSalvando] = React.useState(false)
   const [acaoPendenteId, setAcaoPendenteId] = React.useState(null)
+  const acaoPendenteRef = React.useRef(false)
   const canViewAgendamentos = permissions.canViewAgendamentos
+  const employeeEmailOptions = React.useMemo(() => buildEmployeeEmailOptions(tecnicos, admins), [admins, tecnicos])
 
   const carregarAgendamentos = React.useCallback(async () => {
     if (!canViewAgendamentos) {
@@ -982,12 +1069,17 @@ export default function AgendamentosPage() {
   }
 
   async function atualizarStatusAgendamento(agendamento, novoStatus) {
+    if (acaoPendenteRef.current) {
+      return
+    }
+
     const session = getAuthSession()
     if (!session?.accessToken) {
       toast.error("Sua sessao expirou. Faca login novamente.")
       return
     }
 
+    acaoPendenteRef.current = true
     setAcaoPendenteId(agendamento.id)
 
     try {
@@ -1000,17 +1092,23 @@ export default function AgendamentosPage() {
     } catch (error) {
       toast.error(getErrorMessage(error, "Nao foi possivel atualizar o status."))
     } finally {
+      acaoPendenteRef.current = false
       setAcaoPendenteId(null)
     }
   }
 
   async function executarAgora(agendamento) {
+    if (acaoPendenteRef.current) {
+      return
+    }
+
     const session = getAuthSession()
     if (!session?.accessToken) {
       toast.error("Sua sessao expirou. Faca login novamente.")
       return
     }
 
+    acaoPendenteRef.current = true
     setAcaoPendenteId(agendamento.id)
 
     try {
@@ -1022,11 +1120,16 @@ export default function AgendamentosPage() {
     } catch (error) {
       toast.error(getErrorMessage(error, "Nao foi possivel executar o agendamento."))
     } finally {
+      acaoPendenteRef.current = false
       setAcaoPendenteId(null)
     }
   }
 
   async function excluirAgendamento() {
+    if (acaoPendenteRef.current) {
+      return
+    }
+
     if (!agendamentoExcluir?.id) {
       return
     }
@@ -1037,6 +1140,7 @@ export default function AgendamentosPage() {
       return
     }
 
+    acaoPendenteRef.current = true
     setAcaoPendenteId(agendamentoExcluir.id)
 
     try {
@@ -1056,6 +1160,7 @@ export default function AgendamentosPage() {
     } catch (error) {
       toast.error(getErrorMessage(error, "Nao foi possivel excluir o agendamento."))
     } finally {
+      acaoPendenteRef.current = false
       setAcaoPendenteId(null)
     }
   }
@@ -1074,14 +1179,33 @@ export default function AgendamentosPage() {
     {
       id: "destinatarios",
       header: "Destinatarios",
-      cell: ({ row }) => (
-        <div className="flex max-w-[260px] flex-col gap-1">
-          <span className="truncate text-sm text-foreground">{row.original.destinatariosLista[0] ?? "-"}</span>
-          {row.original.destinatariosLista.length > 1 ? (
-            <span className="text-xs text-muted-foreground">+ {row.original.destinatariosLista.length - 1} destinatario(s)</span>
-          ) : null}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const destinatarios = row.original.destinatariosLista
+
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="flex max-w-[260px] cursor-default flex-col gap-1 text-left">
+                <span className="truncate text-sm text-foreground">{destinatarios[0] ?? "-"}</span>
+                {destinatarios.length > 1 ? (
+                  <span className="text-xs text-muted-foreground">+ {destinatarios.length - 1} destinatario(s)</span>
+                ) : null}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="start" className="max-w-[320px]">
+              {destinatarios.length > 0 ? (
+                <div className="flex flex-col gap-1">
+                  {destinatarios.map((email) => (
+                    <span key={email} className="break-all text-xs">{email}</span>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs">Nenhum destinatario.</span>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        )
+      },
     },
     {
       accessorKey: "frequencia",
@@ -1142,34 +1266,35 @@ export default function AgendamentosPage() {
       cell: ({ row }) => {
         const agendamento = row.original
         const pending = acaoPendenteId === agendamento.id
+        const actionBusy = acaoPendenteId !== null
 
         return (
           <div className="text-right">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="cursor-pointer size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon" disabled={pending}>
+                <Button variant="ghost" className="cursor-pointer size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon" disabled={actionBusy}>
                   <EllipsisVerticalIcon className="size-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem className="cursor-pointer" onSelect={() => abrirEditar(agendamento)}>
+                <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => abrirEditar(agendamento)}>
                   <PencilIcon className="mr-1 size-4" /> Editar
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onSelect={() => executarAgora(agendamento)}>
-                  <SendIcon className="mr-1 size-4" /> Enviar agora
+                <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => executarAgora(agendamento)}>
+                  <SendIcon className="mr-1 size-4" /> {pending ? "Enviando..." : "Enviar agora"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {agendamento.status === "ATIVO" ? (
-                  <DropdownMenuItem className="cursor-pointer" onSelect={() => atualizarStatusAgendamento(agendamento, "PAUSADO")}>
+                  <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => atualizarStatusAgendamento(agendamento, "PAUSADO")}>
                     <PauseCircleIcon className="mr-1 size-4" /> Cancelar envios
                   </DropdownMenuItem>
                 ) : (
-                  <DropdownMenuItem className="cursor-pointer" onSelect={() => atualizarStatusAgendamento(agendamento, "ATIVO")}>
+                  <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => atualizarStatusAgendamento(agendamento, "ATIVO")}>
                     <PlayCircleIcon className="mr-1 size-4" /> Reativar
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" variant="destructive" onSelect={() => confirmarExcluir(agendamento)}>
+                <DropdownMenuItem className="cursor-pointer" variant="destructive" disabled={actionBusy} onSelect={() => confirmarExcluir(agendamento)}>
                   <Trash2Icon className="mr-1 size-4" /> Excluir
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -1359,7 +1484,7 @@ export default function AgendamentosPage() {
                 Configure o relatorio, os destinatarios e a recorrencia de envio.
               </SheetDescription>
             </SheetHeader>
-            <AgendamentoForm form={form} setForm={setForm} maquinas={maquinas} salvando={salvando} modo={modoSheet} />
+            <AgendamentoForm form={form} setForm={setForm} maquinas={maquinas} salvando={salvando} modo={modoSheet} employeeEmailOptions={employeeEmailOptions} />
             <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
               <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>
                 Cancelar

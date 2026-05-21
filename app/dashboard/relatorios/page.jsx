@@ -12,6 +12,7 @@ import {
   GaugeIcon,
   MailIcon,
   MenuIcon,
+  PlusIcon,
   PrinterIcon,
   SendIcon,
   ShieldAlertIcon,
@@ -23,12 +24,20 @@ import {
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { SiteHeader } from "@/components/site-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAlertas } from "@/components/context/alertas-context"
+import { useAdmins } from "@/components/context/admins-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
 import { useSensores } from "@/components/context/sensores-context"
 import { useTecnicos } from "@/components/context/tecnicos-context"
@@ -181,12 +190,55 @@ function parseEmailList(value) {
     .filter(Boolean)
 }
 
-function MultiEmailInput({ value, onChange, disabled = false, placeholder = "email@empresa.com" }) {
+function getUniqueEmails(nextEmails) {
+  const seen = new Set()
+  const uniqueEmails = []
+
+  for (const rawEmail of nextEmails) {
+    const email = rawEmail.trim()
+    const key = email.toLowerCase()
+
+    if (!email || seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    uniqueEmails.push(email)
+  }
+
+  return uniqueEmails
+}
+
+function buildEmployeeEmailOptions(tecnicos = [], admins = []) {
+  const seen = new Set()
+  const options = []
+
+  for (const person of [...admins, ...tecnicos]) {
+    const email = String(person?.email ?? "").trim()
+    const key = email.toLowerCase()
+
+    if (!email || seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    options.push({
+      email,
+      nome: person?.nome || email,
+      role: person?.role === "ADMIN" ? "Administrador" : "Técnico",
+    })
+  }
+
+  return options.sort((a, b) => a.nome.localeCompare(b.nome))
+}
+
+function MultiEmailInput({ value, onChange, disabled = false, placeholder = "email@empresa.com", employeeOptions = [] }) {
   const [draft, setDraft] = React.useState("")
   const emails = React.useMemo(() => parseEmailList(value), [value])
+  const selectedEmailKeys = React.useMemo(() => new Set(emails.map((email) => email.toLowerCase())), [emails])
 
   function updateEmails(nextEmails) {
-    const uniqueEmails = Array.from(new Set(nextEmails.map((email) => email.trim()).filter(Boolean)))
+    const uniqueEmails = getUniqueEmails(nextEmails)
     onChange(uniqueEmails.join(", "))
   }
 
@@ -203,6 +255,10 @@ function MultiEmailInput({ value, onChange, disabled = false, placeholder = "ema
 
   function removeEmail(emailToRemove) {
     updateEmails(emails.filter((email) => email !== emailToRemove))
+  }
+
+  function addEmployeeEmail(email) {
+    updateEmails([...emails, email])
   }
 
   function handleKeyDown(event) {
@@ -228,33 +284,65 @@ function MultiEmailInput({ value, onChange, disabled = false, placeholder = "ema
   }
 
   return (
-    <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-xs transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
-      {emails.map((email) => (
-        <span key={email} className="inline-flex max-w-full items-center gap-1 rounded-md border bg-muted px-2 py-1 text-xs text-foreground">
-          <span className="truncate">{email}</span>
-          <button
-            type="button"
-            className="cursor-pointer rounded-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-            onClick={() => removeEmail(email)}
-            disabled={disabled}
-            aria-label={`Remover ${email}`}
-          >
-            <XIcon className="size-3" />
-          </button>
-        </span>
-      ))}
-      <input
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={handleKeyDown}
-        onBlur={() => addEmails(draft)}
-        onPaste={handlePaste}
-        placeholder={emails.length === 0 ? placeholder : "Adicionar outro e-mail"}
-        disabled={disabled}
-        className="min-w-[180px] flex-1 bg-transparent py-1 outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-        type="email"
-        inputMode="email"
-      />
+    <div className="flex flex-col gap-2">
+      <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-xs transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
+        {emails.map((email) => (
+          <span key={email} className="inline-flex max-w-full items-center gap-1 rounded-md border bg-muted px-2 py-1 text-xs text-foreground">
+            <span className="truncate">{email}</span>
+            <button
+              type="button"
+              className="cursor-pointer rounded-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => removeEmail(email)}
+              disabled={disabled}
+              aria-label={`Remover ${email}`}
+            >
+              <XIcon className="size-3" />
+            </button>
+          </span>
+        ))}
+        <input
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => addEmails(draft)}
+          onPaste={handlePaste}
+          placeholder={emails.length === 0 ? placeholder : "Adicionar outro e-mail"}
+          disabled={disabled}
+          className="min-w-[180px] flex-1 bg-transparent py-1 outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          type="email"
+          inputMode="email"
+        />
+      </div>
+      {employeeOptions.length > 0 ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="w-fit cursor-pointer" disabled={disabled}>
+              <PlusIcon className="mr-1 size-4" />
+              Adicionar cadastrado
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="max-h-72 w-80 overflow-y-auto">
+            <DropdownMenuLabel>Funcionários cadastrados</DropdownMenuLabel>
+            {employeeOptions.map((employee) => {
+              const selected = selectedEmailKeys.has(employee.email.toLowerCase())
+
+              return (
+                <DropdownMenuItem
+                  key={employee.email}
+                  className="cursor-pointer"
+                  disabled={selected}
+                  onSelect={() => addEmployeeEmail(employee.email)}
+                >
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-medium">{employee.nome}</span>
+                    <span className="truncate text-xs text-muted-foreground">{employee.email} - {employee.role}</span>
+                  </div>
+                </DropdownMenuItem>
+              )
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
     </div>
   )
 }
@@ -927,6 +1015,8 @@ function EmailAutomationPanelLegacy({
   onSaveDraft,
   onSendNow,
   savingSchedule = false,
+  sendingNow = false,
+  employeeEmailOptions = [],
 }) {
   const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
   const hasDestinatarios = destinatarios.trim().length > 0
@@ -961,6 +1051,7 @@ function EmailAutomationPanelLegacy({
           onChange={onDestinatariosChange}
           placeholder="email@empresa.com"
           disabled={savingSchedule}
+          employeeOptions={employeeEmailOptions}
         />
 
         <div className="grid grid-cols-2 gap-2">
@@ -1030,9 +1121,10 @@ function EmailAutomationPanelLegacy({
           variant="outline"
           className="cursor-pointer mt-1 h-9 border-primary text-primary hover:bg-primary/10 hover:text-primary"
           onClick={onSendNow}
+          disabled={!hasDestinatarios || sendingNow}
         >
           <SendIcon className="mr-1 size-4" />
-          Enviar agora
+          {sendingNow ? "Enviando..." : "Enviar agora"}
         </Button>
       </div>
 
@@ -1064,6 +1156,8 @@ function EmailAutomationPanel({
   onSaveDraft,
   onSendNow,
   savingSchedule = false,
+  sendingNow = false,
+  employeeEmailOptions = [],
 }) {
   const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
   const [open, setOpen] = React.useState(false)
@@ -1098,15 +1192,17 @@ function EmailAutomationPanel({
               onChange={onDestinatariosChange}
               placeholder="email@empresa.com"
               disabled={savingSchedule}
+              employeeOptions={employeeEmailOptions}
             />
             <Button
               type="button"
               variant="outline"
               className="cursor-pointer h-9 border-primary text-primary hover:bg-primary/10 hover:text-primary"
               onClick={onSendNow}
+              disabled={!hasDestinatarios || sendingNow}
             >
               <SendIcon className="mr-1 size-4" />
-              Enviar agora
+              {sendingNow ? "Enviando..." : "Enviar agora"}
             </Button>
           </div>
 
@@ -1582,6 +1678,7 @@ export default function RelatoriosPage() {
     carregando: loadingTecnicos,
     recarregarTecnicos,
   } = useTecnicos()
+  const { admins } = useAdmins()
 
   const [tipoRelatorio, setTipoRelatorio] = React.useState("geral")
   const [maquinaId, setMaquinaId] = React.useState("")
@@ -1596,8 +1693,11 @@ export default function RelatoriosPage() {
   const [emailDiaSemana, setEmailDiaSemana] = React.useState("segunda")
   const [emailDiaMes, setEmailDiaMes] = React.useState("1")
   const [salvandoAgendamentoEmail, setSalvandoAgendamentoEmail] = React.useState(false)
+  const [enviandoRelatorioEmail, setEnviandoRelatorioEmail] = React.useState(false)
+  const envioRelatorioEmailEmAndamentoRef = React.useRef(false)
   const [geradoEm, setGeradoEm] = React.useState(formatDate())
   const canManageAgendamentos = permissions.canManageAgendamentos
+  const employeeEmailOptions = React.useMemo(() => buildEmployeeEmailOptions(tecnicos, admins), [admins, tecnicos])
 
   React.useEffect(() => {
     if (!maquinaId && maquinas.length > 0) {
@@ -1744,6 +1844,17 @@ export default function RelatoriosPage() {
     return ""
   }
 
+  function limparFormularioEmail() {
+    setEmailNome("Relatorio Operacional")
+    setEmailAssunto("Relatorio Operacional Orbis")
+    setEmailDestinatarios("")
+    setEmailFrequencia("semanal")
+    setEmailHorario("08:00")
+    setEmailDiaSemana("segunda")
+    setEmailDiaMes("1")
+    window.localStorage.removeItem(EMAIL_DRAFT_STORAGE_KEY)
+  }
+
   async function salvarRascunhoEmail() {
     if (salvandoAgendamentoEmail) {
       return
@@ -1815,6 +1926,7 @@ export default function RelatoriosPage() {
       })
 
       toast.success("Agendamento de e-mail criado.")
+      limparFormularioEmail()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar o agendamento.")
     } finally {
@@ -1823,6 +1935,10 @@ export default function RelatoriosPage() {
   }
 
   async function enviarRelatorioAgora() {
+    if (envioRelatorioEmailEmAndamentoRef.current) {
+      return
+    }
+
     const payload = getEmailAutomationPayload()
     const validationMessage = validarPayloadEmail(payload)
 
@@ -1838,6 +1954,9 @@ export default function RelatoriosPage() {
       return
     }
 
+    envioRelatorioEmailEmAndamentoRef.current = true
+    setEnviandoRelatorioEmail(true)
+
     try {
       await requestDashboardJson("/relatorios/enviar-agora", session.accessToken, "o envio do relatorio", {
         method: "POST",
@@ -1851,8 +1970,12 @@ export default function RelatoriosPage() {
       })
 
       toast.success(`Relatorio enviado para ${payload.emailsDestino.length} destinatario(s).`)
+      limparFormularioEmail()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Nao foi possivel enviar o relatorio.")
+    } finally {
+      envioRelatorioEmailEmAndamentoRef.current = false
+      setEnviandoRelatorioEmail(false)
     }
   }
 
@@ -1948,6 +2071,8 @@ export default function RelatoriosPage() {
                 onSaveDraft={salvarRascunhoEmail}
                 onSendNow={enviarRelatorioAgora}
                 savingSchedule={salvandoAgendamentoEmail}
+                sendingNow={enviandoRelatorioEmail}
+                employeeEmailOptions={employeeEmailOptions}
               />
             ) : null}
 
