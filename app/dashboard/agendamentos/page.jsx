@@ -6,6 +6,10 @@ import { toast } from "sonner"
 import {
   ArrowLeftIcon,
   CalendarClockIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
   CheckCircle2Icon,
   ClockIcon,
   EllipsisVerticalIcon,
@@ -51,6 +55,7 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
@@ -674,6 +679,7 @@ export default function AgendamentosPage() {
   const [busca, setBusca] = React.useState("")
   const [sorting, setSorting] = React.useState([])
   const [columnFilters, setColumnFilters] = React.useState([])
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 8 })
   const [sheetAberto, setSheetAberto] = React.useState(false)
   const [modoSheet, setModoSheet] = React.useState("criar")
   const [agendamentoSelecionado, setAgendamentoSelecionado] = React.useState(null)
@@ -1045,11 +1051,13 @@ export default function AgendamentosPage() {
   const table = useReactTable({
     data: dadosFiltrados,
     columns,
-    state: { sorting, columnFilters },
+    state: { sorting, columnFilters, pagination },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
 
@@ -1192,8 +1200,23 @@ export default function AgendamentosPage() {
           </Table>
         </div>
 
-        <div className="text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} resultado(s)
+        <div className="flex items-center justify-between px-4">
+          <span className="text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} resultado(s)</span>
+          <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
+            <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
+              <ChevronsLeftIcon className="size-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+              <ChevronLeftIcon className="size-4" />
+            </Button>
+            <span className="flex w-fit items-center justify-center text-sm font-medium">Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
+            <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+              <ChevronRightIcon className="size-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
+              <ChevronsRightIcon className="size-4" />
+            </Button>
+          </div>
         </div>
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
