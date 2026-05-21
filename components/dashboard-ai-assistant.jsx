@@ -52,6 +52,16 @@ const ORB_BUTTON_SIZE = 48
 const ORB_TRANSITION_MS = 460
 const ORB_BUTTON_RADIUS = 24
 const ORB_PANEL_RADIUS = 8
+export const DASHBOARD_AI_ASSISTANT_OPEN_EVENT = "orbis:open-dashboard-ai-assistant"
+
+const ORB_BUTTON_POSITIONS = [
+  "top-left",
+  "top-right",
+  "center-left",
+  "center-right",
+  "bottom-left",
+  "bottom-right",
+]
 
 const CHAT_TITLE_STOPWORDS = new Set([
   "a",
@@ -541,13 +551,14 @@ function clampAssistantRect(rect) {
   return { x, y, width, height }
 }
 
-function getCompactAssistantRect() {
+function getCompactAssistantRect(position = "bottom-right") {
   const viewport = getAssistantViewport()
   const width = Math.min(ORB_COMPACT_WIDTH, viewport.width - ORB_WINDOW_MARGIN * 2)
   const height = Math.min(ORB_COMPACT_HEIGHT, viewport.height - ORB_COMPACT_BOTTOM - ORB_WINDOW_MARGIN)
+  const opensOnLeft = position.endsWith("left")
 
   return clampAssistantRect({
-    x: viewport.width - width - ORB_COMPACT_GAP,
+    x: opensOnLeft ? ORB_COMPACT_GAP : viewport.width - width - ORB_COMPACT_GAP,
     y: viewport.height - height - ORB_COMPACT_BOTTOM,
     width,
     height,
@@ -567,21 +578,64 @@ function getExpandedAssistantRect() {
   })
 }
 
-function getOrbButtonRect() {
+function getOrbButtonRect(position = "bottom-right") {
   const viewport = getAssistantViewport()
+  const horizontal = position.endsWith("left") ? "left" : "right"
+  const vertical = position.startsWith("top")
+    ? "top"
+    : position.startsWith("center")
+      ? "center"
+      : "bottom"
 
   return {
-    x: viewport.width - ORB_BUTTON_SIZE - ORB_COMPACT_GAP,
-    y: viewport.height - ORB_BUTTON_SIZE - ORB_COMPACT_GAP,
+    x: horizontal === "left" ? ORB_COMPACT_GAP : viewport.width - ORB_BUTTON_SIZE - ORB_COMPACT_GAP,
+    y:
+      vertical === "top"
+        ? ORB_COMPACT_GAP
+        : vertical === "center"
+          ? (viewport.height - ORB_BUTTON_SIZE) / 2
+          : viewport.height - ORB_BUTTON_SIZE - ORB_COMPACT_GAP,
     width: ORB_BUTTON_SIZE,
     height: ORB_BUTTON_SIZE,
   }
+}
+
+function clampOrbButtonRect(rect) {
+  const viewport = getAssistantViewport()
+
+  return {
+    x: Math.min(Math.max(rect.x, ORB_COMPACT_GAP), viewport.width - ORB_BUTTON_SIZE - ORB_COMPACT_GAP),
+    y: Math.min(Math.max(rect.y, ORB_COMPACT_GAP), viewport.height - ORB_BUTTON_SIZE - ORB_COMPACT_GAP),
+    width: ORB_BUTTON_SIZE,
+    height: ORB_BUTTON_SIZE,
+  }
+}
+
+function getClosestOrbButtonPosition(rect) {
+  const centerX = rect.x + rect.width / 2
+  const centerY = rect.y + rect.height / 2
+
+  return ORB_BUTTON_POSITIONS.reduce((closest, position) => {
+    const candidate = getOrbButtonRect(position)
+    const candidateCenterX = candidate.x + candidate.width / 2
+    const candidateCenterY = candidate.y + candidate.height / 2
+    const distance = Math.hypot(centerX - candidateCenterX, centerY - candidateCenterY)
+
+    if (!closest || distance < closest.distance) {
+      return { position, distance }
+    }
+
+    return closest
+  }, null)?.position ?? "bottom-right"
 }
 
 export function DashboardAiAssistant() {
   const pathname = usePathname()
   const dashboardPreferences = useOptionalDashboardPreferences()
   const smoothScrollEnabled = dashboardPreferences?.preferences.smoothScrollEnabled ?? true
+  const orbButtonVisible = dashboardPreferences?.preferences.orbButtonVisible ?? true
+  const orbButtonPosition = dashboardPreferences?.preferences.orbButtonPosition ?? "bottom-right"
+  const setOrbButtonPosition = dashboardPreferences?.setOrbButtonPosition
   const [open, setOpen] = React.useState(false)
   const [assistantPhase, setAssistantPhase] = React.useState("closed")
   const [fullscreen, setFullscreen] = React.useState(false)
@@ -598,6 +652,9 @@ export function DashboardAiAssistant() {
   const [inlineError, setInlineError] = React.useState("")
   const [lastFailedRequest, setLastFailedRequest] = React.useState(null)
   const [loading, setLoading] = React.useState(false)
+  const [orbDragRect, setOrbDragRect] = React.useState(null)
+  const [isDraggingOrbButton, setIsDraggingOrbButton] = React.useState(false)
+  const [activeOrbButtonPosition, setActiveOrbButtonPosition] = React.useState(orbButtonPosition)
   const messagesEndRef = React.useRef(null)
   const chatScrollRef = React.useRef(null)
   const chatContentRef = React.useRef(null)
@@ -607,6 +664,9 @@ export function DashboardAiAssistant() {
   const messagesRef = React.useRef([])
   const activeChatIdRef = React.useRef(null)
   const windowActionRef = React.useRef(null)
+  const orbButtonActionRef = React.useRef(null)
+  const activeOrbButtonPositionRef = React.useRef(activeOrbButtonPosition)
+  const skipNextOrbClickRef = React.useRef(false)
   const animationTimersRef = React.useRef([])
 
   const trimmedInput = input.trim()
@@ -629,6 +689,16 @@ export function DashboardAiAssistant() {
     assistantPhase === "opening-start" || assistantPhase === "closing"
       ? ORB_BUTTON_RADIUS
       : ORB_PANEL_RADIUS
+
+  React.useEffect(() => {
+    activeOrbButtonPositionRef.current = activeOrbButtonPosition
+  }, [activeOrbButtonPosition])
+
+  React.useEffect(() => {
+    if (!isDraggingOrbButton) {
+      setActiveOrbButtonPosition(orbButtonPosition)
+    }
+  }, [isDraggingOrbButton, orbButtonPosition])
 
   React.useEffect(() => {
     const stored = loadChatHistory()
@@ -665,6 +735,20 @@ export function DashboardAiAssistant() {
   }, [open])
 
   React.useEffect(() => {
+    function handleExternalOpen(event) {
+      openAssistant({
+        fullscreen: event instanceof CustomEvent ? event.detail?.fullscreen === true : false,
+      })
+    }
+
+    window.addEventListener(DASHBOARD_AI_ASSISTANT_OPEN_EVENT, handleExternalOpen)
+
+    return () => {
+      window.removeEventListener(DASHBOARD_AI_ASSISTANT_OPEN_EVENT, handleExternalOpen)
+    }
+  })
+
+  React.useEffect(() => {
     if (!assistantReady) {
       return
     }
@@ -673,7 +757,7 @@ export function DashboardAiAssistant() {
       setHistorySidebarOpen(false)
       setAssistantRect(getExpandedAssistantRect())
     } else if (open) {
-      setAssistantRect(getCompactAssistantRect())
+      setAssistantRect(getCompactAssistantRect(activeOrbButtonPositionRef.current))
     }
   }, [assistantReady, fullscreen, open])
 
@@ -685,11 +769,11 @@ export function DashboardAiAssistant() {
     function handleResize() {
       setAssistantRect((current) => {
         if (!current) {
-          return fullscreen ? getExpandedAssistantRect() : getCompactAssistantRect()
+          return fullscreen ? getExpandedAssistantRect() : getCompactAssistantRect(activeOrbButtonPositionRef.current)
         }
 
         if (!fullscreen) {
-          return getCompactAssistantRect()
+          return getCompactAssistantRect(activeOrbButtonPositionRef.current)
         }
 
         return clampAssistantRect(current)
@@ -790,7 +874,10 @@ export function DashboardAiAssistant() {
   }, [messages, loading, open, smoothScrollEnabled])
 
   React.useEffect(() => {
-    return () => abortControllerRef.current?.abort()
+    return () => {
+      abortControllerRef.current?.abort()
+      removeOrbButtonMoveListeners()
+    }
   }, [])
 
   function syncActiveChat(nextMessages) {
@@ -1064,19 +1151,29 @@ export function DashboardAiAssistant() {
     animationTimersRef.current.push(timerId)
   }
 
-  function openAssistant() {
+  function openAssistant(options = {}) {
+    const shouldOpenFullscreen = options.fullscreen === true
+
     clearAssistantAnimationTimers()
 
-    setFullscreen(false)
+    if (open && assistantReady) {
+      setFullscreen(shouldOpenFullscreen)
+      setHistorySidebarOpen(false)
+      setAssistantRect(shouldOpenFullscreen ? getExpandedAssistantRect() : getCompactAssistantRect(activeOrbButtonPosition))
+      window.setTimeout(() => textareaRef.current?.focus(), 0)
+      return
+    }
+
+    setFullscreen(shouldOpenFullscreen)
     setHistorySidebarOpen(false)
     setAssistantPhase("opening-start")
-    setAssistantRect(getOrbButtonRect())
+    setAssistantRect(getOrbButtonRect(activeOrbButtonPosition))
     setOpen(true)
 
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         setAssistantPhase("opening")
-        setAssistantRect(getCompactAssistantRect())
+        setAssistantRect(shouldOpenFullscreen ? getExpandedAssistantRect() : getCompactAssistantRect(activeOrbButtonPosition))
 
         scheduleAssistantAnimation(() => {
           setAssistantPhase("open")
@@ -1095,7 +1192,7 @@ export function DashboardAiAssistant() {
     setFullscreen(false)
     setHistorySidebarOpen(false)
     setAssistantPhase("closing")
-    setAssistantRect(getOrbButtonRect())
+    setAssistantRect(getOrbButtonRect(activeOrbButtonPosition))
 
     scheduleAssistantAnimation(() => {
       setOpen(false)
@@ -1188,6 +1285,98 @@ export function DashboardAiAssistant() {
     setIsResizingWindow(false)
   }
 
+  function beginOrbButtonMove(event) {
+    if (event.button !== 0) {
+      return
+    }
+
+    const startRect = getOrbButtonRect(activeOrbButtonPosition)
+
+    orbButtonActionRef.current = {
+      pointerId: event.pointerId,
+      captureTarget: event.currentTarget,
+      startX: event.clientX,
+      startY: event.clientY,
+      startRect,
+      currentRect: startRect,
+      moved: false,
+    }
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    window.addEventListener("pointermove", handleOrbButtonPointerMove)
+    window.addEventListener("pointerup", endOrbButtonMove)
+    window.addEventListener("pointercancel", endOrbButtonMove)
+  }
+
+  function removeOrbButtonMoveListeners() {
+    window.removeEventListener("pointermove", handleOrbButtonPointerMove)
+    window.removeEventListener("pointerup", endOrbButtonMove)
+    window.removeEventListener("pointercancel", endOrbButtonMove)
+  }
+
+  function handleOrbButtonPointerMove(event) {
+    const action = orbButtonActionRef.current
+
+    if (!action || action.pointerId !== event.pointerId) {
+      return
+    }
+
+    const deltaX = event.clientX - action.startX
+    const deltaY = event.clientY - action.startY
+
+    if (!action.moved && Math.hypot(deltaX, deltaY) < 5) {
+      return
+    }
+
+    event.preventDefault()
+    action.moved = true
+    skipNextOrbClickRef.current = true
+    setIsDraggingOrbButton(true)
+    action.currentRect = clampOrbButtonRect({
+      ...action.startRect,
+      x: action.startRect.x + deltaX,
+      y: action.startRect.y + deltaY,
+    })
+    setOrbDragRect(action.currentRect)
+  }
+
+  function endOrbButtonMove(event) {
+    const action = orbButtonActionRef.current
+
+    if (!action || action.pointerId !== event.pointerId) {
+      return
+    }
+
+    try {
+      action.captureTarget?.releasePointerCapture?.(event.pointerId)
+    } catch {}
+
+    if (action.moved) {
+      const nextPosition = getClosestOrbButtonPosition(action.currentRect)
+
+      setActiveOrbButtonPosition(nextPosition)
+      setOrbButtonPosition?.(nextPosition)
+      setOrbDragRect(null)
+      window.setTimeout(() => {
+        skipNextOrbClickRef.current = false
+      }, 0)
+    }
+
+    orbButtonActionRef.current = null
+    setIsDraggingOrbButton(false)
+    removeOrbButtonMoveListeners()
+  }
+
+  function handleOrbButtonClick(event) {
+    if (skipNextOrbClickRef.current) {
+      event.preventDefault()
+      event.stopPropagation()
+      skipNextOrbClickRef.current = false
+      return
+    }
+
+    openAssistant()
+  }
+
   function toggleFullscreen() {
     setFullscreen((current) => !current)
   }
@@ -1252,6 +1441,9 @@ export function DashboardAiAssistant() {
       </DropdownMenuItem>
     )
   }
+
+  const orbButtonRect = orbDragRect ?? getOrbButtonRect(activeOrbButtonPosition)
+  const orbTooltipSide = activeOrbButtonPosition.endsWith("left") ? "right" : "left"
 
   return (
     <>
@@ -1545,21 +1737,42 @@ export function DashboardAiAssistant() {
         </section>
       ) : null}
 
-      {!open ? (
+      {!open && orbButtonVisible ? (
       <Tooltip className="">
         <TooltipTrigger asChild>
           <Button
             type="button"
             size="icon-lg"
-            className="cursor-pointer fixed dark:bg-[#1e2939] bottom-5 right-5 z-40 size-12 rounded-full! p-0! hover:scale-[1.06] border-1 border-black/30 bg-white"
-            onClick={openAssistant}
+            style={{
+              left: `${orbButtonRect.x}px`,
+              top: `${orbButtonRect.y}px`,
+            }}
+            className={cn(
+              "fixed z-40 size-12 cursor-grab touch-none overflow-hidden rounded-full! border-1 border-black/30 bg-white p-0! transition-[left,top,background-color,border-color,box-shadow] duration-300 ease-out hover:bg-muted active:cursor-grabbing dark:bg-[#1e2939] dark:hover:bg-[#263449]",
+              isDraggingOrbButton && "cursor-grabbing transition-none"
+            )}
+            onPointerDown={beginOrbButtonMove}
+            onClick={handleOrbButtonClick}
             aria-label="Agente Orb"
             aria-expanded={open}
           >
-            <Image src="/orb-ia.svg" className="dark:invert" alt="Orb" width={34} height={34} />
+            <Image
+              src="/orb-ia.svg"
+              className="pointer-events-none block size-[34px] shrink-0 select-none dark:invert"
+              alt="Orb"
+              width={34}
+              height={34}
+              draggable={false}
+            />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="left" sideOffset={8}>Converse com o Orb!</TooltipContent>
+        <TooltipContent
+          side={orbTooltipSide}
+          sideOffset={8}
+          className="border bg-popover text-popover-foreground shadow-md [&_[data-slot=tooltip-arrow]]:bg-popover [&_[data-slot=tooltip-arrow]]:fill-popover"
+        >
+          Converse com o Orb!
+        </TooltipContent>
       </Tooltip>
       ) : null}
     </>

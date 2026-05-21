@@ -8,6 +8,7 @@ import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import { DashboardSettingsDialog } from "@/components/dashboard-settings-dialog"
+import { DASHBOARD_AI_ASSISTANT_OPEN_EVENT } from "@/components/dashboard-ai-assistant"
 import { GlobalSearch } from "@/components/GlobalSearch"
 import {
   Sidebar,
@@ -22,6 +23,7 @@ import { AUTH_SESSION_UPDATED_EVENT, getAuthSessionUser } from "@/lib/auth-sessi
 import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import {
   AlertTriangleIcon,
+  BotIcon,
   CircleHelpIcon,
   LayoutDashboardIcon,
   NfcIcon,
@@ -66,6 +68,12 @@ const data = {
     },
   ],
   navSecondary: [
+    {
+      title: "Conversar com Orb",
+      style: "text-muted-foreground dark:text-white!",
+      url: "#",
+      icon: <BotIcon className="dark:text-white" />,
+    },
     {
       title: "Configurações",
       style: "text-muted-foreground dark:text-white!",
@@ -121,7 +129,18 @@ export function AppSidebar({ ...props }) {
   const navSecondaryItems = React.useMemo(
     () =>
       data.navSecondary.map((item) =>
-        item.title === "Configurações"
+        item.title === "Conversar com Orb"
+          ? {
+              ...item,
+              onClick: () => {
+                window.dispatchEvent(
+                  new CustomEvent(DASHBOARD_AI_ASSISTANT_OPEN_EVENT, {
+                    detail: { fullscreen: true },
+                  })
+                )
+              },
+            }
+          : item.title === "Configurações"
           ? {
               ...item,
               onClick: () => setSettingsOpen(true),
