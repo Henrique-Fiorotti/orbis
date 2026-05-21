@@ -22,6 +22,7 @@ import {
   SendIcon,
   SlidersHorizontalIcon,
   Trash2Icon,
+  XIcon,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -482,6 +483,85 @@ function isDuplicateAgendamento(form, agendamentos, ignoredId = null) {
   })
 }
 
+function MultiEmailInput({ id, value, onChange, disabled = false, placeholder = "email@empresa.com" }) {
+  const [draft, setDraft] = React.useState("")
+  const emails = React.useMemo(() => parseEmails(value), [value])
+
+  function updateEmails(nextEmails) {
+    const uniqueEmails = Array.from(new Set(nextEmails.map((email) => email.trim()).filter(Boolean)))
+    onChange(uniqueEmails.join(", "))
+  }
+
+  function addEmails(rawValue) {
+    const nextEmails = parseEmails(rawValue)
+
+    if (nextEmails.length === 0) {
+      return
+    }
+
+    updateEmails([...emails, ...nextEmails])
+    setDraft("")
+  }
+
+  function removeEmail(emailToRemove) {
+    updateEmails(emails.filter((email) => email !== emailToRemove))
+  }
+
+  function handleKeyDown(event) {
+    if (["Enter", "Tab", ","].includes(event.key)) {
+      if (draft.trim()) {
+        event.preventDefault()
+        addEmails(draft)
+      }
+    }
+
+    if (event.key === "Backspace" && !draft && emails.length > 0) {
+      removeEmail(emails[emails.length - 1])
+    }
+  }
+
+  function handlePaste(event) {
+    const text = event.clipboardData.getData("text")
+
+    if (parseEmails(text).length > 1) {
+      event.preventDefault()
+      addEmails(text)
+    }
+  }
+
+  return (
+    <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-xs transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
+      {emails.map((email) => (
+        <span key={email} className="inline-flex max-w-full items-center gap-1 rounded-md border bg-muted px-2 py-1 text-xs text-foreground">
+          <span className="truncate">{email}</span>
+          <button
+            type="button"
+            className="cursor-pointer rounded-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={() => removeEmail(email)}
+            disabled={disabled}
+            aria-label={`Remover ${email}`}
+          >
+            <XIcon className="size-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        id={id}
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={() => addEmails(draft)}
+        onPaste={handlePaste}
+        placeholder={emails.length === 0 ? placeholder : "Adicionar outro e-mail"}
+        disabled={disabled}
+        className="min-w-[180px] flex-1 bg-transparent py-1 outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        type="email"
+        inputMode="email"
+      />
+    </div>
+  )
+}
+
 function StatusBadge({ status }) {
   const active = status === "ATIVO"
 
@@ -577,7 +657,13 @@ function AgendamentoForm({ form, setForm, maquinas, salvando, modo }) {
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
             <Label htmlFor="emailsDestino">Destinatarios</Label>
-            <Input id="emailsDestino" value={form.emailsDestino} onChange={(event) => updateField("emailsDestino", event.target.value)} placeholder="email@empresa.com, time@empresa.com" disabled={salvando} />
+            <MultiEmailInput
+              id="emailsDestino"
+              value={form.emailsDestino}
+              onChange={(value) => updateField("emailsDestino", value)}
+              placeholder="email@empresa.com"
+              disabled={salvando}
+            />
           </div>
         </div>
       </section>

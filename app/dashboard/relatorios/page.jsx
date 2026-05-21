@@ -17,6 +17,7 @@ import {
   ShieldAlertIcon,
   SlidersHorizontalIcon,
   WashingMachineIcon,
+  XIcon,
   ZapIcon,
 } from "lucide-react"
 
@@ -178,6 +179,84 @@ function parseEmailList(value) {
     .split(/[;,\s]+/)
     .map((email) => email.trim())
     .filter(Boolean)
+}
+
+function MultiEmailInput({ value, onChange, disabled = false, placeholder = "email@empresa.com" }) {
+  const [draft, setDraft] = React.useState("")
+  const emails = React.useMemo(() => parseEmailList(value), [value])
+
+  function updateEmails(nextEmails) {
+    const uniqueEmails = Array.from(new Set(nextEmails.map((email) => email.trim()).filter(Boolean)))
+    onChange(uniqueEmails.join(", "))
+  }
+
+  function addEmails(rawValue) {
+    const nextEmails = parseEmailList(rawValue)
+
+    if (nextEmails.length === 0) {
+      return
+    }
+
+    updateEmails([...emails, ...nextEmails])
+    setDraft("")
+  }
+
+  function removeEmail(emailToRemove) {
+    updateEmails(emails.filter((email) => email !== emailToRemove))
+  }
+
+  function handleKeyDown(event) {
+    if (["Enter", "Tab", ","].includes(event.key)) {
+      if (draft.trim()) {
+        event.preventDefault()
+        addEmails(draft)
+      }
+    }
+
+    if (event.key === "Backspace" && !draft && emails.length > 0) {
+      removeEmail(emails[emails.length - 1])
+    }
+  }
+
+  function handlePaste(event) {
+    const text = event.clipboardData.getData("text")
+
+    if (parseEmailList(text).length > 1) {
+      event.preventDefault()
+      addEmails(text)
+    }
+  }
+
+  return (
+    <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-xs transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
+      {emails.map((email) => (
+        <span key={email} className="inline-flex max-w-full items-center gap-1 rounded-md border bg-muted px-2 py-1 text-xs text-foreground">
+          <span className="truncate">{email}</span>
+          <button
+            type="button"
+            className="cursor-pointer rounded-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={() => removeEmail(email)}
+            disabled={disabled}
+            aria-label={`Remover ${email}`}
+          >
+            <XIcon className="size-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={() => addEmails(draft)}
+        onPaste={handlePaste}
+        placeholder={emails.length === 0 ? placeholder : "Adicionar outro e-mail"}
+        disabled={disabled}
+        className="min-w-[180px] flex-1 bg-transparent py-1 outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        type="email"
+        inputMode="email"
+      />
+    </div>
+  )
 }
 
 function normalizeDuplicateText(value) {
@@ -877,13 +956,11 @@ function EmailAutomationPanelLegacy({
           className="h-9"
         />
 
-        <Input
+        <MultiEmailInput
           value={destinatarios}
-          onChange={(event) => onDestinatariosChange(event.target.value)}
+          onChange={onDestinatariosChange}
           placeholder="email@empresa.com"
-          className="h-9"
-          type="email"
-          inputMode="email"
+          disabled={savingSchedule}
         />
 
         <div className="grid grid-cols-2 gap-2">
@@ -1016,13 +1093,11 @@ function EmailAutomationPanel({
         <div className="grid gap-3 border-t px-4 py-4">
           <div className="grid gap-2">
             <span className="text-xs font-medium text-muted-foreground">Destinatario(s)</span>
-            <Input
+            <MultiEmailInput
               value={destinatarios}
-              onChange={(event) => onDestinatariosChange(event.target.value)}
+              onChange={onDestinatariosChange}
               placeholder="email@empresa.com"
-              className="h-9"
-              type="email"
-              inputMode="email"
+              disabled={savingSchedule}
             />
             <Button
               type="button"
