@@ -34,7 +34,7 @@ import { useTecnicos } from "@/components/context/tecnicos-context"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { getAuthSession } from "@/lib/auth-session"
-import { requestDashboardJson } from "@/lib/dashboard-api"
+import { extractCollection, requestDashboardJson } from "@/lib/dashboard-api"
 import { tempoRelativo } from "@/lib/utils"
 
 const COLORS = {
@@ -178,6 +178,87 @@ function parseEmailList(value) {
     .split(/[;,\s]+/)
     .map((email) => email.trim())
     .filter(Boolean)
+}
+
+function normalizeDuplicateText(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ").toLowerCase()
+}
+
+function normalizeDuplicateEmails(value) {
+  return (Array.isArray(value) ? value : parseEmailList(value))
+    .map((email) => String(email).trim().toLowerCase())
+    .filter(Boolean)
+    .sort()
+    .join("|")
+}
+
+function getScheduleRecipients(item) {
+  if (Array.isArray(item?.destinatarios)) {
+    return item.destinatarios
+      .map((destinatario) => destinatario?.email ?? destinatario)
+      .filter(Boolean)
+  }
+
+  if (Array.isArray(item?.emailsDestino)) {
+    return item.emailsDestino.filter(Boolean)
+  }
+
+  return []
+}
+
+function getScheduleDuplicateSignature({ nome, assunto, emailsDestino, periodo, filtros, agendamento }) {
+  const maquinaIds = Array.isArray(filtros?.maquinasIds) ? filtros.maquinasIds : []
+  const secoes = Array.isArray(filtros?.secoes) ? filtros.secoes : []
+  const frequencia = agendamento?.frequencia ?? "SEMANAL"
+  const hora = Number(agendamento?.hora ?? 8)
+  const minuto = Number(agendamento?.minuto ?? 0)
+
+  return JSON.stringify({
+    nome: normalizeDuplicateText(nome),
+    assunto: normalizeDuplicateText(assunto),
+    emailsDestino: normalizeDuplicateEmails(emailsDestino),
+    maquinaIds: maquinaIds.map(String).sort().join("|"),
+    periodoDias: String(periodo?.valor ?? ""),
+    secoes: secoes.map(String).sort().join("|"),
+    frequencia,
+    diaSemana: frequencia === "SEMANAL" ? String(agendamento?.diaSemana ?? "") : "",
+    diaMes: frequencia === "MENSAL" ? String(agendamento?.diaMes ?? "") : "",
+    horario: `${String(hora).padStart(2, "0")}:${String(minuto).padStart(2, "0")}`,
+  })
+}
+
+function getExistingScheduleDuplicateSignature(item) {
+  const filtros = item?.filtros && typeof item.filtros === "object" ? item.filtros : {}
+  const periodoValor = item?.periodo?.valor ?? item?.periodoDias ?? item?.janelaDados?.periodoDias ?? 30
+  const agendamento = item?.agendamento && typeof item.agendamento === "object"
+    ? item.agendamento
+    : {
+        frequencia: item?.frequencia,
+        diaSemana: item?.diaSemana,
+        diaMes: item?.diaMes,
+        hora: item?.hora,
+        minuto: item?.minuto,
+      }
+
+  return getScheduleDuplicateSignature({
+    nome: item?.nome,
+    assunto: item?.assunto,
+    emailsDestino: getScheduleRecipients(item),
+    periodo: { valor: periodoValor },
+    filtros: {
+      maquinasIds: Array.isArray(filtros.maquinasIds) ? filtros.maquinasIds : [],
+      secoes: Array.isArray(filtros.secoes) ? filtros.secoes : Array.isArray(item?.secoes) ? item.secoes : [],
+    },
+    agendamento,
+  })
+}
+
+async function hasDuplicateSchedule(payload, accessToken) {
+  const response = await requestDashboardJson("/relatorios/agendamentos", accessToken, "os agendamentos")
+  const schedules = extractCollection(response)
+  const signature = getScheduleDuplicateSignature(payload)
+
+  return schedules.some((schedule) => getExistingScheduleDuplicateSignature(schedule) === signature)
 }
 
 function formatDate(date = new Date()) {
@@ -766,6 +847,7 @@ function EmailAutomationPanelLegacy({
   reportPeriodLabel,
   onSaveDraft,
   onSendNow,
+  savingSchedule = false,
 }) {
   const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
   const hasDestinatarios = destinatarios.trim().length > 0
@@ -904,6 +986,7 @@ function EmailAutomationPanel({
   reportPeriodLabel,
   onSaveDraft,
   onSendNow,
+  savingSchedule = false,
 }) {
   const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
   const [open, setOpen] = React.useState(false)
@@ -1042,9 +1125,9 @@ function EmailAutomationPanel({
                   variant="secondary"
                   className="cursor-pointer h-9 bg-muted text-muted-foreground hover:bg-muted"
                   onClick={onSaveDraft}
-                  disabled={!hasDestinatarios}
+                  disabled={!hasDestinatarios || savingSchedule}
                 >
-                  Salvar agendamento
+                  {savingSchedule ? "Salvando..." : "Salvar agendamento"}
                 </Button>
               </div>
             ) : null}
@@ -1437,6 +1520,7 @@ export default function RelatoriosPage() {
   const [emailHorario, setEmailHorario] = React.useState("08:00")
   const [emailDiaSemana, setEmailDiaSemana] = React.useState("segunda")
   const [emailDiaMes, setEmailDiaMes] = React.useState("1")
+  const [salvandoAgendamentoEmail, setSalvandoAgendamentoEmail] = React.useState(false)
   const [geradoEm, setGeradoEm] = React.useState(formatDate())
   const canManageAgendamentos = permissions.canManageAgendamentos
 
@@ -1586,6 +1670,10 @@ export default function RelatoriosPage() {
   }
 
   async function salvarRascunhoEmail() {
+    if (salvandoAgendamentoEmail) {
+      return
+    }
+
     if (!canManageAgendamentos) {
       toast.error("Apenas administradores podem criar agendamentos.")
       return
@@ -1605,6 +1693,8 @@ export default function RelatoriosPage() {
       toast.error("Sua sessao expirou. Faca login novamente.")
       return
     }
+
+    setSalvandoAgendamentoEmail(true)
 
     window.localStorage.setItem(
       EMAIL_DRAFT_STORAGE_KEY,
@@ -1628,21 +1718,32 @@ export default function RelatoriosPage() {
     )
 
     try {
+      const schedulePayload = {
+        nome: payload.nome,
+        emailsDestino: payload.emailsDestino,
+        assunto: payload.assunto,
+        periodo: payload.periodo,
+        filtros: payload.filtros,
+        agendamento: payload.agendamento,
+      }
+
+      const duplicate = await hasDuplicateSchedule(schedulePayload, session.accessToken)
+
+      if (duplicate) {
+        toast.error("Ja existe um agendamento com estes mesmos dados.")
+        return
+      }
+
       await requestDashboardJson("/relatorios/agendamentos", session.accessToken, "o agendamento do relatorio", {
         method: "POST",
-        body: {
-          nome: payload.nome,
-          emailsDestino: payload.emailsDestino,
-          assunto: payload.assunto,
-          periodo: payload.periodo,
-          filtros: payload.filtros,
-          agendamento: payload.agendamento,
-        },
+        body: schedulePayload,
       })
 
       toast.success("Agendamento de e-mail criado.")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar o agendamento.")
+    } finally {
+      setSalvandoAgendamentoEmail(false)
     }
   }
 
@@ -1771,6 +1872,7 @@ export default function RelatoriosPage() {
                 reportPeriodLabel={periodoLabel}
                 onSaveDraft={salvarRascunhoEmail}
                 onSendNow={enviarRelatorioAgora}
+                savingSchedule={salvandoAgendamentoEmail}
               />
             ) : null}
 

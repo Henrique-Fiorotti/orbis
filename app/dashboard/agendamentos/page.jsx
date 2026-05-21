@@ -441,6 +441,47 @@ function validateForm(form) {
   return ""
 }
 
+function normalizeDuplicateText(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ").toLowerCase()
+}
+
+function normalizeDuplicateEmails(value) {
+  return parseEmails(value)
+    .map((email) => email.toLowerCase())
+    .sort()
+    .join("|")
+}
+
+function getDuplicateSignatureFromForm(form) {
+  const { hora, minuto } = parseHorario(form.horario)
+
+  return JSON.stringify({
+    nome: normalizeDuplicateText(form.nome),
+    assunto: normalizeDuplicateText(form.assunto),
+    emailsDestino: normalizeDuplicateEmails(form.emailsDestino),
+    tipoRelatorio: form.tipoRelatorio,
+    maquinaId: form.tipoRelatorio === "maquina" ? String(form.maquinaId || "") : "",
+    periodoDias: String(form.periodoDias),
+    secoes: getEnabledSections(form.secoes).sort().join("|"),
+    frequencia: form.frequencia,
+    diaSemana: form.frequencia === "SEMANAL" ? String(form.diaSemana) : "",
+    diaMes: form.frequencia === "MENSAL" ? String(form.diaMes) : "",
+    horario: `${String(hora).padStart(2, "0")}:${String(minuto).padStart(2, "0")}`,
+  })
+}
+
+function isDuplicateAgendamento(form, agendamentos, ignoredId = null) {
+  const signature = getDuplicateSignatureFromForm(form)
+
+  return agendamentos.some((agendamento) => {
+    if (ignoredId !== null && String(agendamento.id) === String(ignoredId)) {
+      return false
+    }
+
+    return getDuplicateSignatureFromForm(buildFormFromAgendamento(agendamento)) === signature
+  })
+}
+
 function StatusBadge({ status }) {
   const active = status === "ATIVO"
 
@@ -810,9 +851,15 @@ export default function AgendamentosPage() {
 
   async function salvarAgendamento() {
     const validationMessage = validateForm(form)
+    const editing = modoSheet === "editar" && agendamentoSelecionado?.id
 
     if (validationMessage) {
       toast.error(validationMessage)
+      return
+    }
+
+    if (isDuplicateAgendamento(form, agendamentos, editing ? agendamentoSelecionado.id : null)) {
+      toast.error("Ja existe um agendamento com estes mesmos dados.")
       return
     }
 
@@ -826,7 +873,6 @@ export default function AgendamentosPage() {
 
     try {
       const payload = buildPayload(form)
-      const editing = modoSheet === "editar" && agendamentoSelecionado?.id
 
       await requestDashboardJson(
         editing ? `/relatorios/agendamentos/${agendamentoSelecionado.id}` : "/relatorios/agendamentos",
