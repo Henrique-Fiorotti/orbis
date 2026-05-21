@@ -531,15 +531,24 @@ function ChatMessage({ message, animate = false, onAnimationComplete }) {
   )
 }
 
-function EmptyPromptState({ onSelectPrompt }) {
+function EmptyPromptState({ fullscreen = false, onSelectPrompt }) {
   return (
-    <div className="flex min-h-full items-center justify-center px-1 py-4 mt-5">
-      <div className="w-full max-w-[320px]">
-        <div className="mb-5 flex items-center gap-3">
+    <div className={cn(
+      "flex min-h-full flex-1 items-center justify-center  px-1 py-4",
+      fullscreen && "py-0"
+    )}>
+      <div className={cn("w-full", fullscreen ? "max-w-[400px]" : "max-w-[320px]")}>
+        <div className={cn(
+          "mb-5 flex items-center gap-3",
+          fullscreen && "justify-center text-center"
+        )}>
           <div className="flex size-9 shrink-0 items-center justify-center rounded-[8px] text-primary">
             <Image src="/orb-ia.svg" className="dark:invert" alt="Orb" width={58} height={58} />
           </div>
-          <h3 className="m-0 text-left text-xl font-semibold leading-tight text-foreground">
+          <h3 className={cn(
+            "m-0 text-xl font-semibold leading-tight text-foreground",
+            fullscreen ? "text-center" : "text-left"
+          )}>
             O que posso olhar por você?
           </h3>
         </div>
@@ -553,8 +562,10 @@ function EmptyPromptState({ onSelectPrompt }) {
                 key={item.label}
                 type="button"
                 onClick={() => onSelectPrompt(item.prompt)}
-                className="group flex w-full cursor-pointer items-center gap-3 rounded-[8px] px-2 py-2 text-left text-sm text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-              >
+                className={cn("group flex w-full cursor-pointer items-center gap-3 rounded-[8px] px-2 py-2 text-left text-sm text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
+                  fullscreen ? "ms-6 " : "ms-0"
+                )}
+             >
                 <Icon className="size-4 shrink-0 text-muted-foreground transition group-hover:text-primary" />
                 <span className="truncate">{item.label}</span>
               </button>
@@ -1792,7 +1803,7 @@ export function DashboardAiAssistant() {
                   )}
                 >
                   {messages.length === 0 ? (
-                    <EmptyPromptState onSelectPrompt={handleSuggestedPrompt} />
+                    <EmptyPromptState fullscreen={fullscreen} onSelectPrompt={handleSuggestedPrompt} />
                   ) : (
                     messages.map((message, index) => (
                       <ChatMessage
