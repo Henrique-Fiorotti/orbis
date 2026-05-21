@@ -10,6 +10,8 @@ import {
   LucideEye,
   Maximize2Icon,
   MessageSquareIcon,
+  MicIcon,
+  MicOffIcon,
   Minimize2Icon,
   PanelLeftIcon,
   PlusIcon,
@@ -26,6 +28,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -38,7 +42,15 @@ import { cn } from "@/lib/utils"
 const MIN_QUESTION_LENGTH = 3
 const MAX_QUESTION_LENGTH = 500
 const CHAT_HISTORY_STORAGE_KEY = "orbis-orb-chat-history"
+const SPEECH_LANGUAGE_STORAGE_KEY = "orbis-orb-speech-language"
 const MAX_CHAT_HISTORY_ITEMS = 12
+const ORB_FULLSCREEN_SCROLL_LOCK = "orb-fullscreen"
+const SPEECH_LANGUAGE_OPTIONS = [
+  { value: "pt-BR", label: "Português", shortLabel: "PT" },
+  { value: "en-US", label: "English", shortLabel: "EN" },
+  { value: "es-ES", label: "Español", shortLabel: "ES" },
+]
+const SPEECH_LANGUAGE_VALUES = new Set(SPEECH_LANGUAGE_OPTIONS.map((option) => option.value))
 const ORB_COMPACT_GAP = 20
 const ORB_COMPACT_BOTTOM = 80
 const ORB_COMPACT_WIDTH = 420
@@ -168,6 +180,36 @@ function createMessage(role, content, extras = {}) {
     createdAt: new Date().toISOString(),
     ...extras,
   }
+}
+
+function getBrowserSpeechLanguage() {
+  if (typeof window === "undefined") {
+    return "pt-BR"
+  }
+
+  try {
+    const storedLanguage = window.localStorage.getItem(SPEECH_LANGUAGE_STORAGE_KEY)
+
+    if (SPEECH_LANGUAGE_VALUES.has(storedLanguage)) {
+      return storedLanguage
+    }
+  } catch {}
+
+  const browserLanguage = String(window.navigator?.language || "").toLowerCase()
+
+  if (browserLanguage.startsWith("en")) {
+    return "en-US"
+  }
+
+  if (browserLanguage.startsWith("es")) {
+    return "es-ES"
+  }
+
+  return "pt-BR"
+}
+
+function getSpeechLanguageOption(value) {
+  return SPEECH_LANGUAGE_OPTIONS.find((option) => option.value === value) ?? SPEECH_LANGUAGE_OPTIONS[0]
 }
 
 function getChatTitleFromQuestion(question) {
@@ -652,6 +694,10 @@ export function DashboardAiAssistant() {
   const [inlineError, setInlineError] = React.useState("")
   const [lastFailedRequest, setLastFailedRequest] = React.useState(null)
   const [loading, setLoading] = React.useState(false)
+  const [speechSupported, setSpeechSupported] = React.useState(false)
+  const [speechListening, setSpeechListening] = React.useState(false)
+  const [speechStatus, setSpeechStatus] = React.useState("")
+  const [speechLanguage, setSpeechLanguage] = React.useState("pt-BR")
   const [orbDragRect, setOrbDragRect] = React.useState(null)
   const [isDraggingOrbButton, setIsDraggingOrbButton] = React.useState(false)
   const [activeOrbButtonPosition, setActiveOrbButtonPosition] = React.useState(orbButtonPosition)
@@ -663,6 +709,9 @@ export function DashboardAiAssistant() {
   const abortControllerRef = React.useRef(null)
   const messagesRef = React.useRef([])
   const activeChatIdRef = React.useRef(null)
+  const speechRecognitionRef = React.useRef(null)
+  const speechBaseInputRef = React.useRef("")
+  const speechFinalTranscriptRef = React.useRef("")
   const windowActionRef = React.useRef(null)
   const orbButtonActionRef = React.useRef(null)
   const activeOrbButtonPositionRef = React.useRef(activeOrbButtonPosition)
@@ -680,6 +729,7 @@ export function DashboardAiAssistant() {
     !loading &&
     trimmedInput.length >= MIN_QUESTION_LENGTH &&
     promptPayload.length <= MAX_QUESTION_LENGTH
+  const speechLanguageOption = getSpeechLanguageOption(speechLanguage)
   const assistantReady = assistantPhase === "open"
   const assistantTransitionDuration =
     assistantPhase === "opening" || assistantPhase === "closing"
@@ -716,6 +766,10 @@ export function DashboardAiAssistant() {
   }, [])
 
   React.useEffect(() => {
+    setSpeechLanguage(getBrowserSpeechLanguage())
+  }, [])
+
+  React.useEffect(() => {
     if (!historyLoaded) {
       return
     }
@@ -725,6 +779,7 @@ export function DashboardAiAssistant() {
 
   React.useEffect(() => {
     if (!open) {
+      stopSpeechRecognition()
       setAssistantPhase("closed")
       setFullscreen(false)
       setHistorySidebarOpen(false)
@@ -880,6 +935,100 @@ export function DashboardAiAssistant() {
     }
   }, [])
 
+  React.useEffect(() => {
+    const SpeechRecognition =
+      typeof window !== "undefined" &&
+      (window.SpeechRecognition || window.webkitSpeechRecognition)
+
+    if (!SpeechRecognition) {
+      setSpeechSupported(false)
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.lang = speechLanguage
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.maxAlternatives = 1
+
+    recognition.onstart = () => {
+      setSpeechListening(true)
+      setSpeechStatus("Ouvindo...")
+    }
+
+    recognition.onresult = (event) => {
+      let interimTranscript = ""
+      let finalTranscript = speechFinalTranscriptRef.current
+
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const transcript = event.results[index]?.[0]?.transcript ?? ""
+
+        if (event.results[index].isFinal) {
+          finalTranscript = `${finalTranscript} ${transcript}`.trim()
+        } else {
+          interimTranscript = `${interimTranscript} ${transcript}`.trim()
+        }
+      }
+
+      speechFinalTranscriptRef.current = finalTranscript
+      const spokenText = `${finalTranscript} ${interimTranscript}`.trim()
+      const baseInput = speechBaseInputRef.current.trim()
+      const nextInput = baseInput && spokenText ? `${baseInput} ${spokenText}` : spokenText || baseInput
+
+      setInput(nextInput.slice(0, MAX_QUESTION_LENGTH))
+      setInlineError("")
+      setSpeechStatus(interimTranscript ? "Transcrevendo..." : "Ouvindo...")
+    }
+
+    recognition.onerror = (event) => {
+      const message =
+        event.error === "not-allowed" || event.error === "service-not-allowed"
+          ? "Permita o uso do microfone para transcrever."
+          : event.error === "no-speech"
+            ? "Nenhuma fala detectada."
+            : "Não foi possível transcrever o áudio."
+
+      setSpeechStatus(message)
+      setSpeechListening(false)
+    }
+
+    recognition.onend = () => {
+      setSpeechListening(false)
+      setSpeechStatus((current) => {
+        if (current && current !== "Ouvindo..." && current !== "Transcrevendo...") {
+          return current
+        }
+
+        return speechFinalTranscriptRef.current ? "Transcrição concluída." : ""
+      })
+    }
+
+    speechRecognitionRef.current = recognition
+    setSpeechSupported(true)
+
+    return () => {
+      recognition.abort()
+      speechRecognitionRef.current = null
+    }
+  }, [speechLanguage])
+
+  React.useEffect(() => {
+    const textarea = textareaRef.current
+
+    if (!textarea) {
+      return
+    }
+
+    const minHeight = 48
+    const maxHeight = fullscreen ? 160 : 112
+
+    textarea.style.height = "auto"
+    const nextHeight = Math.max(minHeight, Math.min(textarea.scrollHeight, maxHeight))
+    textarea.style.height = `${nextHeight}px`
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? "auto" : "hidden"
+    textarea.scrollTop = textarea.scrollHeight
+  }, [fullscreen, input, open])
+
   function syncActiveChat(nextMessages) {
     messagesRef.current = nextMessages
     setMessages(nextMessages)
@@ -934,11 +1083,13 @@ export function DashboardAiAssistant() {
       abortControllerRef.current?.abort()
     }
 
+    stopSpeechRecognition()
     abortControllerRef.current = null
     setLoading(false)
     setInput("")
     setPageContexts([])
     setInlineError("")
+    setSpeechStatus("")
     setLastFailedRequest(null)
     setActiveChatId(null)
     activeChatIdRef.current = null
@@ -951,6 +1102,7 @@ export function DashboardAiAssistant() {
       abortControllerRef.current?.abort()
     }
 
+    stopSpeechRecognition()
     const chat = chatHistory.find((item) => item.id === chatId)
     if (!chat) {
       return
@@ -959,6 +1111,7 @@ export function DashboardAiAssistant() {
     abortControllerRef.current = null
     setLoading(false)
     setInlineError("")
+    setSpeechStatus("")
     setLastFailedRequest(null)
     setActiveChatId(chat.id)
     activeChatIdRef.current = chat.id
@@ -979,6 +1132,53 @@ export function DashboardAiAssistant() {
 
   function cancelResponse() {
     abortControllerRef.current?.abort()
+  }
+
+  function stopSpeechRecognition() {
+    try {
+      speechRecognitionRef.current?.stop()
+    } catch {}
+
+    setSpeechListening(false)
+  }
+
+  function startSpeechRecognition() {
+    if (!speechSupported || !speechRecognitionRef.current) {
+      setSpeechStatus("Transcrição por voz indisponível neste navegador.")
+      return
+    }
+
+    if (speechListening) {
+      stopSpeechRecognition()
+      return
+    }
+
+    try {
+      speechBaseInputRef.current = input.trim()
+      speechFinalTranscriptRef.current = ""
+      speechRecognitionRef.current.lang = speechLanguage
+      setInlineError("")
+      setSpeechStatus("Ouvindo...")
+      speechRecognitionRef.current.start()
+      textareaRef.current?.focus()
+    } catch {
+      setSpeechStatus("Não foi possível iniciar o microfone.")
+      setSpeechListening(false)
+    }
+  }
+
+  function handleSpeechLanguageChange(value) {
+    if (!SPEECH_LANGUAGE_VALUES.has(value)) {
+      return
+    }
+
+    stopSpeechRecognition()
+    setSpeechLanguage(value)
+    setSpeechStatus("")
+
+    try {
+      window.localStorage.setItem(SPEECH_LANGUAGE_STORAGE_KEY, value)
+    } catch {}
   }
 
   function markMessageAnimated(messageId) {
@@ -1074,6 +1274,8 @@ export function DashboardAiAssistant() {
 
     const question = trimmedInput
     const requestContexts = pageContexts
+    stopSpeechRecognition()
+    setSpeechStatus("")
     setInput("")
     setPageContexts([])
     sendQuestion({
@@ -1685,6 +1887,28 @@ export function DashboardAiAssistant() {
                   ) : null}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={speechListening ? "default" : "outline"}
+                    size="icon-lg"
+                    className={cn(
+                      "size-12 shrink-0 cursor-pointer p-0! disabled:cursor-not-allowed",
+                      speechListening && "bg-[#7c3aed] text-white hover:bg-[#6d28d9]"
+                    )}
+                    disabled={loading || !speechSupported}
+                    onClick={startSpeechRecognition}
+                    aria-label={speechListening ? "Parar transcrição por voz" : "Transcrever pergunta por voz"}
+                    aria-pressed={speechListening}
+                  >
+                    {speechListening ? <MicOffIcon className="size-4" /> : <MicIcon className="size-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={8}>
+                  {speechSupported ? (speechListening ? "Parar transcrição" : "Falar pergunta") : "Voz indisponível"}
+                </TooltipContent>
+              </Tooltip>
               <div className="min-w-0  flex-1">
                 <textarea
                   ref={textareaRef}
@@ -1692,24 +1916,64 @@ export function DashboardAiAssistant() {
                   onChange={(event) => {
                     setInput(event.target.value)
                     setInlineError("")
+                    setSpeechStatus("")
                   }}
                   onKeyDown={handleKeyDown}
                   maxLength={MAX_QUESTION_LENGTH}
                   rows={1}
                   placeholder="Pergunte sobre máquinas, sensores ou alertas..."
-                  className="block h-12 max-h-28 min-h-12 w-full resize-none overflow-y-hidden rounded-[8px] border bg-background px-3 py-1 text-sm leading-5 outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="block h-12 min-h-12 w-full resize-none overflow-y-hidden rounded-[8px] border bg-background px-3 py-1 text-sm leading-5 outline-none transition-[height,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={loading}
                   aria-label="Pergunta para a IA"
                 />
-                <span
-                  className={cn(
-                    "block text-right text-[10px] text-muted-foreground",
-                    promptLength > MAX_QUESTION_LENGTH && "text-destructive"
-                  )}
-                >
-                  {promptLength}/{MAX_QUESTION_LENGTH}
-                  {hasPromptExtras ? " com contexto" : ""}
-                </span>
+                <div className="mt-1 flex min-h-3 items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 shrink-0 cursor-pointer rounded-[6px]! px-1.5! py-0! text-[10px] font-semibold text-muted-foreground hover:text-foreground disabled:cursor-not-allowed"
+                          disabled={loading || speechListening}
+                          aria-label={`Idioma da transcrição: ${speechLanguageOption.label}`}
+                        >
+                          {speechLanguageOption.shortLabel}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" side="top" className="w-40">
+                        <DropdownMenuRadioGroup value={speechLanguage} onValueChange={handleSpeechLanguageChange}>
+                          {SPEECH_LANGUAGE_OPTIONS.map((option) => (
+                            <DropdownMenuRadioItem key={option.value} value={option.value} className="cursor-pointer">
+                              <span className="w-6 text-xs font-semibold">{option.shortLabel}</span>
+                              <span>{option.label}</span>
+                            </DropdownMenuRadioItem>
+                          ))}
+                        </DropdownMenuRadioGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <span
+                      className={cn(
+                        "min-w-0 truncate text-[10px] text-muted-foreground",
+                        speechListening && "text-[#7c3aed]",
+                        speechStatus.includes("Não") || speechStatus.includes("Permita") || speechStatus.includes("Nenhuma")
+                          ? "text-destructive"
+                          : ""
+                      )}
+                    >
+                      {speechStatus}
+                    </span>
+                  </div>
+                  <span
+                    className={cn(
+                      "shrink-0 text-[10px] text-muted-foreground",
+                      promptLength > MAX_QUESTION_LENGTH && "text-destructive"
+                    )}
+                  >
+                    {promptLength}/{MAX_QUESTION_LENGTH}
+                    {hasPromptExtras ? " com contexto" : ""}
+                  </span>
+                </div>
               </div>
               <Button
                 type={loading ? "button" : "submit"}
