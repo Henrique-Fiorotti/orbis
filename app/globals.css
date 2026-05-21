@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../node_modules/tw-animate-css/dist/tw-animate.css";
+@import "../node_modules/lenis/dist/lenis.css";
 
 @custom-variant dark (&:is(.dark *));
 @import "shadcn/tailwind.css";
@@ -73,6 +74,12 @@ html::-webkit-scrollbar-button,
 
 body {
   font-family: var(--font-poppins), sans-serif;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 h1,

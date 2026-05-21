@@ -15,6 +15,7 @@ import {
   ShieldAlertIcon,
   WrenchIcon,
   WashingMachineIcon,
+  NfcIcon,
 } from "lucide-react"
 
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
@@ -461,7 +462,7 @@ function TechnicianDashboard() {
         <section id="tour-technician-shortcuts" className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/alertas")}>
             <span className="flex items-center gap-2">
-              <CircleDotIcon className="size-4 text-[#5E17EB]" />
+              <AlertTriangleIcon className="size-4 text-[#5E17EB]" />
               Alertas em aberto
             </span>
             <ArrowRightIcon className="size-4" />
@@ -475,7 +476,7 @@ function TechnicianDashboard() {
           </Button>
           <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/sensores")}>
             <span className="flex items-center gap-2">
-              <AlertTriangleIcon className="size-4 text-[#5E17EB]" />
+              <NfcIcon className="size-4 text-[#5E17EB]" />
               Sensores
             </span>
             <ArrowRightIcon className="size-4" />
