@@ -7,6 +7,8 @@ const STORAGE_KEY = "orbis-dashboard-preferences"
 const DEFAULT_PREFERENCES = {
   textScale: "padrao",
   smoothScrollEnabled: true,
+  orbButtonVisible: true,
+  orbButtonPosition: "bottom-right",
 }
 
 const TEXT_SCALE_VALUES = {
@@ -14,6 +16,15 @@ const TEXT_SCALE_VALUES = {
   padrao: "",
   ampliada: "106.25%",
 }
+
+const ORB_BUTTON_POSITION_VALUES = new Set([
+  "top-left",
+  "top-right",
+  "center-left",
+  "center-right",
+  "bottom-left",
+  "bottom-right",
+])
 
 const DashboardPreferencesContext = React.createContext(null)
 
@@ -32,6 +43,13 @@ function normalizePreferences(value) {
       typeof value?.smoothScrollEnabled === "boolean"
         ? value.smoothScrollEnabled
         : DEFAULT_PREFERENCES.smoothScrollEnabled,
+    orbButtonVisible:
+      typeof value?.orbButtonVisible === "boolean"
+        ? value.orbButtonVisible
+        : DEFAULT_PREFERENCES.orbButtonVisible,
+    orbButtonPosition: ORB_BUTTON_POSITION_VALUES.has(value?.orbButtonPosition)
+      ? value.orbButtonPosition
+      : DEFAULT_PREFERENCES.orbButtonPosition,
   }
 }
 
@@ -100,6 +118,16 @@ export function DashboardPreferencesProvider({ children }) {
       setSmoothScrollEnabled: (smoothScrollEnabled) => {
         setPreferences((currentPreferences) =>
           normalizePreferences({ ...currentPreferences, smoothScrollEnabled })
+        )
+      },
+      setOrbButtonVisible: (orbButtonVisible) => {
+        setPreferences((currentPreferences) =>
+          normalizePreferences({ ...currentPreferences, orbButtonVisible })
+        )
+      },
+      setOrbButtonPosition: (orbButtonPosition) => {
+        setPreferences((currentPreferences) =>
+          normalizePreferences({ ...currentPreferences, orbButtonPosition })
         )
       },
       resetPreferences: () => {
