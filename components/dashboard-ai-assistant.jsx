@@ -437,7 +437,12 @@ function ChatMessage({ message, animate = false, onAnimationComplete }) {
   }, [animate, isDone, onAnimationComplete])
 
   return (
-    <div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
+    <div className={cn("flex w-full items-start gap-2", isUser ? "justify-end" : "justify-start")}>
+      {!isUser && !isError ? (
+        <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full border bg-background shadow-sm">
+          <Image src="/orb-ia.svg" className="dark:invert" alt="Orb" width={22} height={22} />
+        </div>
+      ) : null}
       <div className={cn(
         "max-w-[86%] rounded-[8px] border px-3 py-2 shadow-sm",
         isUser ? "border-primary/70 bg-primary text-primary-foreground"
@@ -446,7 +451,6 @@ function ChatMessage({ message, animate = false, onAnimationComplete }) {
       )}>
         <div className="flex items-start gap-2">
           {isError && <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />}
-          {!isUser && !isError && <LucideEye className="mt-0.5 size-4 shrink-0 text-primary" />}
           <div className="min-w-0 flex-1 break-words">
             <FormattedMessageContent content={content} isTyping={isTyping} />
           </div>
@@ -666,7 +670,7 @@ export function DashboardAiAssistant() {
     }
 
     if (fullscreen) {
-      setHistorySidebarOpen(true)
+      setHistorySidebarOpen(false)
       setAssistantRect(getExpandedAssistantRect())
     } else if (open) {
       setAssistantRect(getCompactAssistantRect())
