@@ -12,29 +12,39 @@ import {
   GaugeIcon,
   MailIcon,
   MenuIcon,
+  PlusIcon,
   PrinterIcon,
   SendIcon,
   ShieldAlertIcon,
   SlidersHorizontalIcon,
   WashingMachineIcon,
+  XIcon,
   ZapIcon,
 } from "lucide-react"
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { SiteHeader } from "@/components/site-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAlertas } from "@/components/context/alertas-context"
+import { useAdmins } from "@/components/context/admins-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
 import { useSensores } from "@/components/context/sensores-context"
 import { useTecnicos } from "@/components/context/tecnicos-context"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { getAuthSession } from "@/lib/auth-session"
-import { requestDashboardJson } from "@/lib/dashboard-api"
+import { extractCollection, requestDashboardJson } from "@/lib/dashboard-api"
 import { tempoRelativo } from "@/lib/utils"
 
 const COLORS = {
@@ -178,6 +188,244 @@ function parseEmailList(value) {
     .split(/[;,\s]+/)
     .map((email) => email.trim())
     .filter(Boolean)
+}
+
+function getUniqueEmails(nextEmails) {
+  const seen = new Set()
+  const uniqueEmails = []
+
+  for (const rawEmail of nextEmails) {
+    const email = rawEmail.trim()
+    const key = email.toLowerCase()
+
+    if (!email || seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    uniqueEmails.push(email)
+  }
+
+  return uniqueEmails
+}
+
+function buildEmployeeEmailOptions(tecnicos = [], admins = []) {
+  const seen = new Set()
+  const options = []
+
+  for (const person of [...admins, ...tecnicos]) {
+    const email = String(person?.email ?? "").trim()
+    const key = email.toLowerCase()
+
+    if (!email || seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    options.push({
+      email,
+      nome: person?.nome || email,
+      role: person?.role === "ADMIN" ? "Administrador" : "Técnico",
+    })
+  }
+
+  return options.sort((a, b) => a.nome.localeCompare(b.nome))
+}
+
+function MultiEmailInput({ value, onChange, disabled = false, placeholder = "email@empresa.com", employeeOptions = [] }) {
+  const [draft, setDraft] = React.useState("")
+  const emails = React.useMemo(() => parseEmailList(value), [value])
+  const selectedEmailKeys = React.useMemo(() => new Set(emails.map((email) => email.toLowerCase())), [emails])
+
+  function updateEmails(nextEmails) {
+    const uniqueEmails = getUniqueEmails(nextEmails)
+    onChange(uniqueEmails.join(", "))
+  }
+
+  function addEmails(rawValue) {
+    const nextEmails = parseEmailList(rawValue)
+
+    if (nextEmails.length === 0) {
+      return
+    }
+
+    updateEmails([...emails, ...nextEmails])
+    setDraft("")
+  }
+
+  function removeEmail(emailToRemove) {
+    updateEmails(emails.filter((email) => email !== emailToRemove))
+  }
+
+  function addEmployeeEmail(email) {
+    updateEmails([...emails, email])
+  }
+
+  function handleKeyDown(event) {
+    if (["Enter", "Tab", ","].includes(event.key)) {
+      if (draft.trim()) {
+        event.preventDefault()
+        addEmails(draft)
+      }
+    }
+
+    if (event.key === "Backspace" && !draft && emails.length > 0) {
+      removeEmail(emails[emails.length - 1])
+    }
+  }
+
+  function handlePaste(event) {
+    const text = event.clipboardData.getData("text")
+
+    if (parseEmailList(text).length > 1) {
+      event.preventDefault()
+      addEmails(text)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-xs transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
+        {emails.map((email) => (
+          <span key={email} className="inline-flex max-w-full items-center gap-1 rounded-md border bg-muted px-2 py-1 text-xs text-foreground">
+            <span className="truncate">{email}</span>
+            <button
+              type="button"
+              className="cursor-pointer rounded-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => removeEmail(email)}
+              disabled={disabled}
+              aria-label={`Remover ${email}`}
+            >
+              <XIcon className="size-3" />
+            </button>
+          </span>
+        ))}
+        <input
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => addEmails(draft)}
+          onPaste={handlePaste}
+          placeholder={emails.length === 0 ? placeholder : "Adicionar outro e-mail"}
+          disabled={disabled}
+          className="min-w-[180px] flex-1 bg-transparent py-1 outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          type="email"
+          inputMode="email"
+        />
+      </div>
+      {employeeOptions.length > 0 ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="w-fit cursor-pointer" disabled={disabled}>
+              <PlusIcon className="mr-1 size-4" />
+              Adicionar cadastrado
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="max-h-72 w-80 overflow-y-auto">
+            <DropdownMenuLabel>Funcionários cadastrados</DropdownMenuLabel>
+            {employeeOptions.map((employee) => {
+              const selected = selectedEmailKeys.has(employee.email.toLowerCase())
+
+              return (
+                <DropdownMenuItem
+                  key={employee.email}
+                  className="cursor-pointer"
+                  disabled={selected}
+                  onSelect={() => addEmployeeEmail(employee.email)}
+                >
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-medium">{employee.nome}</span>
+                    <span className="truncate text-xs text-muted-foreground">{employee.email} - {employee.role}</span>
+                  </div>
+                </DropdownMenuItem>
+              )
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+    </div>
+  )
+}
+
+function normalizeDuplicateText(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ").toLowerCase()
+}
+
+function normalizeDuplicateEmails(value) {
+  return (Array.isArray(value) ? value : parseEmailList(value))
+    .map((email) => String(email).trim().toLowerCase())
+    .filter(Boolean)
+    .sort()
+    .join("|")
+}
+
+function getScheduleRecipients(item) {
+  if (Array.isArray(item?.destinatarios)) {
+    return item.destinatarios
+      .map((destinatario) => destinatario?.email ?? destinatario)
+      .filter(Boolean)
+  }
+
+  if (Array.isArray(item?.emailsDestino)) {
+    return item.emailsDestino.filter(Boolean)
+  }
+
+  return []
+}
+
+function getScheduleDuplicateSignature({ nome, assunto, emailsDestino, periodo, filtros, agendamento }) {
+  const maquinaIds = Array.isArray(filtros?.maquinasIds) ? filtros.maquinasIds : []
+  const secoes = Array.isArray(filtros?.secoes) ? filtros.secoes : []
+  const frequencia = agendamento?.frequencia ?? "SEMANAL"
+  const hora = Number(agendamento?.hora ?? 8)
+  const minuto = Number(agendamento?.minuto ?? 0)
+
+  return JSON.stringify({
+    nome: normalizeDuplicateText(nome),
+    assunto: normalizeDuplicateText(assunto),
+    emailsDestino: normalizeDuplicateEmails(emailsDestino),
+    maquinaIds: maquinaIds.map(String).sort().join("|"),
+    periodoDias: String(periodo?.valor ?? ""),
+    secoes: secoes.map(String).sort().join("|"),
+    frequencia,
+    diaSemana: frequencia === "SEMANAL" ? String(agendamento?.diaSemana ?? "") : "",
+    diaMes: frequencia === "MENSAL" ? String(agendamento?.diaMes ?? "") : "",
+    horario: `${String(hora).padStart(2, "0")}:${String(minuto).padStart(2, "0")}`,
+  })
+}
+
+function getExistingScheduleDuplicateSignature(item) {
+  const filtros = item?.filtros && typeof item.filtros === "object" ? item.filtros : {}
+  const periodoValor = item?.periodo?.valor ?? item?.periodoDias ?? item?.janelaDados?.periodoDias ?? 30
+  const agendamento = item?.agendamento && typeof item.agendamento === "object"
+    ? item.agendamento
+    : {
+        frequencia: item?.frequencia,
+        diaSemana: item?.diaSemana,
+        diaMes: item?.diaMes,
+        hora: item?.hora,
+        minuto: item?.minuto,
+      }
+
+  return getScheduleDuplicateSignature({
+    nome: item?.nome,
+    assunto: item?.assunto,
+    emailsDestino: getScheduleRecipients(item),
+    periodo: { valor: periodoValor },
+    filtros: {
+      maquinasIds: Array.isArray(filtros.maquinasIds) ? filtros.maquinasIds : [],
+      secoes: Array.isArray(filtros.secoes) ? filtros.secoes : Array.isArray(item?.secoes) ? item.secoes : [],
+    },
+    agendamento,
+  })
+}
+
+async function hasDuplicateSchedule(payload, accessToken) {
+  const response = await requestDashboardJson("/relatorios/agendamentos", accessToken, "os agendamentos")
+  const schedules = extractCollection(response)
+  const signature = getScheduleDuplicateSignature(payload)
+
+  return schedules.some((schedule) => getExistingScheduleDuplicateSignature(schedule) === signature)
 }
 
 function formatDate(date = new Date()) {
@@ -766,6 +1014,9 @@ function EmailAutomationPanelLegacy({
   reportPeriodLabel,
   onSaveDraft,
   onSendNow,
+  savingSchedule = false,
+  sendingNow = false,
+  employeeEmailOptions = [],
 }) {
   const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
   const hasDestinatarios = destinatarios.trim().length > 0
@@ -795,13 +1046,12 @@ function EmailAutomationPanelLegacy({
           className="h-9"
         />
 
-        <Input
+        <MultiEmailInput
           value={destinatarios}
-          onChange={(event) => onDestinatariosChange(event.target.value)}
+          onChange={onDestinatariosChange}
           placeholder="email@empresa.com"
-          className="h-9"
-          type="email"
-          inputMode="email"
+          disabled={savingSchedule}
+          employeeOptions={employeeEmailOptions}
         />
 
         <div className="grid grid-cols-2 gap-2">
@@ -871,9 +1121,10 @@ function EmailAutomationPanelLegacy({
           variant="outline"
           className="cursor-pointer mt-1 h-9 border-primary text-primary hover:bg-primary/10 hover:text-primary"
           onClick={onSendNow}
+          disabled={!hasDestinatarios || sendingNow}
         >
           <SendIcon className="mr-1 size-4" />
-          Enviar agora
+          {sendingNow ? "Enviando..." : "Enviar agora"}
         </Button>
       </div>
 
@@ -904,6 +1155,9 @@ function EmailAutomationPanel({
   reportPeriodLabel,
   onSaveDraft,
   onSendNow,
+  savingSchedule = false,
+  sendingNow = false,
+  employeeEmailOptions = [],
 }) {
   const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
   const [open, setOpen] = React.useState(false)
@@ -933,22 +1187,22 @@ function EmailAutomationPanel({
         <div className="grid gap-3 border-t px-4 py-4">
           <div className="grid gap-2">
             <span className="text-xs font-medium text-muted-foreground">Destinatario(s)</span>
-            <Input
+            <MultiEmailInput
               value={destinatarios}
-              onChange={(event) => onDestinatariosChange(event.target.value)}
+              onChange={onDestinatariosChange}
               placeholder="email@empresa.com"
-              className="h-9"
-              type="email"
-              inputMode="email"
+              disabled={savingSchedule}
+              employeeOptions={employeeEmailOptions}
             />
             <Button
               type="button"
               variant="outline"
               className="cursor-pointer h-9 border-primary text-primary hover:bg-primary/10 hover:text-primary"
               onClick={onSendNow}
+              disabled={!hasDestinatarios || sendingNow}
             >
               <SendIcon className="mr-1 size-4" />
-              Enviar agora
+              {sendingNow ? "Enviando..." : "Enviar agora"}
             </Button>
           </div>
 
@@ -1042,9 +1296,9 @@ function EmailAutomationPanel({
                   variant="secondary"
                   className="cursor-pointer h-9 bg-muted text-muted-foreground hover:bg-muted"
                   onClick={onSaveDraft}
-                  disabled={!hasDestinatarios}
+                  disabled={!hasDestinatarios || savingSchedule}
                 >
-                  Salvar agendamento
+                  {savingSchedule ? "Salvando..." : "Salvar agendamento"}
                 </Button>
               </div>
             ) : null}
@@ -1424,6 +1678,7 @@ export default function RelatoriosPage() {
     carregando: loadingTecnicos,
     recarregarTecnicos,
   } = useTecnicos()
+  const { admins } = useAdmins()
 
   const [tipoRelatorio, setTipoRelatorio] = React.useState("geral")
   const [maquinaId, setMaquinaId] = React.useState("")
@@ -1437,8 +1692,12 @@ export default function RelatoriosPage() {
   const [emailHorario, setEmailHorario] = React.useState("08:00")
   const [emailDiaSemana, setEmailDiaSemana] = React.useState("segunda")
   const [emailDiaMes, setEmailDiaMes] = React.useState("1")
+  const [salvandoAgendamentoEmail, setSalvandoAgendamentoEmail] = React.useState(false)
+  const [enviandoRelatorioEmail, setEnviandoRelatorioEmail] = React.useState(false)
+  const envioRelatorioEmailEmAndamentoRef = React.useRef(false)
   const [geradoEm, setGeradoEm] = React.useState(formatDate())
   const canManageAgendamentos = permissions.canManageAgendamentos
+  const employeeEmailOptions = React.useMemo(() => buildEmployeeEmailOptions(tecnicos, admins), [admins, tecnicos])
 
   React.useEffect(() => {
     if (!maquinaId && maquinas.length > 0) {
@@ -1585,7 +1844,22 @@ export default function RelatoriosPage() {
     return ""
   }
 
+  function limparFormularioEmail() {
+    setEmailNome("Relatorio Operacional")
+    setEmailAssunto("Relatorio Operacional Orbis")
+    setEmailDestinatarios("")
+    setEmailFrequencia("semanal")
+    setEmailHorario("08:00")
+    setEmailDiaSemana("segunda")
+    setEmailDiaMes("1")
+    window.localStorage.removeItem(EMAIL_DRAFT_STORAGE_KEY)
+  }
+
   async function salvarRascunhoEmail() {
+    if (salvandoAgendamentoEmail) {
+      return
+    }
+
     if (!canManageAgendamentos) {
       toast.error("Apenas administradores podem criar agendamentos.")
       return
@@ -1605,6 +1879,8 @@ export default function RelatoriosPage() {
       toast.error("Sua sessao expirou. Faca login novamente.")
       return
     }
+
+    setSalvandoAgendamentoEmail(true)
 
     window.localStorage.setItem(
       EMAIL_DRAFT_STORAGE_KEY,
@@ -1628,25 +1904,41 @@ export default function RelatoriosPage() {
     )
 
     try {
+      const schedulePayload = {
+        nome: payload.nome,
+        emailsDestino: payload.emailsDestino,
+        assunto: payload.assunto,
+        periodo: payload.periodo,
+        filtros: payload.filtros,
+        agendamento: payload.agendamento,
+      }
+
+      const duplicate = await hasDuplicateSchedule(schedulePayload, session.accessToken)
+
+      if (duplicate) {
+        toast.error("Ja existe um agendamento com estes mesmos dados.")
+        return
+      }
+
       await requestDashboardJson("/relatorios/agendamentos", session.accessToken, "o agendamento do relatorio", {
         method: "POST",
-        body: {
-          nome: payload.nome,
-          emailsDestino: payload.emailsDestino,
-          assunto: payload.assunto,
-          periodo: payload.periodo,
-          filtros: payload.filtros,
-          agendamento: payload.agendamento,
-        },
+        body: schedulePayload,
       })
 
       toast.success("Agendamento de e-mail criado.")
+      limparFormularioEmail()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar o agendamento.")
+    } finally {
+      setSalvandoAgendamentoEmail(false)
     }
   }
 
   async function enviarRelatorioAgora() {
+    if (envioRelatorioEmailEmAndamentoRef.current) {
+      return
+    }
+
     const payload = getEmailAutomationPayload()
     const validationMessage = validarPayloadEmail(payload)
 
@@ -1662,6 +1954,9 @@ export default function RelatoriosPage() {
       return
     }
 
+    envioRelatorioEmailEmAndamentoRef.current = true
+    setEnviandoRelatorioEmail(true)
+
     try {
       await requestDashboardJson("/relatorios/enviar-agora", session.accessToken, "o envio do relatorio", {
         method: "POST",
@@ -1675,8 +1970,12 @@ export default function RelatoriosPage() {
       })
 
       toast.success(`Relatorio enviado para ${payload.emailsDestino.length} destinatario(s).`)
+      limparFormularioEmail()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Nao foi possivel enviar o relatorio.")
+    } finally {
+      envioRelatorioEmailEmAndamentoRef.current = false
+      setEnviandoRelatorioEmail(false)
     }
   }
 
@@ -1771,6 +2070,9 @@ export default function RelatoriosPage() {
                 reportPeriodLabel={periodoLabel}
                 onSaveDraft={salvarRascunhoEmail}
                 onSendNow={enviarRelatorioAgora}
+                savingSchedule={salvandoAgendamentoEmail}
+                sendingNow={enviandoRelatorioEmail}
+                employeeEmailOptions={employeeEmailOptions}
               />
             ) : null}
 

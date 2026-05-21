@@ -733,7 +733,7 @@ export default function MaquinasPage() {
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
           <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
             {modoSheet === "ver" && maquinaSelecionada ? (
-              <>
+              <div key="ver" className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
                 <div className="px-4 pt-4">
                   <MaquinaImagePreview maquina={maquinaSelecionada} />
                 </div>
@@ -752,7 +752,7 @@ export default function MaquinasPage() {
                   </Button>
                   {canManageMaquinas ? (
                     <div className="flex gap-2">
-                      <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(maquinaSelecionada), 100) }} disabled={salvando}>
+                      <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(maquinaSelecionada)} disabled={salvando}>
                         <PencilIcon className="mr-1 size-4" /> Editar
                       </Button>
                       <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(maquinaSelecionada)} disabled={salvando}>
@@ -761,9 +761,9 @@ export default function MaquinasPage() {
                     </div>
                   ) : null}
                 </div>
-              </>
+              </div>
             ) : (
-              <>
+              <div key={modoSheet} className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
                 <SheetHeader>
                   <SheetTitle>{modoSheet === "criar" ? "Nova máquina" : "Editar máquina"}</SheetTitle>
                   <SheetDescription>{modoSheet === "criar" ? "Preencha os dados para cadastrar uma nova máquina." : "Altere os dados e clique em salvar."}</SheetDescription>
@@ -826,7 +826,7 @@ export default function MaquinasPage() {
                 {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}
                   </Button>
                 </SheetFooter>
-              </>
+              </div>
             )}
           </SheetContent>
         </Sheet>

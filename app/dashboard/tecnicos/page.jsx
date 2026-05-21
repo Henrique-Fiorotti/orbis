@@ -760,6 +760,7 @@ export default function TecnicosPage() {
         {/* Sheet criar / editar / ver */}
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
           <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
+            <div key={modoSheet} className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
             <SheetHeader>
               <SheetTitle>
                 {modoSheet === "criar" ? "Novo técnico" : modoSheet === "editar" ? "Editar técnico" : "Detalhes do técnico"}
@@ -830,7 +831,7 @@ export default function TecnicosPage() {
 
                     {canManageTecnicos ? (
                       <div className="flex gap-2">
-                        <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
+                        <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(tecnicoSelecionado)} disabled={salvando}>
                           <PencilIcon className="size-4 mr-1" /> Editar
                         </Button>
                         <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>
@@ -958,6 +959,7 @@ export default function TecnicosPage() {
                 <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}</Button>
               </SheetFooter>
             )}
+            </div>
           </SheetContent>
         </Sheet>
 

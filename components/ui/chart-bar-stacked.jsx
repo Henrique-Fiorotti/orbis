@@ -88,11 +88,11 @@ export function ChartBarStacked() {
   const errorMessage = errors.maquinas || (maquinasStatus === "error" ? maquinasMensagem : "") || (status === "error" && maquinas.length === 0 ? mensagem : "")
 
   if (loading) {
-    return <DashboardChartSkeleton variant="bar" className="w-full xl:w-3/5" height="h-[280px]" />
+    return <DashboardChartSkeleton variant="bar" className="w-full xl:w-2/3" height="h-[280px]" />
   }
 
   return (
-    <Card className="flex w-full xl:w-3/5">
+    <Card className="flex w-full xl:w-2/3">
       <CardHeader>
         <CardTitle>Historico por Status</CardTitle>
         <CardDescription>
