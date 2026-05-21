@@ -33,14 +33,25 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useOptionalDashboardPreferences } from "@/components/context/dashboard-preferences-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { askDashboardAi, getHttpErrorStatus } from "@/lib/dashboard-api"
-import { setSmoothScrollLock } from "@/lib/scroll-lock"
 import { cn } from "@/lib/utils"
 
 const MIN_QUESTION_LENGTH = 3
 const MAX_QUESTION_LENGTH = 500
 const CHAT_HISTORY_STORAGE_KEY = "orbis-orb-chat-history"
 const MAX_CHAT_HISTORY_ITEMS = 12
-const ORB_FULLSCREEN_SCROLL_LOCK = "orb-fullscreen"
+const ORB_COMPACT_GAP = 20
+const ORB_COMPACT_BOTTOM = 80
+const ORB_COMPACT_WIDTH = 420
+const ORB_COMPACT_HEIGHT = 620
+const ORB_MIN_WIDTH = 360
+const ORB_MIN_HEIGHT = 420
+const ORB_EXPANDED_MAX_WIDTH = 1120
+const ORB_EXPANDED_MAX_HEIGHT = 760
+const ORB_WINDOW_MARGIN = 16
+const ORB_BUTTON_SIZE = 48
+const ORB_TRANSITION_MS = 460
+const ORB_BUTTON_RADIUS = 24
+const ORB_PANEL_RADIUS = 8
 
 const CHAT_TITLE_STOPWORDS = new Set([
   "a",
@@ -466,7 +477,7 @@ function ChatMessage({ message, animate = false, onAnimationComplete }) {
 
 function EmptyPromptState({ onSelectPrompt }) {
   return (
-    <div className="flex min-h-full items-center justify-center px-1 py-4">
+    <div className="flex min-h-full items-center justify-center px-1 py-4 mt-5">
       <div className="w-full max-w-[320px]">
         <div className="mb-5 flex items-center gap-3">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-[8px] text-primary">
@@ -499,12 +510,80 @@ function EmptyPromptState({ onSelectPrompt }) {
   )
 }
 
+function getAssistantViewport() {
+  if (typeof window === "undefined") {
+    return { width: 1280, height: 800 }
+  }
+
+  return {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  }
+}
+
+function clampAssistantRect(rect) {
+  const viewport = getAssistantViewport()
+  const maxWidth = Math.max(240, viewport.width - ORB_WINDOW_MARGIN * 2)
+  const maxHeight = Math.max(320, viewport.height - ORB_WINDOW_MARGIN * 2)
+  const minWidth = Math.min(ORB_MIN_WIDTH, maxWidth)
+  const minHeight = Math.min(ORB_MIN_HEIGHT, maxHeight)
+  const width = Math.min(Math.max(rect.width, minWidth), maxWidth)
+  const height = Math.min(Math.max(rect.height, minHeight), maxHeight)
+  const maxX = Math.max(ORB_WINDOW_MARGIN, viewport.width - width - ORB_WINDOW_MARGIN)
+  const maxY = Math.max(ORB_WINDOW_MARGIN, viewport.height - height - ORB_WINDOW_MARGIN)
+  const x = Math.min(Math.max(rect.x, ORB_WINDOW_MARGIN), maxX)
+  const y = Math.min(Math.max(rect.y, ORB_WINDOW_MARGIN), maxY)
+
+  return { x, y, width, height }
+}
+
+function getCompactAssistantRect() {
+  const viewport = getAssistantViewport()
+  const width = Math.min(ORB_COMPACT_WIDTH, viewport.width - ORB_WINDOW_MARGIN * 2)
+  const height = Math.min(ORB_COMPACT_HEIGHT, viewport.height - ORB_COMPACT_BOTTOM - ORB_WINDOW_MARGIN)
+
+  return clampAssistantRect({
+    x: viewport.width - width - ORB_COMPACT_GAP,
+    y: viewport.height - height - ORB_COMPACT_BOTTOM,
+    width,
+    height,
+  })
+}
+
+function getExpandedAssistantRect() {
+  const viewport = getAssistantViewport()
+  const width = Math.min(ORB_EXPANDED_MAX_WIDTH, viewport.width - ORB_WINDOW_MARGIN * 2)
+  const height = Math.min(ORB_EXPANDED_MAX_HEIGHT, viewport.height - ORB_WINDOW_MARGIN * 2)
+
+  return clampAssistantRect({
+    x: (viewport.width - width) / 2,
+    y: (viewport.height - height) / 2,
+    width,
+    height,
+  })
+}
+
+function getOrbButtonRect() {
+  const viewport = getAssistantViewport()
+
+  return {
+    x: viewport.width - ORB_BUTTON_SIZE - ORB_COMPACT_GAP,
+    y: viewport.height - ORB_BUTTON_SIZE - ORB_COMPACT_GAP,
+    width: ORB_BUTTON_SIZE,
+    height: ORB_BUTTON_SIZE,
+  }
+}
+
 export function DashboardAiAssistant() {
   const pathname = usePathname()
   const dashboardPreferences = useOptionalDashboardPreferences()
   const smoothScrollEnabled = dashboardPreferences?.preferences.smoothScrollEnabled ?? true
   const [open, setOpen] = React.useState(false)
+  const [assistantPhase, setAssistantPhase] = React.useState("closed")
   const [fullscreen, setFullscreen] = React.useState(false)
+  const [assistantRect, setAssistantRect] = React.useState(null)
+  const [isMovingWindow, setIsMovingWindow] = React.useState(false)
+  const [isResizingWindow, setIsResizingWindow] = React.useState(false)
   const [historySidebarOpen, setHistorySidebarOpen] = React.useState(false)
   const [input, setInput] = React.useState("")
   const [messages, setMessages] = React.useState([])
@@ -523,6 +602,8 @@ export function DashboardAiAssistant() {
   const abortControllerRef = React.useRef(null)
   const messagesRef = React.useRef([])
   const activeChatIdRef = React.useRef(null)
+  const windowActionRef = React.useRef(null)
+  const animationTimersRef = React.useRef([])
 
   const trimmedInput = input.trim()
   const promptPayload = React.useMemo(
@@ -535,6 +616,15 @@ export function DashboardAiAssistant() {
     !loading &&
     trimmedInput.length >= MIN_QUESTION_LENGTH &&
     promptPayload.length <= MAX_QUESTION_LENGTH
+  const assistantReady = assistantPhase === "open"
+  const assistantTransitionDuration =
+    assistantPhase === "opening" || assistantPhase === "closing"
+      ? ORB_TRANSITION_MS
+      : ORB_TRANSITION_MS
+  const assistantBorderRadius =
+    assistantPhase === "opening-start" || assistantPhase === "closing"
+      ? ORB_BUTTON_RADIUS
+      : ORB_PANEL_RADIUS
 
   React.useEffect(() => {
     const stored = loadChatHistory()
@@ -561,44 +651,60 @@ export function DashboardAiAssistant() {
 
   React.useEffect(() => {
     if (!open) {
+      setAssistantPhase("closed")
       setFullscreen(false)
       setHistorySidebarOpen(false)
+      setAssistantRect(null)
       return
     }
 
-    window.setTimeout(() => textareaRef.current?.focus(), 80)
   }, [open])
 
   React.useEffect(() => {
-    if (fullscreen) {
-      setHistorySidebarOpen(true)
-    }
-  }, [fullscreen])
-
-  React.useEffect(() => {
-    if (!open || !fullscreen) {
-      setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, false)
+    if (!assistantReady) {
       return
     }
 
-    const html = document.documentElement
-    const body = document.body
-    const previousHtmlOverflow = html.style.overflow
-    const previousBodyOverflow = body.style.overflow
-    const previousBodyOverscroll = body.style.overscrollBehavior
+    if (fullscreen) {
+      setHistorySidebarOpen(true)
+      setAssistantRect(getExpandedAssistantRect())
+    } else if (open) {
+      setAssistantRect(getCompactAssistantRect())
+    }
+  }, [assistantReady, fullscreen, open])
 
-    setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, true)
-    html.style.overflow = "hidden"
-    body.style.overflow = "hidden"
-    body.style.overscrollBehavior = "none"
+  React.useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    function handleResize() {
+      setAssistantRect((current) => {
+        if (!current) {
+          return fullscreen ? getExpandedAssistantRect() : getCompactAssistantRect()
+        }
+
+        if (!fullscreen) {
+          return getCompactAssistantRect()
+        }
+
+        return clampAssistantRect(current)
+      })
+    }
+
+    window.addEventListener("resize", handleResize)
 
     return () => {
-      html.style.overflow = previousHtmlOverflow
-      body.style.overflow = previousBodyOverflow
-      body.style.overscrollBehavior = previousBodyOverscroll
-      setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, false)
+      window.removeEventListener("resize", handleResize)
     }
-  }, [open, fullscreen])
+  }, [fullscreen, open])
+
+  React.useEffect(() => {
+    return () => {
+      animationTimersRef.current.forEach((timerId) => window.clearTimeout(timerId))
+      animationTimersRef.current = []
+    }
+  }, [])
 
   React.useEffect(() => {
     if (!open || !smoothScrollEnabled) {
@@ -940,6 +1046,144 @@ export function DashboardAiAssistant() {
     scrollElement.scrollTop += event.deltaY
   }
 
+  function clearAssistantAnimationTimers() {
+    animationTimersRef.current.forEach((timerId) => window.clearTimeout(timerId))
+    animationTimersRef.current = []
+  }
+
+  function scheduleAssistantAnimation(callback, delay) {
+    const timerId = window.setTimeout(() => {
+      animationTimersRef.current = animationTimersRef.current.filter((id) => id !== timerId)
+      callback()
+    }, delay)
+
+    animationTimersRef.current.push(timerId)
+  }
+
+  function openAssistant() {
+    clearAssistantAnimationTimers()
+
+    setFullscreen(false)
+    setHistorySidebarOpen(false)
+    setAssistantPhase("opening-start")
+    setAssistantRect(getOrbButtonRect())
+    setOpen(true)
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        setAssistantPhase("opening")
+        setAssistantRect(getCompactAssistantRect())
+
+        scheduleAssistantAnimation(() => {
+          setAssistantPhase("open")
+          window.setTimeout(() => textareaRef.current?.focus(), 0)
+        }, ORB_TRANSITION_MS)
+      })
+    })
+  }
+
+  function closeAssistant() {
+    clearAssistantAnimationTimers()
+
+    windowActionRef.current = null
+    setIsMovingWindow(false)
+    setIsResizingWindow(false)
+    setFullscreen(false)
+    setHistorySidebarOpen(false)
+    setAssistantPhase("closing")
+    setAssistantRect(getOrbButtonRect())
+
+    scheduleAssistantAnimation(() => {
+      setOpen(false)
+      setAssistantPhase("closed")
+      setAssistantRect(null)
+    }, ORB_TRANSITION_MS)
+  }
+
+  function beginWindowMove(event) {
+    if (!fullscreen || event.button !== 0) {
+      return
+    }
+
+    if (event.target instanceof HTMLElement && event.target.closest("button,a,input,textarea,[role='menuitem']")) {
+      return
+    }
+
+    event.preventDefault()
+    windowActionRef.current = {
+      type: "move",
+      pointerId: event.pointerId,
+      captureTarget: event.currentTarget,
+      startX: event.clientX,
+      startY: event.clientY,
+      startRect: assistantRect ?? getExpandedAssistantRect(),
+    }
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    setIsMovingWindow(true)
+  }
+
+  function beginWindowResize(event) {
+    if (!fullscreen || event.button !== 0) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    windowActionRef.current = {
+      type: "resize",
+      pointerId: event.pointerId,
+      captureTarget: event.currentTarget,
+      startX: event.clientX,
+      startY: event.clientY,
+      startRect: assistantRect ?? getExpandedAssistantRect(),
+    }
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    setIsResizingWindow(true)
+  }
+
+  function handleWindowPointerMove(event) {
+    const action = windowActionRef.current
+
+    if (!action || action.pointerId !== event.pointerId) {
+      return
+    }
+
+    const deltaX = event.clientX - action.startX
+    const deltaY = event.clientY - action.startY
+
+    if (action.type === "move") {
+      setAssistantRect(clampAssistantRect({
+        ...action.startRect,
+        x: action.startRect.x + deltaX,
+        y: action.startRect.y + deltaY,
+      }))
+      return
+    }
+
+    setAssistantRect(clampAssistantRect({
+      ...action.startRect,
+      width: action.startRect.width + deltaX,
+      height: action.startRect.height + deltaY,
+    }))
+  }
+
+  function endWindowAction(event) {
+    const action = windowActionRef.current
+
+    if (!action || action.pointerId !== event.pointerId) {
+      return
+    }
+
+    try {
+      action.captureTarget?.releasePointerCapture?.(event.pointerId)
+    } catch {
+      // Pointer capture may already be gone if the browser cancels the gesture.
+    }
+    windowActionRef.current = null
+    setIsMovingWindow(false)
+    setIsResizingWindow(false)
+  }
+
   function toggleFullscreen() {
     setFullscreen((current) => !current)
   }
@@ -1011,14 +1255,38 @@ export function DashboardAiAssistant() {
         <section
           aria-label="Orb"
           onWheelCapture={handleAssistantWheelCapture}
+          onPointerMove={handleWindowPointerMove}
+          onPointerUp={endWindowAction}
+          onPointerCancel={endWindowAction}
+          style={
+            assistantRect
+              ? {
+                  left: `${assistantRect.x}px`,
+                  top: `${assistantRect.y}px`,
+                  width: `${assistantRect.width}px`,
+                  height: `${assistantRect.height}px`,
+                  borderRadius: `${assistantBorderRadius}px`,
+                  transitionDuration: `${assistantTransitionDuration}ms`,
+                }
+              : undefined
+          }
           className={cn(
-            "fixed z-40 flex transform-gpu flex-col overflow-hidden overscroll-contain border bg-popover text-popover-foreground shadow-2xl transition-[inset,width,height,border-radius,box-shadow,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[inset,width,height,transform]",
-            fullscreen
-              ? "inset-0 h-auto w-auto scale-100 rounded-none sm:inset-4 sm:rounded-[8px]"
-              : "inset-x-3 bottom-20 h-[min(620px,calc(100svh-7rem))] w-[calc(100vw-1.5rem)] scale-100 rounded-[8px] sm:inset-x-auto sm:right-5 sm:w-[420px]"
+            "fixed z-40 flex origin-bottom-right transform-gpu flex-col overflow-hidden overscroll-contain border bg-popover text-popover-foreground opacity-100 shadow-2xl will-change-[left,top,width,height,border-radius]",
+            (isMovingWindow || isResizingWindow)
+              ? "transition-none"
+              : "transition-[left,top,width,height,border-radius,box-shadow] ease-[cubic-bezier(0.22,1,0.36,1)]",
           )}
         >
-          <header className="flex items-center gap-3 border-b px-4 py-3">
+          <header
+            className={cn(
+              "flex items-center gap-3 border-b px-4 py-3 transition-opacity duration-150",
+              assistantReady ? "opacity-100" : "pointer-events-none opacity-0",
+              fullscreen && "cursor-move select-none",
+              fullscreen && "touch-none",
+              isMovingWindow && "cursor-grabbing"
+            )}
+            onPointerDown={beginWindowMove}
+          >
             {fullscreen ? (
               <Button
                 type="button"
@@ -1066,14 +1334,17 @@ export function DashboardAiAssistant() {
               variant="ghost"
               size="icon-sm"
               className="cursor-pointer p-0!"
-              onClick={() => setOpen(false)}
+              onClick={closeAssistant}
               aria-label="Fechar Orbis IA"
             >
               <XIcon className="size-4" />
             </Button>
           </header>
 
-          <div className="flex min-h-0 flex-1">
+          <div className={cn(
+            "flex min-h-0 flex-1 transition-opacity duration-150",
+            assistantReady ? "opacity-100" : "pointer-events-none opacity-0"
+          )}>
             {fullscreen ? (
               <aside
                 className={cn(
@@ -1258,6 +1529,15 @@ export function DashboardAiAssistant() {
           </form>
             </div>
           </div>
+          {fullscreen ? (
+            <div
+              className="absolute bottom-0 right-0 z-10 size-5 cursor-nwse-resize touch-none"
+              onPointerDown={beginWindowResize}
+              aria-hidden="true"
+            >
+              <span className="absolute bottom-1 right-1 block size-3 rounded-br-[4px] border-b-2 border-r-2 border-muted-foreground/50" />
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -1268,7 +1548,7 @@ export function DashboardAiAssistant() {
             type="button"
             size="icon-lg"
             className="cursor-pointer fixed dark:bg-[#1e2939] bottom-5 right-5 z-40 size-12 rounded-full! p-0! hover:scale-[1.06] border-1 border-black/30 bg-white"
-            onClick={() => setOpen((current) => !current)}
+            onClick={openAssistant}
             aria-label="Agente Orb"
             aria-expanded={open}
           >
