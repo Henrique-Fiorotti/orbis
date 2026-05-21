@@ -108,6 +108,14 @@
   margin-bottom: 20px;
 }
 
+.heroScrollAnchor {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+}
+
 @media (max-width: 1100px) {
   .heroSection {
     min-height: auto;
@@ -386,7 +394,23 @@
   }
 
   .heroSection {
+    flex-direction: column;
+    min-height: calc(100dvh - var(--landing-header-offset));
+    align-items: flex-start;
     padding: 56px 6vw 84px;
+  }
+
+  .heroImage {
+    order: -1;
+    display: block;
+    width: min(78vw, 300px);
+    height: auto;
+    align-self: center;
+    margin: 0;
+  }
+
+  .heroScrollAnchor {
+    bottom: 18px;
   }
 
   .quoteSection {
