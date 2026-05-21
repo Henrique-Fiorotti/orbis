@@ -127,14 +127,16 @@ export default function HomePage() {
           }}
         />
 
-        <Image
-          src="/orbis-spline-heroo.svg"
-          alt={home.hero.splineTitle}
-          className={styles.heroImage}
-          width={450}
-          height={450}
-          priority
-        />
+        <div className={styles.heroVisual}>
+          <Image
+            src="/orbis-spline-heroo.svg"
+            alt={home.hero.splineTitle}
+            className={styles.heroImage}
+            width={450}
+            height={450}
+            priority
+          />
+        </div>
 
         <div className={styles.heroContent}>
           <h1
