@@ -830,7 +830,7 @@ export default function TecnicosPage() {
 
                     {canManageTecnicos ? (
                       <div className="flex gap-2">
-                        <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(tecnicoSelecionado), 100) }} disabled={salvando}>
+                        <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(tecnicoSelecionado)} disabled={salvando}>
                           <PencilIcon className="size-4 mr-1" /> Editar
                         </Button>
                         <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(tecnicoSelecionado)} disabled={salvando}>

@@ -752,7 +752,7 @@ export default function MaquinasPage() {
                   </Button>
                   {canManageMaquinas ? (
                     <div className="flex gap-2">
-                      <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(maquinaSelecionada), 100) }} disabled={salvando}>
+                      <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(maquinaSelecionada)} disabled={salvando}>
                         <PencilIcon className="mr-1 size-4" /> Editar
                       </Button>
                       <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(maquinaSelecionada)} disabled={salvando}>
