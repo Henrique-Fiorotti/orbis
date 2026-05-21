@@ -983,10 +983,6 @@ export default function AgendamentosPage() {
     return values.length > 0 ? Math.min(...values) : Number.POSITIVE_INFINITY
   }, [agendamentos])
 
-  if (!canViewAgendamentos) {
-    return null
-  }
-
   function abrirCriar() {
     setModoSheet("criar")
     setAgendamentoSelecionado(null)
@@ -1321,6 +1317,10 @@ export default function AgendamentosPage() {
   const loadingInicial = status === "loading"
   const refreshing = status === "refreshing"
   const proximoEnvioMetric = formatMetricNextRun(loadingInicial ? "--" : totais.proximo)
+
+  if (!canViewAgendamentos) {
+    return null
+  }
 
   return (
     <>
