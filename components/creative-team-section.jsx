@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import {
   GithubIcon,
   InstagramIcon,
@@ -163,7 +162,7 @@ export default function CreativeTeamSection() {
           </p>
         </div>
 
-        <div className="mt-20 mb-20 grid gap-x-4 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="mb-20 mt-20 grid gap-x-4 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {TEAM_MEMBERS.map((member) => (
             <TeamMemberCard key={member.name} member={member} />
           ))}
