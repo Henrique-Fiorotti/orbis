@@ -119,7 +119,6 @@ function MaquinaMobileCard({ maquina, onOpen }) {
   const integridade = getMaquinaIntegridadeExibicao(maquina)
   const normalizedIntegridade = Math.round(Number(integridade))
   const hasIntegridade = status !== "SEM_SENSOR" && Number.isFinite(normalizedIntegridade)
-  const integridadeColor = normalizedIntegridade < 50 ? "bg-red-500" : normalizedIntegridade < 75 ? "bg-yellow-400" : "bg-green-500"
   const integridadeTextColor = normalizedIntegridade < 50 ? "text-red-500 dark:text-red-300" : normalizedIntegridade < 75 ? "text-yellow-500 dark:text-yellow-300" : "text-green-600 dark:text-green-300"
 
   return (
@@ -140,9 +139,6 @@ function MaquinaMobileCard({ maquina, onOpen }) {
         <span className="flex min-w-0 flex-col">
           <span className="line-clamp-2 text-xl font-medium leading-tight text-foreground">{maquina.nome}</span>
           <span className="text-sm text-muted-foreground">{maquina.setor}</span>
-          <span className="mt-1">
-            <CriticidadeBadge value={maquina.criticidade} />
-          </span>
         </span>
 
         <span className="flex items-center justify-between gap-3">
@@ -154,14 +150,9 @@ function MaquinaMobileCard({ maquina, onOpen }) {
             ) : (
               <span className="w-12 text-lg font-medium tabular-nums text-muted-foreground">--</span>
             )}
-            <span className="h-2 w-36 max-w-[34vw] overflow-hidden rounded-full bg-muted">
-              <span
-                className={`block h-full rounded-full ${hasIntegridade ? integridadeColor : "w-full bg-muted-foreground/35"}`}
-                style={hasIntegridade ? { width: `${normalizedIntegridade}%` } : undefined}
-              />
-            </span>
           </span>
-          <span className="shrink-0">
+          <span className="flex shrink-0 items-center gap-2">
+            <CriticidadeBadge value={maquina.criticidade} />
             <StatusBadge value={status} />
           </span>
         </span>
