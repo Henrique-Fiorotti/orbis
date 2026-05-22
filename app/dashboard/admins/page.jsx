@@ -782,7 +782,7 @@ export default function AdminsPage() {
         )}
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
             <SheetHeader>
               <SheetTitle>
                 {modoSheet === "criar" ? "Novo administrador" : modoSheet === "editar" ? "Editar administrador" : "Detalhes do administrador"}
@@ -796,7 +796,7 @@ export default function AdminsPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <div className="flex flex-col gap-4 px-4 py-4 overflow-y-auto flex-1">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
               {modoSheet === "ver" && adminSelecionado ? (
                 <>
                   <div className="flex items-center gap-4 p-4 rounded-xl bg-linear-to-r from-purple-50 to-violet-50 border border-purple-100 dark:from-primary/10 dark:to-muted/30 dark:border-primary/30">
@@ -942,7 +942,7 @@ export default function AdminsPage() {
             </div>
 
             {modoSheet !== "ver" && (
-              <SheetFooter className="px-4 pb-4">
+              <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
                 <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
                 <Button className="cursor-pointer" onClick={salvar} disabled={salvando}>
                   {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}

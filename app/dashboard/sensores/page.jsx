@@ -814,7 +814,7 @@ export default function SensoresPage() {
         )}
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
             <SheetHeader>
               <SheetTitle>
                 {modoSheet === "criar" ? "Novo sensor" : modoSheet === "editar" ? "Editar sensor" : "Detalhes do sensor"}
@@ -827,7 +827,7 @@ export default function SensoresPage() {
                     : "Leituras e configurações do sensor."}
               </SheetDescription>
             </SheetHeader>
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
               {modoSheet === "ver" && sensorSelecionado ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
@@ -1005,7 +1005,7 @@ export default function SensoresPage() {
               )}
             </div>
             {modoSheet !== "ver" ? (
-              <SheetFooter className="px-4 pb-4">
+              <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
                 <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>
                   Cancelar
                 </Button>

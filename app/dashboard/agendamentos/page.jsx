@@ -1477,7 +1477,7 @@ export default function AgendamentosPage() {
         </div>
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" className="w-full max-w-none! sm:w-[560px]! sm:max-w-none!">
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[560px]! sm:max-w-none!">
             <SheetHeader>
               <SheetTitle>{modoSheet === "criar" ? "Novo agendamento" : "Editar agendamento"}</SheetTitle>
               <SheetDescription>

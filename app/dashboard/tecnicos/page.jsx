@@ -759,7 +759,7 @@ export default function TecnicosPage() {
 
         {/* Sheet criar / editar / ver */}
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
             <div key={modoSheet} className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
             <SheetHeader>
               <SheetTitle>
@@ -772,7 +772,7 @@ export default function TecnicosPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <div className="flex flex-col gap-4  px-4 py-4 overflow-y-auto flex-1">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
 
               {/* ── MODO VER ── */}
               {modoSheet === "ver" && tecnicoSelecionado ? (
@@ -954,7 +954,7 @@ export default function TecnicosPage() {
             </div>
 
             {modoSheet !== "ver" && (
-              <SheetFooter className="px-4 pb-4">
+              <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
                 <Button variant="outline" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
                 <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}</Button>
               </SheetFooter>

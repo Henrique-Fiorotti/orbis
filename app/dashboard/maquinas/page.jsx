@@ -731,7 +731,7 @@ export default function MaquinasPage() {
         )}
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" className="w-[420px]! max-w-none! gap-0 overflow-hidden sm:max-w-none!">
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
             {modoSheet === "ver" && maquinaSelecionada ? (
               <div key="ver" className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
                 <div className="shrink-0 px-4 pt-4 bg-gradient-to-b from-popover to-popover/80">
@@ -822,7 +822,7 @@ export default function MaquinasPage() {
                     </Select>
                   </div>
                 </div>
-                <SheetFooter className="px-4 pb-4">
+                <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
                   <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
                   <Button className="cursor-pointer" onClick={salvar} disabled={salvando}>
                 {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}
