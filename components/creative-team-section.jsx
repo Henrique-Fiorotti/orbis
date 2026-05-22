@@ -135,7 +135,7 @@ export default function CreativeTeamSection() {
                     src={member.image}
                     alt={member.name}
                     draggable={false}
-                    className="select-none size-full rounded-full object-cover transition duration-500 ease-out group-hover:scale-105"
+                    className="select-none size-full rounded-full object-cover "
                   />
                 ) : (
                   <div
