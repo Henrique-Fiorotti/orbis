@@ -58,6 +58,7 @@
 .root :global(#inicio),
 .root :global(#sobre),
 .root :global(#planos),
+.root :global(#equipe),
 .root :global(#contact) {
   scroll-margin-top: calc(var(--landing-header-offset) + 16px);
 }

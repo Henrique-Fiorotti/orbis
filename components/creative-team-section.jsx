@@ -11,7 +11,7 @@ const TEAM_MEMBERS = [
   {
     name: "Caio Ferrer",
     role: "Desenvolvedor Backend",
-    image: "/caio.jpeg",
+    // image: "/caio.jpeg",
     initials: "CF",
     cardClass: "bg-[#5E17EB] dark:bg-[#5E17EB]",
     links: {
@@ -53,7 +53,7 @@ const TEAM_MEMBERS = [
   {
     name: "Gustavo Cagega",
     role: "Desenvolvedor Backend",
-    image: "/gustavo.jpeg",
+    // image: "/gustavo.jpeg",
     initials: "GC",
     cardClass: "bg-[#7C3AED] dark:bg-[#7C3AED]",
     links: {

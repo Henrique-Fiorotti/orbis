@@ -467,9 +467,11 @@ export default function HomePage() {
 
       <Separator orientation="horizontal" /> {/* Linha que separa */}
 
-      <RevealOnScroll>
-        <CreativeTeamSection />
-      </RevealOnScroll>
+      <section id="equipe">
+        <RevealOnScroll>
+          <CreativeTeamSection />
+        </RevealOnScroll>
+      </section>
 
     </div>
 
