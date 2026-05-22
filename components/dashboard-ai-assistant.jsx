@@ -1754,7 +1754,7 @@ export function DashboardAiAssistant() {
               : undefined
           }
           className={cn(
-            "fixed z-40 flex origin-bottom-right transform-gpu flex-col overflow-hidden overscroll-contain border bg-white text-foreground opacity-100 shadow-2xl will-change-[left,top,width,height,border-radius] dark:bg-[#1E2939]",
+            "fixed z-40 flex origin-bottom-right transform-gpu flex-col overflow-hidden overscroll-contain border bg-white text-foreground opacity-100 shadow-2xl will-change-[left,top,width,height,border-radius] dark:bg-[#1e2939]",
             (isMovingWindow || isResizingWindow)
               ? "transition-none"
               : "transition-[left,top,width,height,border-radius,box-shadow] ease-[cubic-bezier(0.22,1,0.36,1)]",
@@ -1901,7 +1901,7 @@ export function DashboardAiAssistant() {
               </div>
 
               <form onSubmit={handleSubmit} className={cn(
-                "bg-background px-3 py-2.5 transition-opacity duration-150",
+                "bg-background px-3 py-2.5 transition-opacity duration-150 dark:bg-[#1e2939]",
                 assistantReady ? "opacity-100" : "pointer-events-none opacity-0",
                 fullscreen && "px-4 md:px-8 lg:px-10"
               )}>
