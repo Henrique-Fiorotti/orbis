@@ -213,6 +213,38 @@ function StatusAdminBadge({ value }) {
   )
 }
 
+function AdminPerfilBadge() {
+  return (
+    <Badge variant="outline" className="px-1.5 bg-purple-100 text-purple-700 border-purple-200 dark:border-primary/40 dark:bg-primary/10 dark:text-primary-foreground">
+      Administrador
+    </Badge>
+  )
+}
+
+function AdminMobileCard({ admin, onOpen }) {
+  return (
+    <button
+      type="button"
+      className="flex w-full cursor-pointer items-center gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      onClick={() => onOpen(admin)}
+    >
+      <span className="shrink-0">
+        <AdminAvatar admin={admin} size="sm" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-2">
+        <span className="min-w-0">
+          <span className="line-clamp-1 text-xl font-medium leading-tight text-foreground">{admin.nome}</span>
+          <span className="block truncate text-base text-muted-foreground">{admin.email}</span>
+        </span>
+        <span className="flex min-w-0 flex-wrap items-center gap-2">
+          <AdminPerfilBadge />
+          <StatusAdminBadge value={admin.status} />
+        </span>
+      </span>
+    </button>
+  )
+}
+
 function StatePanel({ message, tone = "muted" }) {
   return (
     <div
@@ -603,7 +635,7 @@ export default function AdminsPage() {
     {
       accessorKey: "role",
       header: "Perfil",
-      cell: () => <Badge variant="outline" className="px-1.5 bg-purple-100 text-purple-700 border-purple-200 dark:border-primary/40 dark:bg-primary/10 dark:text-primary-foreground">Administrador</Badge>,
+      cell: () => <AdminPerfilBadge />,
     },
     {
       accessorKey: "email",
@@ -727,7 +759,19 @@ export default function AdminsPage() {
           <StatePanel message={mensagem || "Não foi possível carregar os administradores."} tone="error" />
         ) : (
           <>
-            <div className="overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
+            <div className="flex flex-col gap-4 md:hidden">
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <AdminMobileCard key={row.id} admin={row.original} onOpen={abrirVer} />
+                ))
+              ) : (
+                <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+                  Nenhum administrador encontrado.
+                </div>
+              )}
+            </div>
+
+            <div className="hidden overflow-auto rounded-lg border bg-card md:block dark:border-gray-700! dark:bg-[#0F172A]">
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-muted">
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -760,9 +804,9 @@ export default function AdminsPage() {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <span className="text-sm text-muted-foreground">{adminsFiltrados.length} resultado(s) nesta página - {filtroResumoLabel}</span>
-              <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
+              <div className="flex items-center justify-end gap-3 sm:gap-8 lg:w-fit">
                 <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => carregarAdmins(1, limiteItems)} disabled={paginaAtual <= 1 || status === "loading"}>
                   <ChevronsLeftIcon className="size-4" />
                 </Button>

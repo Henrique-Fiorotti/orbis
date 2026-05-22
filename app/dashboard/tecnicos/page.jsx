@@ -107,6 +107,53 @@ function StatusTecnicoBadge({ value }) {
   )
 }
 
+function PerfilTecnicoBadge() {
+  return (
+    <Badge variant="outline" className="px-1.5 text-muted-foreground">
+      Técnico
+    </Badge>
+  )
+}
+
+function EspecialidadeBadge({ value }) {
+  const especialidade = String(value ?? "").trim()
+
+  if (!especialidade) {
+    return null
+  }
+
+  return (
+    <Badge variant="outline" className="max-w-full px-1.5 text-muted-foreground">
+      <span className="truncate">{especialidade}</span>
+    </Badge>
+  )
+}
+
+function TecnicoMobileCard({ tecnico, onOpen }) {
+  return (
+    <button
+      type="button"
+      className="flex w-full cursor-pointer items-center gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      onClick={() => onOpen(tecnico)}
+    >
+      <span className="shrink-0">
+        <TecnicoAvatar tecnico={tecnico} size="sm" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-2">
+        <span className="min-w-0">
+          <span className="line-clamp-1 text-xl font-medium leading-tight text-foreground">{tecnico.nome}</span>
+          <span className="block truncate text-base text-muted-foreground">{tecnico.email}</span>
+        </span>
+        <span className="flex min-w-0 flex-wrap items-center gap-2">
+          <PerfilTecnicoBadge />
+          <EspecialidadeBadge value={tecnico.especialidade} />
+          <StatusTecnicoBadge value={tecnico.status} />
+        </span>
+      </span>
+    </button>
+  )
+}
+
 function StatePanel({ message, tone = "muted" }) {
   return (
     <div
@@ -686,7 +733,19 @@ export default function TecnicosPage() {
         ) : (
           <>
         {/* Tabela */}
-        <div className="min-h-[500px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
+        <div className="flex flex-col gap-4 md:hidden">
+          {table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TecnicoMobileCard key={row.id} tecnico={row.original} onOpen={abrirVer} />
+            ))
+          ) : (
+            <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+              Nenhum técnico encontrado.
+            </div>
+          )}
+        </div>
+
+        <div className="hidden min-h-[500px] overflow-auto rounded-lg border bg-card md:block dark:border-gray-700! dark:bg-[#0F172A]">
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-muted">
               {table.getHeaderGroups().map(hg => (
@@ -712,9 +771,9 @@ export default function TecnicosPage() {
         </div>
 
         {/* Paginação */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <span className="text-sm text-muted-foreground">{tecnicosFiltrados.length} resultado(s) nesta página - {filtroResumoLabel}</span>
-          <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
+          <div className="flex items-center justify-end gap-3 sm:gap-8 lg:w-fit">
             <Button 
               variant="outline" 
               size="icon" 
