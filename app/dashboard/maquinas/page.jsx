@@ -731,20 +731,22 @@ export default function MaquinasPage() {
         )}
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
+          <SheetContent side="right" className="w-[420px]! max-w-none! gap-0 overflow-hidden sm:max-w-none!">
             {modoSheet === "ver" && maquinaSelecionada ? (
               <div key="ver" className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
-                <div className="px-4 pt-4">
+                <div className="shrink-0 px-4 pt-4 bg-gradient-to-b from-popover to-popover/80">
                   <MaquinaImagePreview maquina={maquinaSelecionada} />
                 </div>
-                <SheetHeader>
+                <SheetHeader className="shrink-0">
                   <SheetTitle>Detalhes da máquina</SheetTitle>
                   <SheetDescription>{maquinaSelecionada.setor} - {maquinaSelecionada.tipo}</SheetDescription>
                 </SheetHeader>
-                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
                   <MaquinaDetailsPanel maquina={maquinaSelecionada} sensores={sensores} sensorError={sensorError} />
+                </div>
+                <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
                   <Button 
-                    className={"cursor-pointer"}
+                    className={"w-full cursor-pointer"}
                     type="button"
                     onClick={() => router.push(`/dashboard/alertas?maquina=${encodeURIComponent(maquinaSelecionada.nome)}`)}
                   >
@@ -760,7 +762,7 @@ export default function MaquinasPage() {
                       </Button>
                     </div>
                   ) : null}
-                </div>
+                </SheetFooter>
               </div>
             ) : (
               <div key={modoSheet} className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">

@@ -130,7 +130,7 @@ function SheetHeader({
   return (
     <div
       data-slot="sheet-header"
-      className={cn("flex flex-col gap-0.5 p-4", className)}
+      className={cn("flex flex-col gap-0.5 p-4 bg-gradient-to-b from-popover to-popover/80", className)}
       {...props} />
   );
 }

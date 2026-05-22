@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   ActivityIcon,
   AlertTriangleIcon,
+  ChevronDownIcon,
   CircleCheckIcon,
   CircleHelpIcon,
   CircleMinusIcon,
@@ -20,7 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   getMaquinaIntegridadeExibicao,
@@ -29,8 +29,24 @@ import {
 } from "@/lib/maquinas-table"
 import { cn, tempoRelativo } from "@/lib/utils"
 
+const PREDICAO_LIMIAR_MANUTENCAO = 70
+const PREDICAO_LIMIAR_FALHA = 30
+const PREDICAO_ANTECEDENCIA_FIM_JANELA_DIAS = 2
+
 function getMachineSensors(maquina, sensores) {
   return sensores.filter((sensor) => sensor.maquinaId === maquina.id || sensor.maquinaNome === maquina.nome)
+}
+
+function getNumericValue(...values) {
+  for (const value of values) {
+    const parsed = Number(value)
+
+    if (Number.isFinite(parsed)) {
+      return parsed
+    }
+  }
+
+  return null
 }
 
 function formatMetric(value, suffix = "", digits = 1) {
@@ -41,6 +57,265 @@ function formatMetric(value, suffix = "", digits = 1) {
   }
 
   return `${parsed.toFixed(digits)}${suffix}`
+}
+
+function parseDateValue(value) {
+  if (!value) {
+    return null
+  }
+
+  const date = new Date(value)
+  return Number.isFinite(date.getTime()) ? date : null
+}
+
+function formatPredictionDate(value) {
+  const date = parseDateValue(value)
+
+  if (!date) {
+    return "Sem previsão"
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date)
+}
+
+function formatPredictionRange(start, end) {
+  const startDate = parseDateValue(start)
+  const endDate = parseDateValue(end)
+
+  if (!startDate && !endDate) {
+    return "Sem janela"
+  }
+
+  if (!startDate) {
+    return `Até ${formatPredictionDate(end)}`
+  }
+
+  if (!endDate) {
+    return `A partir de ${formatPredictionDate(start)}`
+  }
+
+  return `${formatPredictionDate(start)} - ${formatPredictionDate(end)}`
+}
+
+function formatDaysUntil(value) {
+  const date = parseDateValue(value)
+
+  if (!date) {
+    return ""
+  }
+
+  const diff = date.getTime() - Date.now()
+
+  if (diff <= 0) {
+    return "Prazo atingido"
+  }
+
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
+
+  if (days === 1) {
+    return "Em 1 dia"
+  }
+
+  return `Em ${days} dias`
+}
+
+function calculateSensorHealthScore(sensor) {
+  const temp = getNumericValue(sensor?.temperatura?.valorAtual, sensor?.temperatura, sensor?.ultimaTemperatura)
+  const vibra = getNumericValue(sensor?.vibracao?.valorAtual, sensor?.vibracao, sensor?.ultimaVibracao)
+  const idealTemp = getNumericValue(sensor?.idealTemperatura)
+  const limitTemp = getNumericValue(sensor?.limiteTemperatura, sensor?.temperatura?.limiteMax)
+  const idealVibra = getNumericValue(sensor?.idealVibracao)
+  const limitVibra = getNumericValue(sensor?.limiteVibracao, sensor?.vibracao?.limiteMax)
+
+  if ([temp, vibra, idealTemp, limitTemp, idealVibra, limitVibra].some((value) => value === null)) {
+    return null
+  }
+
+  const diffTemp = limitTemp - idealTemp || 1
+  const diffVibra = limitVibra - idealVibra || 1
+  const scoreTemp = Math.max(0, Math.min(1, 1 - (temp - idealTemp) / diffTemp))
+  const scoreVibra = Math.max(0, Math.min(1, 1 - (vibra - idealVibra) / diffVibra))
+  const score = ((scoreTemp * 0.4) + (scoreVibra * 0.6)) * 100
+
+  return Number.isFinite(score) ? score : null
+}
+
+function getAverageSensorHealthScore(sensores) {
+  const scores = sensores
+    .map((sensor) => calculateSensorHealthScore(sensor))
+    .filter((score) => Number.isFinite(score))
+
+  if (scores.length === 0) {
+    return null
+  }
+
+  return scores.reduce((total, score) => total + score, 0) / scores.length
+}
+
+function getPredictionSummary({ maquina, statusExibicao, integridadeExibicao }) {
+  const hasSensors = statusExibicao !== "SEM_SENSOR"
+  const integridade = Number(integridadeExibicao)
+  const falhaPrevista = parseDateValue(maquina.previsaoManutencao)
+  const janelaInicio = parseDateValue(maquina.janelaManuInicio)
+  const janelaFim = parseDateValue(maquina.janelaManuFim)
+  const now = Date.now()
+  const janelaAtiva =
+    Boolean(janelaInicio && janelaFim) &&
+    janelaInicio.getTime() <= now &&
+    janelaFim.getTime() >= now
+
+  if (!hasSensors) {
+    return {
+      tone: "muted",
+      badge: "Sem base",
+      title: "Previsão indisponível",
+      description: "A máquina ainda não tem sensores vinculados para sustentar uma leitura preditiva.",
+    }
+  }
+
+  if (falhaPrevista) {
+    if (janelaAtiva) {
+      return {
+        tone: "warning",
+        badge: "Janela ativa",
+        title: "Priorizar manutenção",
+        description: "A janela recomendada pelo modelo já está aberta para esta máquina.",
+      }
+    }
+
+    return {
+      tone: "attention",
+      badge: "Previsão ativa",
+      title: "Planejar intervenção",
+      description: "O histórico de integridade já indica uma data provável de falha.",
+    }
+  }
+
+  if (Number.isFinite(integridade) && integridade <= PREDICAO_LIMIAR_FALHA) {
+    return {
+      tone: "critical",
+      badge: "Crítico",
+      title: "Integridade em nível de falha",
+      description: "A máquina já está abaixo do limiar crítico usado pela predição.",
+    }
+  }
+
+  if (Number.isFinite(integridade) && integridade < PREDICAO_LIMIAR_MANUTENCAO) {
+    return {
+      tone: "warning",
+      badge: "Atenção",
+      title: "Abaixo do limiar de manutenção",
+      description: "A saúde atual pede acompanhamento, mesmo sem uma data de falha confiável.",
+    }
+  }
+
+  return {
+    tone: "stable",
+    badge: "Estável",
+    title: "Sem previsão crítica",
+    description: "A curva atual não indica queda suficiente para projetar falha dentro da janela monitorada.",
+  }
+}
+
+function PredictionMetric({ label, value, sub }) {
+  return (
+    <div className="min-w-0 rounded-md border border-border/70 bg-background/80 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+      <span className="block text-[11px] font-medium uppercase text-muted-foreground">{label}</span>
+      <span className="mt-1 block break-words text-sm font-semibold leading-snug">{value}</span>
+      {sub ? <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">{sub}</span> : null}
+    </div>
+  )
+}
+
+function PredicaoManutencaoCard({
+  maquina,
+  sensoresDaMaquina,
+  integridadeExibicao,
+  statusExibicao,
+  summary: providedSummary,
+  showHeader = true,
+}) {
+  const summary = providedSummary ?? getPredictionSummary({ maquina, statusExibicao, integridadeExibicao })
+  const sensorHealthScore = getAverageSensorHealthScore(sensoresDaMaquina)
+  const integridade = Number(integridadeExibicao)
+  const healthScore = Number.isFinite(sensorHealthScore)
+    ? sensorHealthScore
+    : Number.isFinite(integridade)
+      ? integridade
+      : null
+  const falhaSub = formatDaysUntil(maquina.previsaoManutencao)
+  const limiarSub = Number.isFinite(healthScore)
+    ? healthScore < PREDICAO_LIMIAR_MANUTENCAO
+      ? "Abaixo do ponto de manutenção"
+      : "Acima do ponto de manutenção"
+    : "Aguardando leitura"
+  const toneClasses = {
+    stable: "border bg-transparent dark:border dark:bg-transparent",
+    attention: "border-[#5E17EB]/30 bg-[#5E17EB]/5 dark:border-[#5E17EB]/50 dark:bg-[#5E17EB]/10",
+    warning: "border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/25",
+    critical: "border-red-200 bg-red-50/80 dark:border-red-900/60 dark:bg-red-950/25",
+    muted: "border-border bg-muted/30",
+  }
+  const badgeClasses = {
+    stable: "border bg-white text-emerald-700 dark:border dark:bg-transparent dark:text-[#7c3aed]",
+    attention: "border-[#5E17EB]/30 bg-white text-[#5E17EB] dark:border-[#5E17EB]/50 dark:bg-[#5E17EB]/10 dark:text-[#A780FF]",
+    warning: "border-amber-200 bg-white text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300",
+    critical: "border-red-200 bg-white text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300",
+    muted: "border-border bg-background text-muted-foreground",
+  }
+
+  return (
+    <div className={cn("rounded-lg border p-3", toneClasses[summary.tone])}>
+      {showHeader ? (
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <ActivityIcon className="size-4 text-[#5E17EB]" />
+              <Label>Predição de manutenção</Label>
+            </div>
+            <p className="mt-2 text-sm font-semibold leading-snug">{summary.title}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{summary.description}</p>
+          </div>
+          <Badge variant="outline" className={cn("shrink-0 px-2 text-xs", badgeClasses[summary.tone])}>
+            {summary.badge}
+          </Badge>
+        </div>
+      ) : (
+        <div className="rounded-md border border-border/60 bg-background/65 p-3">
+          <p className="text-sm font-semibold leading-snug">{summary.title}</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{summary.description}</p>
+        </div>
+      )}
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <PredictionMetric
+          label="Falha prevista"
+          value={formatPredictionDate(maquina.previsaoManutencao)}
+          sub={falhaSub}
+        />
+        <PredictionMetric
+          label="Janela ideal"
+          value={formatPredictionRange(maquina.janelaManuInicio, maquina.janelaManuFim)}
+          sub={maquina.janelaManuFim ? `${PREDICAO_ANTECEDENCIA_FIM_JANELA_DIAS} dias antes da falha` : "Sem janela calculada"}
+        />
+        <PredictionMetric
+          label="Saúde dos sensores"
+          value={Number.isFinite(sensorHealthScore) ? `${Math.round(sensorHealthScore)}%` : "Sem leitura"}
+          sub="Temperatura 40% / vibração 60%"
+        />
+        <PredictionMetric
+          label="Limiar atual"
+          value={Number.isFinite(healthScore) ? `${Math.round(healthScore)}%` : "--"}
+          sub={limiarSub}
+        />
+      </div>
+    </div>
+  )
 }
 
 function CriticidadeBadge({ value }) {
@@ -108,7 +383,7 @@ function SensorStatusBadge({ value }) {
 
 function MetricSnapshot({ icon: Icon, label, current, ideal, limit, suffix, digits = 1 }) {
   return (
-    <div className="rounded-lg border border-[#5E17EB]/25 bg-[#5E17EB]/5 p-3 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10">
+    <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
       <div className="mb-3 flex items-center gap-2">
         <Icon className="size-4 text-[#5E17EB]" />
         <span className="text-sm font-medium">{label}</span>
@@ -128,6 +403,42 @@ function MetricSnapshot({ icon: Icon, label, current, ideal, limit, suffix, digi
         </div>
       </div>
     </div>
+  )
+}
+
+function DetailsAccordionSection({ title, icon: Icon, meta, open, onToggle, children }) {
+  const contentId = React.useId()
+
+  return (
+    <section
+      className={cn(
+        "overflow-hidden rounded-lg border border-border/70 bg-card/35 transition-colors",
+        open && "border-[#5E17EB]/45 bg-[#5E17EB]/5"
+      )}
+    >
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={contentId}
+        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        onClick={onToggle}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <Icon className="size-4 shrink-0 text-[#5E17EB]" />
+          <span className="truncate text-sm font-semibold">{title}</span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
+          {meta}
+          <ChevronDownIcon className={cn("size-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+        </span>
+      </button>
+      <div
+        id={contentId}
+        hidden={!open}
+      >
+        {children}
+      </div>
+    </section>
   )
 }
 
@@ -235,9 +546,31 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
   const statusExibicao = getMaquinaStatusExibicao(maquinaComTotalSensores)
   const integridadeExibicao = getMaquinaIntegridadeExibicao(maquinaComTotalSensores)
   const ultimaLeituraExibicao = getMaquinaUltimaLeituraExibicao(maquinaComTotalSensores)
+  const predictionSummary = React.useMemo(
+    () => getPredictionSummary({ maquina, statusExibicao, integridadeExibicao }),
+    [maquina, statusExibicao, integridadeExibicao]
+  )
+  const [openSections, setOpenSections] = React.useState({
+    predicao: true,
+    sensores: false,
+  })
+
+  React.useEffect(() => {
+    setOpenSections({
+      predicao: true,
+      sensores: false,
+    })
+  }, [maquina?.id])
+
+  function toggleSection(section) {
+    setOpenSections((currentSections) => ({
+      ...currentSections,
+      [section]: !currentSections[section],
+    }))
+  }
 
   return (
-    <div className={cn("flex flex-col gap-4 text-sm", className)}>
+    <div className={cn("flex flex-col gap-4 text-sm mt-5", className)}>
       {sensorError ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
           {sensorError}
@@ -289,44 +622,78 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
         </div>
       </div>
 
-      <Separator />
+      <div className="flex flex-col gap-2">
+        <DetailsAccordionSection
+          title="Predição de manutenção"
+          icon={ActivityIcon}
+          open={openSections.predicao}
+          onToggle={() => toggleSection("predicao")}
+          meta={
+            <Badge variant="outline" className="border-[#5E17EB]/35 bg-background/80 px-2 text-xs text-[#7c3aed] dark:text-[#A780FF]">
+              {predictionSummary.badge}
+            </Badge>
+          }
+        >
+          <PredicaoManutencaoCard
+            maquina={maquina}
+            sensoresDaMaquina={sensoresDaMaquina}
+            integridadeExibicao={integridadeExibicao}
+            statusExibicao={statusExibicao}
+            summary={predictionSummary}
+            showHeader={false}
+          />
+        </DetailsAccordionSection>
 
-      <div className="flex flex-col gap-3">
-        <Label>Sensores sincronizados</Label>
-        {sensoresDaMaquina.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nenhum sensor vinculado foi retornado pela API para esta máquina.</p>
-        ) : (
-          sensoresDaMaquina.map((sensor, index) => (
-            <div key={sensor.id ?? `${sensor.nome}-${index}`} className="rounded-lg border p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium">{sensor.nome}</p>
-                  <p className="text-xs text-muted-foreground">{tempoRelativo(sensor.ultimaLeituraEm)}</p>
+        <DetailsAccordionSection
+          title="Sensores sincronizados"
+          icon={ThermometerIcon}
+          open={openSections.sensores}
+          onToggle={() => toggleSection("sensores")}
+          meta={
+            <Badge variant="outline" className="border-border/70 bg-background/80 px-2 text-xs text-muted-foreground">
+              {sensoresDaMaquina.length} {sensoresDaMaquina.length === 1 ? "sensor" : "sensores"}
+            </Badge>
+          }
+        >
+          <div className="grid gap-3">
+            {sensoresDaMaquina.length === 0 ? (
+              <p className="rounded-lg border border-border/70 bg-background/80 p-3 text-xs text-muted-foreground">
+                Nenhum sensor vinculado foi retornado pela API para esta máquina.
+              </p>
+            ) : (
+              sensoresDaMaquina.map((sensor, index) => (
+                <div key={sensor.id ?? `${sensor.nome}-${index}`} className="rounded-lg border border-border/70 bg-background/80 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium">{sensor.nome}</p>
+                      <p className="text-xs text-muted-foreground">{tempoRelativo(sensor.ultimaLeituraEm)}</p>
+                    </div>
+                    <SensorStatusBadge value={sensor.status} />
+                  </div>
+                  <div className="mt-3 grid gap-3">
+                    <MetricSnapshot
+                      icon={ThermometerIcon}
+                      label="Temperatura"
+                      current={sensor.temperatura?.valorAtual}
+                      ideal={sensor.idealTemperatura}
+                      limit={sensor.limiteTemperatura ?? sensor.temperatura?.limiteMax}
+                      suffix=" °C"
+                    />
+                    <MetricSnapshot
+                      icon={ActivityIcon}
+                      label="Vibração"
+                      current={sensor.vibracao?.valorAtual}
+                      ideal={sensor.idealVibracao}
+                      limit={sensor.limiteVibracao ?? sensor.vibracao?.limiteMax}
+                      suffix=" mm/s"
+                      digits={2}
+                    />
+                  </div>
                 </div>
-                <SensorStatusBadge value={sensor.status} />
-              </div>
-              <div className="mt-3 grid gap-3">
-                <MetricSnapshot
-                  icon={ThermometerIcon}
-                  label="Temperatura"
-                  current={sensor.temperatura?.valorAtual}
-                  ideal={sensor.idealTemperatura}
-                  limit={sensor.limiteTemperatura ?? sensor.temperatura?.limiteMax}
-                  suffix=" °C"
-                />
-                <MetricSnapshot
-                  icon={ActivityIcon}
-                  label="Vibração"
-                  current={sensor.vibracao?.valorAtual}
-                  ideal={sensor.idealVibracao}
-                  limit={sensor.limiteVibracao ?? sensor.vibracao?.limiteMax}
-                  suffix=" mm/s"
-                  digits={2}
-                />
-              </div>
-            </div>
-          ))
-        )}
+              ))
+            )}
+          </div>
+        </DetailsAccordionSection>
       </div>
     </div>
   )
