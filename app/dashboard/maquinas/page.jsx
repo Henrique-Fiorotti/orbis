@@ -172,7 +172,7 @@ function MaquinaMobileCard({ maquina, onOpen }) {
             )}
            
           </span>
-          <span className="shrink-0 flex gap-1 items-center ">
+          <span className="shrink-0 flex gap-2 items-center ">
             <CriticidadeBadge value={maquina.criticidade}/>
             <StatusBadge value={status} />
           </span>
