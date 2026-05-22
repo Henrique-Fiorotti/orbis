@@ -20,7 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MaquinaDetailsPanel, MaquinaImagePreview } from "@/components/maquina-details-panel"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
-import { CircleCheckIcon, CircleMinusIcon, AlertTriangleIcon, ImageIcon, EllipsisVerticalIcon, Columns3Icon, ChevronDownIcon, PlusIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, ArrowRightIcon } from "lucide-react"
+import { CircleCheckIcon, CircleMinusIcon, AlertTriangleIcon, ImageIcon, EllipsisVerticalIcon, ChevronDownIcon, PlusIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, ArrowRightIcon, SlidersHorizontalIcon, WashingMachineIcon } from "lucide-react"
 import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { cn, tempoRelativo } from "@/lib/utils"
 import {
@@ -39,6 +39,8 @@ import {
   statusMaquinaSortFn,
   withMaquinaAlertasStatus,
 } from "@/lib/maquinas-table"
+
+const FILTER_ALL_VALUE = "__all__"
 
 function CriticidadeBadge({ value }) {
   const styles = {
@@ -108,6 +110,158 @@ function IntegridadeBar({ value, inactive = false }) {
         <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${normalizedValue}%` }} />
       </div>
       <span className={`text-sm font-medium w-9 text-right tabular-nums ${textCor}`}>{normalizedValue}%</span>
+    </div>
+  )
+}
+
+function MaquinaMobileCard({ maquina, onOpen }) {
+  const status = getMaquinaStatusExibicao(maquina)
+  const integridade = getMaquinaIntegridadeExibicao(maquina)
+  const normalizedIntegridade = Math.round(Number(integridade))
+  const hasIntegridade = status !== "SEM_SENSOR" && Number.isFinite(normalizedIntegridade)
+  const integridadeColor = normalizedIntegridade < 50 ? "bg-red-500" : normalizedIntegridade < 75 ? "bg-yellow-400" : "bg-green-500"
+  const integridadeTextColor = normalizedIntegridade < 50 ? "text-red-500 dark:text-red-300" : normalizedIntegridade < 75 ? "text-yellow-500 dark:text-yellow-300" : "text-green-600 dark:text-green-300"
+
+  return (
+    <button
+      type="button"
+      className="flex w-full cursor-pointer items-center gap-4 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      onClick={() => onOpen(maquina)}
+    >
+      <span className="flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-muted-foreground">
+        {maquina.imagem ? (
+          <img src={maquina.imagem} alt="" className="size-full object-cover" />
+        ) : (
+          <WashingMachineIcon className="size-16 stroke-1 text-muted-foreground/35" />
+        )}
+      </span>
+
+      <span className="flex min-w-0 flex-1 flex-col gap-3">
+        <span className="flex min-w-0 flex-col">
+          <span className="line-clamp-2 text-xl font-medium leading-tight text-foreground">{maquina.nome}</span>
+          <span className="text-sm text-muted-foreground">{maquina.setor}</span>
+          <span className="mt-1">
+            <CriticidadeBadge value={maquina.criticidade} />
+          </span>
+        </span>
+
+        <span className="flex items-center justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2">
+            {hasIntegridade ? (
+              <span className={`w-12 text-lg font-medium tabular-nums ${integridadeTextColor}`}>
+                {normalizedIntegridade}%
+              </span>
+            ) : (
+              <span className="w-12 text-lg font-medium tabular-nums text-muted-foreground">--</span>
+            )}
+            <span className="h-2 w-36 max-w-[34vw] overflow-hidden rounded-full bg-muted">
+              <span
+                className={`block h-full rounded-full ${hasIntegridade ? integridadeColor : "w-full bg-muted-foreground/35"}`}
+                style={hasIntegridade ? { width: `${normalizedIntegridade}%` } : undefined}
+              />
+            </span>
+          </span>
+          <span className="shrink-0">
+            <StatusBadge value={status} />
+          </span>
+        </span>
+      </span>
+    </button>
+  )
+}
+
+function MobileFilterSection({ title, value, options, onChange }) {
+  const currentValue = value ?? FILTER_ALL_VALUE
+
+  return (
+    <details className="group rounded-lg border bg-background [&>summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm font-medium">
+        <span>{title}</span>
+        <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="grid gap-2 px-3 pb-3">
+        <button
+          type="button"
+          className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${currentValue === FILTER_ALL_VALUE
+              ? "border-[#5E17EB] bg-[#5E17EB]/10 text-[#5E17EB]"
+              : "bg-card text-muted-foreground hover:border-[#5E17EB]/50"
+            }`}
+          onClick={() => onChange(undefined)}
+        >
+          Todos
+        </button>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${currentValue === option.value
+                ? "border-[#5E17EB] bg-[#5E17EB]/10 text-[#5E17EB]"
+                : "bg-card text-muted-foreground hover:border-[#5E17EB]/50"
+              }`}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function MobileFiltersMenu({
+  open,
+  onOpenChange,
+  activeCount,
+  filters,
+  onFilterChange,
+  onClear,
+}) {
+  return (
+    <div className="flex flex-col gap-3 md:hidden">
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 cursor-pointer"
+          onClick={() => onOpenChange(!open)}
+        >
+          <SlidersHorizontalIcon className="size-4" />
+          Filtros
+          {activeCount > 0 ? (
+            <Badge variant="outline" className="ml-1 border-[#5E17EB]/40 bg-[#5E17EB]/10 px-1.5 text-[#5E17EB]">
+              {activeCount}
+            </Badge>
+          ) : null}
+        </Button>
+        {activeCount > 0 ? (
+          <Button type="button" variant="ghost" size="sm" className="cursor-pointer text-muted-foreground" onClick={onClear}>
+            Limpar
+          </Button>
+        ) : null}
+      </div>
+
+      {open ? (
+        <div className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+          <MobileFilterSection
+            title="Importancia"
+            value={filters.criticidade}
+            options={IMPORTANCIA_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("criticidade", value)}
+          />
+          <MobileFilterSection
+            title="Status"
+            value={filters.status}
+            options={STATUS_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("status", value)}
+          />
+          <MobileFilterSection
+            title="Integridade"
+            value={filters.integridade}
+            options={INTEGRIDADE_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("integridade", value)}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -239,11 +393,12 @@ function MaquinasTable({
   sensorError = "",
   emptyMessage = "Nenhuma máquina encontrada.",
   className = "",
+  columnFilters,
+  onColumnFiltersChange,
 }) {
   const router = useRouter()
   const [maquinaDetalhe, setMaquinaDetalhe] = React.useState(null)
   const [columnVisibility, setColumnVisibility] = React.useState({})
-  const [columnFilters, setColumnFilters] = React.useState([])
   const [sorting, setSorting] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const permissions = useDashboardPermissions()
@@ -263,7 +418,7 @@ function MaquinasTable({
     state: { sorting, columnVisibility, columnFilters, pagination },
     getRowId: (row) => row.id.toString(),
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
@@ -276,43 +431,56 @@ function MaquinasTable({
 
   return (
     <>
-      <div className={cn("min-h-[500px] overflow-auto rounded-lg border dark:bg-[#0F172A] dark:border-gray-700!", className)}>
-          <Table>
-            <TableHeader className="sticky top-0 z-10 bg-muted">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} colSpan={header.colSpan}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
+      <div className="flex flex-col gap-4 md:hidden">
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => (
+            <MaquinaMobileCard key={row.id} maquina={row.original} onOpen={actions.onViewDetails} />
+          ))
+        ) : (
+          <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+            {emptyMessage}
+          </div>
+        )}
+      </div>
+
+      <div className={cn("hidden min-h-[500px] overflow-auto rounded-lg border md:block dark:bg-[#0F172A] dark:border-gray-700!", className)}>
+        <Table>
+          <TableHeader className="sticky top-0 z-10 bg-muted">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} colSpan={header.colSpan}>
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} className="relative z-0 h-14">
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                   ))}
                 </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} className="relative z-0 h-14">
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                    {emptyMessage}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                  {emptyMessage}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
-      <div className="flex items-center justify-between px-4">
+      <div className="flex items-center justify-between px-0 sm:px-4">
         <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
           {table.getFilteredRowModel().rows.length} máquina(s) encontrada(s).
         </div>
-        <div className="flex w-full items-center gap-4 sm:gap-8 lg:w-fit">
+        <div className="flex w-full items-center gap-3 sm:gap-8 lg:w-fit">
+          <span className="text-sm text-muted-foreground lg:hidden">{table.getFilteredRowModel().rows.length} resultado(s)</span>
           <div className="hidden items-center gap-2 lg:flex">
             <Label htmlFor="rows-pp" className="text-sm font-medium">Por página</Label>
             <Select value={`${table.getState().pagination.pageSize}`} onValueChange={(value) => table.setPageSize(Number(value))}>
@@ -368,6 +536,8 @@ function MaquinasTable({
 export function DataTable() {
   const router = useRouter()
   const permissions = useDashboardPermissions()
+  const [columnFilters, setColumnFilters] = React.useState([])
+  const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false)
   const {
     status: dashboardStatus,
     mensagem: dashboardMensagem,
@@ -394,17 +564,51 @@ export function DataTable() {
   const machineError =
     maquinas.length === 0
       ? errors.maquinas ||
-        (maquinasStatus === "error" ? maquinasMensagem : "") ||
-        (dashboardStatus === "error" ? dashboardMensagem : "")
+      (maquinasStatus === "error" ? maquinasMensagem : "") ||
+      (dashboardStatus === "error" ? dashboardMensagem : "")
       : ""
   const sensorNotice = errors.sensores && maquinas.length > 0
     ? `${errors.sensores} Os detalhes dos sensores podem ficar indisponíveis temporariamente.`
     : ""
 
+  const mobileFilterValues = {
+    criticidade: columnFilters.find((filter) => filter.id === "criticidade")?.value,
+    status: columnFilters.find((filter) => filter.id === "status")?.value,
+    integridade: columnFilters.find((filter) => filter.id === "integridade")?.value,
+  }
+  const activeMobileFilters = Object.values(mobileFilterValues).filter((value) => value !== undefined && value !== "").length
+
+  function alterarFiltroMobile(columnId, value) {
+    setColumnFilters((current) => {
+      const next = current.filter((filter) => filter.id !== columnId)
+
+      if (value === undefined || value === "") {
+        return next
+      }
+
+      return [...next, { id: columnId, value }]
+    })
+  }
+
+  function limparFiltrosMobile() {
+    setColumnFilters((current) => current.filter((filter) => !["criticidade", "status", "integridade"].includes(filter.id)))
+  }
+
   return (
-    <Tabs defaultValue="outline" className="w-full flex-col justify-start gap-6">
-      <div className="rounded-[8px]! flex flex-wrap items-center justify-between gap-2 px-4 lg:px-6">
-        <TabsList className="rounded-[8px]! hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full! **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1 @4xl/main:flex">
+    <Tabs defaultValue="outline" className="w-full flex-col justify-start gap-6 ">
+      <div className="px-4 lg:px-6">
+        <MobileFiltersMenu
+          open={mobileFiltersOpen}
+          onOpenChange={setMobileFiltersOpen}
+          activeCount={activeMobileFilters}
+          filters={mobileFilterValues}
+          onFilterChange={alterarFiltroMobile}
+          onClear={limparFiltrosMobile}
+        />
+      </div>
+
+      <div className="rounded-[8px]! flex flex-nowrap items-center h-[32px] justify-between gap-2 px-4 lg:px-6">
+        <TabsList  className="rounded-[8px]! responsivo flex w-fit max-w-full shrink items-center gap-2 overflow-x-auto **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full! **:data-[slot=badge]:bg-muted-foreground/30 **:data-[slot=badge]:px-1">
           <TabsTrigger className="rounded-[8px]! dark:border-gray-600!" value="outline">Máquinas</TabsTrigger>
           <TabsTrigger className="rounded-[8px]! dark:border-gray-600!" value="alertas">
             Em Alerta
@@ -415,9 +619,7 @@ export function DataTable() {
             )}
           </TabsTrigger>
         </TabsList>
-        <div className="flex flex-wrap items-center gap-2">
-          
-
+        <div className="flex shrink-0 items-center gap-2">
           {permissions.canManageMaquinas ? (
             <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => router.push("/dashboard/maquinas?action=new")}>
               <PlusIcon />
@@ -446,7 +648,13 @@ export function DataTable() {
         ) : machineError ? (
           <StatePanel message={machineError} tone="error" />
         ) : (
-          <MaquinasTable data={maquinas} sensores={sensores} sensorError={errors.sensores} />
+          <MaquinasTable
+            data={maquinas}
+            sensores={sensores}
+            sensorError={errors.sensores}
+            columnFilters={columnFilters}
+            onColumnFiltersChange={setColumnFilters}
+          />
         )}
       </TabsContent>
 
@@ -464,6 +672,8 @@ export function DataTable() {
         ) : (
           <MaquinasTable
             data={emAlerta}
+            columnFilters={columnFilters}
+            onColumnFiltersChange={setColumnFilters}
             sensores={sensores}
             sensorError={errors.sensores}
             emptyMessage="Nenhuma máquina em alerta encontrada."
