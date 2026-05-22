@@ -1290,7 +1290,7 @@ export default function AlertasPage() {
           <StatePanel message={mensagem || "Não foi possível carregar os alertas."} tone="error" />
         ) : (
           <Tabs value={filtroResumo} onValueChange={setFiltroResumo} className="min-w-0 w-full flex-col gap-4">
-            <TabsList className="w-full max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <TabsList className="w-full responsivo max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <TabsTrigger value="em-aberto" className="cursor-pointer shrink-0 flex-none">
                 Em aberto{emAberto.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{emAberto.length}</Badge>}
               </TabsTrigger>
