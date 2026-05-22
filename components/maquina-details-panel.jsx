@@ -27,11 +27,70 @@ import {
   getMaquinaStatusExibicao,
   getMaquinaUltimaLeituraExibicao,
 } from "@/lib/maquinas-table"
+import { getAuthSession } from "@/lib/auth-session"
+import { getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
 import { cn, tempoRelativo } from "@/lib/utils"
 
 const PREDICAO_LIMIAR_MANUTENCAO = 70
 const PREDICAO_LIMIAR_FALHA = 30
 const PREDICAO_ANTECEDENCIA_FIM_JANELA_DIAS = 2
+
+const PREDICAO_MOTIVOS_AUSENCIA = {
+  historico_insuficiente: "Histórico insuficiente para sustentar o cálculo.",
+  modelo_nao_pode_ser_calculado: "O modelo não pôde ser calculado com a base atual.",
+  tendencia_nao_confiavel: "A tendência atual não atingiu confiança mínima.",
+  sem_historico_de_alertas_do_tipo: "Não há histórico suficiente desse tipo de alerta.",
+  evento_ja_ocorrido: "O evento previsto já ocorreu.",
+  previsao_fora_da_janela: "A previsão ficou fora da janela monitorada.",
+  sem_alerta_previsivel: "Nenhum alerta previsível foi encontrado.",
+  leituras_insuficientes: "Leituras insuficientes nas janelas recentes.",
+  sem_leitura_recente: "Não há leitura recente para calcular o risco.",
+  historico_de_alertas_insuficiente: "Histórico de alertas insuficiente.",
+}
+
+const FATOR_RISCO_LABELS = {
+  proporcao_acima_limite_24h: "leituras acima do limite em 24h",
+  proporcao_acima_ideal_24h: "leituras acima do ideal em 24h",
+  desvio_vibracao_24h: "variação de vibração em 24h",
+  desvio_temperatura_24h: "variação de temperatura em 24h",
+  instabilidades_ultimas_72h: "instabilidades nas últimas 72h",
+  vibracao_media_2h: "vibração média nas últimas 2h",
+  risco_instabilidade_24h: "risco de instabilidade em 24h",
+  tendencias_curtas_72h: "tendências curtas nas últimas 72h",
+  tendencias_longas_7d: "tendências longas em 7 dias",
+  queda_integridade_24h: "queda de integridade em 24h",
+  queda_estabilidade_24h: "queda de estabilidade em 24h",
+  vibracao_media_7d: "vibração média em 7 dias",
+  alertas_recentes_72h: "alertas recentes em 72h",
+  risco_alerta_24h: "risco de alerta em 24h",
+  alertas_ativos: "alertas ativos",
+  alertas_recentes_24h: "alertas recentes em 24h",
+  queda_integridade_7d: "queda de integridade em 7 dias",
+  criticidade_maquina: "criticidade da máquina",
+  integridade_atual: "integridade atual",
+  score_estabilidade_atual: "estabilidade atual",
+  variacao_integridade_24h: "variação de integridade em 24h",
+}
+
+const RISCO_LABELS = {
+  instabilidade: "Instabilidade",
+  alerta: "Alerta",
+  manutencao: "Manutenção",
+}
+
+const ALERTA_TIPO_LABELS = {
+  INSTABILIDADE: "Instabilidade",
+  TENDENCIA_CURTA: "Tendência curta",
+  TENDENCIA_LONGA: "Tendência longa",
+  DEGRADACAO_ACELERADA: "Degradação acelerada",
+  LIMITE_ULTRAPASSADO: "Limite ultrapassado",
+}
+
+const FONTE_LIMIAR_LABELS = {
+  MAQUINA: "Máquina",
+  TIPO_MAQUINA: "Tipo de máquina",
+  GLOBAL: "Base global",
+}
 
 function getMachineSensors(maquina, sensores) {
   return sensores.filter((sensor) => sensor.maquinaId === maquina.id || sensor.maquinaNome === maquina.nome)
@@ -122,6 +181,141 @@ function formatDaysUntil(value) {
   }
 
   return `Em ${days} dias`
+}
+
+function formatPercentProbability(value) {
+  if (value === null || value === undefined || value === "") {
+    return "N/A"
+  }
+
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return "N/A"
+  }
+
+  return `${Math.round(parsed * 100)}%`
+}
+
+function formatDecimal(value, digits = 2) {
+  if (value === null || value === undefined || value === "") {
+    return "N/A"
+  }
+
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return "N/A"
+  }
+
+  return parsed.toFixed(digits).replace(".", ",")
+}
+
+function formatCount(value) {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return "0"
+  }
+
+  return new Intl.NumberFormat("pt-BR").format(parsed)
+}
+
+function formatPredictionReason(reason) {
+  if (!reason) {
+    return ""
+  }
+
+  return PREDICAO_MOTIVOS_AUSENCIA[reason] ?? reason.replace(/_/g, " ")
+}
+
+function formatRiskFactor(value) {
+  if (!value) {
+    return ""
+  }
+
+  return FATOR_RISCO_LABELS[value] ?? String(value).replace(/_/g, " ")
+}
+
+function getRiskTone(classificacao) {
+  if (classificacao === "ALTO") {
+    return "critical"
+  }
+
+  if (classificacao === "MEDIO") {
+    return "warning"
+  }
+
+  if (classificacao === "BAIXO") {
+    return "stable"
+  }
+
+  return "muted"
+}
+
+function getRiskBadgeLabel(classificacao) {
+  if (classificacao === "ALTO") {
+    return "Alto"
+  }
+
+  if (classificacao === "MEDIO") {
+    return "Médio"
+  }
+
+  if (classificacao === "BAIXO") {
+    return "Baixo"
+  }
+
+  return "Indisponível"
+}
+
+function unwrapPredictionPayload(payload, key) {
+  if (!payload || typeof payload !== "object") {
+    return null
+  }
+
+  if (payload[key] && typeof payload[key] === "object") {
+    return payload[key]
+  }
+
+  if (payload.dados && typeof payload.dados === "object") {
+    return unwrapPredictionPayload(payload.dados, key)
+  }
+
+  if (payload.data && typeof payload.data === "object") {
+    return unwrapPredictionPayload(payload.data, key)
+  }
+
+  return payload
+}
+
+async function fetchMachinePredictions(maquinaId, accessToken, signal) {
+  const [alertasResult, riscoResult] = await Promise.allSettled([
+    requestDashboardJson(`/maquinas/${maquinaId}/predicao-alertas`, accessToken, "a predição de alertas", { signal }),
+    requestDashboardJson(`/maquinas/${maquinaId}/predicao-risco`, accessToken, "a predição de risco", { signal }),
+  ])
+
+  const alertas =
+    alertasResult.status === "fulfilled"
+      ? unwrapPredictionPayload(alertasResult.value, "predicaoAlertas")
+      : null
+  const risco =
+    riscoResult.status === "fulfilled"
+      ? unwrapPredictionPayload(riscoResult.value, "predicaoRisco")
+      : null
+  const errors = {
+    alertas: alertasResult.status === "rejected" && alertasResult.reason instanceof Error
+      ? alertasResult.reason.message
+      : "",
+    risco: riscoResult.status === "rejected" && riscoResult.reason instanceof Error
+      ? riscoResult.reason.message
+      : "",
+  }
+  const unauthorized = [alertasResult, riscoResult].some(
+    (result) => result.status === "rejected" && getHttpErrorStatus(result.reason) === 401
+  )
+
+  return { alertas, risco, errors, unauthorized }
 }
 
 function calculateSensorHealthScore(sensor) {
@@ -314,6 +508,221 @@ function PredicaoManutencaoCard({
           sub={limiarSub}
         />
       </div>
+    </div>
+  )
+}
+
+function PredictionRemoteNotice({ loading, errors }) {
+  const messages = Object.values(errors || {}).filter(Boolean)
+
+  if (loading) {
+    return (
+      <div className="rounded-lg border border-border/70 bg-background/80 p-3 text-xs text-muted-foreground">
+        Atualizando predições de risco e alertas...
+      </div>
+    )
+  }
+
+  if (messages.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-300">
+      {messages.length === 1
+        ? messages[0]
+        : "Parte das predições não pôde ser carregada agora."}
+    </div>
+  )
+}
+
+function PredicaoAlertaItem({ title, prediction, absence }) {
+  if (!prediction) {
+    return (
+      <div className="rounded-md border border-border/70 bg-background/80 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-semibold">{title}</span>
+          <Badge variant="outline" className="border-border/70 px-2 text-xs text-muted-foreground">
+            Sem previsão
+          </Badge>
+        </div>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          {formatPredictionReason(absence?.motivo) || "O backend não retornou uma previsão para esta janela."}
+        </p>
+      </div>
+    )
+  }
+
+  const tipo = ALERTA_TIPO_LABELS[prediction.tipo] ?? prediction.tipo ?? "Alerta"
+  const fonte = FONTE_LIMIAR_LABELS[prediction.fonteLimiar] ?? prediction.fonteLimiar
+
+  return (
+    <div className="rounded-md border border-[#5E17EB]/25 bg-[#5E17EB]/5 p-3 dark:border-[#5E17EB]/45 dark:bg-[#5E17EB]/10">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <span className="block text-sm font-semibold">{title}</span>
+          <span className="mt-1 block text-xs text-muted-foreground">{tipo}</span>
+        </div>
+        <Badge variant="outline" className="shrink-0 border-[#5E17EB]/35 bg-background/80 px-2 text-xs text-[#7c3aed] dark:text-[#A780FF]">
+          {formatPercentProbability(prediction.confianca)} confiança
+        </Badge>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <PredictionMetric
+          label="Data prevista"
+          value={formatPredictionDate(prediction.dataPrevista)}
+          sub={formatDaysUntil(prediction.dataPrevista)}
+        />
+        <PredictionMetric
+          label="Limiar"
+          value={formatMetric(prediction.integridadeLimiar, "%", 1)}
+          sub={fonte ? `${fonte}${prediction.amostrasLimiar ? ` - ${prediction.amostrasLimiar} amostras` : ""}` : ""}
+        />
+      </div>
+    </div>
+  )
+}
+
+function PredicaoAlertasCard({ predicao }) {
+  if (!predicao) {
+    return null
+  }
+
+  const modelo = predicao.modeloIntegridade
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/60 p-3">
+      <div className="mb-3 flex items-center gap-2">
+        <AlertTriangleIcon className="size-4 text-[#5E17EB]" />
+        <Label>Alertas preditivos</Label>
+      </div>
+      <div className="grid gap-3">
+        <PredicaoAlertaItem
+          title="Próximo alerta"
+          prediction={predicao.proximoAlerta}
+          absence={predicao.ausenciaProximoAlerta}
+        />
+        <PredicaoAlertaItem
+          title="Instabilidade"
+          prediction={predicao.instabilidade}
+          absence={predicao.ausenciaInstabilidade}
+        />
+      </div>
+      {modelo ? (
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <PredictionMetric label="R²" value={formatDecimal(modelo.r2, 2)} sub="Ajuste do modelo" />
+          <PredictionMetric label="Inclinação" value={formatDecimal(modelo.slope, 2)} sub="Tendência" />
+          <PredictionMetric label="Pontos" value={formatCount(modelo.pontosUsados)} sub="Histórico usado" />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function RiskProbabilityBar({ label, value }) {
+  const parsed = Number(value)
+  const width = Number.isFinite(parsed) ? Math.max(0, Math.min(100, Math.round(parsed * 100))) : 0
+
+  return (
+    <div className="min-w-0">
+      <div className="mb-1 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+        <span>{label}</span>
+        <span className="tabular-nums">{formatPercentProbability(value)}</span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full bg-[#5E17EB] transition-all" style={{ width: `${width}%` }} />
+      </div>
+    </div>
+  )
+}
+
+function RiskItem({ type, risk }) {
+  const tone = getRiskTone(risk?.classificacao)
+  const badgeClasses = {
+    stable: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/25 dark:text-emerald-300",
+    warning: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-300",
+    critical: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/25 dark:text-red-300",
+    muted: "border-border bg-background text-muted-foreground",
+  }
+
+  return (
+    <div className="rounded-md border border-border/70 bg-background/80 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold">{RISCO_LABELS[type] ?? type}</span>
+        <Badge variant="outline" className={cn("px-2 text-xs", badgeClasses[tone])}>
+          {getRiskBadgeLabel(risk?.classificacao)}
+        </Badge>
+      </div>
+      {!risk ? (
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          O backend não retornou este bloco de risco.
+        </p>
+      ) : risk.motivoAusencia ? (
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          {formatPredictionReason(risk.motivoAusencia)}
+        </p>
+      ) : (
+        <div className="mt-3 grid gap-3">
+          <RiskProbabilityBar label="24h" value={risk?.["24h"]} />
+          <RiskProbabilityBar label="72h" value={risk?.["72h"]} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PredicaoRiscoCard({ predicao }) {
+  if (!predicao) {
+    return null
+  }
+
+  const riscos = predicao.riscos && typeof predicao.riscos === "object" ? predicao.riscos : {}
+  const fatores = Array.isArray(predicao.fatoresPrincipais) ? predicao.fatoresPrincipais : []
+  const metadados = predicao.metadados && typeof predicao.metadados === "object" ? predicao.metadados : null
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/60 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <ActivityIcon className="size-4 text-[#5E17EB]" />
+            <Label>Risco operacional</Label>
+          </div>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            Probabilidade independente para 24h e 72h.
+          </p>
+        </div>
+        <Badge variant="outline" className="shrink-0 border-[#5E17EB]/35 bg-background/80 px-2 text-xs text-[#7c3aed] dark:text-[#A780FF]">
+          {formatPercentProbability(predicao.confiancaGeral)} confiança
+        </Badge>
+      </div>
+      <div className="mt-3 grid gap-2">
+        {["instabilidade", "alerta", "manutencao"].map((type) => (
+          <RiskItem key={type} type={type} risk={riscos[type]} />
+        ))}
+      </div>
+      {fatores.length > 0 ? (
+        <div className="mt-3">
+          <span className="text-[11px] font-medium uppercase text-muted-foreground">Fatores principais</span>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {fatores.map((factor) => (
+              <Badge key={factor} variant="outline" className="border-border/70 bg-background/80 px-2 text-[11px] text-muted-foreground">
+                {formatRiskFactor(factor)}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {metadados ? (
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <PredictionMetric label="Histórico" value={formatCount(metadados.pontosHistoricoIntegridade)} sub="pontos" />
+          <PredictionMetric label="Leituras" value={formatCount(metadados.leiturasConsideradas)} sub="7 dias" />
+          <PredictionMetric label="Alertas" value={formatCount(metadados.alertasRecentesConsiderados)} sub="72h" />
+        </div>
+      ) : null}
+      {predicao.modeloVersao ? (
+        <p className="mt-2 text-[11px] text-muted-foreground">Modelo: {predicao.modeloVersao}</p>
+      ) : null}
     </div>
   )
 }
@@ -554,12 +963,105 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
     predicao: true,
     sensores: false,
   })
+  const [predictionInsights, setPredictionInsights] = React.useState({
+    status: "idle",
+    alertas: null,
+    risco: null,
+    errors: {
+      alertas: "",
+      risco: "",
+    },
+  })
 
   React.useEffect(() => {
     setOpenSections({
       predicao: true,
       sensores: false,
     })
+  }, [maquina?.id])
+
+  React.useEffect(() => {
+    const maquinaId = maquina?.id
+
+    if (!maquinaId) {
+      setPredictionInsights({
+        status: "idle",
+        alertas: null,
+        risco: null,
+        errors: {
+          alertas: "",
+          risco: "",
+        },
+      })
+      return
+    }
+
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      setPredictionInsights({
+        status: "error",
+        alertas: null,
+        risco: null,
+        errors: {
+          alertas: "Faça login para carregar as predições da máquina.",
+          risco: "",
+        },
+      })
+      return
+    }
+
+    const controller = new AbortController()
+    let ignore = false
+
+    setPredictionInsights({
+      status: "loading",
+      alertas: null,
+      risco: null,
+      errors: {
+        alertas: "",
+        risco: "",
+      },
+    })
+
+    fetchMachinePredictions(maquinaId, session.accessToken, controller.signal)
+      .then(({ alertas, risco, errors, unauthorized }) => {
+        if (ignore) {
+          return
+        }
+
+        setPredictionInsights({
+          status: alertas || risco ? "success" : "error",
+          alertas,
+          risco,
+          errors: unauthorized
+            ? {
+                alertas: "Sua sessão expirou. Faça login novamente.",
+                risco: "",
+              }
+            : errors,
+        })
+      })
+      .catch((error) => {
+        if (ignore || error?.name === "AbortError") {
+          return
+        }
+
+        setPredictionInsights({
+          status: "error",
+          alertas: null,
+          risco: null,
+          errors: {
+            alertas: error instanceof Error ? error.message : "Não foi possível carregar as predições da máquina.",
+            risco: "",
+          },
+        })
+      })
+
+    return () => {
+      ignore = true
+      controller.abort()
+    }
   }, [maquina?.id])
 
   function toggleSection(section) {
@@ -624,7 +1126,7 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
 
       <div className="flex flex-col gap-2">
         <DetailsAccordionSection
-          title="Predição de manutenção"
+          title="Predições da máquina"
           icon={ActivityIcon}
           open={openSections.predicao}
           onToggle={() => toggleSection("predicao")}
@@ -634,14 +1136,22 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
             </Badge>
           }
         >
-          <PredicaoManutencaoCard
-            maquina={maquina}
-            sensoresDaMaquina={sensoresDaMaquina}
-            integridadeExibicao={integridadeExibicao}
-            statusExibicao={statusExibicao}
-            summary={predictionSummary}
-            showHeader={false}
-          />
+          <div className="grid gap-3">
+            <PredictionRemoteNotice
+              loading={predictionInsights.status === "loading"}
+              errors={predictionInsights.errors}
+            />
+            <PredicaoManutencaoCard
+              maquina={maquina}
+              sensoresDaMaquina={sensoresDaMaquina}
+              integridadeExibicao={integridadeExibicao}
+              statusExibicao={statusExibicao}
+              summary={predictionSummary}
+              showHeader={false}
+            />
+            <PredicaoAlertasCard predicao={predictionInsights.alertas} />
+            <PredicaoRiscoCard predicao={predictionInsights.risco} />
+          </div>
         </DetailsAccordionSection>
 
         <DetailsAccordionSection
