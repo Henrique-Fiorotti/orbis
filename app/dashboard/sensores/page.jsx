@@ -31,6 +31,7 @@ import {
   ChevronRightIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
+  ChevronDownIcon,
   CircleCheckIcon,
   EllipsisVerticalIcon,
   EyeIcon,
@@ -38,6 +39,7 @@ import {
   PencilIcon,
   PlusIcon,
   SearchIcon,
+  SlidersHorizontalIcon,
   ThermometerIcon,
   Trash2Icon,
   WifiOffIcon,
@@ -56,6 +58,7 @@ import { tempoRelativo } from "@/lib/utils"
 import { parseDecimalInput, sanitizeDecimalInput } from "@/lib/form-formatters"
 
 const SEM_MAQUINA_VALUE = "__sem_maquina__"
+const FILTER_ALL_VALUE = "__all__"
 
 const formVazio = {
   tipo: "",
@@ -131,6 +134,188 @@ function LeituraCell({ valor, unidade, limiteMin, limiteMax }) {
           style={{ transform: `scaleX(${pct / 100})` }}
         />
       </div>
+    </div>
+  )
+}
+
+function getLeituraResumo(sensor, chave, unidade) {
+  if (!isSensorTransmitindo(sensor)) {
+    return {
+      label: "--",
+      pct: 100,
+      barClass: "bg-muted-foreground/35",
+      textClass: "text-muted-foreground",
+    }
+  }
+
+  const leitura = sensor?.[chave]
+  const valor = Number(leitura?.valorAtual)
+  const limiteMin = Number(leitura?.limiteMin)
+  const limiteMax = Number(leitura?.limiteMax)
+
+  if (!leitura || !Number.isFinite(valor) || !Number.isFinite(limiteMin) || !Number.isFinite(limiteMax)) {
+    return {
+      label: "--",
+      pct: 100,
+      barClass: "bg-muted-foreground/35",
+      textClass: "text-muted-foreground",
+    }
+  }
+
+  const overLimit = valor > limiteMax || valor < limiteMin
+  const pct = limiteMax > limiteMin ? Math.min(100, Math.max(0, ((valor - limiteMin) / (limiteMax - limiteMin)) * 100)) : 0
+
+  return {
+    label: `${valor}${unidade}`,
+    pct,
+    barClass: overLimit ? "bg-red-500" : pct > 80 ? "bg-yellow-400" : "bg-green-500",
+    textClass: overLimit ? "text-red-600 dark:text-red-300" : "text-muted-foreground",
+  }
+}
+
+function SensorReadingRow({ reading, label }) {
+  return (
+    <span className="flex items-center gap-2">
+      <span className={`w-9 text-sm font-medium tabular-nums ${reading.textClass}`}>{reading.label}</span>
+      <span className="h-6 w-32 overflow-hidden rounded-md bg-muted">
+        <span
+          className={`block h-full rounded-md ${reading.barClass}`}
+          style={{ width: `${reading.pct}%` }}
+        />
+      </span>
+      <span className="text-sm text-muted-foreground">{label}</span>
+    </span>
+  )
+}
+
+function SensorMobileCard({ sensor, onOpen }) {
+  const vibracao = getLeituraResumo(sensor, "vibracao", "")
+  const temperatura = getLeituraResumo(sensor, "temperatura", "")
+
+  return (
+    <button
+      type="button"
+      className="flex w-full cursor-pointer flex-col gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      onClick={() => onOpen(sensor)}
+    >
+      <span className="flex items-start justify-between gap-3">
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="truncate text-base font-medium text-foreground">{sensor.tipo}</span>
+          <span className="truncate text-sm text-muted-foreground">{sensor.maquinaId ? sensor.maquinaNome : "Sem máquina"}</span>
+        </span>
+        <span className="shrink-0">
+          <StatusBadge value={sensor.status} />
+        </span>
+      </span>
+
+      <span className="flex flex-col gap-2">
+        <SensorReadingRow reading={vibracao} label="Vib" />
+        <SensorReadingRow reading={temperatura} label="Temp" />
+      </span>
+    </button>
+  )
+}
+
+function MobileFilterSection({ title, value, options, onChange }) {
+  const currentValue = value ?? FILTER_ALL_VALUE
+
+  return (
+    <details className="group rounded-lg border bg-background [&>summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm font-medium">
+        <span>{title}</span>
+        <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="grid gap-2 px-3 pb-3">
+        <button
+          type="button"
+          className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+            currentValue === FILTER_ALL_VALUE
+              ? "border-[#5E17EB] bg-[#5E17EB]/10 text-[#5E17EB]"
+              : "bg-card text-muted-foreground hover:border-[#5E17EB]/50"
+          }`}
+          onClick={() => onChange(undefined)}
+        >
+          Todos
+        </button>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+              currentValue === option.value
+                ? "border-[#5E17EB] bg-[#5E17EB]/10 text-[#5E17EB]"
+                : "bg-card text-muted-foreground hover:border-[#5E17EB]/50"
+            }`}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function MobileFiltersMenu({
+  open,
+  onOpenChange,
+  activeCount,
+  filters,
+  onFilterChange,
+  onClear,
+}) {
+  return (
+    <div className="flex flex-col gap-3 md:hidden">
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 cursor-pointer"
+          onClick={() => onOpenChange(!open)}
+        >
+          <SlidersHorizontalIcon className="size-4" />
+          Filtros
+          {activeCount > 0 ? (
+            <Badge variant="outline" className="ml-1 border-[#5E17EB]/40 bg-[#5E17EB]/10 px-1.5 text-[#5E17EB]">
+              {activeCount}
+            </Badge>
+          ) : null}
+        </Button>
+        {activeCount > 0 ? (
+          <Button type="button" variant="ghost" size="sm" className="cursor-pointer text-muted-foreground" onClick={onClear}>
+            Limpar
+          </Button>
+        ) : null}
+      </div>
+
+      {open ? (
+        <div className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+          <MobileFilterSection
+            title="Máquina"
+            value={filters.vinculoMaquina}
+            options={SENSOR_MAQUINA_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("vinculoMaquina", value)}
+          />
+          <MobileFilterSection
+            title="Status"
+            value={filters.status}
+            options={SENSOR_STATUS_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("status", value)}
+          />
+          <MobileFilterSection
+            title="Temperatura"
+            value={filters.temperatura}
+            options={SENSOR_LEITURA_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("temperatura", value)}
+          />
+          <MobileFilterSection
+            title="Vibração"
+            value={filters.vibracao}
+            options={SENSOR_LEITURA_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("vibracao", value)}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -296,6 +481,7 @@ export default function SensoresPage() {
   const [sorting, setSorting] = React.useState([])
   const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
+  const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false)
   const sensorAbertoPelaUrlRef = React.useRef(null)
 
   const loadingInicial = useDashboardMetricsLoading(carregando && sensores.length === 0)
@@ -672,6 +858,26 @@ export default function SensoresPage() {
     getSortedRowModel: getSortedRowModel(),
   })
 
+  const mobileFilterValues = {
+    vinculoMaquina: table.getColumn("vinculoMaquina")?.getFilterValue(),
+    status: table.getColumn("status")?.getFilterValue(),
+    temperatura: table.getColumn("temperatura")?.getFilterValue(),
+    vibracao: table.getColumn("vibracao")?.getFilterValue(),
+  }
+  const activeMobileFilters = Object.values(mobileFilterValues).filter((value) => value !== undefined && value !== "").length
+
+  function alterarFiltroMobile(columnId, value) {
+    table.getColumn(columnId)?.setFilterValue(value)
+    table.setPageIndex(0)
+  }
+
+  function limparFiltrosMobile() {
+    alterarFiltroMobile("vinculoMaquina", undefined)
+    alterarFiltroMobile("status", undefined)
+    alterarFiltroMobile("temperatura", undefined)
+    alterarFiltroMobile("vibracao", undefined)
+  }
+
   return (
     <>
       <SiteHeader />
@@ -744,13 +950,23 @@ export default function SensoresPage() {
           />
         </div>
 
-        <div className="relative w-full max-w-sm">
+        <div className="flex flex-col gap-3">
+          <MobileFiltersMenu
+            open={mobileFiltersOpen}
+            onOpenChange={setMobileFiltersOpen}
+            activeCount={activeMobileFilters}
+            filters={mobileFilterValues}
+            onFilterChange={alterarFiltroMobile}
+            onClear={limparFiltrosMobile}
+          />
+          <div className="relative w-full max-w-sm">
           <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por tipo ou máquina..."
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
             className="pl-8 dark:border-gray-600" />
+          </div>
         </div>
 
         {loadingInicial ? (
@@ -759,7 +975,19 @@ export default function SensoresPage() {
           <StatePanel message={mensagem || "Não foi possível carregar os sensores."} tone="error" />
         ) : (
           <>
-            <div className="min-h-[500px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
+            <div className="flex flex-col gap-4 md:hidden">
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <SensorMobileCard key={row.id} sensor={row.original} onOpen={abrirVer} />
+                ))
+              ) : (
+                <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+                  Nenhum sensor encontrado.
+                </div>
+              )}
+            </div>
+
+            <div className="hidden min-h-[500px] overflow-auto rounded-lg border bg-card md:block dark:border-gray-700! dark:bg-[#0F172A]">
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-muted">
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -792,9 +1020,9 @@ export default function SensoresPage() {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between px-4">
+            <div className="flex items-center justify-between px-0 sm:px-4">
               <span className="text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} resultado(s)</span>
-              <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
+              <div className="flex items-center justify-end gap-3 sm:gap-8 lg:w-fit">
                 <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
                   <ChevronsLeftIcon className="size-4" />
                 </Button>
@@ -814,7 +1042,7 @@ export default function SensoresPage() {
         )}
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
             <SheetHeader>
               <SheetTitle>
                 {modoSheet === "criar" ? "Novo sensor" : modoSheet === "editar" ? "Editar sensor" : "Detalhes do sensor"}
@@ -827,7 +1055,7 @@ export default function SensoresPage() {
                     : "Leituras e configurações do sensor."}
               </SheetDescription>
             </SheetHeader>
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
               {modoSheet === "ver" && sensorSelecionado ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
@@ -1005,7 +1233,7 @@ export default function SensoresPage() {
               )}
             </div>
             {modoSheet !== "ver" ? (
-              <SheetFooter className="px-4 pb-4">
+              <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
                 <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>
                   Cancelar
                 </Button>

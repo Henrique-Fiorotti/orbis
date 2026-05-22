@@ -30,7 +30,7 @@ import {
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
   ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon,
   WashingMachineIcon, ShieldAlertIcon, ImageIcon, UploadIcon,
-  CircleMinusIcon,
+  CircleMinusIcon, SlidersHorizontalIcon, ChevronDownIcon,
 } from "lucide-react"
 import {
   flexRender, getCoreRowModel, getFilteredRowModel,
@@ -57,6 +57,7 @@ import {
 } from "@/lib/maquinas-table"
 
 const formVazio = { nome: "", setor: "", tipo: "", criticidade: "MEDIA" }
+const FILTER_ALL_VALUE = "__all__"
 
 function CriticidadeBadge({ value }) {
   const styles = {
@@ -127,6 +128,154 @@ function IntegridadeBar({ value, inactive = false }) {
         <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${normalizedValue}%` }} />
       </div>
 
+    </div>
+  )
+}
+
+function MaquinaMobileCard({ maquina, onOpen }) {
+  const status = getMaquinaStatusExibicao(maquina)
+  const integridade = getMaquinaIntegridadeExibicao(maquina)
+  const normalizedIntegridade = Math.round(Number(integridade))
+  const hasIntegridade = status !== "SEM_SENSOR" && Number.isFinite(normalizedIntegridade)
+  const integridadeColor = normalizedIntegridade < 50 ? "bg-red-500" : normalizedIntegridade < 75 ? "bg-yellow-400" : "bg-green-500"
+  const integridadeTextColor = normalizedIntegridade < 50 ? "text-red-500 dark:text-red-300" : normalizedIntegridade < 75 ? "text-yellow-500 dark:text-yellow-300" : "text-green-600 dark:text-green-300"
+
+  return (
+    <button
+      type="button"
+      className="flex w-full cursor-pointer items-center gap-4 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      onClick={() => onOpen(maquina)}
+    >
+      <span className="flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-muted-foreground">
+        {maquina.imagem ? (
+          <img src={maquina.imagem} alt="" className="size-full object-cover" />
+        ) : (
+          <WashingMachineIcon className="size-16 stroke-1 text-muted-foreground/35" />
+        )}
+      </span>
+
+      <span className="flex min-w-0 flex-1 flex-col gap-3">
+        <span className="flex min-w-0 flex-col">
+          <span className="line-clamp-2 text-xl font-medium leading-tight text-foreground">{maquina.nome}</span>
+          <span className="text-sm text-muted-foreground">{maquina.setor}</span>
+         
+        </span>
+
+        <span className="flex items-center justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2">
+            {hasIntegridade ? (
+              <span className={`w-12 text-lg font-medium tabular-nums ${integridadeTextColor}`}>
+                {normalizedIntegridade}%
+              </span>
+            ) : (
+              <span className="w-12 text-lg font-medium tabular-nums text-muted-foreground">--</span>
+            )}
+           
+          </span>
+          <span className="shrink-0 flex gap-2 items-center ">
+            <CriticidadeBadge value={maquina.criticidade}/>
+            <StatusBadge value={status} />
+          </span>
+        </span>
+      </span>
+    </button>
+  )
+}
+
+function MobileFilterSection({ title, value, options, onChange }) {
+  const currentValue = value ?? FILTER_ALL_VALUE
+
+  return (
+    <details className="group rounded-lg border bg-background [&>summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm font-medium">
+        <span>{title}</span>
+        <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="grid gap-2 px-3 pb-3">
+        <button
+          type="button"
+          className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+            currentValue === FILTER_ALL_VALUE
+              ? "border-[#5E17EB] bg-[#5E17EB]/10 text-[#5E17EB]"
+              : "bg-card text-muted-foreground hover:border-[#5E17EB]/50"
+          }`}
+          onClick={() => onChange(undefined)}
+        >
+          Todos
+        </button>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+              currentValue === option.value
+                ? "border-[#5E17EB] bg-[#5E17EB]/10 text-[#5E17EB]"
+                : "bg-card text-muted-foreground hover:border-[#5E17EB]/50"
+            }`}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function MobileFiltersMenu({
+  open,
+  onOpenChange,
+  activeCount,
+  filters,
+  onFilterChange,
+  onClear,
+}) {
+  return (
+    <div className="flex flex-col gap-3 md:hidden">
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 cursor-pointer"
+          onClick={() => onOpenChange(!open)}
+        >
+          <SlidersHorizontalIcon className="size-4" />
+          Filtros
+          {activeCount > 0 ? (
+            <Badge variant="outline" className="ml-1 border-[#5E17EB]/40 bg-[#5E17EB]/10 px-1.5 text-[#5E17EB]">
+              {activeCount}
+            </Badge>
+          ) : null}
+        </Button>
+        {activeCount > 0 ? (
+          <Button type="button" variant="ghost" size="sm" className="cursor-pointer text-muted-foreground" onClick={onClear}>
+            Limpar
+          </Button>
+        ) : null}
+      </div>
+
+      {open ? (
+        <div className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+          <MobileFilterSection
+            title="Importancia"
+            value={filters.criticidade}
+            options={IMPORTANCIA_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("criticidade", value)}
+          />
+          <MobileFilterSection
+            title="Status"
+            value={filters.status}
+            options={STATUS_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("status", value)}
+          />
+          <MobileFilterSection
+            title="Integridade"
+            value={filters.integridade}
+            options={INTEGRIDADE_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("integridade", value)}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -218,6 +367,7 @@ export default function MaquinasPage() {
   const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const [openActionMenuId, setOpenActionMenuId] = React.useState(null)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false)
   const maquinaAbertaPelaUrlRef = React.useRef(null)
 
   const loadingInicial = useDashboardMetricsLoading(carregando && maquinas.length === 0)
@@ -560,6 +710,24 @@ export default function MaquinasPage() {
     getSortedRowModel: getSortedRowModel(),
   })
 
+  const mobileFilterValues = {
+    criticidade: table.getColumn("criticidade")?.getFilterValue(),
+    status: table.getColumn("status")?.getFilterValue(),
+    integridade: table.getColumn("integridade")?.getFilterValue(),
+  }
+  const activeMobileFilters = Object.values(mobileFilterValues).filter((value) => value !== undefined && value !== "").length
+
+  function alterarFiltroMobile(columnId, value) {
+    table.getColumn(columnId)?.setFilterValue(value)
+    table.setPageIndex(0)
+  }
+
+  function limparFiltrosMobile() {
+    alterarFiltroMobile("criticidade", undefined)
+    alterarFiltroMobile("status", undefined)
+    alterarFiltroMobile("integridade", undefined)
+  }
+
   return (
     <>
       <SiteHeader />
@@ -660,14 +828,24 @@ export default function MaquinasPage() {
           </MaquinaMetricCard>
         </div>
 
-        <div className="relative w-full max-w-sm">
-          <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, setor ou tipo..."
-            value={busca}
-            onChange={(event) => setBusca(event.target.value)}
-            className="pl-8 dark:border-gray-600"
+        <div className="flex flex-col gap-3">
+          <MobileFiltersMenu
+            open={mobileFiltersOpen}
+            onOpenChange={setMobileFiltersOpen}
+            activeCount={activeMobileFilters}
+            filters={mobileFilterValues}
+            onFilterChange={alterarFiltroMobile}
+            onClear={limparFiltrosMobile}
           />
+          <div className="relative w-full max-w-sm">
+            <SearchIcon className="absolute left-2.5 top-2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, setor ou tipo..."
+              value={busca}
+              onChange={(event) => setBusca(event.target.value)}
+              className="pl-8 dark:border-gray-600"
+            />
+          </div>
         </div>
 
         {loadingInicial ? (
@@ -676,7 +854,19 @@ export default function MaquinasPage() {
           <StatePanel message={mensagem || "Não foi possível carregar as máquinas."} tone="error" />
         ) : (
           <>
-            <div className="min-h-[500px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
+            <div className="flex flex-col gap-4 md:hidden">
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <MaquinaMobileCard key={row.id} maquina={row.original} onOpen={abrirVer} />
+                ))
+              ) : (
+                <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+                  Nenhuma m&aacute;quina encontrada.
+                </div>
+              )}
+            </div>
+
+            <div className="hidden min-h-[500px] overflow-auto rounded-lg border bg-card md:block dark:border-gray-700! dark:bg-[#0F172A]">
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-muted">
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -709,9 +899,9 @@ export default function MaquinasPage() {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between px-4">
+            <div className="flex items-center justify-between px-0 sm:px-4">
               <span className="text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} resultado(s)</span>
-              <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
+              <div className="flex items-center justify-end gap-3 sm:gap-8 lg:w-fit">
                 <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
                   <ChevronsLeftIcon className="size-4" />
                 </Button>
@@ -731,7 +921,7 @@ export default function MaquinasPage() {
         )}
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" className="w-[420px]! max-w-none! gap-0 overflow-hidden sm:max-w-none!">
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
             {modoSheet === "ver" && maquinaSelecionada ? (
               <div key="ver" className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
                 <div className="shrink-0 px-4 pt-4 bg-gradient-to-b from-popover to-popover/80">
@@ -822,7 +1012,7 @@ export default function MaquinasPage() {
                     </Select>
                   </div>
                 </div>
-                <SheetFooter className="px-4 pb-4">
+                <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
                   <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
                   <Button className="cursor-pointer" onClick={salvar} disabled={salvando}>
                 {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}
