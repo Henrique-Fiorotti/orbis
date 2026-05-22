@@ -465,6 +465,8 @@ export default function HomePage() {
         <SAQ />
       </section>
 
+      <Separator orientation="horizontal" /> {/* Linha que separa */}
+
       <RevealOnScroll>
         <CreativeTeamSection />
       </RevealOnScroll>

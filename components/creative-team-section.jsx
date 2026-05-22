@@ -117,33 +117,41 @@ export default function CreativeTeamSection() {
           </p>
         </div>
 
-        <div className="mt-16 grid gap-x-4 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="mt-20 mb-20 grid gap-x-4 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {TEAM_MEMBERS.map((member) => (
             <article
               key={member.name}
-              className={`relative flex min-h-[224px] select-none flex-col items-center justify-end rounded-[30px] px-4 pb-6 pt-20 text-center shadow-[0_18px_40px_rgba(94,23,235,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_54px_rgba(94,23,235,0.26)] ${member.cardClass}`}
+              className={`group relative flex min-h-[224px] select-none flex-col items-center justify-end rounded-[30px] px-4 pb-6 pt-20 text-center shadow-[0_18px_40px_rgba(94,23,235,0.18)] transition-all duration-500 ease-out hover:-translate-y-2 hover:scale-[1.025] hover:shadow-[0_28px_64px_rgba(94,23,235,0.32)] ${member.cardClass}`}
             >
-              <div className="select-none absolute -top-14 flex size-28 items-center justify-center rounded-full bg-background p-1.5 shadow-sm">
+              <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[30px]">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.35),transparent_42%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                <div className="absolute -left-24 top-0 h-full w-16 skew-x-[-18deg] bg-white/25 blur-sm transition-transform duration-700 group-hover:translate-x-[420px]" />
+              </div>
+              <div className="pointer-events-none absolute inset-0 rounded-[30px] ring-1 ring-white/0 transition duration-500 group-hover:ring-white/25" />
+
+              <div className="select-none absolute -top-14 z-20 flex size-28 items-center justify-center rounded-full bg-background p-1.5 shadow-sm transition duration-500 ease-out group-hover:-translate-y-1 group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-[0_18px_36px_rgba(24,24,27,0.22)]">
                 {member.image ? (
                   <img
                     src={member.image}
                     alt={member.name}
                     draggable={false}
-                    className="select-none size-full rounded-full object-cover"
+                    className="select-none size-full rounded-full object-cover transition duration-500 ease-out group-hover:scale-105"
                   />
                 ) : (
                   <div
-                    className={`select-none flex size-full items-center justify-center rounded-full bg-gradient-to-br text-2xl font-semibold text-white ${member.avatarClass}`}
+                    className={`select-none flex size-full items-center justify-center rounded-full bg-gradient-to-br text-2xl font-semibold text-white transition duration-500 ease-out group-hover:scale-105 ${member.avatarClass}`}
                   >
                     {member.initials}
                   </div>
                 )}
               </div>
 
-              <h3 className="select-none text-base font-semibold text-white">{member.name}</h3>
-              <p className="select-none mt-2 text-sm text-zinc-200">{member.role}</p>
+              <div className="relative z-10 transition duration-500 ease-out group-hover:-translate-y-1">
+                <h3 className="select-none text-base font-semibold text-white transition duration-500 group-hover:tracking-wide">{member.name}</h3>
+                <p className="select-none mt-2 text-sm text-zinc-200 transition duration-500 group-hover:text-white/90">{member.role}</p>
+              </div>
 
-              <div className="mt-7 flex items-center justify-center gap-3">
+              <div className="relative z-10 mt-7 flex items-center justify-center gap-3 transition duration-500 ease-out group-hover:-translate-y-1">
                 {SOCIAL_LINKS.map(({ key, icon: Icon, label }) => (
                   <a
                     key={key}
@@ -151,7 +159,7 @@ export default function CreativeTeamSection() {
                     target={key === "email" ? undefined : "_blank"}
                     rel={key === "email" ? undefined : "noreferrer"}
                     aria-label={`${label} de ${member.name}`}
-                    className="inline-flex size-7 items-center justify-center rounded-full text-white transition hover:-translate-y-0.5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-purple-400/35"
+                    className="inline-flex size-7 items-center justify-center rounded-full text-white transition duration-300 hover:-translate-y-1 hover:scale-110 hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-purple-400/35"
                   >
                     <Icon className="size-4" />
                   </a>
