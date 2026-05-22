@@ -44,8 +44,7 @@ export default function SobreInformativo() {
 
     return (
         <section
-            style={{ background: "var(--landing-alt-bg)" }}
-            className="flex flex-col min-[1030px]:flex-row min-[1030px]:items-stretch min-h-max bg-[#f0f0f056] dark:bg-zinc-900 md:ms-2 lg:ms-16 xl:ms-24 2xl:ms-90 max-[1029px]:ms-0 max-[1029px]:items-center max-[1029px]:justify-center max-[1029px]:text-center"
+            className={`${styles.srOrbisInner} flex flex-col min-[1030px]:flex-row min-[1030px]:items-stretch min-h-max md:ms-2 lg:ms-16 xl:ms-24 2xl:ms-90 max-[1029px]:ms-0 max-[1029px]:items-center max-[1029px]:justify-center max-[1029px]:text-center`}
         >
             {/* Lado esquerdo - conteúdo */}
             <div className="w-full max-w-[460px] min-[1030px]:w-[500px] min-[1030px]:max-w-none min-[1030px]:flex-shrink-0 flex flex-col sm:items-left min-[1030px]:items-start px-8 sm:px-12 md:px-10 lg:px-8 py-8 md:py-20 gap-6 md:gap-10 max-[1029px]:mx-auto max-[1029px]:items-center max-[1029px]:text-center">
