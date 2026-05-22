@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   ActivityIcon,
   AlertTriangleIcon,
+  ChevronDownIcon,
   CircleCheckIcon,
   CircleHelpIcon,
   CircleMinusIcon,
@@ -20,7 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   getMaquinaIntegridadeExibicao,
@@ -224,7 +224,7 @@ function getPredictionSummary({ maquina, statusExibicao, integridadeExibicao }) 
 
 function PredictionMetric({ label, value, sub }) {
   return (
-    <div className="min-w-0 rounded-md border border-border/70 bg-background/70 p-2.5">
+    <div className="min-w-0 rounded-md border border-border/70 bg-background/80 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
       <span className="block text-[11px] font-medium uppercase text-muted-foreground">{label}</span>
       <span className="mt-1 block break-words text-sm font-semibold leading-snug">{value}</span>
       {sub ? <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">{sub}</span> : null}
@@ -232,8 +232,15 @@ function PredictionMetric({ label, value, sub }) {
   )
 }
 
-function PredicaoManutencaoCard({ maquina, sensoresDaMaquina, integridadeExibicao, statusExibicao }) {
-  const summary = getPredictionSummary({ maquina, statusExibicao, integridadeExibicao })
+function PredicaoManutencaoCard({
+  maquina,
+  sensoresDaMaquina,
+  integridadeExibicao,
+  statusExibicao,
+  summary: providedSummary,
+  showHeader = true,
+}) {
+  const summary = providedSummary ?? getPredictionSummary({ maquina, statusExibicao, integridadeExibicao })
   const sensorHealthScore = getAverageSensorHealthScore(sensoresDaMaquina)
   const integridade = Number(integridadeExibicao)
   const healthScore = Number.isFinite(sensorHealthScore)
@@ -248,14 +255,14 @@ function PredicaoManutencaoCard({ maquina, sensoresDaMaquina, integridadeExibica
       : "Acima do ponto de manutenção"
     : "Aguardando leitura"
   const toneClasses = {
-    stable: "border-emerald-200 bg-emerald-50/70 dark:border-emerald-900/60 dark:bg-emerald-950/20",
+    stable: "border bg-transparent dark:border dark:bg-transparent",
     attention: "border-[#5E17EB]/30 bg-[#5E17EB]/5 dark:border-[#5E17EB]/50 dark:bg-[#5E17EB]/10",
     warning: "border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/25",
     critical: "border-red-200 bg-red-50/80 dark:border-red-900/60 dark:bg-red-950/25",
     muted: "border-border bg-muted/30",
   }
   const badgeClasses = {
-    stable: "border-emerald-200 bg-white text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
+    stable: "border bg-white text-emerald-700 dark:border dark:bg-transparent dark:text-[#7c3aed]",
     attention: "border-[#5E17EB]/30 bg-white text-[#5E17EB] dark:border-[#5E17EB]/50 dark:bg-[#5E17EB]/10 dark:text-[#A780FF]",
     warning: "border-amber-200 bg-white text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300",
     critical: "border-red-200 bg-white text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300",
@@ -264,19 +271,26 @@ function PredicaoManutencaoCard({ maquina, sensoresDaMaquina, integridadeExibica
 
   return (
     <div className={cn("rounded-lg border p-3", toneClasses[summary.tone])}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <ActivityIcon className="size-4 text-[#5E17EB]" />
-            <Label>Predição de manutenção</Label>
+      {showHeader ? (
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <ActivityIcon className="size-4 text-[#5E17EB]" />
+              <Label>Predição de manutenção</Label>
+            </div>
+            <p className="mt-2 text-sm font-semibold leading-snug">{summary.title}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{summary.description}</p>
           </div>
-          <p className="mt-2 text-sm font-semibold leading-snug">{summary.title}</p>
+          <Badge variant="outline" className={cn("shrink-0 px-2 text-xs", badgeClasses[summary.tone])}>
+            {summary.badge}
+          </Badge>
+        </div>
+      ) : (
+        <div className="rounded-md border border-border/60 bg-background/65 p-3">
+          <p className="text-sm font-semibold leading-snug">{summary.title}</p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{summary.description}</p>
         </div>
-        <Badge variant="outline" className={cn("shrink-0 px-2 text-xs", badgeClasses[summary.tone])}>
-          {summary.badge}
-        </Badge>
-      </div>
+      )}
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         <PredictionMetric
@@ -369,7 +383,7 @@ function SensorStatusBadge({ value }) {
 
 function MetricSnapshot({ icon: Icon, label, current, ideal, limit, suffix, digits = 1 }) {
   return (
-    <div className="rounded-lg border border-[#5E17EB]/25 bg-[#5E17EB]/5 p-3 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10">
+    <div className="rounded-lg border border-border/70 bg-background/80 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
       <div className="mb-3 flex items-center gap-2">
         <Icon className="size-4 text-[#5E17EB]" />
         <span className="text-sm font-medium">{label}</span>
@@ -389,6 +403,42 @@ function MetricSnapshot({ icon: Icon, label, current, ideal, limit, suffix, digi
         </div>
       </div>
     </div>
+  )
+}
+
+function DetailsAccordionSection({ title, icon: Icon, meta, open, onToggle, children }) {
+  const contentId = React.useId()
+
+  return (
+    <section
+      className={cn(
+        "overflow-hidden rounded-lg border border-border/70 bg-card/35 transition-colors",
+        open && "border-[#5E17EB]/45 bg-[#5E17EB]/5"
+      )}
+    >
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={contentId}
+        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        onClick={onToggle}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <Icon className="size-4 shrink-0 text-[#5E17EB]" />
+          <span className="truncate text-sm font-semibold">{title}</span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
+          {meta}
+          <ChevronDownIcon className={cn("size-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+        </span>
+      </button>
+      <div
+        id={contentId}
+        hidden={!open}
+      >
+        {children}
+      </div>
+    </section>
   )
 }
 
@@ -496,9 +546,31 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
   const statusExibicao = getMaquinaStatusExibicao(maquinaComTotalSensores)
   const integridadeExibicao = getMaquinaIntegridadeExibicao(maquinaComTotalSensores)
   const ultimaLeituraExibicao = getMaquinaUltimaLeituraExibicao(maquinaComTotalSensores)
+  const predictionSummary = React.useMemo(
+    () => getPredictionSummary({ maquina, statusExibicao, integridadeExibicao }),
+    [maquina, statusExibicao, integridadeExibicao]
+  )
+  const [openSections, setOpenSections] = React.useState({
+    predicao: true,
+    sensores: false,
+  })
+
+  React.useEffect(() => {
+    setOpenSections({
+      predicao: true,
+      sensores: false,
+    })
+  }, [maquina?.id])
+
+  function toggleSection(section) {
+    setOpenSections((currentSections) => ({
+      ...currentSections,
+      [section]: !currentSections[section],
+    }))
+  }
 
   return (
-    <div className={cn("flex flex-col gap-4 text-sm", className)}>
+    <div className={cn("flex flex-col gap-4 text-sm mt-5", className)}>
       {sensorError ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
           {sensorError}
@@ -550,51 +622,78 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
         </div>
       </div>
 
-      <PredicaoManutencaoCard
-        maquina={maquina}
-        sensoresDaMaquina={sensoresDaMaquina}
-        integridadeExibicao={integridadeExibicao}
-        statusExibicao={statusExibicao}
-      />
+      <div className="flex flex-col gap-2">
+        <DetailsAccordionSection
+          title="Predição de manutenção"
+          icon={ActivityIcon}
+          open={openSections.predicao}
+          onToggle={() => toggleSection("predicao")}
+          meta={
+            <Badge variant="outline" className="border-[#5E17EB]/35 bg-background/80 px-2 text-xs text-[#7c3aed] dark:text-[#A780FF]">
+              {predictionSummary.badge}
+            </Badge>
+          }
+        >
+          <PredicaoManutencaoCard
+            maquina={maquina}
+            sensoresDaMaquina={sensoresDaMaquina}
+            integridadeExibicao={integridadeExibicao}
+            statusExibicao={statusExibicao}
+            summary={predictionSummary}
+            showHeader={false}
+          />
+        </DetailsAccordionSection>
 
-      <Separator />
-
-      <div className="flex flex-col gap-3">
-        <Label>Sensores sincronizados</Label>
-        {sensoresDaMaquina.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nenhum sensor vinculado foi retornado pela API para esta máquina.</p>
-        ) : (
-          sensoresDaMaquina.map((sensor, index) => (
-            <div key={sensor.id ?? `${sensor.nome}-${index}`} className="rounded-lg border p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium">{sensor.nome}</p>
-                  <p className="text-xs text-muted-foreground">{tempoRelativo(sensor.ultimaLeituraEm)}</p>
+        <DetailsAccordionSection
+          title="Sensores sincronizados"
+          icon={ThermometerIcon}
+          open={openSections.sensores}
+          onToggle={() => toggleSection("sensores")}
+          meta={
+            <Badge variant="outline" className="border-border/70 bg-background/80 px-2 text-xs text-muted-foreground">
+              {sensoresDaMaquina.length} {sensoresDaMaquina.length === 1 ? "sensor" : "sensores"}
+            </Badge>
+          }
+        >
+          <div className="grid gap-3">
+            {sensoresDaMaquina.length === 0 ? (
+              <p className="rounded-lg border border-border/70 bg-background/80 p-3 text-xs text-muted-foreground">
+                Nenhum sensor vinculado foi retornado pela API para esta máquina.
+              </p>
+            ) : (
+              sensoresDaMaquina.map((sensor, index) => (
+                <div key={sensor.id ?? `${sensor.nome}-${index}`} className="rounded-lg border border-border/70 bg-background/80 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium">{sensor.nome}</p>
+                      <p className="text-xs text-muted-foreground">{tempoRelativo(sensor.ultimaLeituraEm)}</p>
+                    </div>
+                    <SensorStatusBadge value={sensor.status} />
+                  </div>
+                  <div className="mt-3 grid gap-3">
+                    <MetricSnapshot
+                      icon={ThermometerIcon}
+                      label="Temperatura"
+                      current={sensor.temperatura?.valorAtual}
+                      ideal={sensor.idealTemperatura}
+                      limit={sensor.limiteTemperatura ?? sensor.temperatura?.limiteMax}
+                      suffix=" °C"
+                    />
+                    <MetricSnapshot
+                      icon={ActivityIcon}
+                      label="Vibração"
+                      current={sensor.vibracao?.valorAtual}
+                      ideal={sensor.idealVibracao}
+                      limit={sensor.limiteVibracao ?? sensor.vibracao?.limiteMax}
+                      suffix=" mm/s"
+                      digits={2}
+                    />
+                  </div>
                 </div>
-                <SensorStatusBadge value={sensor.status} />
-              </div>
-              <div className="mt-3 grid gap-3">
-                <MetricSnapshot
-                  icon={ThermometerIcon}
-                  label="Temperatura"
-                  current={sensor.temperatura?.valorAtual}
-                  ideal={sensor.idealTemperatura}
-                  limit={sensor.limiteTemperatura ?? sensor.temperatura?.limiteMax}
-                  suffix=" °C"
-                />
-                <MetricSnapshot
-                  icon={ActivityIcon}
-                  label="Vibração"
-                  current={sensor.vibracao?.valorAtual}
-                  ideal={sensor.idealVibracao}
-                  limit={sensor.limiteVibracao ?? sensor.vibracao?.limiteMax}
-                  suffix=" mm/s"
-                  digits={2}
-                />
-              </div>
-            </div>
-          ))
-        )}
+              ))
+            )}
+          </div>
+        </DetailsAccordionSection>
       </div>
     </div>
   )
