@@ -7,15 +7,12 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
 import {
   ArrowLeftIcon,
-  ChevronsLeftIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsRightIcon,
   CircleCheckIcon,
   CircleMinusIcon,
   EllipsisVerticalIcon,
@@ -41,6 +38,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { SiteHeader } from "@/components/site-header"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
+import { TablePagination } from "@/components/table-pagination"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { fetchDashboardJson, getHttpErrorStatus, normalizeAdminCollection, requestDashboardJson } from "@/lib/dashboard-api"
@@ -53,6 +51,7 @@ import {
 } from "@/lib/form-formatters"
 import { tempoRelativo } from "@/lib/utils"
 import { getWhatsappUrl } from "@/lib/whatsapp-url.mjs"
+import { collectPaginatedItems } from "@/lib/pagination.mjs"
 
 const formVazio = {
   nome: "",
@@ -171,6 +170,33 @@ async function fetchAdminsFromUsuariosCollection(accessToken) {
   return admins
 }
 
+async function fetchAllAdmins(accessToken, limit = ADMIN_PAGE_SIZE) {
+  const firstResolved = await fetchAdminsPayload(accessToken, 1, limit)
+
+  if (firstResolved.source === "usuarios") {
+    return fetchAdminsFromUsuariosCollection(accessToken)
+  }
+
+  const { items } = await collectPaginatedItems({
+    pageSize: limit,
+    fetchPage: async (page) => {
+      const resolved = page === 1 ? firstResolved : await fetchAdminsPayload(accessToken, page, limit)
+      const admins = normalizeAdminCollection(resolved.payload, {
+        assumeAdminWhenRoleMissing: resolved.source !== "usuarios",
+      })
+
+      return {
+        admins,
+        total: getPayloadTotal(resolved.payload, admins.length),
+        totalPages: resolved.payload?.totalPages,
+      }
+    },
+    getItems: (payload) => payload.admins,
+  })
+
+  return items
+}
+
 function AdminAvatar({ admin, size = "default", onClick }) {
   const sizeClass = size === "lg"
     ? "h-16 w-16 text-xl"
@@ -281,8 +307,7 @@ export default function AdminsPage() {
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [adminExcluir, setAdminExcluir] = React.useState(null)
   const [limiteItems] = React.useState(ADMIN_PAGE_SIZE)
-  const [paginaAtual, setPaginaAtual] = React.useState(1)
-  const [totalPaginas, setTotalPaginas] = React.useState(1)
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: ADMIN_PAGE_SIZE })
   const [filtroResumo, setFiltroResumo] = React.useState("TODOS")
   const adminIdParam = searchParams.get("adminId")
   const adminAbertoPelaUrlRef = React.useRef(null)
@@ -318,25 +343,9 @@ export default function AdminsPage() {
     setMensagem("Carregando administradores...")
 
     try {
-      const resolved = await fetchAdminsPayload(session.accessToken, page, limit)
-      let normalizedAdmins = normalizeAdminCollection(resolved.payload, {
-        assumeAdminWhenRoleMissing: resolved.source !== "usuarios",
-      })
-      let totalAdmins = getPayloadTotal(resolved.payload, normalizedAdmins.length)
-      let totalPages = resolved.payload?.totalPages
-
-      if (resolved.source.startsWith("usuarios")) {
-        const allAdmins = await fetchAdminsFromUsuariosCollection(session.accessToken)
-        const startIndex = (page - 1) * limit
-
-        normalizedAdmins = allAdmins.slice(startIndex, startIndex + limit)
-        totalAdmins = allAdmins.length
-        totalPages = Math.max(Math.ceil(totalAdmins / limit), 1)
-      }
-
+      const normalizedAdmins = await fetchAllAdmins(session.accessToken, limit)
       setAdmins(normalizedAdmins)
-      setTotalPaginas(totalPages ? Number(totalPages) : Math.max(Math.ceil(totalAdmins / limit), 1))
-      setPaginaAtual(page)
+      setPagination((current) => ({ ...current, pageIndex: 0, pageSize: limit }))
       setStatus("success")
       setMensagem("")
     } catch (error) {
@@ -488,7 +497,7 @@ export default function AdminsPage() {
 
     try {
       await requestDashboardJson(endpoint, session.accessToken, contextLabel, { method, body })
-      await carregarAdmins(paginaAtual, limiteItems)
+      await carregarAdmins(1, limiteItems)
     } catch (error) {
       if (getHttpErrorStatus(error) === 401) {
         clearAuthSession()
@@ -684,8 +693,11 @@ export default function AdminsPage() {
   const table = useReactTable({
     data: adminsFiltrados,
     columns,
+    state: { pagination },
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
 
@@ -735,7 +747,7 @@ export default function AdminsPage() {
             <div className="flex items-center justify-between gap-3">
               <span>{mensagem}</span>
               <RefreshTooltipButton
-                onClick={() => carregarAdmins(paginaAtual, limiteItems)}
+                onClick={() => carregarAdmins(1, limiteItems)}
                 disabled={status === "loading" || salvando}
                 successMessage="Atualização dos administradores concluída."
               />
@@ -804,24 +816,7 @@ export default function AdminsPage() {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm text-muted-foreground">{adminsFiltrados.length} resultado(s) nesta página - {filtroResumoLabel}</span>
-              <div className="flex items-center justify-end gap-3 sm:gap-8 lg:w-fit">
-                <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => carregarAdmins(1, limiteItems)} disabled={paginaAtual <= 1 || status === "loading"}>
-                  <ChevronsLeftIcon className="size-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => carregarAdmins(paginaAtual - 1, limiteItems)} disabled={paginaAtual <= 1 || status === "loading"}>
-                  <ChevronLeftIcon className="size-4" />
-                </Button>
-                <span className="text-sm">Pág. {paginaAtual} de {Math.max(totalPaginas, 1)}</span>
-                <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => carregarAdmins(paginaAtual + 1, limiteItems)} disabled={paginaAtual >= totalPaginas || status === "loading"}>
-                  <ChevronRightIcon className="size-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => carregarAdmins(totalPaginas, limiteItems)} disabled={paginaAtual >= totalPaginas || status === "loading"}>
-                  <ChevronsRightIcon className="size-4" />
-                </Button>
-              </div>
-            </div>
+            <TablePagination table={table} countLabel={`${adminsFiltrados.length} resultado(s) - ${filtroResumoLabel}`} disabled={status === "loading"} />
           </>
         )}
 

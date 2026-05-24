@@ -1,12 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { io } from "socket.io-client"
 
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import {
-  API_URL,
   fetchDashboardJson,
   getHttpErrorStatus,
   mergeSensorLeitura,
@@ -15,13 +13,12 @@ import {
   refreshSensorStatuses,
   requestDashboardJson,
 } from "@/lib/dashboard-api"
+import { REALTIME_SENSOR_READING_EVENT } from "@/lib/realtime-events.mjs"
 
 /** @typedef {import("@/lib/orbis-types").WithChildrenProps} WithChildrenProps */
 /** @typedef {import("@/lib/orbis-types").SensoresContextValue} SensoresContextValue */
 /** @typedef {import("@/lib/orbis-types").NovoSensorInput} NovoSensorInput */
 /** @typedef {import("@/lib/orbis-types").AtualizacaoSensorInput} AtualizacaoSensorInput */
-
-export const SENSOR_READING_EVENT = "orbis-sensor-reading"
 
 /** @type {React.Context<SensoresContextValue | null>} */
 const SensoresContext = React.createContext(null)
@@ -87,35 +84,14 @@ export function SensoresProvider({ children }) {
   }, [])
 
   React.useEffect(() => {
-    const session = getAuthSession()
-
-    if (!session?.accessToken) {
-      return
+    function handleSensorReading(event) {
+      setSensores((current) => refreshSensorStatuses(mergeSensorLeitura(current, event.detail)))
     }
 
-    const socket = io(API_URL, {
-      auth: {
-        token: session.accessToken,
-        accessToken: session.accessToken,
-      },
-      query: {
-        token: session.accessToken,
-      },
-      transports: ["websocket", "polling"],
-    })
-
-    function handleNovaLeitura(payload) {
-      setSensores((current) => refreshSensorStatuses(mergeSensorLeitura(current, payload)))
-      window.dispatchEvent(new CustomEvent(SENSOR_READING_EVENT, { detail: payload }))
-    }
-
-    socket.on("novaLeitura", handleNovaLeitura)
-    socket.on("nova-leitura", handleNovaLeitura)
+    window.addEventListener(REALTIME_SENSOR_READING_EVENT, handleSensorReading)
 
     return () => {
-      socket.off("novaLeitura", handleNovaLeitura)
-      socket.off("nova-leitura", handleNovaLeitura)
-      socket.disconnect()
+      window.removeEventListener(REALTIME_SENSOR_READING_EVENT, handleSensorReading)
     }
   }, [])
 

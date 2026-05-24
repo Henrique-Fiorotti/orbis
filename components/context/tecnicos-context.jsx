@@ -4,6 +4,7 @@ import * as React from "react"
 
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { getDashboardPermissions } from "@/lib/dashboard-permissions"
+import { collectPaginatedItems } from "@/lib/pagination.mjs"
 import {
   extractCollection,
   fetchDashboardJson,
@@ -276,6 +277,26 @@ async function fetchTecnicosPayload(accessToken, page, limit) {
   throw new Error("Não foi possível localizar um endpoint de leitura de técnicos na API.")
 }
 
+async function fetchAllTecnicoItems(accessToken, limit) {
+  const firstResolved = await fetchTecnicosPayload(accessToken, 1, limit)
+  const { items } = await collectPaginatedItems({
+    pageSize: limit,
+    fetchPage: async (page) => {
+      const resolved = page === 1 ? firstResolved : await fetchTecnicosPayload(accessToken, page, limit)
+      const tecnicoItems = getTecnicosFromPayload(resolved.payload, resolved.source)
+
+      return {
+        items: tecnicoItems,
+        total: getPayloadTotal(resolved.payload, tecnicoItems.length),
+        totalPages: resolved.payload?.totalPages,
+      }
+    },
+    getItems: (payload) => payload.items,
+  })
+
+  return items
+}
+
 /**
  * @param {WithChildrenProps} props
  */
@@ -314,9 +335,8 @@ export function TecnicosProvider({ children }) {
     }
 
     try {
-      const resolved = await fetchTecnicosPayload(session.accessToken, page, limit)
-      const tecnicoItems = getTecnicosFromPayload(resolved.payload, resolved.source)
-      const totalTecnicos = getPayloadTotal(resolved.payload, tecnicoItems.length)
+      const tecnicoItems = await fetchAllTecnicoItems(session.accessToken, limit)
+      const totalTecnicos = tecnicoItems.length
       const tecnicosParaConferencia = await fetchTecnicosAtivosParaConferencia(
         session.accessToken,
         totalTecnicos,
@@ -332,16 +352,8 @@ export function TecnicosProvider({ children }) {
       const normalizedTecnicos = normalizeTecnicoCollection(applyTecnicosCriadoEm(mergedTecnicos, criadosEm))
 
       setTecnicos(normalizedTecnicos)
-
-      if (resolved.payload && resolved.payload.totalPages) {
-        setTotalPaginas(resolved.payload.totalPages)
-      } else if (resolved.payload && resolved.payload.total && limit && resolved.source !== "usuarios") {
-        setTotalPaginas(Math.ceil(resolved.payload.total / limit))
-      } else {
-        setTotalPaginas(Math.max(Math.ceil(normalizedTecnicos.length / limit), 1))
-      }
-
-      setPaginaAtual(page)
+      setTotalPaginas(Math.max(Math.ceil(normalizedTecnicos.length / limit), 1))
+      setPaginaAtual(1)
       
       setStatus("success")
       setMensagem("")
