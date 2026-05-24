@@ -8,8 +8,10 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { AdminsProvider } from "@/components/context/admins-context"
 import { AlertasProvider } from "@/components/context/alertas-context"
 import { DashboardAiAssistant } from "@/components/dashboard-ai-assistant"
+import { DashboardIntroductionModal } from "@/components/dashboard-introduction-modal"
 import { DashboardAuthSkeleton } from "@/components/dashboard-skeletons"
 import { DashboardPreferencesProvider } from "@/components/context/dashboard-preferences-context"
+import { DashboardRealtimeProvider } from "@/components/context/dashboard-realtime-context"
 import { MaquinasProvider } from "@/components/context/maquinas-context"
 import { SensoresProvider } from "@/components/context/sensores-context"
 import { TecnicosProvider } from "@/components/context/tecnicos-context"
@@ -62,30 +64,33 @@ export default function DashboardLayout({ children }) {
   }
 
   return (
-    <MaquinasProvider>
-      <SensoresProvider>
-        <AlertasProvider>
-          <AdminsProvider>
-            <TecnicosProvider>
-              <DashboardPreferencesProvider>
-                <TooltipProvider>
-                  <SidebarProvider
-                    style={{ "--sidebar-width": "calc(var(--spacing) * 72)", "--header-height": "calc(var(--spacing) * 12)",  }}>
-                    <AppSidebar variant="inset" />
-                    <SidebarInset>
-                      <SmoothScroll>
-                        {children}
-                      </SmoothScroll>
+    <DashboardRealtimeProvider>
+      <MaquinasProvider>
+        <SensoresProvider>
+          <AlertasProvider>
+            <AdminsProvider>
+              <TecnicosProvider>
+                <DashboardPreferencesProvider>
+                  <TooltipProvider>
+                    <SidebarProvider
+                      style={{ "--sidebar-width": "calc(var(--spacing) * 72)", "--header-height": "calc(var(--spacing) * 12)",  }}>
+                      <AppSidebar variant="inset" />
+                      <SidebarInset>
+                        <SmoothScroll>
+                          {children}
+                        </SmoothScroll>
                       <Toaster position="top-left" />
                     </SidebarInset>
                     <DashboardAiAssistant />
+                    <DashboardIntroductionModal />
                   </SidebarProvider>
-                </TooltipProvider>
-              </DashboardPreferencesProvider>
-            </TecnicosProvider>
-          </AdminsProvider>
-        </AlertasProvider>
-      </SensoresProvider>
-    </MaquinasProvider>
+                  </TooltipProvider>
+                </DashboardPreferencesProvider>
+              </TecnicosProvider>
+            </AdminsProvider>
+          </AlertasProvider>
+        </SensoresProvider>
+      </MaquinasProvider>
+    </DashboardRealtimeProvider>
   )
 }

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/sidebar"
 import { AUTH_SESSION_UPDATED_EVENT, getAuthSessionUser } from "@/lib/auth-session"
 import { getDashboardPermissions } from "@/lib/dashboard-permissions"
+import { DASHBOARD_INTRODUCTION_MODAL_OPEN_EVENT } from "@/lib/introduction-modal.mjs"
 import {
   AlertTriangleIcon,
   BotIcon,
@@ -79,6 +80,12 @@ const data = {
       style: "text-muted-foreground dark:text-white!",
       url: "#",
       icon: <Settings2Icon className="dark:text-white" />,
+    },
+    {
+      title: "Ajuda",
+      style: "text-muted-foreground dark:text-white!",
+      url: "#",
+      icon: <CircleHelpIcon className="dark:text-white" />,
     },
     {
       title: "Pesquisar",
@@ -144,6 +151,13 @@ export function AppSidebar({ ...props }) {
           ? {
               ...item,
               onClick: () => setSettingsOpen(true),
+            }
+          : item.title === "Ajuda"
+          ? {
+              ...item,
+              onClick: () => {
+                window.dispatchEvent(new CustomEvent(DASHBOARD_INTRODUCTION_MODAL_OPEN_EVENT))
+              },
             }
           : item.title === "Pesquisar"
             ? {
