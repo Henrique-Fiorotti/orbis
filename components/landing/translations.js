@@ -411,26 +411,27 @@ export const LANDING_COPY = {
         {
           title: "Navegação",
           links: [
-            { title: "Início", href: "/" },
+            { title: "Início", href: "/#inicio" },
             { title: "Sobre", href: "/#sobre" },
             { title: "Planos", href: "/#planos" },
             { title: "Contato", href: "/#contact" },
+            { title: "Equipe", href: "/#equipe" },
           ],
         },
         {
           title: "Plataforma",
           links: [
             { title: "Login", href: "/login" },
-            { title: "Registrar empresa", href: "/registro" },
+            { title: "Registrar empresa", href: "/login" },
             { title: "Dashboard", href: "/dashboard" },
           ],
         },
         {
           title: "Legal",
           links: [
-            { title: "Política de Privacidade", href: "/login" },
-            { title: "Termos de Uso", href: "#" },
-            { title: "Página não encontrada", href: "/404-exemplo" },
+            { title: "Política de Privacidade", href: "/#contact" },
+            { title: "Termos de Uso", href: "/#contact" },
+            { title: "Página não encontrada", href: "/nao-encontrada" },
           ],
         },
       ],
@@ -812,26 +813,27 @@ export const LANDING_COPY = {
         {
           title: "Navigation",
           links: [
-            { title: "Home", href: "/" },
+            { title: "Home", href: "/#inicio" },
             { title: "About", href: "/#sobre" },
             { title: "Plans", href: "/#planos" },
             { title: "Contact", href: "/#contact" },
+            { title: "Team", href: "/#equipe" },
           ],
         },
         {
           title: "Platform",
           links: [
             { title: "Login", href: "/login" },
-            { title: "Register company", href: "/registro" },
+            { title: "Register company", href: "/login" },
             { title: "Dashboard", href: "/dashboard" },
           ],
         },
         {
           title: "Legal",
           links: [
-            { title: "Privacy Policy", href: "/login" },
-            { title: "Terms of Use", href: "#" },
-            { title: "Page not found", href: "/404-exemplo" },
+            { title: "Privacy Policy", href: "/#contact" },
+            { title: "Terms of Use", href: "/#contact" },
+            { title: "Page not found", href: "/not-found" },
           ],
         },
       ],
@@ -1217,22 +1219,23 @@ export const LANDING_COPY = {
             { title: "Sobre", href: "/#sobre" },
             { title: "Planes", href: "/#planos" },
             { title: "Contacto", href: "/#contact" },
+            { title: "Equipo", href: "/#equipe" },
           ],
         },
         {
           title: "Plataforma",
           links: [
             { title: "Login", href: "/login" },
-            { title: "Registrar empresa", href: "/registro" },
+            { title: "Registrar empresa", href: "/login" },
             { title: "Dashboard", href: "/dashboard" },
           ],
         },
         {
           title: "Legal",
           links: [
-            { title: "Política de Privacidad", href: "/login" },
-            { title: "Términos de Uso", href: "#" },
-            { title: "Página no encontrada", href: "/404-exemplo" },
+            { title: "Política de Privacidad", href: "/#contact" },
+            { title: "Términos de Uso", href: "/#contact" },
+            { title: "Página no encontrada", href: "/no-encontrada" },
           ],
         },
       ],

@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import {
   GithubIcon,
   InstagramIcon,
@@ -11,86 +10,86 @@ import {
 const TEAM_MEMBERS = [
   {
     name: "Caio Ferrer",
-    role: "Backend Developer",
-    image: "/caio.jpeg",
+    role: "Desenvolvedor Backend",
+    // image: "/caio.jpeg",
     initials: "CF",
-    cardClass: "bg-sky-100/80 dark:bg-sky-950/30",
+    cardClass: "bg-[#5E17EB] dark:bg-[#5E17EB]",
     links: {
       linkedin: "https://linkedin.com/in/usuario",
       github: "https://github.com/usuario",
       instagram: "https://instagram.com/usuario",
       email: "mailto:email@exemplo.com",
     },
-    avatarClass: "from-sky-300 to-blue-500",
+    avatarClass: "from-[#5E17EB] to-violet-500",
   },
   {
     name: "Gabriel Lourencetti",
-    role: "Frontend Developer",
+    role: "Desenvolvedor Frontend",
     image: "/gabriel.jpeg",
     initials: "GL",
-    cardClass: "bg-zinc-200/80 dark:bg-zinc-800/70",
+    cardClass: "bg-[#7C3AED] dark:bg-[#7C3AED]",
     links: {
       linkedin: "https://www.linkedin.com/in/gabriel-lourencetti-souza-04b525276",
       github: "https://github.com/usuario",
       instagram: "https://instagram.com/usuario",
       email: "mailto:email@exemplo.com",
     },
-    avatarClass: "from-zinc-400 to-zinc-700",
+    avatarClass: "from-[#5E17EB] to-violet-500",
   },
   {
     name: "Guilherme Orlof",
-    role: "IOT and Frontend Developer",
+    role: "Desenvolvedor IoT e Frontend",
     image: "/gui.jpeg",
     initials: "GO",
-    cardClass: "bg-emerald-100/80 dark:bg-emerald-950/30",
+    cardClass: "bg-[#5E17EB] dark:bg-[#5E17EB]",
     links: {
       linkedin: "https://linkedin.com/in/usuario",
       github: "https://github.com/usuario",
       instagram: "https://instagram.com/usuario",
       email: "mailto:email@exemplo.com",
     },
-    avatarClass: "from-emerald-300 to-teal-500",
+    avatarClass: "from-[#5E17EB] to-violet-500",
   },
   {
     name: "Gustavo Cagega",
-    role: "Backend Developer",
-    image: "/gustavo.jpeg",
+    role: "Desenvolvedor Backend",
+    // image: "/gustavo.jpeg",
     initials: "GC",
-    cardClass: "bg-rose-100/80 dark:bg-rose-950/30",
+    cardClass: "bg-[#7C3AED] dark:bg-[#7C3AED]",
     links: {
       linkedin: "https://linkedin.com/in/usuario",
       github: "https://github.com/usuario",
       instagram: "https://instagram.com/usuario",
       email: "mailto:email@exemplo.com",
     },
-    avatarClass: "from-rose-300 to-pink-500",
+    avatarClass: "from-[#5E17EB] to-violet-500",
   },
   {
     name: "Henrique Fiorotti",
-    role: "Frontend Developer",
+    role: "Desenvolvedor Frontend",
     initials: "HF",
     image: "/henrique.jpeg",
-    cardClass: "bg-orange-100/80 dark:bg-orange-950/30",
+    cardClass: "bg-[#5E17EB] dark:bg-[#5E17EB]",
     links: {
       linkedin: "https://linkedin.com/in/usuario",
       github: "https://github.com/usuario",
       instagram: "https://instagram.com/usuario",
       email: "mailto:email@exemplo.com",
     },
-    avatarClass: "from-orange-300 to-amber-500",
+    avatarClass: "from-[#5E17EB] to-violet-500",
   },
   {
     name: "Murilo Almeida",
-    role: "Mobile Developer",
+    role: "Desenvolvedor Mobile",
     initials: "MA",
-    cardClass: "bg-orange-100/80 dark:bg-orange-950/30",
+    cardClass: "bg-[#7C3AED] dark:bg-[#7C3AED]",
     links: {
       linkedin: "https://linkedin.com/in/usuario",
       github: "https://github.com/usuario",
       instagram: "https://instagram.com/usuario",
       email: "mailto:email@exemplo.com",
     },
-    avatarClass: "from-orange-300 to-amber-500",
+    avatarClass: "from-[#5E17EB] to-violet-500",
   },
 ]
 
@@ -100,6 +99,52 @@ const SOCIAL_LINKS = [
   { key: "instagram", icon: InstagramIcon, label: "Instagram" },
   { key: "email", icon: MailIcon, label: "Email" },
 ]
+
+function TeamMemberCard({ member }) {
+  return (
+    <article
+      className={`group relative flex min-h-[224px] select-none flex-col items-center justify-end rounded-[30px] px-4 pb-6 pt-20 text-center shadow-[0_18px_40px_rgba(94,23,235,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_54px_rgba(94,23,235,0.26)] ${member.cardClass}`}
+    >
+      <div className="pointer-events-none absolute -top-16 z-10 size-32 rounded-full border border-white/15" />
+      <div className="pointer-events-none absolute -top-11 z-10 size-24 rounded-full border border-white/20" />
+
+      <div className="select-none absolute -top-14 z-20 flex size-28 items-center justify-center rounded-full bg-background p-1.5 shadow-sm transition duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_18px_36px_rgba(24,24,27,0.18)]">
+        {member.image ? (
+          <img
+            src={member.image}
+            alt={member.name}
+            draggable={false}
+            className="select-none size-full rounded-full object-cover"
+          />
+        ) : (
+          <div
+            className={`select-none flex size-full items-center justify-center rounded-full bg-gradient-to-br text-2xl font-semibold text-white ${member.avatarClass}`}
+          >
+            {member.initials}
+          </div>
+        )}
+      </div>
+
+      <h3 className="select-none text-base font-semibold text-white">{member.name}</h3>
+      <p className="select-none mt-2 text-sm text-zinc-200">{member.role}</p>
+
+      <div className="mt-7 flex items-center justify-center gap-3">
+        {SOCIAL_LINKS.map(({ key, icon: Icon, label }) => (
+          <a
+            key={key}
+            href={member.links?.[key] || "#contact"}
+            target={key === "email" ? undefined : "_blank"}
+            rel={key === "email" ? undefined : "noreferrer"}
+            aria-label={`${label} de ${member.name}`}
+            className="inline-flex size-7 items-center justify-center rounded-full text-white transition duration-300 hover:-translate-y-1 hover:scale-110 hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-purple-400/35"
+          >
+            <Icon className="size-4" />
+          </a>
+        ))}
+      </div>
+    </article>
+  )
+}
 
 export default function CreativeTeamSection() {
   return (
@@ -117,46 +162,9 @@ export default function CreativeTeamSection() {
           </p>
         </div>
 
-        <div className="mt-16 grid gap-x-4 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="mb-20 mt-20 grid gap-x-4 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {TEAM_MEMBERS.map((member) => (
-            <article
-              key={member.name}
-              className={`relative flex min-h-[224px] flex-col items-center justify-end rounded-[8px] px-4 pb-6 pt-20 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl ${member.cardClass}`}
-            >
-              <div className="absolute -top-14 flex size-28 items-center justify-center rounded-full bg-background p-1.5 shadow-sm">
-                {member.image ? (
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="size-full rounded-full object-cover"
-                  />
-                ) : (
-                  <div
-                    className={`flex size-full items-center justify-center rounded-full bg-gradient-to-br text-2xl font-semibold text-white ${member.avatarClass}`}
-                  >
-                    {member.initials}
-                  </div>
-                )}
-              </div>
-
-              <h3 className="text-base font-semibold text-black dark:text-white">{member.name}</h3>
-              <p className="mt-2 text-sm text-[var(--landing-muted)]">{member.role}</p>
-
-              <div className="mt-7 flex items-center justify-center gap-3">
-                {SOCIAL_LINKS.map(({ key, icon: Icon, label }) => (
-                  <a
-                    key={key}
-                    href={member.links?.[key] || "#contact"}
-                    target={key === "email" ? undefined : "_blank"}
-                    rel={key === "email" ? undefined : "noreferrer"}
-                    aria-label={`${label} de ${member.name}`}
-                    className="inline-flex size-7 items-center justify-center rounded-full text-black transition hover:-translate-y-0.5 hover:text-[var(--landing-accent-strong)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-purple-400/35 dark:text-white"
-                  >
-                    <Icon className="size-4" />
-                  </a>
-                ))}
-              </div>
-            </article>
+            <TeamMemberCard key={member.name} member={member} />
           ))}
         </div>
       </div>

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import Lenis from "lenis"
 import {
   AlertTriangleIcon,
+  AudioLinesIcon,
   FileTextIcon,
   Loader2Icon,
   LucideEye,
@@ -15,7 +16,6 @@ import {
   Minimize2Icon,
   PanelLeftIcon,
   PlusIcon,
-  SendIcon,
   SparklesIcon,
   SquareIcon,
   Trash2Icon,
@@ -28,8 +28,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -46,14 +44,14 @@ const SPEECH_LANGUAGE_STORAGE_KEY = "orbis-orb-speech-language"
 const MAX_CHAT_HISTORY_ITEMS = 12
 const ORB_FULLSCREEN_SCROLL_LOCK = "orb-fullscreen"
 const SPEECH_LANGUAGE_OPTIONS = [
-  { value: "pt-BR", label: "Português", shortLabel: "PT" },
+  { value: "pt-BR", label: "PortuguÃªs", shortLabel: "PT" },
   { value: "en-US", label: "English", shortLabel: "EN" },
-  { value: "es-ES", label: "Español", shortLabel: "ES" },
+  { value: "es-ES", label: "EspaÃ±ol", shortLabel: "ES" },
 ]
 const SPEECH_LANGUAGE_VALUES = new Set(SPEECH_LANGUAGE_OPTIONS.map((option) => option.value))
 const ORB_COMPACT_GAP = 20
 const ORB_COMPACT_BOTTOM = 80
-const ORB_COMPACT_WIDTH = 420
+const ORB_COMPACT_WIDTH = 320
 const ORB_COMPACT_HEIGHT = 620
 const ORB_MIN_WIDTH = 360
 const ORB_MIN_HEIGHT = 420
@@ -114,38 +112,38 @@ const CHAT_TITLE_STOPWORDS = new Set([
 const PAGE_CONTEXTS = [
   {
     path: "/dashboard/maquinas",
-    label: "Máquinas",
-    description: "gestão e leitura operacional das máquinas cadastradas",
+    label: "MÃ¡quinas",
+    description: "gestÃ£o e leitura operacional das mÃ¡quinas cadastradas",
   },
   {
     path: "/dashboard/sensores",
     label: "Sensores",
-    description: "monitoramento de sensores, status e últimas leituras",
+    description: "monitoramento de sensores, status e Ãºltimas leituras",
   },
   {
     path: "/dashboard/alertas",
     label: "Alertas",
-    description: "alertas, severidade, status e priorização de atendimento",
+    description: "alertas, severidade, status e priorizaÃ§Ã£o de atendimento",
   },
   {
     path: "/dashboard/tecnicos",
-    label: "Técnicos",
-    description: "equipe técnica, disponibilidade e cadastro de usuários técnicos",
+    label: "TÃ©cnicos",
+    description: "equipe tÃ©cnica, disponibilidade e cadastro de usuÃ¡rios tÃ©cnicos",
   },
   {
     path: "/dashboard/relatorios",
-    label: "Relatórios",
-    description: "análises, gráficos e consolidação de indicadores",
+    label: "RelatÃ³rios",
+    description: "anÃ¡lises, grÃ¡ficos e consolidaÃ§Ã£o de indicadores",
   },
   {
     path: "/dashboard/perfil",
     label: "Perfil",
-    description: "dados e preferências do usuário autenticado",
+    description: "dados e preferÃªncias do usuÃ¡rio autenticado",
   },
   {
     path: "/dashboard",
     label: "Dashboard",
-    description: "visão geral operacional com máquinas, sensores e alertas",
+    description: "visÃ£o geral operacional com mÃ¡quinas, sensores e alertas",
   },
 ]
 
@@ -153,7 +151,7 @@ const SUGGESTED_PROMPTS = [
   {
     icon: AlertTriangleIcon,
     label: "Resumir alertas ativos",
-    prompt: "Resuma os alertas ativos e diga o que precisa de atenção primeiro.",
+    prompt: "Resuma os alertas ativos e diga o que precisa de atenÃ§Ã£o primeiro.",
   },
   {
     icon: SparklesIcon,
@@ -163,12 +161,12 @@ const SUGGESTED_PROMPTS = [
   {
     icon: LucideEye,
     label: "Conferir sensores",
-    prompt: "Quais sensores parecem exigir uma verificação mais cuidadosa?",
+    prompt: "Quais sensores parecem exigir uma verificaÃ§Ã£o mais cuidadosa?",
   },
   {
     icon: FileTextIcon,
-    label: "Planejar próximos passos",
-    prompt: "Monte uma lista curta de próximos passos para manter a operação estável hoje.",
+    label: "Planejar prÃ³ximos passos",
+    prompt: "Monte uma lista curta de prÃ³ximos passos para manter a operaÃ§Ã£o estÃ¡vel hoje.",
   },
 ]
 
@@ -193,7 +191,7 @@ function getBrowserSpeechLanguage() {
     if (SPEECH_LANGUAGE_VALUES.has(storedLanguage)) {
       return storedLanguage
     }
-  } catch {}
+  } catch { }
 
   const browserLanguage = String(window.navigator?.language || "").toLowerCase()
 
@@ -206,10 +204,6 @@ function getBrowserSpeechLanguage() {
   }
 
   return "pt-BR"
-}
-
-function getSpeechLanguageOption(value) {
-  return SPEECH_LANGUAGE_OPTIONS.find((option) => option.value === value) ?? SPEECH_LANGUAGE_OPTIONS[0]
 }
 
 function getChatTitleFromQuestion(question) {
@@ -263,7 +257,7 @@ function normalizeStoredMessages(messages) {
 
   return messages.map((message) =>
     // CORRIGIDO: era `message.animated !== false` (undefined !== false = true, marcava msgs nunca animadas como animated:true)
-    // Agora só preserva animated:true quando foi explicitamente salvo como true
+    // Agora sÃ³ preserva animated:true quando foi explicitamente salvo como true
     message?.role === "assistant" && message.animated === true
       ? { ...message, animated: true }
       : message
@@ -279,9 +273,9 @@ function loadChatHistory() {
     const parsed = JSON.parse(window.localStorage.getItem(CHAT_HISTORY_STORAGE_KEY) || "{}")
     const chats = Array.isArray(parsed.chats)
       ? parsed.chats.map((chat) => ({
-          ...chat,
-          messages: normalizeStoredMessages(chat.messages),
-        }))
+        ...chat,
+        messages: normalizeStoredMessages(chat.messages),
+      }))
       : []
     const activeChatId = typeof parsed.activeChatId === "string" ? parsed.activeChatId : chats[0]?.id ?? null
 
@@ -304,7 +298,7 @@ function saveChatHistory(chats, activeChatId) {
         activeChatId,
       })
     )
-  } catch {}
+  } catch { }
 }
 
 function formatMessageTime(value) {
@@ -327,7 +321,7 @@ function getErrorMessage(error) {
     return error.message
   }
 
-  return "Não foi possível consultar a IA agora."
+  return "NÃ£o foi possÃ­vel consultar a IA agora."
 }
 
 function getCurrentPageContext(pathname) {
@@ -350,7 +344,7 @@ function buildPromptPayload(question, contexts) {
   const lines = []
 
   if (contexts.length > 0) {
-    lines.push(`Contexto de página: ${contexts.map((context) => context.text).join(" | ")}`)
+    lines.push(`Contexto de pÃ¡gina: ${contexts.map((context) => context.text).join(" | ")}`)
   }
 
   lines.push(`Pergunta: ${question}`)
@@ -444,11 +438,11 @@ function FormattedMessageContent({ content, isTyping }) {
 
 function useTypewriter(text, speed = 18) {
   const [displayed, setDisplayed] = React.useState("")
-  // CORRIGIDO: era `useState(true)` — com isDone=true no primeiro render, isTyping=false e o cursor não aparecia;
-  // agora inicializa false quando há texto, evitando o frame inicial sem animação
+  // CORRIGIDO: era `useState(true)` â€” com isDone=true no primeiro render, isTyping=false e o cursor nÃ£o aparecia;
+  // agora inicializa false quando hÃ¡ texto, evitando o frame inicial sem animaÃ§Ã£o
   const [isDone, setIsDone] = React.useState(!text)
 
-  // CORRIGIDO: era `useEffect` — trocado por `useLayoutEffect` para o intervalo começar
+  // CORRIGIDO: era `useEffect` â€” trocado por `useLayoutEffect` para o intervalo comeÃ§ar
   // antes do paint, eliminando o race condition onde um re-render descartava o componente
   // antes do efeito disparar
   React.useLayoutEffect(() => {
@@ -498,7 +492,7 @@ function ChatMessage({ message, animate = false, onAnimationComplete }) {
       <div className={cn(
         "max-w-[86%] rounded-[8px] border px-3 py-2 shadow-sm",
         isUser ? "border-primary/70 bg-primary text-primary-foreground"
-               : "border-border bg-muted/40 text-foreground",
+          : "border-border bg-muted/40 text-foreground",
         isError && "border-destructive/30 bg-destructive/5 text-destructive"
       )}>
         <div className="flex items-start gap-2">
@@ -513,7 +507,7 @@ function ChatMessage({ message, animate = false, onAnimationComplete }) {
               <span key={context.id} className={cn(
                 "rounded-[6px] border px-1.5 py-0.5 text-[10px]",
                 isUser ? "border-primary-foreground/25 text-primary-foreground/85"
-                       : "border-border bg-background/60 text-muted-foreground"
+                  : "border-border bg-background/60 text-muted-foreground"
               )}>
                 {context.label}
               </span>
@@ -549,7 +543,7 @@ function EmptyPromptState({ fullscreen = false, onSelectPrompt }) {
             "m-0 text-xl font-semibold leading-tight text-foreground",
             fullscreen ? "text-center" : "text-left"
           )}>
-            O que posso olhar por você?
+            O que posso olhar por vocÃª?
           </h3>
         </div>
 
@@ -565,7 +559,7 @@ function EmptyPromptState({ fullscreen = false, onSelectPrompt }) {
                 className={cn("group flex w-full cursor-pointer items-center gap-3 rounded-[8px] px-2 py-2 text-left text-sm text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
                   fullscreen ? "ms-6 " : "ms-0"
                 )}
-             >
+              >
                 <Icon className="size-4 shrink-0 text-muted-foreground transition group-hover:text-primary" />
                 <span className="truncate">{item.label}</span>
               </button>
@@ -604,6 +598,7 @@ function clampAssistantRect(rect) {
   return { x, y, width, height }
 }
 
+
 function getCompactAssistantRect(position = "bottom-right") {
   const viewport = getAssistantViewport()
   const width = Math.min(ORB_COMPACT_WIDTH, viewport.width - ORB_WINDOW_MARGIN * 2)
@@ -618,10 +613,39 @@ function getCompactAssistantRect(position = "bottom-right") {
   })
 }
 
+function getExpandedAssistantSize(viewport) {
+  if (viewport.width < 640) {
+    return {
+      width: viewport.width - ORB_WINDOW_MARGIN * 2,
+      height: viewport.height - ORB_WINDOW_MARGIN * 2,
+    }
+  }
+
+  if (viewport.width < 1024) {
+    return {
+      width: Math.min(260, viewport.width - ORB_WINDOW_MARGIN * 2),
+      height: Math.min(680, viewport.height - ORB_WINDOW_MARGIN * 2),
+    }
+  }
+
+  if (viewport.width < 1440) {
+    return {
+      width: Math.min(660, viewport.width - ORB_WINDOW_MARGIN * 2),
+      height: Math.min(520, viewport.height - ORB_WINDOW_MARGIN * 2),
+    }
+  }
+
+  return {
+    width: ORB_EXPANDED_MAX_WIDTH,
+    height: ORB_EXPANDED_MAX_HEIGHT,
+  }
+}
+
 function getExpandedAssistantRect() {
   const viewport = getAssistantViewport()
-  const width = Math.min(ORB_EXPANDED_MAX_WIDTH, viewport.width - ORB_WINDOW_MARGIN * 2)
-  const height = Math.min(ORB_EXPANDED_MAX_HEIGHT, viewport.height - ORB_WINDOW_MARGIN * 2)
+  const size = getExpandedAssistantSize(viewport)
+  const width = Math.min(size.width, viewport.width - ORB_WINDOW_MARGIN * 2)
+  const height = Math.min(size.height, viewport.height - ORB_WINDOW_MARGIN * 2)
 
   return clampAssistantRect({
     x: (viewport.width - width) / 2,
@@ -708,6 +732,7 @@ export function DashboardAiAssistant() {
   const [speechSupported, setSpeechSupported] = React.useState(false)
   const [speechListening, setSpeechListening] = React.useState(false)
   const [speechStatus, setSpeechStatus] = React.useState("")
+  const [activeSpeechMode, setActiveSpeechMode] = React.useState(null)
   const [speechLanguage, setSpeechLanguage] = React.useState("pt-BR")
   const [orbDragRect, setOrbDragRect] = React.useState(null)
   const [isDraggingOrbButton, setIsDraggingOrbButton] = React.useState(false)
@@ -723,6 +748,9 @@ export function DashboardAiAssistant() {
   const speechRecognitionRef = React.useRef(null)
   const speechBaseInputRef = React.useRef("")
   const speechFinalTranscriptRef = React.useRef("")
+  const speechAutoSendRef = React.useRef(false)
+  const speechAutoSendingRef = React.useRef(false)
+  const pageContextsRef = React.useRef([])
   const windowActionRef = React.useRef(null)
   const orbButtonActionRef = React.useRef(null)
   const activeOrbButtonPositionRef = React.useRef(activeOrbButtonPosition)
@@ -740,7 +768,7 @@ export function DashboardAiAssistant() {
     !loading &&
     trimmedInput.length >= MIN_QUESTION_LENGTH &&
     promptPayload.length <= MAX_QUESTION_LENGTH
-  const speechLanguageOption = getSpeechLanguageOption(speechLanguage)
+  pageContextsRef.current = pageContexts
   const assistantReady = assistantPhase === "open"
   const assistantTransitionDuration =
     assistantPhase === "opening" || assistantPhase === "closing"
@@ -964,6 +992,7 @@ export function DashboardAiAssistant() {
 
     recognition.onstart = () => {
       setSpeechListening(true)
+      setActiveSpeechMode(speechAutoSendRef.current ? "instant" : "transcribe")
       setSpeechStatus("Ouvindo...")
     }
 
@@ -988,7 +1017,21 @@ export function DashboardAiAssistant() {
 
       setInput(nextInput.slice(0, MAX_QUESTION_LENGTH))
       setInlineError("")
-      setSpeechStatus(interimTranscript ? "Transcrevendo..." : "Ouvindo...")
+      setSpeechStatus(
+        speechAutoSendRef.current
+          ? interimTranscript
+            ? "Preparando envio..."
+            : "Finalizando..."
+          : interimTranscript
+            ? "Transcrevendo..."
+            : "Ouvindo..."
+      )
+
+      if (speechAutoSendRef.current && finalTranscript) {
+        try {
+          recognition.stop()
+        } catch { }
+      }
     }
 
     recognition.onerror = (event) => {
@@ -997,20 +1040,49 @@ export function DashboardAiAssistant() {
           ? "Permita o uso do microfone para transcrever."
           : event.error === "no-speech"
             ? "Nenhuma fala detectada."
-            : "Não foi possível transcrever o áudio."
+            : "NÃ£o foi possÃ­vel transcrever o Ã¡udio."
 
       setSpeechStatus(message)
       setSpeechListening(false)
+      setActiveSpeechMode(null)
     }
 
     recognition.onend = () => {
       setSpeechListening(false)
+      setActiveSpeechMode(null)
+
+      if (speechAutoSendRef.current && !speechAutoSendingRef.current) {
+        const question = speechFinalTranscriptRef.current.trim()
+        const requestContexts = pageContextsRef.current
+
+        speechAutoSendingRef.current = true
+        speechAutoSendRef.current = false
+
+        if (question.length >= MIN_QUESTION_LENGTH) {
+          setSpeechStatus("")
+          setInput("")
+          setPageContexts([])
+          sendQuestion({
+            question,
+            contexts: requestContexts,
+          }).finally(() => {
+            speechAutoSendingRef.current = false
+          })
+          return
+        }
+
+        speechAutoSendingRef.current = false
+        setSpeechStatus(question ? "Fale uma pergunta um pouco maior." : "Nenhuma fala detectada.")
+        return
+      }
+
+      speechAutoSendRef.current = false
       setSpeechStatus((current) => {
         if (current && current !== "Ouvindo..." && current !== "Transcrevendo...") {
           return current
         }
 
-        return speechFinalTranscriptRef.current ? "Transcrição concluída." : ""
+        return speechFinalTranscriptRef.current ? "TranscriÃ§Ã£o concluÃ­da." : ""
       })
     }
 
@@ -1023,22 +1095,28 @@ export function DashboardAiAssistant() {
     }
   }, [speechLanguage])
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const textarea = textareaRef.current
 
     if (!textarea) {
       return
     }
 
-    const minHeight = 48
-    const maxHeight = fullscreen ? 160 : 112
+    const minHeight = fullscreen ? 32 : 28
+    const maxHeight = fullscreen ? 96 : 48
+
+    if (!assistantReady) {
+      textarea.style.height = `${minHeight}px`
+      textarea.style.overflowY = "hidden"
+      return
+    }
 
     textarea.style.height = "auto"
     const nextHeight = Math.max(minHeight, Math.min(textarea.scrollHeight, maxHeight))
     textarea.style.height = `${nextHeight}px`
     textarea.style.overflowY = textarea.scrollHeight > maxHeight ? "auto" : "hidden"
     textarea.scrollTop = textarea.scrollHeight
-  }, [fullscreen, input, open])
+  }, [assistantReady, fullscreen, input, open])
 
   function syncActiveChat(nextMessages) {
     messagesRef.current = nextMessages
@@ -1146,16 +1224,18 @@ export function DashboardAiAssistant() {
   }
 
   function stopSpeechRecognition() {
+    speechAutoSendRef.current = false
     try {
       speechRecognitionRef.current?.stop()
-    } catch {}
+    } catch { }
 
     setSpeechListening(false)
+    setActiveSpeechMode(null)
   }
 
-  function startSpeechRecognition() {
+  function startSpeechRecognition({ autoSend = false } = {}) {
     if (!speechSupported || !speechRecognitionRef.current) {
-      setSpeechStatus("Transcrição por voz indisponível neste navegador.")
+      setSpeechStatus("TranscriÃ§Ã£o por voz indisponÃ­vel neste navegador.")
       return
     }
 
@@ -1165,31 +1245,23 @@ export function DashboardAiAssistant() {
     }
 
     try {
+      speechAutoSendRef.current = autoSend
+      speechAutoSendingRef.current = false
       speechBaseInputRef.current = input.trim()
       speechFinalTranscriptRef.current = ""
       speechRecognitionRef.current.lang = speechLanguage
+      speechRecognitionRef.current.continuous = !autoSend
       setInlineError("")
-      setSpeechStatus("Ouvindo...")
+      setSpeechStatus(autoSend ? "Fale agora. O Orb envia automaticamente." : "Ouvindo...")
       speechRecognitionRef.current.start()
       textareaRef.current?.focus()
     } catch {
-      setSpeechStatus("Não foi possível iniciar o microfone.")
+      speechAutoSendRef.current = false
+      speechAutoSendingRef.current = false
+      setSpeechStatus("NÃ£o foi possÃ­vel iniciar o microfone.")
       setSpeechListening(false)
+      setActiveSpeechMode(null)
     }
-  }
-
-  function handleSpeechLanguageChange(value) {
-    if (!SPEECH_LANGUAGE_VALUES.has(value)) {
-      return
-    }
-
-    stopSpeechRecognition()
-    setSpeechLanguage(value)
-    setSpeechStatus("")
-
-    try {
-      window.localStorage.setItem(SPEECH_LANGUAGE_STORAGE_KEY, value)
-    } catch {}
   }
 
   function markMessageAnimated(messageId) {
@@ -1210,14 +1282,14 @@ export function DashboardAiAssistant() {
     }
 
     if (payloadQuestion.length > MAX_QUESTION_LENGTH) {
-      setInlineError("A pergunta com contexto deve ter no máximo 500 caracteres.")
+      setInlineError("A pergunta com contexto deve ter no mÃ¡ximo 500 caracteres.")
       return
     }
 
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      setInlineError("Faça login para consultar a IA.")
+      setInlineError("FaÃ§a login para consultar a IA.")
       return
     }
 
@@ -1315,7 +1387,7 @@ export function DashboardAiAssistant() {
 
     setPageContexts((current) => {
       if (current.some((item) => item.id === context.id)) {
-        setInlineError("O contexto desta página já foi adicionado.")
+        setInlineError("O contexto desta pÃ¡gina jÃ¡ foi adicionado.")
         return current
       }
 
@@ -1561,7 +1633,7 @@ export function DashboardAiAssistant() {
 
     try {
       action.captureTarget?.releasePointerCapture?.(event.pointerId)
-    } catch {}
+    } catch { }
 
     if (action.moved) {
       const nextPosition = getClosestOrbButtonPosition(action.currentRect)
@@ -1657,6 +1729,8 @@ export function DashboardAiAssistant() {
 
   const orbButtonRect = orbDragRect ?? getOrbButtonRect(activeOrbButtonPosition)
   const orbTooltipSide = activeOrbButtonPosition.endsWith("left") ? "right" : "left"
+  const placeholder = "Pergunte ao Orb "
+  const showInputMeta = Boolean(speechStatus) || promptLength > 0 || hasPromptExtras
 
   return (
     <>
@@ -1670,17 +1744,17 @@ export function DashboardAiAssistant() {
           style={
             assistantRect
               ? {
-                  left: `${assistantRect.x}px`,
-                  top: `${assistantRect.y}px`,
-                  width: `${assistantRect.width}px`,
-                  height: `${assistantRect.height}px`,
-                  borderRadius: `${assistantBorderRadius}px`,
-                  transitionDuration: `${assistantTransitionDuration}ms`,
-                }
+                left: `${assistantRect.x}px`,
+                top: `${assistantRect.y}px`,
+                width: `${assistantRect.width}px`,
+                height: `${assistantRect.height}px`,
+                borderRadius: `${assistantBorderRadius}px`,
+                transitionDuration: `${assistantTransitionDuration}ms`,
+              }
               : undefined
           }
           className={cn(
-            "fixed z-40 flex origin-bottom-right transform-gpu flex-col overflow-hidden overscroll-contain border bg-popover text-popover-foreground opacity-100 shadow-2xl will-change-[left,top,width,height,border-radius]",
+            "fixed z-40 flex origin-bottom-right transform-gpu flex-col overflow-hidden overscroll-contain border bg-white text-foreground opacity-100 shadow-2xl will-change-[left,top,width,height,border-radius] dark:bg-[#1e2939]",
             (isMovingWindow || isResizingWindow)
               ? "transition-none"
               : "transition-[left,top,width,height,border-radius,box-shadow] ease-[cubic-bezier(0.22,1,0.36,1)]",
@@ -1703,7 +1777,7 @@ export function DashboardAiAssistant() {
                 size="icon-sm"
                 className="cursor-pointer p-0!"
                 onClick={() => setHistorySidebarOpen((current) => !current)}
-                aria-label={historySidebarOpen ? "Ocultar histórico" : "Mostrar histórico"}
+                aria-label={historySidebarOpen ? "Ocultar histÃ³rico" : "Mostrar histÃ³rico"}
                 aria-expanded={historySidebarOpen}
               >
                 <PanelLeftIcon className="size-4" />
@@ -1713,20 +1787,20 @@ export function DashboardAiAssistant() {
               <h2 className="m-0 truncate text-sm font-semibold">Orb - IA Preditiva</h2>
             </div>
             {!fullscreen ? (
-            <DropdownMenu>
-              <DropdownMenuContent align="end" className="w-72">
-                <DropdownMenuItem className="cursor-pointer" onSelect={startNewChat}>
-                  <PlusIcon className="size-4" />
-                  Nova conversa
-                </DropdownMenuItem>
-                {chatHistory.length > 0 ? (
-                  <>
-                    <DropdownMenuSeparator />
-                    {chatHistory.map((chat) => renderHistoryButton(chat))}
-                  </>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuContent align="end" className="w-72">
+                  <DropdownMenuItem className="cursor-pointer" onSelect={startNewChat}>
+                    <PlusIcon className="size-4" />
+                    Nova conversa
+                  </DropdownMenuItem>
+                  {chatHistory.length > 0 ? (
+                    <>
+                      <DropdownMenuSeparator />
+                      {chatHistory.map((chat) => renderHistoryButton(chat))}
+                    </>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : null}
             <Button
               type="button"
@@ -1826,143 +1900,147 @@ export function DashboardAiAssistant() {
                 </div>
               </div>
 
-          <form onSubmit={handleSubmit} className={cn(
-            "border-t bg-muted/20 px-3 py-3",
-            fullscreen && "px-4 md:px-8 lg:px-10"
-          )}>
-            {inlineError ? (
-              <p className="m-0 mb-2 text-xs text-destructive">{inlineError}</p>
-            ) : null}
-            {pageContexts.length > 0 ? (
-              <div className="mb-2 flex flex-wrap gap-2">
-                {pageContexts.map((context) => (
-                  <button
-                    key={context.id}
-                    type="button"
-                    onClick={() => removePageContext(context.id)}
-                    className="inline-flex max-w-full cursor-pointer items-center gap-1 rounded-[8px] border bg-background px-2 py-1 text-xs text-muted-foreground"
-                  >
-                    <FileTextIcon className="size-3.5 shrink-0" />
-                    <span className="truncate">{context.label}</span>
-                    <XIcon className="size-3 shrink-0" />
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {lastFailedRequest && !loading ? (
-              <div className="mb-2 flex justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 cursor-pointer px-2! py-0!"
-                  onClick={handleRetry}
-                >
-                  Tentar novamente
-                </Button>
-              </div>
-            ) : null}
-            <div className={cn("flex items-start gap-2", fullscreen && "mx-auto max-w-3xl")}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-lg"
-                    className="size-12 shrink-0 cursor-pointer p-0! disabled:cursor-not-allowed"
-                    disabled={loading}
-                    aria-label="Adicionar contexto"
-                  >
-                    <PlusIcon className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" side="top" className="w-45">
-                  <DropdownMenuItem className="cursor-pointer" onSelect={addCurrentPageContext}>
-                    <FileTextIcon className="size-4" />
-                    Contexto da página
-                  </DropdownMenuItem>
-                  {pageContexts.length > 0 ? (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        variant="destructive"
-                        onSelect={() => {
-                          setPageContexts([])
-                        }}
+              <form onSubmit={handleSubmit} className={cn(
+                "bg-background px-3 py-2.5 transition-opacity duration-150 dark:bg-[#1e2939]",
+                assistantReady ? "opacity-100" : "pointer-events-none opacity-0",
+                fullscreen && "px-4 md:px-8 lg:px-10"
+              )}>
+                {inlineError ? (
+                  <p className="m-0 mb-2 text-xs text-destructive">{inlineError}</p>
+                ) : null}
+                {pageContexts.length > 0 ? (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {pageContexts.map((context) => (
+                      <button
+                        key={context.id}
+                        type="button"
+                        onClick={() => removePageContext(context.id)}
+                        className="inline-flex max-w-full cursor-pointer items-center gap-1 rounded-[8px] border bg-background px-2 py-1 text-xs text-muted-foreground"
                       >
-                        <XIcon className="size-4" />
-                        Limpar contexto
-                      </DropdownMenuItem>
-                    </>
-                  ) : null}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant={speechListening ? "default" : "outline"}
-                    size="icon-lg"
-                    className={cn(
-                      "size-12 shrink-0 cursor-pointer p-0! disabled:cursor-not-allowed",
-                      speechListening && "bg-[#7c3aed] text-white hover:bg-[#6d28d9]"
-                    )}
-                    disabled={loading || !speechSupported}
-                    onClick={startSpeechRecognition}
-                    aria-label={speechListening ? "Parar transcrição por voz" : "Transcrever pergunta por voz"}
-                    aria-pressed={speechListening}
-                  >
-                    {speechListening ? <MicOffIcon className="size-4" /> : <MicIcon className="size-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top" sideOffset={8}>
-                  {speechSupported ? (speechListening ? "Parar transcrição" : "Falar pergunta") : "Voz indisponível"}
-                </TooltipContent>
-              </Tooltip>
-              <div className="min-w-0  flex-1">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(event) => {
-                    setInput(event.target.value)
-                    setInlineError("")
-                    setSpeechStatus("")
-                  }}
-                  onKeyDown={handleKeyDown}
-                  maxLength={MAX_QUESTION_LENGTH}
-                  rows={1}
-                  placeholder="Pergunte sobre máquinas, sensores ou alertas..."
-                  className="block h-12 min-h-12 w-full resize-none overflow-y-hidden rounded-[8px] border bg-background px-3 py-1 text-sm leading-5 outline-none transition-[height,border-color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={loading}
-                  aria-label="Pergunta para a IA"
-                />
-                <div className="mt-1 flex min-h-3 items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-1.5">
+                        <FileTextIcon className="size-3.5 shrink-0" />
+                        <span className="truncate">{context.label}</span>
+                        <XIcon className="size-3 shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                {lastFailedRequest && !loading ? (
+                  <div className="mb-2 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 cursor-pointer px-2! py-0!"
+                      onClick={handleRetry}
+                    >
+                      Tentar novamente
+                    </Button>
+                  </div>
+                ) : null}
+                <div className={cn("min-h-0", fullscreen && "mx-auto max-w-3xl")}>
+                  <div className={cn(
+                    "flex items-center gap-1.5 rounded-full border border-border bg-muted/70 text-foreground shadow-sm transition focus-within:border-[#7c3aed]/60 focus-within:ring-3 focus-within:ring-[#7c3aed]/20 dark:bg-muted/40",
+                    fullscreen ? "px-2.5 py-1.5" : "px-2 py-1"
+                  )}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 shrink-0 cursor-pointer rounded-[6px]! px-1.5! py-0! text-[10px] font-semibold text-muted-foreground hover:text-foreground disabled:cursor-not-allowed"
-                          disabled={loading || speechListening}
-                          aria-label={`Idioma da transcrição: ${speechLanguageOption.label}`}
+                          className="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition hover:bg-background/80 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                          disabled={loading}
+                          aria-label="Adicionar contexto"
                         >
-                          {speechLanguageOption.shortLabel}
-                        </Button>
+                          <PlusIcon className="size-4" />
+                        </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" side="top" className="w-40">
-                        <DropdownMenuRadioGroup value={speechLanguage} onValueChange={handleSpeechLanguageChange}>
-                          {SPEECH_LANGUAGE_OPTIONS.map((option) => (
-                            <DropdownMenuRadioItem key={option.value} value={option.value} className="cursor-pointer">
-                              <span className="w-6 text-xs font-semibold">{option.shortLabel}</span>
-                              <span>{option.label}</span>
-                            </DropdownMenuRadioItem>
-                          ))}
-                        </DropdownMenuRadioGroup>
+                      <DropdownMenuContent align="start" side="top" className="w-45">
+                        <DropdownMenuItem className="cursor-pointer" onSelect={addCurrentPageContext}>
+                          <FileTextIcon className="size-4" />
+                          Contexto da página
+                        </DropdownMenuItem>
+                        {pageContexts.length > 0 ? (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              variant="destructive"
+                              onSelect={() => {
+                                setPageContexts([])
+                              }}
+                            >
+                              <XIcon className="size-4" />
+                              Limpar contexto
+                            </DropdownMenuItem>
+                          </>
+                        ) : null}
                       </DropdownMenuContent>
                     </DropdownMenu>
+
+                    <textarea
+                      ref={textareaRef}
+                      value={input}
+                      onChange={(event) => {
+                        setInput(event.target.value)
+                        setInlineError("")
+                        setSpeechStatus("")
+                      }}
+                      onKeyDown={handleKeyDown}
+                      maxLength={MAX_QUESTION_LENGTH}
+                      rows={1}
+                      placeholder={placeholder}
+                      className={cn(
+                        "block flex-1 resize-none overflow-y-hidden border-0 bg-transparent px-1 text-sm leading-5 text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60",
+                        fullscreen ? "h-8 min-h-8 py-1.5" : "h-7 min-h-7 py-1"
+                      )}
+                      disabled={loading}
+                      aria-label="Pergunta para a IA"
+                    />
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition hover:bg-background/80 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
+                            activeSpeechMode === "transcribe" && "bg-[#7c3aed] text-white hover:bg-[#6d28d9]"
+                          )}
+                          disabled={loading || !speechSupported}
+                          onClick={() => startSpeechRecognition({ autoSend: false })}
+                          aria-label={activeSpeechMode === "transcribe" ? "Parar transcrição por voz" : "Transcrever pergunta por voz"}
+                          aria-pressed={activeSpeechMode === "transcribe"}
+                        >
+                          {activeSpeechMode === "transcribe" ? <MicOffIcon className="size-3.5" /> : <MicIcon className="size-3.5" />}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={8}>
+                        {speechSupported ? (activeSpeechMode === "transcribe" ? "Parar transcrição" : "Ditado para revisar") : "Voz indisponível"}
+                      </TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-foreground text-background shadow-sm transition hover:scale-105 hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50",
+                            activeSpeechMode === "instant" && "animate-pulse"
+                          )}
+                          disabled={loading ? false : !speechSupported}
+                          onClick={loading ? cancelResponse : () => startSpeechRecognition({ autoSend: true })}
+                          aria-label={loading ? "Cancelar resposta" : "Conversar com o Orb por áudio"}
+                          aria-pressed={activeSpeechMode === "instant"}
+                        >
+                          {loading ? <SquareIcon className="size-3.5 fill-current" /> : <AudioLinesIcon className="size-4" />}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={8}>
+                        {loading ? "Cancelar resposta" : "Falar e enviar automaticamente"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+
+                  {showInputMeta ? (
+                    <div className="mt-1.5 flex min-h-4 items-center justify-between gap-2 px-2">
                     <span
                       className={cn(
                         "min-w-0 truncate text-[10px] text-muted-foreground",
@@ -1974,30 +2052,19 @@ export function DashboardAiAssistant() {
                     >
                       {speechStatus}
                     </span>
-                  </div>
-                  <span
-                    className={cn(
-                      "shrink-0 text-[10px] text-muted-foreground",
-                      promptLength > MAX_QUESTION_LENGTH && "text-destructive"
-                    )}
-                  >
-                    {promptLength}/{MAX_QUESTION_LENGTH}
-                    {hasPromptExtras ? " com contexto" : ""}
-                  </span>
+                    <span
+                      className={cn(
+                        "shrink-0 text-[10px] text-muted-foreground",
+                        promptLength > MAX_QUESTION_LENGTH && "text-destructive"
+                      )}
+                    >
+                      {promptLength}/{MAX_QUESTION_LENGTH}
+                      {hasPromptExtras ? " com contexto" : ""}
+                    </span>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-              <Button
-                type={loading ? "button" : "submit"}
-                size="icon-lg"
-                className="size-12 shrink-0 cursor-pointer p-0! disabled:cursor-not-allowed"
-                disabled={loading ? false : !canSend}
-                onClick={loading ? cancelResponse : undefined}
-                aria-label={loading ? "Cancelar resposta" : "Enviar pergunta"}
-              >
-                {loading ? <SquareIcon className="size-4 fill-current" /> : <SendIcon className="size-4" />}
-              </Button>
-            </div>
-          </form>
+              </form>
             </div>
           </div>
           {fullscreen ? (
@@ -2013,42 +2080,42 @@ export function DashboardAiAssistant() {
       ) : null}
 
       {!open && orbButtonVisible ? (
-      <Tooltip className="">
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            size="icon-lg"
-            style={{
-              left: `${orbButtonRect.x}px`,
-              top: `${orbButtonRect.y}px`,
-            }}
-            className={cn(
-              "fixed z-40 size-12 cursor-grab touch-none overflow-hidden rounded-full! border-1 border-black/30 bg-white p-0! transition-[left,top,background-color,border-color,box-shadow] duration-300 ease-out hover:bg-muted active:cursor-grabbing dark:bg-[#1e2939] dark:hover:bg-[#263449]",
-              isDraggingOrbButton && "cursor-grabbing transition-none"
-            )}
-            onPointerDown={beginOrbButtonMove}
-            onClick={handleOrbButtonClick}
-            aria-label="Agente Orb"
-            aria-expanded={open}
+        <Tooltip className="">
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon-lg"
+              style={{
+                left: `${orbButtonRect.x}px`,
+                top: `${orbButtonRect.y}px`,
+              }}
+              className={cn(
+                "fixed z-40 size-12 cursor-grab touch-none overflow-hidden rounded-full! border-1 border-black/30 bg-white p-0! transition-[left,top,background-color,border-color,box-shadow] duration-300 ease-out hover:bg-muted active:cursor-grabbing dark:bg-[#1e2939] dark:hover:bg-[#263449]",
+                isDraggingOrbButton && "cursor-grabbing transition-none"
+              )}
+              onPointerDown={beginOrbButtonMove}
+              onClick={handleOrbButtonClick}
+              aria-label="Agente Orb"
+              aria-expanded={open}
+            >
+              <Image
+                src="/orb-ia.svg"
+                className="pointer-events-none block size-[34px] shrink-0 select-none dark:invert"
+                alt="Orb"
+                width={34}
+                height={34}
+                draggable={false}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent
+            side={orbTooltipSide}
+            sideOffset={8}
+            className="border bg-popover text-popover-foreground shadow-md [&_[data-slot=tooltip-arrow]]:bg-popover [&_[data-slot=tooltip-arrow]]:fill-popover"
           >
-            <Image
-              src="/orb-ia.svg"
-              className="pointer-events-none block size-[34px] shrink-0 select-none dark:invert"
-              alt="Orb"
-              width={34}
-              height={34}
-              draggable={false}
-            />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent
-          side={orbTooltipSide}
-          sideOffset={8}
-          className="border bg-popover text-popover-foreground shadow-md [&_[data-slot=tooltip-arrow]]:bg-popover [&_[data-slot=tooltip-arrow]]:fill-popover"
-        >
-          Converse com o Orb!
-        </TooltipContent>
-      </Tooltip>
+            Converse com o Orb!
+          </TooltipContent>
+        </Tooltip>
       ) : null}
     </>
   )

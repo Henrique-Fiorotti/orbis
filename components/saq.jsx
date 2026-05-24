@@ -467,7 +467,7 @@ export default function ContatoPage() {
                         border: "2px solid var(--contact-panel-border)",
                         borderRadius: "20px",
                         overflowY: "auto",
-                        minHeight: "clamp(480px, 68vh, 720px)",
+                        minHeight: "clamp(480px, 48vh, 720px)",
                         background: "var(--contact-panel-bg)",
                         boxShadow: "var(--contact-panel-shadow)",
                         scrollbarWidth: "thin",
