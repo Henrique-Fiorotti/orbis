@@ -83,7 +83,6 @@ export function NavMain({ items, pathname }) {
 
   function openCreateDialog() {
     setCreateDialogOpen(true)
-    closeMobileSidebar()
   }
 
   function goToCreateFlow(href) {
@@ -118,11 +117,11 @@ export function NavMain({ items, pathname }) {
                 <SidebarMenuButton
                   type="button"
                   tooltip="Adicionar"
-                  className="cursor-pointer transition-colors min-w-8 bg-primary text-primary-foreground duration-200 ease-out transform hover:bg-primary/90 hover:text-gray-600 active:translate-y-0 active:scale-95 active:bg-primary/90 active:text-primary-foreground"
+                  className="min-w-0 cursor-pointer justify-start bg-primary text-primary-foreground transition-colors duration-200 ease-out hover:bg-primary/90 hover:text-primary-foreground active:translate-y-0 active:scale-95 active:bg-primary/90 active:text-primary-foreground group-data-[collapsible=icon]:justify-center"
                   onClick={openCreateDialog}
                 >
-                  <CirclePlusIcon />
-                  <span>Adicionar</span>
+                  <CirclePlusIcon className="shrink-0" />
+                  <span className="truncate group-data-[collapsible=icon]:hidden">Adicionar</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -151,10 +150,10 @@ export function NavMain({ items, pathname }) {
       </SidebarGroup>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader className="flex flex-row items-center gap-2">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl p-4 sm:p-6">
+          <DialogHeader className="flex flex-row items-start gap-2 text-left sm:items-center">
             <CirclePlusIcon className="size-5 shrink-0" />
-            <DialogTitle className="flex flex-wrap items-center gap-x-1.5 text-[22px]">
+            <DialogTitle className="flex min-w-0 flex-wrap items-center gap-x-1.5 text-base leading-snug sm:text-[22px]">
               <span>O que você deseja</span>
               <span className="text-[#5E17EB]">adicionar,</span>
               <span>{userName ? `${getShortName(userName)}?` : "?"}</span>

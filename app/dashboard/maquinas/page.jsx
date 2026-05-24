@@ -23,12 +23,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { MaquinaDetailsPanel, MaquinaImagePreview, MaquinaUploadImagePreview } from "@/components/maquina-details-panel"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
+import { TablePagination } from "@/components/table-pagination"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import {
   CircleCheckIcon, AlertTriangleIcon, EllipsisVerticalIcon, PlusIcon,
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
-  ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon,
   WashingMachineIcon, ShieldAlertIcon, ImageIcon, UploadIcon,
   CircleMinusIcon, SlidersHorizontalIcon, ChevronDownIcon,
 } from "lucide-react"
@@ -899,24 +899,7 @@ export default function MaquinasPage() {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between px-0 sm:px-4">
-              <span className="text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} resultado(s)</span>
-              <div className="flex items-center justify-end gap-3 sm:gap-8 lg:w-fit">
-                <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
-                  <ChevronsLeftIcon className="size-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-                  <ChevronLeftIcon className="size-4" />
-                </Button>
-                <span className="flex w-fit items-center justify-center text-sm font-medium">Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
-                <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-                  <ChevronRightIcon className="size-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
-                  <ChevronsRightIcon className="size-4" />
-                </Button>
-              </div>
-            </div>
+            <TablePagination table={table} />
           </>
         )}
 

@@ -7,10 +7,6 @@ import {
   ArrowLeftIcon,
   CalendarClockIcon,
   ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
   CheckCircle2Icon,
   ClockIcon,
   EllipsisVerticalIcon,
@@ -49,6 +45,7 @@ import { SiteHeader } from "@/components/site-header"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
+import { TablePagination } from "@/components/table-pagination"
 import { MetricValue } from "@/components/animated-metric"
 import { useAdmins } from "@/components/context/admins-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
@@ -1138,7 +1135,7 @@ export default function AgendamentosPage() {
   const [busca, setBusca] = React.useState("")
   const [sorting, setSorting] = React.useState([])
   const [columnFilters, setColumnFilters] = React.useState([])
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 8 })
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false)
   const [sheetAberto, setSheetAberto] = React.useState(false)
   const [modoSheet, setModoSheet] = React.useState("criar")
@@ -1780,24 +1777,7 @@ export default function AgendamentosPage() {
           </Table>
         </div>
 
-        <div className="flex items-center justify-between px-0 sm:px-4">
-          <span className="text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} resultado(s)</span>
-          <div className="flex items-center justify-end gap-3 sm:gap-8 lg:w-fit">
-            <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
-              <ChevronsLeftIcon className="size-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-              <ChevronLeftIcon className="size-4" />
-            </Button>
-            <span className="flex w-fit items-center justify-center text-sm font-medium">Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}</span>
-            <Button variant="outline" size="icon" className="cursor-pointer size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-              <ChevronRightIcon className="size-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
-              <ChevronsRightIcon className="size-4" />
-            </Button>
-          </div>
-        </div>
+        <TablePagination table={table} />
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
           <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[560px]! sm:max-w-none!">

@@ -23,15 +23,15 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
+import { TablePagination } from "@/components/table-pagination"
 import {
   UsersIcon, EllipsisVerticalIcon, PlusIcon,
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
-  ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon,
   CircleCheckIcon, CircleMinusIcon, ImageIcon, RefreshCcwIcon,
 } from "lucide-react"
 import {
   flexRender, getCoreRowModel, getFilteredRowModel,
-  getSortedRowModel, useReactTable,
+  getPaginationRowModel, getSortedRowModel, useReactTable,
 } from "@tanstack/react-table"
 import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { tempoRelativo } from "@/lib/utils"
@@ -278,8 +278,6 @@ export default function TecnicosPage() {
     mensagem,
     carregando,
     salvando,
-    totalPaginas,
-    paginaAtual,
     adicionarTecnico,
     editarTecnico,
     excluirTecnico,
@@ -296,6 +294,7 @@ export default function TecnicosPage() {
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [tecnicoExcluir, setTecnicoExcluir] = React.useState(null)
   const [limiteItems] = React.useState(10)
+  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const [filtroResumo, setFiltroResumo] = React.useState("TODOS")
   const tecnicoAbertoPelaUrlRef = React.useRef(null)
 
@@ -618,8 +617,11 @@ export default function TecnicosPage() {
 
   const table = useReactTable({
     data: tecnicosFiltrados, columns,
+    state: { pagination },
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
   })
 
@@ -770,49 +772,7 @@ export default function TecnicosPage() {
           </Table>
         </div>
 
-        {/* Paginação */}
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">{tecnicosFiltrados.length} resultado(s) nesta página - {filtroResumoLabel}</span>
-          <div className="flex items-center justify-end gap-3 sm:gap-8 lg:w-fit">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="cursor-pointer hidden size-8 lg:flex" 
-              onClick={() => recarregarTecnicos(1, limiteItems)} 
-              disabled={paginaAtual <= 1 || carregando}
-            >
-              <ChevronsLeftIcon className="size-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="cursor-pointer size-8" 
-              onClick={() => recarregarTecnicos(paginaAtual - 1, limiteItems)} 
-              disabled={paginaAtual <= 1 || carregando}
-            >
-              <ChevronLeftIcon className="size-4" />
-            </Button>
-            <span className="text-sm">Pág. {paginaAtual} de {Math.max(totalPaginas, 1)}</span>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="cursor-pointer size-8" 
-              onClick={() => recarregarTecnicos(paginaAtual + 1, limiteItems)} 
-              disabled={paginaAtual >= totalPaginas || carregando}
-            >
-              <ChevronRightIcon className="size-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="cursor-pointer hidden size-8 lg:flex" 
-              onClick={() => recarregarTecnicos(totalPaginas, limiteItems)} 
-              disabled={paginaAtual >= totalPaginas || carregando}
-            >
-              <ChevronsRightIcon className="size-4" />
-            </Button>
-          </div>
-        </div>
+        <TablePagination table={table} countLabel={`${tecnicosFiltrados.length} resultado(s) - ${filtroResumoLabel}`} disabled={carregando} />
           </>
         )}
 

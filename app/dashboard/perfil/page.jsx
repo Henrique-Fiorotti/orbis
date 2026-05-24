@@ -20,6 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { clearAuthSession, getAuthSession, updateAuthSessionUser } from "@/lib/auth-session"
 import { getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
 import { isValidBackendPassword, isValidEmail } from "@/lib/form-formatters"
+import { buildPerfilForm, buildPerfilUpdateBody } from "@/lib/profile-form.mjs"
 import {
   ActivityIcon,
   AlertTriangleIcon,
@@ -99,13 +100,7 @@ function normalizePerfil(raw) {
 }
 
 function getFormFromPerfil(perfil) {
-  return {
-    nome: perfil.nome,
-    email: perfil.email,
-    role: perfil.role,
-    telefone: perfil.telefone,
-    especialidade: perfil.especialidade,
-  }
+  return buildPerfilForm(perfil)
 }
 
 function getIniciais(nome) {
@@ -239,14 +234,18 @@ export default function PerfilPage() {
 
       try {
         const payload = await requestDashboardJson("/perfil", session.accessToken, "o perfil")
-        const nextPerfil = normalizePerfil(payload)
+        const loadedPerfil = normalizePerfil(payload)
+        const nextPerfil = {
+          ...loadedPerfil,
+          especialidade: loadedPerfil.especialidade || session.usuario?.especialidade || "",
+        }
 
         if (!isActive) {
           return
         }
 
         setPerfil(nextPerfil)
-        setForm(getFormFromPerfil(nextPerfil))
+        setForm(buildPerfilForm(nextPerfil, session.usuario))
         setSenhas((current) => ({
           ...current,
           emailDestino: current.emailDestino || nextPerfil.email,
@@ -291,10 +290,7 @@ export default function PerfilPage() {
       const nome = form.nome.trim()
       const email = form.email.trim()
       const role = form.role || perfil.role
-      const body = {
-        telefone: form.telefone.trim(),
-        especialidade: form.especialidade.trim(),
-      }
+      const body = buildPerfilUpdateBody(form)
 
       if (podeEditarIdentidade) {
         if (nome !== perfil.nome) {
@@ -346,10 +342,22 @@ export default function PerfilPage() {
       }
 
       let nextPerfil = normalizePerfil({ ...perfil, ...payload, ...body })
+      if (!nextPerfil.especialidade) {
+        nextPerfil = {
+          ...nextPerfil,
+          especialidade: perfil.especialidade || session.usuario?.especialidade || "",
+        }
+      }
 
       if (podeEditarIdentidade) {
         const perfilAtualizado = await requestDashboardJson("/perfil", session.accessToken, "o perfil atualizado")
         nextPerfil = normalizePerfil({ ...perfil, ...perfilAtualizado })
+        if (!nextPerfil.especialidade) {
+          nextPerfil = {
+            ...nextPerfil,
+            especialidade: perfil.especialidade || session.usuario?.especialidade || "",
+          }
+        }
 
         if (body.email && nextPerfil.email !== body.email) {
           const { email: _email, ...bodySemEmail } = body
@@ -364,6 +372,12 @@ export default function PerfilPage() {
 
           const perfilAtualizadoComEmail = await requestDashboardJson("/perfil", session.accessToken, "o perfil atualizado")
           nextPerfil = normalizePerfil({ ...perfil, ...payload, ...perfilAtualizadoComEmail })
+          if (!nextPerfil.especialidade) {
+            nextPerfil = {
+              ...nextPerfil,
+              especialidade: perfil.especialidade || session.usuario?.especialidade || "",
+            }
+          }
         }
 
         if (body.email && nextPerfil.email !== body.email) {
