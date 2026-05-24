@@ -10,6 +10,7 @@ import { useLandingLanguage } from '@/components/landing/language-provider'
 const LANDING_HEADER_SECTIONS = [
   { id: 'inicio', href: '/#inicio' },
   { id: 'sobre', href: '/#sobre' },
+  { id: 'planos', href: '/#planos' },
   { id: 'contact', href: '/#contact' },
 ]
 
@@ -90,7 +91,7 @@ export default function Header() {
 
   const isDark = resolvedTheme === 'dark'
   const navLinks = copy.header.nav
-  const activeNavTextClass = 'text-[#5E17EB] dark:text-[#5E17EB]'
+  const activeNavTextClass = 'text-[#5E17EB] dark:text-white'
   const defaultNavTextClass = 'text-black/55 dark:text-white/50'
 
   const scrollToLandingHash = React.useCallback((href) => {

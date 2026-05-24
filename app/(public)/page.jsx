@@ -87,6 +87,7 @@ export default function HomePage() {
   const { copy } = useLandingLanguage();
   const { home } = copy;
   const router = useRouter();
+  const heroSectionRef = React.useRef(null);
 
   React.useEffect(() => {
     if (isAuthSessionRemembered() && getValidAuthSession()) {
@@ -105,13 +106,42 @@ export default function HomePage() {
     router.push("/login");
   }, [router]);
 
+  function handleHeroPointerMove(event) {
+    const section = heroSectionRef.current;
+
+    if (!section) {
+      return;
+    }
+
+    const rect = section.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+
+    section.style.setProperty("--hero-sparkle-shift-x", `${x * 7}px`);
+    section.style.setProperty("--hero-sparkle-shift-y", `${y * 6}px`);
+  }
+
+  function resetHeroPointer() {
+    const section = heroSectionRef.current;
+
+    if (!section) {
+      return;
+    }
+
+    section.style.setProperty("--hero-sparkle-shift-x", "0px");
+    section.style.setProperty("--hero-sparkle-shift-y", "0px");
+  }
+
   return (
 
     <div className={styles.root}>
 
       <section
+        ref={heroSectionRef}
         id="inicio"
         className={styles.heroSection}
+        onPointerMove={handleHeroPointerMove}
+        onPointerLeave={resetHeroPointer}
       >
         <div
           style={{
@@ -168,7 +198,7 @@ export default function HomePage() {
               color: "var(--landing-muted)",
               lineHeight: "var(--hero-subtitle-line-height)",
               fontFamily: "'Open Sans', 'Segoe UI', sans-serif",
-              maxWidth: "420px",
+              maxWidth: "min(420px, 100%)",
               marginBottom: "var(--hero-subtitle-margin)",
             }}
           >
@@ -202,7 +232,7 @@ export default function HomePage() {
               {home.hero.registerQuestion}
             </p>
             <Link
-              href="/login"
+              href="/#planos"
               prefetch={false}
               className={styles.registerLink}
               style={{ fontSize: "var(--hero-register-size)" }}
@@ -289,11 +319,7 @@ export default function HomePage() {
       </section>
 
       {/* SrOrbis */}
-      <section id="sobre" style={{
-        background: "var(--landing-alt-bg)",
-        transition: "background-color 0.25s ease",
-        paddingTop: "45px"
-      }}>
+      <section id="sobre" className={styles.srOrbisSection}>
         <RevealOnScroll>
           <SobreInformativo />
         </RevealOnScroll>
@@ -337,25 +363,27 @@ export default function HomePage() {
             <SlideOpacity items={home.features} />
           </RevealOnScroll>
         </div>
-      </section>
+      </section >
 
 
       {/* Mostando o Dashboard */}
-      <section
+      < section
         style={{
           background: "var(--landing-alt-bg)",
           transition: "background-color 0.25s ease",
+          borderTop: "#7b39ed57 1px solid",
           ...HERO_DASHBOARD_STYLE,
-        }}
+        }
+        }
       >
         <RevealOnScroll>
           <HeroDashboard />
         </RevealOnScroll>
-      </section>
+      </section >
 
       {/* Como Funciona */}
-      <section
-        className={styles.processSection}
+      < section
+        className={`${styles.processSection} ${styles.gridBackgroundSection}`}
         style={DEFERRED_SECTION_STYLE}
       >
         <div className={styles.processInner}>
@@ -404,12 +432,12 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
       <Separator orientation="horizontal" /> {/* Linha que separa */}
 
       {/* Planos */}
-      <div id="planos" style={DEFERRED_SECTION_STYLE}>
+      <div id="planos" className={styles.gridBackgroundSection} style={DEFERRED_SECTION_STYLE}>
         <RevealOnScroll>
           <Pricing />
         </RevealOnScroll>
@@ -461,19 +489,17 @@ export default function HomePage() {
       </section>
 
       {/* SAQ */}
-      <section id="contact" >
+      <section id="contact" className={styles.gridBackgroundSection}>
         <SAQ />
       </section>
 
-      <Separator orientation="horizontal" /> {/* Linha que separa */}
-
-      <section id="equipe">
+      <section className={styles.gridBackgroundSection}>
         <RevealOnScroll>
           <CreativeTeamSection />
         </RevealOnScroll>
       </section>
 
-    </div>
+    </div >
 
   );
 }

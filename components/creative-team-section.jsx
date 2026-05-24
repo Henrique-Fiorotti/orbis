@@ -148,7 +148,7 @@ function TeamMemberCard({ member }) {
 
 export default function CreativeTeamSection() {
   return (
-    <section className="bg-[var(--landing-section-bg)] px-6 py-20 text-[var(--landing-heading)] transition-colors sm:px-8 lg:px-12">
+    <section className="bg-transparent px-6 py-20 text-[var(--landing-heading)] transition-colors sm:px-8 lg:px-12">
       <div className="mx-auto max-w-[1440px]">
         <div className="mx-auto max-w-4xl text-center">
           <span className="inline-flex rounded-full border border-[var(--landing-secondary-border)] bg-[var(--landing-feature-bg)] px-3 py-1 text-sm text-[var(--landing-heading)] shadow-sm">

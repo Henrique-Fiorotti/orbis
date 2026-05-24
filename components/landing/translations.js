@@ -41,6 +41,7 @@ export const LANDING_COPY = {
       nav: [
         { label: "Início", href: "/#inicio" },
         { label: "Sobre", href: "/#sobre" },
+        { label: "Planos", href: "/#planos" },
         { label: "Contato", href: "/#contact" },
       ],
       theme: {
@@ -68,7 +69,7 @@ export const LANDING_COPY = {
         primaryCta: "Acesse o Orbis",
         secondaryCta: "Sobre",
         registerQuestion: "Não tem uma conta?",
-        registerCta: "Registrar empresa",
+        registerCta: "Quero ser Orbis",
         scrollDownLabel: "Rolar para baixo",
       },
       quote: {
@@ -445,6 +446,7 @@ export const LANDING_COPY = {
       nav: [
         { label: "Home", href: "/#inicio" },
         { label: "About", href: "/#sobre" },
+        { label: "Plans", href: "/#planos" },
         { label: "Contact", href: "/#contact" },
       ],
       theme: {
@@ -846,6 +848,7 @@ export const LANDING_COPY = {
       nav: [
         { label: "Inicio", href: "/#inicio" },
         { label: "Sobre", href: "/#sobre" },
+        { label: "Planes", href: "/#planos" },
         { label: "Contacto", href: "/#contact" },
       ],
       theme: {

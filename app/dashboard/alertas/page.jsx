@@ -762,11 +762,11 @@ function GrupoAlertasSheet({ grupo, open, onOpenChange, onVerAlerta }) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[520px]! max-w-none! sm:max-w-none!">
+      <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[520px]! sm:max-w-none!">
         <SheetHeader>
           <SheetTitle>{grupo?.maquinaNome || "Ocorrencias da maquina"}</SheetTitle>
         </SheetHeader>
-        <div data-lenis-prevent className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
+        <div data-lenis-prevent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
           <div className="flex flex-col gap-3">
             {alertas.map((alerta) => (
               <div key={alerta.id} className="rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
@@ -1290,7 +1290,7 @@ export default function AlertasPage() {
           <StatePanel message={mensagem || "Não foi possível carregar os alertas."} tone="error" />
         ) : (
           <Tabs value={filtroResumo} onValueChange={setFiltroResumo} className="min-w-0 w-full flex-col gap-4">
-            <TabsList className="w-full max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <TabsList className="w-full responsivo max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <TabsTrigger value="em-aberto" className="cursor-pointer shrink-0 flex-none">
                 Em aberto{emAberto.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{emAberto.length}</Badge>}
               </TabsTrigger>
@@ -1339,7 +1339,7 @@ export default function AlertasPage() {
             }
           }}
         >
-          <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
             <SheetHeader>
               {modoSheet === "ver" && grupoRetornoDetalhes ? (
                 <div className="flex items-start gap-3">
@@ -1365,7 +1365,7 @@ export default function AlertasPage() {
                 </>
               )}
             </SheetHeader>
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
               {modoSheet === "ver" && alertaSelecionado ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
@@ -1488,7 +1488,7 @@ export default function AlertasPage() {
               )}
             </div>
             {modoSheet !== "ver" ? (
-              <SheetFooter className="px-4 pb-4">
+              <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
                 <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)}>Cancelar</Button>
                 <Button className="cursor-pointer" onClick={salvar}>Registrar alerta</Button>
               </SheetFooter>
@@ -1505,7 +1505,7 @@ export default function AlertasPage() {
             }
           }}
         >
-          <SheetContent side="right" className="w-[420px]! max-w-none! sm:max-w-none!">
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
             <SheetHeader>
               <div className="flex items-start gap-3">
                 <Button

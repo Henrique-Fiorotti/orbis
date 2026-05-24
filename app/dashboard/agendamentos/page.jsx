@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import {
   ArrowLeftIcon,
   CalendarClockIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsLeftIcon,
@@ -13,6 +14,7 @@ import {
   CheckCircle2Icon,
   ClockIcon,
   EllipsisVerticalIcon,
+  EyeIcon,
   MailIcon,
   PauseCircleIcon,
   PencilIcon,
@@ -65,6 +67,7 @@ import {
 } from "@tanstack/react-table"
 
 const TIMEZONE = "America/Sao_Paulo"
+const FILTER_ALL_VALUE = "__all__"
 
 const PERIOD_OPTIONS = [
   { value: "7", label: "7 dias" },
@@ -332,6 +335,16 @@ function getFrequencyLabel(value) {
 
 function getWeekdayLabel(value) {
   return WEEKDAY_OPTIONS.find((option) => Number(option.value) === Number(value))?.label ?? "-"
+}
+
+function getPeriodLabel(value) {
+  return PERIOD_OPTIONS.find((option) => option.value === String(value))?.label ?? `${value ?? "-"} dias`
+}
+
+function getEnabledSectionLabels(secoes) {
+  return SECTION_OPTIONS
+    .filter((secao) => secoes?.[secao.id])
+    .map((secao) => secao.label)
 }
 
 function getRecipients(item) {
@@ -703,7 +716,241 @@ function ScheduleDescription({ agendamento }) {
     return <>{getWeekdayLabel(agendamento.diaSemana)+","} às {formatHorario(agendamento.hora, agendamento.minuto)}</>
   }
 
-  return <>Dia {agendamento.diaMes+"," ?? "-"} às {formatHorario(agendamento.hora, agendamento.minuto)}</>
+  return <>Dia {agendamento.diaMes ?? "-"}, às {formatHorario(agendamento.hora, agendamento.minuto)}</>
+}
+
+function getMobileScheduleBadgeLabel(agendamento) {
+  if (agendamento.frequencia === "SEMANAL") {
+    return getWeekdayLabel(agendamento.diaSemana)
+  }
+
+  if (agendamento.frequencia === "MENSAL") {
+    return agendamento.diaMes ? `Dia ${agendamento.diaMes}` : "Mensal"
+  }
+
+  return "Diario"
+}
+
+function AgendamentoMobileCard({ agendamento, onOpen }) {
+  return (
+    <button
+      type="button"
+      className="flex w-full cursor-pointer flex-col gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      onClick={() => onOpen(agendamento)}
+    >
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className="line-clamp-2 text-xl font-medium leading-tight text-foreground">{agendamento.nome}</span>
+        <span className="line-clamp-2 text-base text-muted-foreground">{agendamento.assunto}</span>
+      </span>
+
+      <span className="flex flex-wrap justify-end gap-2">
+        <Badge variant="outline" className="border-yellow-200 bg-yellow-50 px-3 text-yellow-600 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300">
+          {formatHorario(agendamento.hora, agendamento.minuto)}
+        </Badge>
+        <StatusBadge status={agendamento.status} />
+        <Badge variant="outline" className="px-3 text-muted-foreground">
+          {getMobileScheduleBadgeLabel(agendamento)}
+        </Badge>
+      </span>
+    </button>
+  )
+}
+
+function DetailItem({ label, value, children }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1 rounded-lg border bg-background px-3 py-3">
+      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="min-w-0 text-sm font-medium text-foreground">
+        {children ?? value ?? "-"}
+      </span>
+    </div>
+  )
+}
+
+function DetailSection({ title, icon: Icon, children }) {
+  return (
+    <section className="grid gap-3">
+      <div className="flex items-center gap-2 text-sm font-semibold text-[#3B2867] dark:text-white">
+        <Icon className="size-4" />
+        {title}
+      </div>
+      <div className="grid gap-3">
+        {children}
+      </div>
+    </section>
+  )
+}
+
+function AgendamentoDetailsPanel({ agendamento, maquinas, firstNextRunValue }) {
+  const maquina = maquinas.find((item) => String(item.id) === String(agendamento.maquinaId))
+  const tipoRelatorio = agendamento.tipoRelatorio === "maquina" ? "Maquina especifica" : "Geral da frota"
+  const maquinaNome = agendamento.tipoRelatorio === "maquina" ? maquina?.nome ?? "Maquina nao encontrada" : "Todas as maquinas"
+  const secoes = getEnabledSectionLabels(agendamento.secoes)
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain px-4 py-2">
+      <div className="rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-2">
+            <span className="flex size-11 items-center justify-center rounded-lg bg-[#5E17EB]/10 text-[#5E17EB]">
+              <CalendarClockIcon className="size-5" />
+            </span>
+            <div className="flex min-w-0 flex-col gap-1">
+              <h2 className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">{agendamento.nome}</h2>
+              <p className="line-clamp-2 text-sm text-muted-foreground">{agendamento.assunto}</p>
+            </div>
+          </div>
+          <StatusBadge status={agendamento.status} />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Badge variant="outline" className="border-yellow-200 bg-yellow-50 px-3 text-yellow-600 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300">
+            <ClockIcon className="size-3.5" />
+            {formatHorario(agendamento.hora, agendamento.minuto)}
+          </Badge>
+          <Badge variant="outline" className="px-3 text-muted-foreground">
+            {getFrequencyLabel(agendamento.frequencia)}
+          </Badge>
+          <NextRunBadge agendamento={agendamento} firstNextRunValue={firstNextRunValue} />
+        </div>
+      </div>
+
+      <DetailSection title="Programacao" icon={CalendarClockIcon}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <DetailItem label="Recorrencia">
+            <ScheduleDescription agendamento={agendamento} />
+          </DetailItem>
+          <DetailItem label="Fuso horario" value={agendamento.timezone} />
+        </div>
+      </DetailSection>
+
+      <DetailSection title="Relatorio" icon={SlidersHorizontalIcon}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <DetailItem label="Tipo" value={tipoRelatorio} />
+          <DetailItem label="Maquina" value={maquinaNome} />
+          <DetailItem label="Periodo" value={getPeriodLabel(agendamento.periodoDias)} />
+          <DetailItem label="Secoes">
+            <span className="flex flex-wrap gap-1.5">
+              {secoes.length ? (
+                secoes.map((secao) => (
+                  <Badge key={secao} variant="outline" className="text-muted-foreground">
+                    {secao}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-muted-foreground">Nenhuma secao selecionada</span>
+              )}
+            </span>
+          </DetailItem>
+        </div>
+      </DetailSection>
+
+      <DetailSection title="Destinatarios" icon={MailIcon}>
+        <div className="grid gap-2 rounded-lg border bg-background p-3">
+          {agendamento.destinatariosLista.length ? (
+            agendamento.destinatariosLista.map((email) => (
+              <span key={email} className="break-all rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                {email}
+              </span>
+            ))
+          ) : (
+            <span className="text-sm text-muted-foreground">Nenhum destinatario cadastrado.</span>
+          )}
+        </div>
+      </DetailSection>
+    </div>
+  )
+}
+
+function MobileFilterSection({ title, value, options, onChange }) {
+  const currentValue = value ?? FILTER_ALL_VALUE
+
+  return (
+    <details className="group rounded-lg border bg-background [&>summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm font-medium">
+        <span>{title}</span>
+        <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="grid gap-2 px-3 pb-3">
+        <button
+          type="button"
+          className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+            currentValue === FILTER_ALL_VALUE
+              ? "border-[#5E17EB] bg-[#5E17EB]/10 text-[#5E17EB]"
+              : "bg-card text-muted-foreground hover:border-[#5E17EB]/50"
+          }`}
+          onClick={() => onChange(undefined)}
+        >
+          Todos
+        </button>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+              currentValue === option.value
+                ? "border-[#5E17EB] bg-[#5E17EB]/10 text-[#5E17EB]"
+                : "bg-card text-muted-foreground hover:border-[#5E17EB]/50"
+            }`}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </details>
+  )
+}
+
+function MobileFiltersMenu({
+  open,
+  onOpenChange,
+  activeCount,
+  filters,
+  onFilterChange,
+  onClear,
+}) {
+  return (
+    <div className="flex flex-col gap-3 md:hidden">
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 cursor-pointer"
+          onClick={() => onOpenChange(!open)}
+        >
+          <SlidersHorizontalIcon className="size-4" />
+          Filtros
+          {activeCount > 0 ? (
+            <Badge variant="outline" className="ml-1 border-[#5E17EB]/40 bg-[#5E17EB]/10 px-1.5 text-[#5E17EB]">
+              {activeCount}
+            </Badge>
+          ) : null}
+        </Button>
+        {activeCount > 0 ? (
+          <Button type="button" variant="ghost" size="sm" className="cursor-pointer text-muted-foreground" onClick={onClear}>
+            Limpar
+          </Button>
+        ) : null}
+      </div>
+
+      {open ? (
+        <div className="flex flex-col gap-2 rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+          <MobileFilterSection
+            title="Frequencia"
+            value={filters.frequencia}
+            options={FREQUENCY_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("frequencia", value)}
+          />
+          <MobileFilterSection
+            title="Status"
+            value={filters.status}
+            options={STATUS_FILTER_OPTIONS}
+            onChange={(value) => onFilterChange("status", value)}
+          />
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 function AgendamentoForm({ form, setForm, maquinas, salvando, modo, employeeEmailOptions }) {
@@ -892,6 +1139,7 @@ export default function AgendamentosPage() {
   const [sorting, setSorting] = React.useState([])
   const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 8 })
+  const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false)
   const [sheetAberto, setSheetAberto] = React.useState(false)
   const [modoSheet, setModoSheet] = React.useState("criar")
   const [agendamentoSelecionado, setAgendamentoSelecionado] = React.useState(null)
@@ -944,6 +1192,18 @@ export default function AgendamentosPage() {
     carregarAgendamentos()
   }, [canViewAgendamentos, carregarAgendamentos])
 
+  React.useEffect(() => {
+    if (!agendamentoSelecionado?.id) {
+      return
+    }
+
+    const atualizado = agendamentos.find((item) => item.id === agendamentoSelecionado.id)
+
+    if (atualizado && atualizado !== agendamentoSelecionado) {
+      setAgendamentoSelecionado(atualizado)
+    }
+  }, [agendamentos, agendamentoSelecionado])
+
   const totais = React.useMemo(() => {
     const ativos = agendamentos.filter((item) => item.status === "ATIVO").length
     const pausados = agendamentos.filter((item) => item.status === "PAUSADO").length
@@ -991,6 +1251,13 @@ export default function AgendamentosPage() {
       secoes: { ...DEFAULT_SECTIONS },
       maquinaId: maquinas[0]?.id ? String(maquinas[0].id) : "",
     })
+    setSheetAberto(true)
+  }
+
+  function abrirVer(agendamento) {
+    setModoSheet("ver")
+    setAgendamentoSelecionado(agendamento)
+    setForm(buildFormFromAgendamento(agendamento))
     setSheetAberto(true)
   }
 
@@ -1084,6 +1351,9 @@ export default function AgendamentosPage() {
         body: { status: novoStatus },
       })
       toast.success(novoStatus === "PAUSADO" ? "Envios cancelados/pausados." : "Agendamento reativado.")
+      setAgendamentoSelecionado((current) => (
+        current?.id === agendamento.id ? { ...current, status: novoStatus } : current
+      ))
       await carregarAgendamentos()
     } catch (error) {
       toast.error(getErrorMessage(error, "Nao foi possivel atualizar o status."))
@@ -1167,7 +1437,13 @@ export default function AgendamentosPage() {
       header: "Nome",
       cell: ({ row }) => (
         <div className="flex min-w-[220px] flex-col gap-1">
-          <span className="font-medium text-foreground">{row.original.nome}</span>
+          <button
+            type="button"
+            className="w-fit cursor-pointer text-left font-medium text-foreground transition-colors hover:text-primary hover:underline"
+            onClick={() => abrirVer(row.original)}
+          >
+            {row.original.nome}
+          </button>
           <span className="text-xs text-muted-foreground">{row.original.assunto}</span>
         </div>
       ),
@@ -1273,6 +1549,9 @@ export default function AgendamentosPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => abrirVer(agendamento)}>
+                  <EyeIcon className="mr-1 size-4" /> Ver detalhes
+                </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => abrirEditar(agendamento)}>
                   <PencilIcon className="mr-1 size-4" /> Editar
                 </DropdownMenuItem>
@@ -1314,9 +1593,27 @@ export default function AgendamentosPage() {
     getSortedRowModel: getSortedRowModel(),
   })
 
+  const mobileFilterValues = {
+    frequencia: table.getColumn("frequencia")?.getFilterValue(),
+    status: table.getColumn("status")?.getFilterValue(),
+  }
+  const activeMobileFilters = Object.values(mobileFilterValues).filter((value) => value !== undefined && value !== "").length
+
+  function alterarFiltroMobile(columnId, value) {
+    table.getColumn(columnId)?.setFilterValue(value)
+    table.setPageIndex(0)
+  }
+
+  function limparFiltrosMobile() {
+    alterarFiltroMobile("frequencia", undefined)
+    alterarFiltroMobile("status", undefined)
+  }
+
   const loadingInicial = status === "loading"
   const refreshing = status === "refreshing"
   const proximoEnvioMetric = formatMetricNextRun(loadingInicial ? "--" : totais.proximo)
+  const selectedActionPending = acaoPendenteId === agendamentoSelecionado?.id
+  const actionBusy = acaoPendenteId !== null
 
   if (!canViewAgendamentos) {
     return null
@@ -1408,17 +1705,43 @@ export default function AgendamentosPage() {
           />
         </div>
 
-        <div className="relative w-full max-w-sm">
-          <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, assunto ou e-mail..."
-            value={busca}
-            onChange={(event) => setBusca(event.target.value)}
-            className="pl-8"
+        <div className="flex flex-col gap-3">
+          <MobileFiltersMenu
+            open={mobileFiltersOpen}
+            onOpenChange={setMobileFiltersOpen}
+            activeCount={activeMobileFilters}
+            filters={mobileFilterValues}
+            onFilterChange={alterarFiltroMobile}
+            onClear={limparFiltrosMobile}
           />
+          <div className="relative w-full max-w-sm">
+            <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, assunto ou e-mail..."
+              value={busca}
+              onChange={(event) => setBusca(event.target.value)}
+              className="pl-8"
+            />
+          </div>
         </div>
 
-        <div className="min-h-[420px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
+        <div className="flex flex-col gap-4 md:hidden">
+          {loadingInicial ? (
+            <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+              Carregando agendamentos...
+            </div>
+          ) : table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row) => (
+              <AgendamentoMobileCard key={row.id} agendamento={row.original} onOpen={abrirVer} />
+            ))
+          ) : (
+            <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+              Nenhum agendamento encontrado.
+            </div>
+          )}
+        </div>
+
+        <div className="hidden min-h-[420px] overflow-auto rounded-lg border bg-card md:block dark:border-gray-700! dark:bg-[#0F172A]">
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-muted">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -1457,9 +1780,9 @@ export default function AgendamentosPage() {
           </Table>
         </div>
 
-        <div className="flex items-center justify-between px-4">
+        <div className="flex items-center justify-between px-0 sm:px-4">
           <span className="text-sm text-muted-foreground">{table.getFilteredRowModel().rows.length} resultado(s)</span>
-          <div className="flex w-full items-center justify-end gap-8 lg:w-fit">
+          <div className="flex items-center justify-end gap-3 sm:gap-8 lg:w-fit">
             <Button variant="outline" size="icon" className="cursor-pointer hidden size-8 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
               <ChevronsLeftIcon className="size-4" />
             </Button>
@@ -1477,22 +1800,87 @@ export default function AgendamentosPage() {
         </div>
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" className="w-full max-w-none! sm:w-[560px]! sm:max-w-none!">
-            <SheetHeader>
-              <SheetTitle>{modoSheet === "criar" ? "Novo agendamento" : "Editar agendamento"}</SheetTitle>
-              <SheetDescription>
-                Configure o relatorio, os destinatarios e a recorrencia de envio.
-              </SheetDescription>
-            </SheetHeader>
-            <AgendamentoForm form={form} setForm={setForm} maquinas={maquinas} salvando={salvando} modo={modoSheet} employeeEmailOptions={employeeEmailOptions} />
-            <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
-              <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>
-                Cancelar
-              </Button>
-              <Button className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={salvarAgendamento} disabled={salvando}>
-                {salvando ? "Salvando..." : modoSheet === "criar" ? "Criar agendamento" : "Salvar alteracoes"}
-              </Button>
-            </SheetFooter>
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[560px]! sm:max-w-none!">
+            {modoSheet === "ver" && agendamentoSelecionado ? (
+              <div className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
+                <SheetHeader className="shrink-0">
+                  <SheetTitle>Detalhes do agendamento</SheetTitle>
+                  <SheetDescription>
+                    Veja a configuracao do envio e execute acoes rapidas.
+                  </SheetDescription>
+                </SheetHeader>
+                <AgendamentoDetailsPanel agendamento={agendamentoSelecionado} maquinas={maquinas} firstNextRunValue={firstNextRunValue} />
+                <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
+                  <div className="grid w-full gap-2 sm:grid-cols-2">
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      onClick={() => executarAgora(agendamentoSelecionado)}
+                      disabled={actionBusy}
+                    >
+                      <SendIcon className="mr-1 size-4" />
+                      {selectedActionPending ? "Processando..." : "Enviar agora"}
+                    </Button>
+                    {agendamentoSelecionado.status === "ATIVO" ? (
+                      <Button
+                        variant="outline"
+                        className="cursor-pointer border-yellow-200 text-yellow-700 hover:bg-yellow-50 dark:border-yellow-900/60 dark:text-yellow-300 dark:hover:bg-yellow-950/30"
+                        onClick={() => atualizarStatusAgendamento(agendamentoSelecionado, "PAUSADO")}
+                        disabled={actionBusy}
+                      >
+                        <PauseCircleIcon className="mr-1 size-4" />
+                        {selectedActionPending ? "Processando..." : "Pausar"}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="cursor-pointer border-green-200 text-green-700 hover:bg-green-50 dark:border-green-900/60 dark:text-green-300 dark:hover:bg-green-950/30"
+                        onClick={() => atualizarStatusAgendamento(agendamentoSelecionado, "ATIVO")}
+                        disabled={actionBusy}
+                      >
+                        <PlayCircleIcon className="mr-1 size-4" />
+                        {selectedActionPending ? "Processando..." : "Reativar"}
+                      </Button>
+                    )}
+                    <Button
+                      className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+                      onClick={() => abrirEditar(agendamentoSelecionado)}
+                      disabled={actionBusy}
+                    >
+                      <PencilIcon className="mr-1 size-4" />
+                      Editar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="cursor-pointer"
+                      onClick={() => confirmarExcluir(agendamentoSelecionado)}
+                      disabled={actionBusy}
+                    >
+                      <Trash2Icon className="mr-1 size-4" />
+                      Excluir
+                    </Button>
+                  </div>
+                </SheetFooter>
+              </div>
+            ) : (
+              <div key={modoSheet} className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
+                <SheetHeader className="shrink-0">
+                  <SheetTitle>{modoSheet === "criar" ? "Novo agendamento" : "Editar agendamento"}</SheetTitle>
+                  <SheetDescription>
+                    Configure o relatorio, os destinatarios e a recorrencia de envio.
+                  </SheetDescription>
+                </SheetHeader>
+                <AgendamentoForm form={form} setForm={setForm} maquinas={maquinas} salvando={salvando} modo={modoSheet} employeeEmailOptions={employeeEmailOptions} />
+                <SheetFooter className="shrink-0 px-4 pb-4 sm:flex-row sm:justify-end">
+                  <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>
+                    Cancelar
+                  </Button>
+                  <Button className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={salvarAgendamento} disabled={salvando}>
+                    {salvando ? "Salvando..." : modoSheet === "criar" ? "Criar agendamento" : "Salvar alteracoes"}
+                  </Button>
+                </SheetFooter>
+              </div>
+            )}
           </SheetContent>
         </Sheet>
 
