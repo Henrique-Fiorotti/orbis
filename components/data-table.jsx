@@ -14,13 +14,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MaquinaDetailsPanel, MaquinaImagePreview } from "@/components/maquina-details-panel"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
-import { CircleCheckIcon, CircleMinusIcon, AlertTriangleIcon, ImageIcon, EllipsisVerticalIcon, ChevronDownIcon, PlusIcon, ChevronsLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, ArrowRightIcon, SlidersHorizontalIcon, WashingMachineIcon } from "lucide-react"
+import { TablePagination } from "@/components/table-pagination"
+import { CircleCheckIcon, CircleMinusIcon, AlertTriangleIcon, ImageIcon, EllipsisVerticalIcon, ChevronDownIcon, PlusIcon, ArrowRightIcon, SlidersHorizontalIcon, WashingMachineIcon } from "lucide-react"
 import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
 import { cn, tempoRelativo } from "@/lib/utils"
 import {
@@ -466,46 +465,11 @@ function MaquinasTable({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between px-0 sm:px-4">
-        <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-          {table.getFilteredRowModel().rows.length} máquina(s) encontrada(s).
-        </div>
-        <div className="flex w-full items-center gap-3 sm:gap-8 lg:w-fit">
-          <span className="text-sm text-muted-foreground lg:hidden">{table.getFilteredRowModel().rows.length} resultado(s)</span>
-          <div className="hidden items-center gap-2 lg:flex">
-            <Label htmlFor="rows-pp" className="text-sm font-medium">Por página</Label>
-            <Select value={`${table.getState().pagination.pageSize}`} onValueChange={(value) => table.setPageSize(Number(value))}>
-              <SelectTrigger size="sm" className="w-20" id="rows-pp">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent side="top">
-                <SelectGroup>
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>{pageSize}</SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex w-fit items-center justify-center text-sm font-medium">
-            Pág. {table.getState().pagination.pageIndex + 1} de {Math.max(table.getPageCount(), 1)}
-          </div>
-          <div className="ml-auto flex items-center gap-2 lg:ml-0">
-            <Button variant="outline" className="cursor-pointer hidden h-8 w-8 p-0 lg:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
-              <ChevronsLeftIcon />
-            </Button>
-            <Button variant="outline" className="cursor-pointer size-8" size="icon" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-              <ChevronLeftIcon />
-            </Button>
-            <Button variant="outline" className="cursor-pointer size-8" size="icon" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-              <ChevronRightIcon />
-            </Button>
-            <Button variant="outline" className="cursor-pointer hidden size-8 lg:flex" size="icon" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
-              <ChevronsRightIcon />
-            </Button>
-          </div>
-        </div>
-      </div>
+      <TablePagination
+        table={table}
+        countLabel={`${table.getFilteredRowModel().rows.length} máquina(s) encontrada(s).`}
+        showPageSizeSelect
+      />
       {maquinaDetalhe ? (
         <MachineDetailsDrawer
           item={maquinaDetalhe}

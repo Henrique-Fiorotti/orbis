@@ -2,7 +2,6 @@
 
 import * as React from "react"
 
-import { SENSOR_READING_EVENT } from "@/components/context/sensores-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import {
   extractCollection,
@@ -11,6 +10,7 @@ import {
   normalizeAlertaCollection,
   requestDashboardJson,
 } from "@/lib/dashboard-api"
+import { REALTIME_SENSOR_READING_EVENT } from "@/lib/realtime-events.mjs"
 
 /** @typedef {import("@/lib/orbis-types").WithChildrenProps} WithChildrenProps */
 /** @typedef {import("@/lib/orbis-types").NovoAlertaInput} NovoAlertaInput */
@@ -149,11 +149,11 @@ export function AlertasProvider({ children }) {
       reloadTimer = window.setTimeout(reloadSilencioso, wait)
     }
 
-    window.addEventListener(SENSOR_READING_EVENT, handleSensorReading)
+    window.addEventListener(REALTIME_SENSOR_READING_EVENT, handleSensorReading)
 
     return () => {
       window.clearTimeout(reloadTimer)
-      window.removeEventListener(SENSOR_READING_EVENT, handleSensorReading)
+      window.removeEventListener(REALTIME_SENSOR_READING_EVENT, handleSensorReading)
     }
   }, [carregarAlertas])
 
