@@ -272,18 +272,26 @@ function StatePanel({ message, tone = "muted", className = "" }) {
   )
 }
 
-function getTableColumns(sensores, sensorError, canManageMaquinas, actions) {
+function getTableColumns(canManageMaquinas, actions) {
   return [
     {
       accessorKey: "nome",
       header: "Máquina",
       cell: ({ row }) => (
-        <TableCellViewer
-          item={row.original}
-          sensores={sensores}
-          sensorError={sensorError}
-          onViewAlerts={actions.onViewAlerts}
-        />
+        <Button
+          variant="ghost"
+          className="h-auto w-fit cursor-pointer justify-start gap-3 !p-0 text-left text-foreground hover:bg-transparent hover:text-primary"
+          onClick={() => actions.onViewDetails(row.original)}
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted text-muted-foreground">
+            {row.original.imagem ? (
+              <img src={row.original.imagem} alt="" className="size-full object-cover" />
+            ) : (
+              <ImageIcon className="size-4" />
+            )}
+          </span>
+          <span className="cursor-pointer text-sm font-medium hover:underline">{row.original.nome}</span>
+        </Button>
       ),
       enableHiding: false,
     },
@@ -392,14 +400,21 @@ function MaquinasTable({
   const [sorting, setSorting] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const permissions = useDashboardPermissions()
+  const maquinaDetalheAtual = React.useMemo(() => {
+    if (!maquinaDetalhe?.id) {
+      return maquinaDetalhe
+    }
+
+    return data.find((maquina) => String(maquina.id) === String(maquinaDetalhe.id)) ?? maquinaDetalhe
+  }, [maquinaDetalhe, data])
   const actions = React.useMemo(() => ({
     onViewDetails: (maquina) => setMaquinaDetalhe(maquina),
     onViewAlerts: (maquina) => router.push(`/dashboard/alertas?maquina=${encodeURIComponent(maquina.nome)}`),
     onManageMachine: (maquina) => router.push(`/dashboard/maquinas?machineId=${encodeURIComponent(maquina.id)}`),
   }), [router])
   const columns = React.useMemo(
-    () => getTableColumns(sensores, sensorError, permissions.canManageMaquinas, actions),
-    [sensores, sensorError, permissions.canManageMaquinas, actions]
+    () => getTableColumns(permissions.canManageMaquinas, actions),
+    [permissions.canManageMaquinas, actions]
   )
 
   const table = useReactTable({
@@ -472,7 +487,7 @@ function MaquinasTable({
       />
       {maquinaDetalhe ? (
         <MachineDetailsDrawer
-          item={maquinaDetalhe}
+          item={maquinaDetalheAtual}
           sensores={sensores}
           sensorError={sensorError}
           open={Boolean(maquinaDetalhe)}
@@ -636,32 +651,6 @@ export function DataTable() {
         )}
       </TabsContent>
     </Tabs>
-  )
-}
-
-function TableCellViewer({ item, sensores, sensorError = "", onViewAlerts }) {
-  return (
-    <MachineDetailsDrawer
-      item={item}
-      sensores={sensores}
-      sensorError={sensorError}
-      onViewAlerts={onViewAlerts}
-      trigger={(
-        <Button
-          variant="ghost"
-          className="h-auto w-fit cursor-pointer justify-start gap-3 !p-0 text-left text-foreground hover:bg-transparent hover:text-primary"
-        >
-          <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted text-muted-foreground">
-            {item.imagem ? (
-              <img src={item.imagem} alt="" className="size-full object-cover" />
-            ) : (
-              <ImageIcon className="size-4" />
-            )}
-          </span>
-          <span className="cursor-pointer text-sm font-medium hover:underline">{item.nome}</span>
-        </Button>
-      )}
-    />
   )
 }
 

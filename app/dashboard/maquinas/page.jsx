@@ -381,6 +381,14 @@ export default function MaquinasPage() {
     !salvando
 
   const maquinasComStatus = React.useMemo(() => withMaquinaAlertasStatus(maquinas, alertas), [alertas, maquinas])
+  const maquinaSelecionadaAtual = React.useMemo(() => {
+    if (!maquinaSelecionada?.id) {
+      return maquinaSelecionada
+    }
+
+    return maquinasComStatus.find((maquina) => String(maquina.id) === String(maquinaSelecionada.id)) ?? maquinaSelecionada
+  }, [maquinaSelecionada, maquinasComStatus])
+  const maquinaDetalhada = modoSheet === "ver" ? maquinaSelecionadaAtual : maquinaSelecionada
   const totalOk = React.useMemo(() => maquinasComStatus.filter((maquina) => getMaquinaStatusExibicao(maquina) === "OK").length, [maquinasComStatus])
   const totalAlerta = React.useMemo(() => maquinasComStatus.filter((maquina) => ["COM_ALERTA", "EM_ANDAMENTO"].includes(getMaquinaStatusExibicao(maquina))).length, [maquinasComStatus])
   const criticasAlta = React.useMemo(() => maquinasComStatus.filter((maquina) => maquina.criticidade === "ALTA").length, [maquinasComStatus])
@@ -905,32 +913,32 @@ export default function MaquinasPage() {
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
           <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
-            {modoSheet === "ver" && maquinaSelecionada ? (
+            {modoSheet === "ver" && maquinaDetalhada ? (
               <div key="ver" className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
                 <div className="shrink-0 px-4 pt-4 bg-gradient-to-b from-popover to-popover/80">
-                  <MaquinaImagePreview maquina={maquinaSelecionada} />
+                  <MaquinaImagePreview maquina={maquinaDetalhada} />
                 </div>
                 <SheetHeader className="shrink-0">
                   <SheetTitle>Detalhes da máquina</SheetTitle>
-                  <SheetDescription>{maquinaSelecionada.setor} - {maquinaSelecionada.tipo}</SheetDescription>
+                  <SheetDescription>{maquinaDetalhada.setor} - {maquinaDetalhada.tipo}</SheetDescription>
                 </SheetHeader>
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
-                  <MaquinaDetailsPanel maquina={maquinaSelecionada} sensores={sensores} sensorError={sensorError} />
+                  <MaquinaDetailsPanel maquina={maquinaDetalhada} sensores={sensores} sensorError={sensorError} />
                 </div>
                 <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
                   <Button 
                     className={"w-full cursor-pointer"}
                     type="button"
-                    onClick={() => router.push(`/dashboard/alertas?maquina=${encodeURIComponent(maquinaSelecionada.nome)}`)}
+                    onClick={() => router.push(`/dashboard/alertas?maquina=${encodeURIComponent(maquinaDetalhada.nome)}`)}
                   >
                     Ver alertas desta máquina
                   </Button>
                   {canManageMaquinas ? (
                     <div className="flex gap-2">
-                      <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(maquinaSelecionada)} disabled={salvando}>
+                      <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(maquinaDetalhada)} disabled={salvando}>
                         <PencilIcon className="mr-1 size-4" /> Editar
                       </Button>
-                      <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(maquinaSelecionada)} disabled={salvando}>
+                      <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(maquinaDetalhada)} disabled={salvando}>
                         <Trash2Icon className="mr-1 size-4" /> Excluir
                       </Button>
                     </div>

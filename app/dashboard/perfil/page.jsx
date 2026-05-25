@@ -674,7 +674,7 @@ export default function PerfilPage() {
         </div>
 
         <Tabs defaultValue="dados">
-          <TabsList className="responsivo w-50 h-auto justify-start">
+          <TabsList className="responsivo w-80 h-auto justify-start">
             <TabsTrigger value="dados" className="gap-1.5">
               <UserIcon className="size-3.5" /> Dados Pessoais
             </TabsTrigger>

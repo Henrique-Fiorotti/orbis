@@ -11,6 +11,7 @@ import {
   requestDashboardJson,
 } from "@/lib/dashboard-api"
 import { REALTIME_SENSOR_READING_EVENT } from "@/lib/realtime-events.mjs"
+import { SMOOTH_SCROLL_LOCK_CHANGE, isSmoothScrollLocked } from "@/lib/scroll-lock"
 
 /** @typedef {import("@/lib/orbis-types").WithChildrenProps} WithChildrenProps */
 /** @typedef {import("@/lib/orbis-types").NovoAlertaInput} NovoAlertaInput */
@@ -132,14 +133,22 @@ export function AlertasProvider({ children }) {
   React.useEffect(() => {
     let reloadTimer = null
     let lastReloadAt = 0
+    let reloadPendingWhileLocked = false
 
     function reloadSilencioso() {
-      lastReloadAt = Date.now()
       reloadTimer = null
+
+      if (isSmoothScrollLocked()) {
+        reloadPendingWhileLocked = true
+        return
+      }
+
+      lastReloadAt = Date.now()
+      reloadPendingWhileLocked = false
       carregarAlertas({ silent: true }).catch(() => {})
     }
 
-    function handleSensorReading() {
+    function scheduleReload() {
       if (reloadTimer) {
         return
       }
@@ -149,11 +158,28 @@ export function AlertasProvider({ children }) {
       reloadTimer = window.setTimeout(reloadSilencioso, wait)
     }
 
+    function handleSensorReading() {
+      scheduleReload()
+    }
+
+    function handleScrollLockChange(event) {
+      const locked =
+        typeof event.detail?.locked === "boolean"
+          ? event.detail.locked
+          : isSmoothScrollLocked()
+
+      if (!locked && reloadPendingWhileLocked) {
+        scheduleReload()
+      }
+    }
+
     window.addEventListener(REALTIME_SENSOR_READING_EVENT, handleSensorReading)
+    window.addEventListener(SMOOTH_SCROLL_LOCK_CHANGE, handleScrollLockChange)
 
     return () => {
       window.clearTimeout(reloadTimer)
       window.removeEventListener(REALTIME_SENSOR_READING_EVENT, handleSensorReading)
+      window.removeEventListener(SMOOTH_SCROLL_LOCK_CHANGE, handleScrollLockChange)
     }
   }, [carregarAlertas])
 
