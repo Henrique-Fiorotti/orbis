@@ -202,10 +202,10 @@ function SensorMobileCard({ sensor, onOpen }) {
   return (
     <button
       type="button"
-      className="flex w-full cursor-pointer flex-col gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      className="flex  w-full cursor-pointer flex-col justify-between gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
       onClick={() => onOpen(sensor)}
     >
-      <span className="flex items-start justify-between gap-3">
+      <span className="flex items-start justify-between gap-1">
         <span className="flex min-w-0 items-baseline gap-2">
           <span className="truncate text-base font-medium text-foreground">{sensor.tipo}</span>
           <span className="truncate text-sm text-muted-foreground">{sensor.maquinaId ? sensor.maquinaNome : "Sem máquina"}</span>
@@ -1206,7 +1206,7 @@ export default function SensoresPage() {
   return (
     <>
       <SiteHeader />
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6  p-4 md:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" className={"cursor-pointer"} size="icon-sm" onClick={() => router.push("/dashboard")}>
@@ -1350,8 +1350,8 @@ export default function SensoresPage() {
         )}
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
-            <SheetHeader>
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
+            <SheetHeader className="shrink-0">
               <SheetTitle>
                 {modoSheet === "criar" ? "Novo sensor" : modoSheet === "editar" ? "Editar sensor" : "Detalhes do sensor"}
               </SheetTitle>
@@ -1363,10 +1363,27 @@ export default function SensoresPage() {
                     : "Leituras e configurações do sensor."}
               </SheetDescription>
             </SheetHeader>
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
-              {modoSheet === "ver" && sensorDetalhado ? (
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
+              {modoSheet === "ver" && sensorSelecionado ? (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <span className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">{sensorSelecionado.tipo}</span>
+                        <span className="line-clamp-2 text-sm text-muted-foreground">{sensorSelecionado.maquinaId ? sensorSelecionado.maquinaNome : "Sem maquina vinculada"}</span>
+                      </div>
+                      <StatusBadge value={sensorSelecionado.status} />
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Badge variant="outline" className="px-3 text-muted-foreground">
+                        ID {sensorSelecionado.id ?? "--"}
+                      </Badge>
+                      <Badge variant="outline" className="px-3 text-muted-foreground">
+                        {tempoRelativo(sensorSelecionado.ultimaLeituraEm)}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="hidden grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Tipo</Label>
                       <span className="text-sm font-semibold">{sensorDetalhado.tipo}</span>
@@ -1384,7 +1401,7 @@ export default function SensoresPage() {
                       <span className="text-sm font-semibold">{sensorDetalhado.id ?? "--"}</span>
                     </div>
                   </div>
-                  <Separator />
+                  <Separator className="hidden" />
                   <div className="flex flex-col gap-3 rounded-lg border border-[#5E17EB] bg-[#5E17EB]/10 p-3 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10">
                     <div className="flex items-center gap-2">
                       <ThermometerIcon className="size-4 text-[#5E17EB] dark:text-[#5E17EB]" />
@@ -1429,10 +1446,10 @@ export default function SensoresPage() {
                     <Label className="text-xs text-muted-foreground">Último sinal</Label>
                     <span className="text-sm">{tempoRelativo(sensorDetalhado.ultimaLeituraEm)}</span>
                   </div>
-                  <Separator />
+                  <Separator className="hidden" />
                   {canManageSensores ? (
-                    <div className="flex gap-2">
-                      <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(sensorDetalhado), 100) }} disabled={salvando}>
+                    <div className="hidden">
+                      <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(sensorSelecionado), 100) }} disabled={salvando}>
                         <PencilIcon className="mr-1 size-4" />
                         Editar
                       </Button>
@@ -1605,8 +1622,23 @@ export default function SensoresPage() {
                 </>
               )}
             </div>
-            {modoSheet !== "ver" ? (
-              <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
+            {modoSheet === "ver" && sensorSelecionado ? (
+              <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
+                {canManageSensores ? (
+                  <div className="grid w-full gap-2 sm:grid-cols-2">
+                    <Button className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(sensorSelecionado), 100) }} disabled={salvando}>
+                      <PencilIcon className="mr-1 size-4" />
+                      Editar
+                    </Button>
+                    <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(sensorSelecionado)} disabled={salvando}>
+                      <Trash2Icon className="mr-1 size-4" />
+                      Excluir
+                    </Button>
+                  </div>
+                ) : null}
+              </SheetFooter>
+            ) : (
+              <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)] sm:flex-row sm:justify-end">
                 <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>
                   Cancelar
                 </Button>
@@ -1614,7 +1646,7 @@ export default function SensoresPage() {
                   {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}
                 </Button>
               </SheetFooter>
-            ) : null}
+            )}
           </SheetContent>
         </Sheet>
 

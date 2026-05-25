@@ -251,18 +251,18 @@ function AdminMobileCard({ admin, onOpen }) {
   return (
     <button
       type="button"
-      className="flex w-full cursor-pointer items-center gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      className="flex w-full cursor-pointer items-center gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
       onClick={() => onOpen(admin)}
     >
       <span className="shrink-0">
         <AdminAvatar admin={admin} size="sm" />
       </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-2">
+      <span className="flex min-w-0 flex-1 flex-col justify-between gap-3">
         <span className="min-w-0">
           <span className="line-clamp-1 text-xl font-medium leading-tight text-foreground">{admin.nome}</span>
           <span className="block truncate text-base text-muted-foreground">{admin.email}</span>
         </span>
-        <span className="flex min-w-0 flex-wrap items-center gap-2">
+        <span className="flex min-w-0 flex-wrap items-center gap-1">
           <AdminPerfilBadge />
           <StatusAdminBadge value={admin.status} />
         </span>
@@ -716,7 +716,7 @@ export default function AdminsPage() {
   return (
     <>
       <SiteHeader />
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6  p-4 md:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button className={"cursor-pointer"} variant="ghost" size="icon-sm" onClick={() => router.push("/dashboard")}>
@@ -821,8 +821,8 @@ export default function AdminsPage() {
         )}
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
-            <SheetHeader>
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
+            <SheetHeader className="shrink-0">
               <SheetTitle>
                 {modoSheet === "criar" ? "Novo administrador" : modoSheet === "editar" ? "Editar administrador" : "Detalhes do administrador"}
               </SheetTitle>
@@ -835,65 +835,39 @@ export default function AdminsPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
               {modoSheet === "ver" && adminSelecionado ? (
                 <>
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-linear-to-r from-purple-50 to-violet-50 border border-purple-100 dark:from-primary/10 dark:to-muted/30 dark:border-primary/30">
-                    <AdminAvatar admin={adminSelecionado} size="lg" onClick={() => abrirFotoFullscreen(adminSelecionado)} />
-                    <div className="flex flex-col gap-1">
-                      <span className="font-semibold text-base text-[#3B2867] dark:text-white">{adminSelecionado.nome}</span>
-                      <span className="text-sm text-muted-foreground">Administrador</span>
+                  <div className="rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 items-center gap-4">
+                        <AdminAvatar admin={adminSelecionado} size="lg" onClick={() => abrirFotoFullscreen(adminSelecionado)} />
+                        <div className="flex min-w-0 flex-col gap-1">
+                          <span className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">{adminSelecionado.nome}</span>
+                          <span className="text-sm text-muted-foreground">Administrador</span>
+                        </div>
+                      </div>
                       <StatusAdminBadge value={adminSelecionado.status} />
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <AdminPerfilBadge />
                     </div>
                   </div>
 
-                  <Separator />
-
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {[
                       ["E-mail", adminSelecionado.email],
                       ["Telefone", adminSelecionado.telefone || "Não informado"],
                       ["Perfil", "Administrador"],
                     //   ["Cadastrado", tempoRelativo(adminSelecionado.criadoEm)],
                     ].map(([label, value]) => (
-                      <div key={label} className="flex flex-col gap-1">
+                      <div key={label} className="flex min-w-0 flex-col gap-1 rounded-lg border bg-background px-3 py-3">
                         <Label className="text-muted-foreground text-xs">{label}</Label>
                         <span className="text-sm font-medium break-all">{value}</span>
                       </div>
                     ))}
                   </div>
 
-                  <Separator />
-
-                  <div className="flex flex-col gap-2">
-                    {adminWhatsappUrl ? (
-                      <Button
-                        asChild
-                        variant="outline"
-                        className="w-full border-green-200 bg-[#5F18EA]/95 text-white hover:bg-[#5F18EA] hover:text-white dark:border-[#5F18EA]60 dark:bg-[#5F18EA]/30 dark:text-white dark:hover:bg-[#5F18EA]/50"
-                      >
-                        <a href={adminWhatsappUrl} target="_blank" rel="noreferrer">
-                          <img src="/whatsapp-128-svgrepo-com.svg" alt="" className="size-4 invert" />
-                          Entrar em contato pelo WhatsApp
-                        </a>
-                      </Button>
-                    ) : (
-                      <Button variant="outline" className="w-full text-muted-foreground" disabled>
-                        Administrador precisa registrar um telefone para contato
-                      </Button>
-                    )}
-
-                    {canManageAdmins ? (
-                      <div className="flex gap-2">
-                        <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(adminSelecionado)} disabled={salvando}>
-                          <PencilIcon className="size-4 mr-1" /> Editar
-                        </Button>
-                        <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(adminSelecionado)} disabled={salvando}>
-                          <Trash2Icon className="size-4 mr-1" /> Excluir
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
                 </>
               ) : (
                 <>
@@ -980,10 +954,42 @@ export default function AdminsPage() {
               )}
             </div>
 
-            {modoSheet !== "ver" && (
-              <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
+            {modoSheet === "ver" && adminSelecionado ? (
+              <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
+                <div className="grid w-full gap-2 sm:grid-cols-2">
+                  {adminWhatsappUrl ? (
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="cursor-pointer border-green-200 bg-[#5F18EA]/95 text-white hover:bg-[#5F18EA] hover:text-white dark:border-[#5F18EA]60 dark:bg-[#5F18EA]/30 dark:text-white dark:hover:bg-[#5F18EA]/50 sm:col-span-2"
+                    >
+                      <a href={adminWhatsappUrl} target="_blank" rel="noreferrer">
+                        <img src="/whatsapp-128-svgrepo-com.svg" alt="" className="size-4 invert" />
+                        WhatsApp
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button variant="outline" className="text-muted-foreground sm:col-span-2" disabled>
+                      Telefone nao informado
+                    </Button>
+                  )}
+
+                  {canManageAdmins ? (
+                    <>
+                      <Button className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => abrirEditar(adminSelecionado)} disabled={salvando}>
+                        <PencilIcon className="size-4 mr-1" /> Editar
+                      </Button>
+                      <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(adminSelecionado)} disabled={salvando}>
+                        <Trash2Icon className="size-4 mr-1" /> Excluir
+                      </Button>
+                    </>
+                  ) : null}
+                </div>
+              </SheetFooter>
+            ) : (
+              <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)] sm:flex-row sm:justify-end">
                 <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>Cancelar</Button>
-                <Button className="cursor-pointer" onClick={salvar} disabled={salvando}>
+                <Button className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={salvar} disabled={salvando}>
                   {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}
                 </Button>
               </SheetFooter>

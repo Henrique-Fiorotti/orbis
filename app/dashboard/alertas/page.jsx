@@ -715,12 +715,12 @@ function HistoricoManutencaoPanel({
   )
 }
 
-function GrupoTiposResumo({ tipos = [] }) {
+function GrupoTiposResumo({ tipos = [], compact = false }) {
   const visiveis = tipos.slice(0, 2)
   const restante = Math.max(tipos.length - visiveis.length, 0)
 
   return (
-    <div className="flex min-w-[180px] flex-wrap items-center gap-1.5">
+    <div className={`flex flex-wrap items-center ${compact ? "min-w-0 gap-1" : "min-w-[180px] gap-1.5"}`}>
       {visiveis.map((tipo) => (
         <TipoAlertaBadge key={tipo} value={tipo} />
       ))}
@@ -755,13 +755,67 @@ function GrupoSensoresResumo({ sensores = [] }) {
   )
 }
 
+function GrupoAlertasMobileCard({ grupo, onOpen }) {
+  const sensoresVisiveis = (grupo.sensores ?? []).slice(0, 2)
+  const sensoresRestantes = Math.max((grupo.sensores?.length ?? 0) - sensoresVisiveis.length, 0)
+  const ocorrencias = Math.max(Number(grupo.totalOcorrencias) || Number(grupo.totalAlertas) || 1, 1)
+
+  return (
+    <button
+      type="button"
+      className="flex min-h-[110px] w-full cursor-pointer flex-col justify-between gap-3 rounded-lg border bg-card p-2 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      onClick={() => onOpen(grupo)}
+    >
+      <span className="flex min-w-0 items-start justify-between gap-2">
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="line-clamp-2 text-lg font-medium leading-tight text-foreground">
+            {grupo.maquinaNome || "Maquina nao informada"}
+          </span>
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted-foreground">
+            {sensoresVisiveis.length ? (
+              sensoresVisiveis.map((sensor) => (
+                <span key={sensor} className="max-w-full truncate">
+                  {sensor}
+                </span>
+              ))
+            ) : (
+              <span>Sensor nao informado</span>
+            )}
+            {sensoresRestantes > 0 ? <span>+{sensoresRestantes} sensor(es)</span> : null}
+          </span>
+        </span>
+        <ChevronRightIcon className="mt-1 size-4 shrink-0 text-muted-foreground" />
+      </span>
+
+      <span className="flex flex-col gap-2">
+        <span className="flex flex-wrap items-center gap-1">
+          <GrupoTiposResumo tipos={grupo.tipos} compact />
+        </span>
+
+        <span className="flex flex-wrap items-center justify-between gap-1">
+          <span className="flex flex-wrap items-center gap-1">
+            <StatusAlertaBadge value={grupo.principalStatus} />
+            <Badge variant="outline" className={`px-1.5 text-xs ${grupo.temRepetidos ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
+              {ocorrencias} ocorr.
+            </Badge>
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <ClockIcon className="size-3" />
+            {tempoRelativo(grupo.ultimaOcorrenciaEm)}
+          </span>
+        </span>
+      </span>
+    </button>
+  )
+}
+
 function GrupoAlertasSheet({ grupo, open, onOpenChange, onVerAlerta }) {
   const alertas = grupo?.alertas ?? []
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[520px]! sm:max-w-none!">
-        <SheetHeader>
+      <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[520px]! sm:max-w-none!">
+        <SheetHeader className="shrink-0">
           <SheetTitle>{grupo?.maquinaNome || "Ocorrencias da maquina"}</SheetTitle>
         </SheetHeader>
         <div data-lenis-prevent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
@@ -902,7 +956,19 @@ function AlertasTable({ data, onVerGrupo }) {
 
   return (
     <>
-      <div className="min-h-[500px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
+      <div className="flex flex-col gap-4 md:hidden">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => (
+            <GrupoAlertasMobileCard key={row.id} grupo={row.original} onOpen={onVerGrupo} />
+          ))
+        ) : (
+          <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+            Nenhuma maquina com alertas encontrada.
+          </div>
+        )}
+      </div>
+
+      <div className="hidden min-h-[500px] overflow-auto rounded-lg border bg-card md:block dark:border-gray-700! dark:bg-[#0F172A]">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -1195,7 +1261,7 @@ export default function AlertasPage() {
   return (
     <>
       <SiteHeader />
-      <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-6">
+      <div className="flex min-w-0 flex-col gap-6  p-4 md:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" className={"cursor-pointer"} size="icon-sm" onClick={() => router.push("/dashboard")}>
@@ -1343,9 +1409,9 @@ export default function AlertasPage() {
             }
           }}
         >
-          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
-            <SheetHeader>
-              {modoSheet === "ver" && grupoRetornoAtual ? (
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
+            <SheetHeader className="shrink-0">
+              {modoSheet === "ver" && grupoRetornoDetalhes ? (
                 <div className="flex items-start gap-3">
                   <Button
                     type="button"
@@ -1369,10 +1435,26 @@ export default function AlertasPage() {
                 </>
               )}
             </SheetHeader>
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
-              {modoSheet === "ver" && alertaDetalhado ? (
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
+              {modoSheet === "ver" && alertaSelecionado ? (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <span className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">{alertaSelecionado.maquinaNome}</span>
+                        <span className="line-clamp-2 text-sm text-muted-foreground">{alertaSelecionado.sensorNome}</span>
+                      </div>
+                      <StatusAlertaBadge value={alertaSelecionado.status} />
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <TipoAlertaBadge value={alertaSelecionado.tipo} />
+                      <SeveridadeBadge value={alertaSelecionado.severidade} />
+                      <Badge variant="outline" className="px-3 text-muted-foreground">
+                        {Math.max(Number(alertaSelecionado.ocorrencias) || 1, 1)} ocorr.
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="hidden grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <FieldLabelWithHelp
                         help={TIPOS_ALERTA_HELP[alertaDetalhado.tipo]}
@@ -1396,7 +1478,7 @@ export default function AlertasPage() {
                       <StatusAlertaBadge value={alertaDetalhado.status} />
                     </div>
                   </div>
-                  <Separator />
+                  <Separator className="hidden" />
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Máquina</Label>
@@ -1435,7 +1517,7 @@ export default function AlertasPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-auto w-full cursor-pointer justify-between gap-3 px-3 py-3 text-left"
+                    className="hidden h-auto w-full cursor-pointer justify-between gap-3 px-3 py-3 text-left"
                     onClick={abrirHistoricoManutencao}
                   >
                     <span className="flex min-w-0 items-center gap-2">
@@ -1491,12 +1573,30 @@ export default function AlertasPage() {
                 </>
               )}
             </div>
-            {modoSheet !== "ver" ? (
-              <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
-                <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)}>Cancelar</Button>
-                <Button className="cursor-pointer" onClick={salvar}>Registrar alerta</Button>
+            {modoSheet === "ver" && alertaSelecionado ? (
+              <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-auto w-full cursor-pointer justify-between gap-3 px-3 py-3 text-left"
+                  onClick={abrirHistoricoManutencao}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <HistoryIcon className="size-4 shrink-0 text-[#3B2867] dark:text-white" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">Historico de Manutencao</span>
+                      <span className="block truncate text-xs text-muted-foreground">Abrir cronofluxo de eventos</span>
+                    </span>
+                  </span>
+                  <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                </Button>
               </SheetFooter>
-            ) : null}
+            ) : (
+              <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)] sm:flex-row sm:justify-end">
+                <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)}>Cancelar</Button>
+                <Button className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={salvar}>Registrar alerta</Button>
+              </SheetFooter>
+            )}
           </SheetContent>
         </Sheet>
 
@@ -1509,8 +1609,8 @@ export default function AlertasPage() {
             }
           }}
         >
-          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
-            <SheetHeader>
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
+            <SheetHeader className="shrink-0">
               <div className="flex items-start gap-3">
                 <Button
                   type="button"
