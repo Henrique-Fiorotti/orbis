@@ -1777,7 +1777,7 @@ export function DashboardAiAssistant() {
                 size="icon-sm"
                 className="cursor-pointer p-0!"
                 onClick={() => setHistorySidebarOpen((current) => !current)}
-                aria-label={historySidebarOpen ? "Ocultar histÃ³rico" : "Mostrar histÃ³rico"}
+                aria-label={historySidebarOpen ? "Ocultar historico" : "Mostrar historico"}
                 aria-expanded={historySidebarOpen}
               >
                 <PanelLeftIcon className="size-4" />
@@ -1788,7 +1788,7 @@ export function DashboardAiAssistant() {
             </div>
             {!fullscreen ? (
               <DropdownMenu>
-                <DropdownMenuContent align="end" className="w-72">
+                <DropdownMenuContent align="end" className="w-72 ">
                   <DropdownMenuItem className="cursor-pointer" onSelect={startNewChat}>
                     <PlusIcon className="size-4" />
                     Nova conversa
@@ -1831,7 +1831,7 @@ export function DashboardAiAssistant() {
             {fullscreen ? (
               <aside
                 className={cn(
-                  "min-h-0 shrink-0 overflow-hidden border-r bg-muted/20 transition-[width,opacity] duration-300 ease-out",
+                  "min-h-0 shrink-0 overflow-hidden border-r bg-muted/90 border-r-gray-700 transition-[width,opacity] duration-300 ease-out",
                   historySidebarOpen ? "w-72 opacity-100" : "w-0 opacity-0"
                 )}
                 aria-hidden={!historySidebarOpen}
