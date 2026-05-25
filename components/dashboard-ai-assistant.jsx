@@ -1692,8 +1692,10 @@ export function DashboardAiAssistant() {
         <div
           key={chat.id}
           className={cn(
-            "flex w-full items-center gap-2 rounded-[8px] px-2 py-2 text-left text-sm transition",
-            isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            "group flex w-full items-center gap-2 rounded-[8px] border px-2 py-2 text-left text-sm transition",
+            isActive
+              ? "border-primary/20 bg-primary/10 text-primary shadow-sm"
+              : "border-transparent text-muted-foreground hover:border-border hover:bg-background/80 hover:text-foreground"
           )}
         >
           <button
@@ -1706,7 +1708,7 @@ export function DashboardAiAssistant() {
           </button>
           <button
             type="button"
-            className="cursor-pointer rounded p-1 text-muted-foreground transition hover:text-destructive"
+            className="cursor-pointer rounded-[6px] p-1 text-muted-foreground opacity-70 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
             onClick={() => deleteChat(chat.id)}
             aria-label={`Excluir conversa ${chat.title}`}
           >
@@ -1775,7 +1777,7 @@ export function DashboardAiAssistant() {
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                className="cursor-pointer p-0!"
+                className="cursor-pointer p-0! hover:bg-muted"
                 onClick={() => setHistorySidebarOpen((current) => !current)}
                 aria-label={historySidebarOpen ? "Ocultar historico" : "Mostrar historico"}
                 aria-expanded={historySidebarOpen}
@@ -1831,30 +1833,49 @@ export function DashboardAiAssistant() {
             {fullscreen ? (
               <aside
                 className={cn(
-                  "min-h-0 shrink-0 overflow-hidden border-r bg-muted/90 border-r-gray-700 transition-[width,opacity] duration-300 ease-out",
+                  "min-h-0 shrink-0 overflow-hidden border-r bg-muted/30 transition-[width,opacity] duration-300 ease-out dark:bg-[#172033]",
                   historySidebarOpen ? "w-72 opacity-100" : "w-0 opacity-0"
                 )}
                 aria-hidden={!historySidebarOpen}
               >
-                <div className="flex h-full w-72 flex-col gap-3 p-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="cursor-pointer justify-start"
-                    onClick={startNewChat}
-                  >
-                    <PlusIcon className="size-4" />
-                    Nova conversa
-                  </Button>
-                  <div className="min-h-0 flex-1 overflow-y-auto">
-                    {chatHistory.length > 0 ? (
-                      <div className="grid gap-1">
-                        {chatHistory.map((chat) => renderHistoryButton(chat, "sidebar"))}
+                <div className="flex h-full w-72 flex-col">
+                  <div className="border-b bg-background/70 px-3 py-3 dark:bg-white/[0.03]">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="m-0 truncate text-sm font-semibold text-foreground">Historico</h3>
+                        <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                          {chatHistory.length} {chatHistory.length === 1 ? "conversa" : "conversas"}
+                        </p>
                       </div>
-                    ) : (
-                      <p className="m-0 px-2 py-3 text-sm text-muted-foreground">Nenhuma conversa salva.</p>
-                    )}
+                    </div>
+                  </div>
+
+                  <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      className="h-9 cursor-pointer justify-start rounded-[8px] shadow-sm"
+                      onClick={startNewChat}
+                    >
+                      <PlusIcon className="size-4" />
+                      Nova conversa
+                    </Button>
+                    <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                      {chatHistory.length > 0 ? (
+                        <div className="grid gap-1">
+                          {chatHistory.map((chat) => renderHistoryButton(chat, "sidebar"))}
+                        </div>
+                      ) : (
+                        <div className="flex h-full min-h-36 flex-col items-center justify-center rounded-[8px] border border-dashed bg-background/60 px-4 text-center">
+                          <MessageSquareIcon className="mb-2 size-5 text-muted-foreground" />
+                          <p className="m-0 text-sm font-medium text-foreground">Sem conversas ainda</p>
+                          <p className="m-0 mt-1 text-xs leading-relaxed text-muted-foreground">
+                            Suas conversas recentes aparecem aqui.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </aside>
