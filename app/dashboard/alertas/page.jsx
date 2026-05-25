@@ -971,6 +971,29 @@ export default function AlertasPage() {
   const errorSemDados = status === "error" && alertas.length === 0
 
   const alertasOrdenados = React.useMemo(() => [...alertas].sort(compareAlertaRecente), [alertas])
+  const gruposAtualizados = React.useMemo(() => groupAlertasByMaquina(alertasOrdenados), [alertasOrdenados])
+  const alertaSelecionadoAtual = React.useMemo(() => {
+    if (!alertaSelecionado?.id) {
+      return alertaSelecionado
+    }
+
+    return alertasOrdenados.find((alerta) => String(alerta.id) === String(alertaSelecionado.id)) ?? alertaSelecionado
+  }, [alertaSelecionado, alertasOrdenados])
+  const grupoAlertasAtual = React.useMemo(() => {
+    if (!grupoAlertasSelecionado?.id) {
+      return grupoAlertasSelecionado
+    }
+
+    return gruposAtualizados.find((grupo) => String(grupo.id) === String(grupoAlertasSelecionado.id)) ?? grupoAlertasSelecionado
+  }, [grupoAlertasSelecionado, gruposAtualizados])
+  const grupoRetornoAtual = React.useMemo(() => {
+    if (!grupoRetornoDetalhes?.id) {
+      return grupoRetornoDetalhes
+    }
+
+    return gruposAtualizados.find((grupo) => String(grupo.id) === String(grupoRetornoDetalhes.id)) ?? grupoRetornoDetalhes
+  }, [grupoRetornoDetalhes, gruposAtualizados])
+  const alertaDetalhado = modoSheet === "ver" ? alertaSelecionadoAtual : alertaSelecionado
   const totalEmAberto = React.useMemo(() => alertasOrdenados.filter((alerta) => alerta.status === "ATIVO").length, [alertasOrdenados])
   const totalEmAndamento = React.useMemo(() => alertasOrdenados.filter((alerta) => alerta.status === "EM_ANDAMENTO").length, [alertasOrdenados])
   const totalRepetidos = React.useMemo(() => alertasOrdenados.filter((alerta) => isStatusAberto(alerta.status) && isAlertaRepetido(alerta)).length, [alertasOrdenados])
@@ -1039,7 +1062,7 @@ export default function AlertasPage() {
   }
 
   function abrirAlertaDoGrupo(alerta) {
-    const grupoRetorno = grupoAlertasSelecionado
+    const grupoRetorno = grupoAlertasAtual
     setGrupoAlertasAberto(false)
     runAfterCurrentOverlayCloses(() => abrirVer(alerta, grupoRetorno))
   }
@@ -1094,7 +1117,7 @@ export default function AlertasPage() {
   }
 
   function abrirHistoricoManutencao() {
-    if (!alertaSelecionado?.id) {
+    if (!alertaDetalhado?.id) {
       return
     }
 
@@ -1102,7 +1125,7 @@ export default function AlertasPage() {
     setHistoricoAberto(true)
 
     if (historicoStatus === "idle") {
-      carregarHistoricoManutencao(alertaSelecionado.id)
+      carregarHistoricoManutencao(alertaDetalhado.id)
     }
   }
 
@@ -1112,11 +1135,11 @@ export default function AlertasPage() {
   }
 
   function voltarParaAlertasDaMaquina() {
-    if (!grupoRetornoDetalhes) {
+    if (!grupoRetornoAtual) {
       return
     }
 
-    const grupoRetorno = grupoRetornoDetalhes
+    const grupoRetorno = grupoRetornoAtual
 
     setSheetAberto(false)
     setGrupoRetornoDetalhes(null)
@@ -1299,7 +1322,7 @@ export default function AlertasPage() {
         )}
 
         <GrupoAlertasSheet
-          grupo={grupoAlertasSelecionado}
+          grupo={grupoAlertasAtual}
           open={grupoAlertasAberto}
           onOpenChange={(open) => {
             setGrupoAlertasAberto(open)
@@ -1322,7 +1345,7 @@ export default function AlertasPage() {
         >
           <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
             <SheetHeader>
-              {modoSheet === "ver" && grupoRetornoDetalhes ? (
+              {modoSheet === "ver" && grupoRetornoAtual ? (
                 <div className="flex items-start gap-3">
                   <Button
                     type="button"
@@ -1347,65 +1370,65 @@ export default function AlertasPage() {
               )}
             </SheetHeader>
             <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
-              {modoSheet === "ver" && alertaSelecionado ? (
+              {modoSheet === "ver" && alertaDetalhado ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <FieldLabelWithHelp
-                        help={TIPOS_ALERTA_HELP[alertaSelecionado.tipo]}
-                        helpLabel={`Ajuda sobre tipo ${TIPOS_ALERTA_LABEL[alertaSelecionado.tipo] ?? alertaSelecionado.tipo}`}
+                        help={TIPOS_ALERTA_HELP[alertaDetalhado.tipo]}
+                        helpLabel={`Ajuda sobre tipo ${TIPOS_ALERTA_LABEL[alertaDetalhado.tipo] ?? alertaDetalhado.tipo}`}
                       >
                         Tipo
                       </FieldLabelWithHelp>
-                      <TipoAlertaBadge value={alertaSelecionado.tipo} />
+                      <TipoAlertaBadge value={alertaDetalhado.tipo} />
                     </div>
                     <div className="flex flex-col gap-1">
                       <FieldLabelWithHelp
-                        help={SEVERIDADE_HELP[alertaSelecionado.severidade]}
-                        helpLabel={`Ajuda sobre severidade ${alertaSelecionado.severidade}`}
+                        help={SEVERIDADE_HELP[alertaDetalhado.severidade]}
+                        helpLabel={`Ajuda sobre severidade ${alertaDetalhado.severidade}`}
                       >
                         Severidade
                       </FieldLabelWithHelp>
-                      <SeveridadeBadge value={alertaSelecionado.severidade} />
+                      <SeveridadeBadge value={alertaDetalhado.severidade} />
                     </div>
                     <div className="col-span-2 flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Status</Label>
-                      <StatusAlertaBadge value={alertaSelecionado.status} />
+                      <StatusAlertaBadge value={alertaDetalhado.status} />
                     </div>
                   </div>
                   <Separator />
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Máquina</Label>
-                      <span className="text-sm font-medium">{alertaSelecionado.maquinaNome}</span>
+                      <span className="text-sm font-medium">{alertaDetalhado.maquinaNome}</span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Sensor</Label>
-                      <span className="text-sm font-medium">{alertaSelecionado.sensorNome}</span>
+                      <span className="text-sm font-medium">{alertaDetalhado.sensorNome}</span>
                     </div>
                   </div>
-                  {alertaSelecionado.tecnicoNome ? (
+                  {alertaDetalhado.tecnicoNome ? (
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Técnico responsável</Label>
-                      <span className="text-sm font-medium">{alertaSelecionado.tecnicoNome}</span>
+                      <span className="text-sm font-medium">{alertaDetalhado.tecnicoNome}</span>
                     </div>
                   ) : null}
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs text-muted-foreground">Mensagem</Label>
-                    <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm leading-relaxed text-foreground">{alertaSelecionado.mensagem}</p>
+                    <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm leading-relaxed text-foreground">{alertaDetalhado.mensagem}</p>
                   </div>
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs text-muted-foreground">Criado em</Label>
-                    <span className="text-sm">{tempoRelativo(alertaSelecionado.criadoEm)}</span>
+                    <span className="text-sm">{tempoRelativo(alertaDetalhado.criadoEm)}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Última ocorrência</Label>
-                      <span className="text-sm">{tempoRelativo(getUltimaOcorrencia(alertaSelecionado))}</span>
+                      <span className="text-sm">{tempoRelativo(getUltimaOcorrencia(alertaDetalhado))}</span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Ocorrências</Label>
-                      <span className="text-sm font-semibold">{Math.max(Number(alertaSelecionado.ocorrencias) || 1, 1)}</span>
+                      <span className="text-sm font-semibold">{Math.max(Number(alertaDetalhado.ocorrencias) || 1, 1)}</span>
                     </div>
                   </div>
                   <Separator />
@@ -1506,11 +1529,11 @@ export default function AlertasPage() {
               </div>
             </SheetHeader>
             <HistoricoManutencaoPanel
-              alerta={alertaSelecionado}
+              alerta={alertaDetalhado}
               eventos={historicoEventos}
               status={historicoStatus}
               mensagem={historicoMensagem}
-              onRetry={() => alertaSelecionado?.id ? carregarHistoricoManutencao(alertaSelecionado.id) : null}
+              onRetry={() => alertaDetalhado?.id ? carregarHistoricoManutencao(alertaDetalhado.id) : null}
             />
           </SheetContent>
         </Sheet>

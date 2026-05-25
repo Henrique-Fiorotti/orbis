@@ -14,6 +14,7 @@ import {
   requestDashboardJson,
 } from "@/lib/dashboard-api"
 import { REALTIME_SENSOR_READING_EVENT } from "@/lib/realtime-events.mjs"
+import { isSmoothScrollLocked } from "@/lib/scroll-lock"
 
 /** @typedef {import("@/lib/orbis-types").WithChildrenProps} WithChildrenProps */
 /** @typedef {import("@/lib/orbis-types").SensoresContextValue} SensoresContextValue */
@@ -77,6 +78,10 @@ export function SensoresProvider({ children }) {
 
   React.useEffect(() => {
     const intervalId = window.setInterval(() => {
+      if (isSmoothScrollLocked()) {
+        return
+      }
+
       setSensores((current) => refreshSensorStatuses(current))
     }, 5000)
 

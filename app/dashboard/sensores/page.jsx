@@ -487,6 +487,14 @@ export default function SensoresPage() {
 
   const totalOnline = React.useMemo(() => sensores.filter((sensor) => sensor.status === "ONLINE").length, [sensores])
   const semMaquina = React.useMemo(() => sensores.filter((sensor) => !sensor.maquinaId).length, [sensores])
+  const sensorSelecionadoAtual = React.useMemo(() => {
+    if (!sensorSelecionado?.id) {
+      return sensorSelecionado
+    }
+
+    return sensores.find((sensor) => String(sensor.id) === String(sensorSelecionado.id)) ?? sensorSelecionado
+  }, [sensorSelecionado, sensores])
+  const sensorDetalhado = modoSheet === "ver" ? sensorSelecionadoAtual : sensorSelecionado
   const foraDoLimite = React.useMemo(() => sensores.filter((sensor) => {
     if (!isSensorTransmitindo(sensor)) {
       return false
@@ -1036,24 +1044,24 @@ export default function SensoresPage() {
               </SheetDescription>
             </SheetHeader>
             <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
-              {modoSheet === "ver" && sensorSelecionado ? (
+              {modoSheet === "ver" && sensorDetalhado ? (
                 <>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Tipo</Label>
-                      <span className="text-sm font-semibold">{sensorSelecionado.tipo}</span>
+                      <span className="text-sm font-semibold">{sensorDetalhado.tipo}</span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Máquina vinculada</Label>
-                      <span className="text-sm font-medium">{sensorSelecionado.maquinaId ? sensorSelecionado.maquinaNome : "Sem máquina vinculada"}</span>
+                      <span className="text-sm font-medium">{sensorDetalhado.maquinaId ? sensorDetalhado.maquinaNome : "Sem máquina vinculada"}</span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Status</Label>
-                      <StatusBadge value={sensorSelecionado.status} />
+                      <StatusBadge value={sensorDetalhado.status} />
                     </div>
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">ID do sensor</Label>
-                      <span className="text-sm font-semibold">{sensorSelecionado.id ?? "--"}</span>
+                      <span className="text-sm font-semibold">{sensorDetalhado.id ?? "--"}</span>
                     </div>
                   </div>
                   <Separator />
@@ -1065,15 +1073,15 @@ export default function SensoresPage() {
                     <div className="grid grid-cols-3 gap-3">
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Leitura</Label>
-                        <span className="text-sm font-semibold">{formatLeituraAtual(sensorSelecionado, sensorSelecionado.temperatura, " °C")}</span>
+                        <span className="text-sm font-semibold">{formatLeituraAtual(sensorDetalhado, sensorDetalhado.temperatura, " °C")}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Ideal</Label>
-                        <span className="text-sm">{formatValue(sensorSelecionado.idealTemperatura, " °C")}</span>
+                        <span className="text-sm">{formatValue(sensorDetalhado.idealTemperatura, " °C")}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Limite</Label>
-                        <span className="text-sm">{formatValue(sensorSelecionado.limiteTemperatura, " °C")}</span>
+                        <span className="text-sm">{formatValue(sensorDetalhado.limiteTemperatura, " °C")}</span>
                       </div>
                     </div>
                   </div>
@@ -1085,30 +1093,30 @@ export default function SensoresPage() {
                     <div className="grid grid-cols-3 gap-3">
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Leitura</Label>
-                        <span className="text-sm font-semibold">{formatLeituraAtual(sensorSelecionado, sensorSelecionado.vibracao, " mm/s")}</span>
+                        <span className="text-sm font-semibold">{formatLeituraAtual(sensorDetalhado, sensorDetalhado.vibracao, " mm/s")}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Ideal</Label>
-                        <span className="text-sm">{formatValue(sensorSelecionado.idealVibracao, " mm/s")}</span>
+                        <span className="text-sm">{formatValue(sensorDetalhado.idealVibracao, " mm/s")}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <Label className="text-xs text-muted-foreground">Limite</Label>
-                        <span className="text-sm">{formatValue(sensorSelecionado.limiteVibracao, " mm/s")}</span>
+                        <span className="text-sm">{formatValue(sensorDetalhado.limiteVibracao, " mm/s")}</span>
                       </div>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs text-muted-foreground">Último sinal</Label>
-                    <span className="text-sm">{tempoRelativo(sensorSelecionado.ultimaLeituraEm)}</span>
+                    <span className="text-sm">{tempoRelativo(sensorDetalhado.ultimaLeituraEm)}</span>
                   </div>
                   <Separator />
                   {canManageSensores ? (
                     <div className="flex gap-2">
-                      <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(sensorSelecionado), 100) }} disabled={salvando}>
+                      <Button className="cursor-pointer flex-1" onClick={() => { setSheetAberto(false); setTimeout(() => abrirEditar(sensorDetalhado), 100) }} disabled={salvando}>
                         <PencilIcon className="mr-1 size-4" />
                         Editar
                       </Button>
-                      <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(sensorSelecionado)} disabled={salvando}>
+                      <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(sensorDetalhado)} disabled={salvando}>
                         <Trash2Icon className="mr-1 size-4" />
                         Excluir
                       </Button>
