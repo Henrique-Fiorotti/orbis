@@ -1172,7 +1172,7 @@ export default function AlertasPage() {
   return (
     <>
       <SiteHeader />
-      <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-6">
+      <div className="flex min-w-0 flex-col gap-6  p-4 md:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" className={"cursor-pointer"} size="icon-sm" onClick={() => router.push("/dashboard")}>

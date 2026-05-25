@@ -133,19 +133,19 @@ function TecnicoMobileCard({ tecnico, onOpen }) {
   return (
     <button
       type="button"
-      className="flex w-full cursor-pointer items-center gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      className="flex w-full cursor-pointer items-center gap-5 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
       onClick={() => onOpen(tecnico)}
     >
       <span className="shrink-0">
         <TecnicoAvatar tecnico={tecnico} size="sm" />
       </span>
-      <span className="flex min-w-0 flex-1 flex-col gap-2">
+      <span className="flex  min-w-0 flex-1 flex-col justify-between gap-3">
         <span className="min-w-0">
           <span className="line-clamp-1 text-xl font-medium leading-tight text-foreground">{tecnico.nome}</span>
           <span className="block truncate text-base text-muted-foreground">{tecnico.email}</span>
         </span>
-        <span className="flex min-w-0 flex-wrap items-center gap-2">
-          <PerfilTecnicoBadge />
+        <span className="flex min-w-0 flex-wrap items-center gap-1">
+         
           <EspecialidadeBadge value={tecnico.especialidade} />
           <StatusTecnicoBadge value={tecnico.status} />
         </span>
@@ -632,7 +632,7 @@ export default function TecnicosPage() {
   return (
     <>
       <SiteHeader />
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6 p-4 md:p-6">
 
         {/* Header */}
         <div className="flex items-center justify-between">

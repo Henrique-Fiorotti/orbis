@@ -732,7 +732,7 @@ function AgendamentoMobileCard({ agendamento, onOpen }) {
   return (
     <button
       type="button"
-      className="flex w-full cursor-pointer flex-col gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      className="flex min-h-[110px] w-full cursor-pointer flex-col justify-between gap-3 rounded-lg border bg-card p-2 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
       onClick={() => onOpen(agendamento)}
     >
       <span className="flex min-w-0 flex-col gap-1">
@@ -740,7 +740,7 @@ function AgendamentoMobileCard({ agendamento, onOpen }) {
         <span className="line-clamp-2 text-base text-muted-foreground">{agendamento.assunto}</span>
       </span>
 
-      <span className="flex flex-wrap justify-end gap-2">
+      <span className="flex flex-wrap justify-end gap-1">
         <Badge variant="outline" className="border-yellow-200 bg-yellow-50 px-3 text-yellow-600 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300">
           {formatHorario(agendamento.hora, agendamento.minuto)}
         </Badge>
@@ -1619,7 +1619,7 @@ export default function AgendamentosPage() {
   return (
     <>
       <SiteHeader />
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6  p-4 md:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <Tooltip>

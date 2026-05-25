@@ -192,10 +192,10 @@ function SensorMobileCard({ sensor, onOpen }) {
   return (
     <button
       type="button"
-      className="flex w-full cursor-pointer flex-col gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      className="flex  w-full cursor-pointer flex-col justify-between gap-4 rounded-lg border bg-card p-4 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
       onClick={() => onOpen(sensor)}
     >
-      <span className="flex items-start justify-between gap-3">
+      <span className="flex items-start justify-between gap-1">
         <span className="flex min-w-0 items-baseline gap-2">
           <span className="truncate text-base font-medium text-foreground">{sensor.tipo}</span>
           <span className="truncate text-sm text-muted-foreground">{sensor.maquinaId ? sensor.maquinaNome : "Sem máquina"}</span>
@@ -878,7 +878,7 @@ export default function SensoresPage() {
   return (
     <>
       <SiteHeader />
-      <div className="flex flex-col gap-6 p-6">
+      <div className="flex flex-col gap-6  p-4 md:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" className={"cursor-pointer"} size="icon-sm" onClick={() => router.push("/dashboard")}>
