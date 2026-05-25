@@ -11,14 +11,14 @@ const TEAM_MEMBERS = [
   {
     name: "Caio Ferrer",
     role: "Desenvolvedor Backend",
-    // image: "/caio.jpeg",
+    image: "/caio.jpeg",
     initials: "CF",
     cardClass: "bg-[#5E17EB] dark:bg-[#5E17EB]",
     links: {
       linkedin: "https://linkedin.com/in/usuario",
-      github: "https://github.com/usuario",
-      instagram: "https://instagram.com/usuario",
-      email: "mailto:email@exemplo.com",
+      github: "https://github.com/Kcaio28",
+      instagram: "https://instagram.com/kcaioferrer",
+      email: "carioferrer4@gmail.com",
     },
     avatarClass: "from-[#5E17EB] to-violet-500",
   },
@@ -30,9 +30,9 @@ const TEAM_MEMBERS = [
     cardClass: "bg-[#7C3AED] dark:bg-[#7C3AED]",
     links: {
       linkedin: "https://www.linkedin.com/in/gabriel-lourencetti-souza-04b525276",
-      github: "https://github.com/usuario",
-      instagram: "https://instagram.com/usuario",
-      email: "mailto:email@exemplo.com",
+      github: "https://github.com/gabriellourencetti",
+      instagram: "https://instagram.com/_ruivoxy",
+      email: "gglourencetti@gmail.com",
     },
     avatarClass: "from-[#5E17EB] to-violet-500",
   },
@@ -43,10 +43,10 @@ const TEAM_MEMBERS = [
     initials: "GO",
     cardClass: "bg-[#5E17EB] dark:bg-[#5E17EB]",
     links: {
-      linkedin: "https://linkedin.com/in/usuario",
-      github: "https://github.com/usuario",
-      instagram: "https://instagram.com/usuario",
-      email: "mailto:email@exemplo.com",
+      linkedin: "https://linkedin.com/in/guilhermeOrlof",
+      github: "https://github.com/guilhermeorlof",
+      instagram: "https://instagram.com/guiorlof",
+      email: "orlofguilherme@gmail.com",
     },
     avatarClass: "from-[#5E17EB] to-violet-500",
   },
@@ -57,10 +57,10 @@ const TEAM_MEMBERS = [
     initials: "GC",
     cardClass: "bg-[#7C3AED] dark:bg-[#7C3AED]",
     links: {
-      linkedin: "https://linkedin.com/in/usuario",
-      github: "https://github.com/usuario",
+      linkedin: "https://www.linkedin.com/in/gustavopereiracagega",
+      github: "https://github.com/gpc186",
       instagram: "https://instagram.com/usuario",
-      email: "mailto:email@exemplo.com",
+      email: "gustavopereira010806@gmail.com",
     },
     avatarClass: "from-[#5E17EB] to-violet-500",
   },
@@ -71,10 +71,10 @@ const TEAM_MEMBERS = [
     image: "/henrique (2).jpeg",
     cardClass: "bg-[#5E17EB] dark:bg-[#5E17EB]",
     links: {
-      linkedin: "https://linkedin.com/in/usuario",
-      github: "https://github.com/usuario",
-      instagram: "https://instagram.com/usuario",
-      email: "mailto:email@exemplo.com",
+      linkedin: "https://www.linkedin.com/in/henrique-berdoldi-fiorotti?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
+      github: "https://github.com/Henrique-Fiorotti",
+      instagram: "https://instagram.com/whytezx",
+      email: "hberdoldifiorotti@gmail.com",
     },
     avatarClass: "from-[#5E17EB] to-violet-500",
   },
@@ -133,7 +133,11 @@ function TeamMemberCard({ member }) {
         {SOCIAL_LINKS.map(({ key, icon: Icon, label }) => (
           <a
             key={key}
-            href={member.links?.[key] || "#contact"}
+            href={
+              key === "email"
+                ? `mailto:${member.links?.[key]}`
+                : member.links?.[key] || "#contact"
+            }
             target={key === "email" ? undefined : "_blank"}
             rel={key === "email" ? undefined : "noreferrer"}
             aria-label={`${label} de ${member.name}`}
