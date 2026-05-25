@@ -9,6 +9,7 @@ import { XIcon } from "lucide-react"
 import { setSmoothScrollLock } from "@/lib/scroll-lock"
 
 const MOBILE_SHEET_QUERY = "(max-width: 640px)"
+const SheetCloseContext = React.createContext(null)
 
 function Sheet({
   open,
@@ -36,13 +37,15 @@ function Sheet({
   }
 
   return (
-    <SheetPrimitive.Root
-      data-slot="sheet"
-      open={open}
-      defaultOpen={defaultOpen}
-      onOpenChange={handleOpenChange}
-      {...props}
-    />
+    <SheetCloseContext.Provider value={() => handleOpenChange(false)}>
+      <SheetPrimitive.Root
+        data-slot="sheet"
+        open={open}
+        defaultOpen={defaultOpen}
+        onOpenChange={handleOpenChange}
+        {...props}
+      />
+    </SheetCloseContext.Provider>
   );
 }
 
@@ -72,7 +75,7 @@ function SheetOverlay({
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 z-[49] bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 z-[49] bg-black/10 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props} />
@@ -87,13 +90,29 @@ function SheetContent({
   showCloseButton = true,
   onWheel,
   onTouchMove,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  onClickCapture,
+  onTouchStart,
+  onTouchEnd,
+  onTouchCancel,
   style,
   ...props
 }) {
   const [useMobileSide, setUseMobileSide] = React.useState(false)
+  const requestClose = React.useContext(SheetCloseContext)
   const effectiveSide = mobileSide && useMobileSide ? mobileSide : side
   const closeRef = React.useRef(null)
   const dragStartYRef = React.useRef(0)
+  const dragStartXRef = React.useRef(0)
+  const dragYRef = React.useRef(0)
+  const dragPointerIdRef = React.useRef(null)
+  const dragTouchIdRef = React.useRef(null)
+  const dragScrollableRef = React.useRef(null)
+  const dragActiveRef = React.useRef(false)
+  const suppressClickRef = React.useRef(false)
   const [dragY, setDragY] = React.useState(0)
   const [isDragging, setIsDragging] = React.useState(false)
   const isBottomSheet = effectiveSide === "bottom"
@@ -115,6 +134,8 @@ function SheetContent({
 
   React.useEffect(() => {
     if (!isBottomSheet) {
+      dragYRef.current = 0
+      dragActiveRef.current = false
       setDragY(0)
       setIsDragging(false)
     }
@@ -130,39 +151,257 @@ function SheetContent({
     event.stopPropagation()
   }
 
-  function handleDragStart(event) {
-    if (!isBottomSheet) {
+  function getScrollableParent(target, boundary) {
+    let current = target instanceof Element ? target : null
+
+    while (current && current !== boundary) {
+      const style = window.getComputedStyle(current)
+      const canScrollY = /(auto|scroll)/.test(style.overflowY)
+
+      if (canScrollY && current.scrollHeight > current.clientHeight) {
+        return current
+      }
+
+      current = current.parentElement
+    }
+
+    return null
+  }
+
+  function shouldIgnoreSheetDrag(target) {
+    return target instanceof Element && Boolean(target.closest("input, textarea, select, [contenteditable='true'], [data-sheet-drag-ignore]"))
+  }
+
+  function handleContentPointerDown(event) {
+    onPointerDown?.(event)
+
+    if (event.defaultPrevented || !isBottomSheet || event.button !== 0 || shouldIgnoreSheetDrag(event.target)) {
       return
     }
 
     dragStartYRef.current = event.clientY
-    setIsDragging(true)
-    event.currentTarget.setPointerCapture?.(event.pointerId)
+    dragStartXRef.current = event.clientX
+    dragPointerIdRef.current = event.pointerId
+    dragScrollableRef.current = getScrollableParent(event.target, event.currentTarget)
+    dragYRef.current = 0
+    dragActiveRef.current = false
+    setIsDragging(false)
+    setDragY(0)
   }
 
-  function handleDragMove(event) {
-    if (!isDragging || !isBottomSheet) {
-      return
-    }
-
-    setDragY(Math.max(event.clientY - dragStartYRef.current, 0))
+  function startSheetDrag({ clientX, clientY, pointerId = null, touchId = null, target, currentTarget }) {
+    dragStartYRef.current = clientY
+    dragStartXRef.current = clientX
+    dragPointerIdRef.current = pointerId
+    dragTouchIdRef.current = touchId
+    dragScrollableRef.current = getScrollableParent(target, currentTarget)
+    dragYRef.current = 0
+    dragActiveRef.current = false
+    setIsDragging(false)
+    setDragY(0)
   }
 
-  function handleDragEnd(event) {
-    if (!isDragging || !isBottomSheet) {
-      return
+  function updateSheetDrag({ clientX, clientY, currentTarget, pointerId = null, capturePointer = false, event }) {
+    const deltaY = Math.max(clientY - dragStartYRef.current, 0)
+    const deltaX = Math.abs(clientX - dragStartXRef.current)
+
+    if (!dragActiveRef.current) {
+      if (deltaY < 6 || deltaX > deltaY) {
+        return
+      }
+
+      if (dragScrollableRef.current && dragScrollableRef.current.scrollTop > 0) {
+        return
+      }
+
+      dragActiveRef.current = true
+      setIsDragging(true)
+
+      if (capturePointer && pointerId !== null) {
+        currentTarget.setPointerCapture?.(pointerId)
+      }
     }
 
-    event.currentTarget.releasePointerCapture?.(event.pointerId)
+    event?.preventDefault()
+    dragYRef.current = deltaY
+    setDragY(deltaY)
+  }
+
+  function finishSheetDrag({ currentTarget, pointerId = null, releasePointer = false }) {
+    if (releasePointer && dragActiveRef.current && pointerId !== null) {
+      currentTarget.releasePointerCapture?.(pointerId)
+    }
+
+    const didDrag = dragActiveRef.current
+    dragActiveRef.current = false
+    dragPointerIdRef.current = null
+    dragTouchIdRef.current = null
+    dragScrollableRef.current = null
     setIsDragging(false)
 
-    if (dragY > 80) {
+    if (didDrag && dragYRef.current > 80) {
+      suppressClickRef.current = true
+      dragYRef.current = 0
       setDragY(0)
+      requestClose?.()
       closeRef.current?.click()
       return
     }
 
+    dragYRef.current = 0
     setDragY(0)
+  }
+
+  function cancelSheetDrag({ closeIfPastThreshold = false, currentTarget = null } = {}) {
+    if (closeIfPastThreshold && dragActiveRef.current && dragYRef.current > 80) {
+      finishSheetDrag({ currentTarget })
+      return
+    }
+
+    dragPointerIdRef.current = null
+    dragTouchIdRef.current = null
+    dragScrollableRef.current = null
+    dragYRef.current = 0
+    dragActiveRef.current = false
+    setIsDragging(false)
+    setDragY(0)
+  }
+
+  function handleContentPointerMove(event) {
+    onPointerMove?.(event)
+
+    if (!isBottomSheet || dragPointerIdRef.current !== event.pointerId || dragTouchIdRef.current !== null) {
+      return
+    }
+
+    updateSheetDrag({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      currentTarget: event.currentTarget,
+      pointerId: event.pointerId,
+      capturePointer: true,
+      event,
+    })
+  }
+
+  function handleContentPointerEnd(event) {
+    onPointerUp?.(event)
+
+    if (!isBottomSheet || dragPointerIdRef.current !== event.pointerId) {
+      return
+    }
+
+    finishSheetDrag({
+      currentTarget: event.currentTarget,
+      pointerId: event.pointerId,
+      releasePointer: true,
+    })
+  }
+
+  function handleContentPointerCancel(event) {
+    onPointerCancel?.(event)
+
+    if (!isBottomSheet || dragPointerIdRef.current !== event.pointerId) {
+      return
+    }
+
+    cancelSheetDrag({
+      closeIfPastThreshold: true,
+      currentTarget: event.currentTarget,
+    })
+  }
+
+  function getTrackedTouch(touches) {
+    if (dragTouchIdRef.current === null) {
+      return touches[0] ?? null
+    }
+
+    return Array.from(touches).find((touch) => touch.identifier === dragTouchIdRef.current) ?? null
+  }
+
+  function handleContentTouchStart(event) {
+    onTouchStart?.(event)
+
+    if (event.defaultPrevented || !isBottomSheet || shouldIgnoreSheetDrag(event.target)) {
+      return
+    }
+
+    const touch = event.changedTouches[0]
+
+    if (!touch) {
+      return
+    }
+
+    startSheetDrag({
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      touchId: touch.identifier,
+      target: event.target,
+      currentTarget: event.currentTarget,
+    })
+  }
+
+  function handleContentTouchMove(event) {
+    onTouchMove?.(event)
+    event.stopPropagation()
+
+    if (!isBottomSheet || dragTouchIdRef.current === null) {
+      return
+    }
+
+    const touch = getTrackedTouch(event.touches)
+
+    if (!touch) {
+      return
+    }
+
+    updateSheetDrag({
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      currentTarget: event.currentTarget,
+      event,
+    })
+  }
+
+  function handleContentTouchEnd(event) {
+    onTouchEnd?.(event)
+
+    if (!isBottomSheet || dragTouchIdRef.current === null) {
+      return
+    }
+
+    const touch = getTrackedTouch(event.changedTouches)
+
+    if (!touch) {
+      return
+    }
+
+    finishSheetDrag({ currentTarget: event.currentTarget })
+  }
+
+  function handleContentTouchCancel(event) {
+    onTouchCancel?.(event)
+
+    if (!isBottomSheet || dragTouchIdRef.current === null) {
+      return
+    }
+
+    cancelSheetDrag({
+      closeIfPastThreshold: true,
+      currentTarget: event.currentTarget,
+    })
+  }
+
+  function handleContentClickCapture(event) {
+    onClickCapture?.(event)
+
+    if (!suppressClickRef.current) {
+      return
+    }
+
+    suppressClickRef.current = false
+    event.preventDefault()
+    event.stopPropagation()
   }
 
   return (
@@ -176,7 +415,15 @@ function SheetContent({
           className
         )}
         onWheel={handleWheel}
-        onTouchMove={handleTouchMove}
+        onTouchStart={handleContentTouchStart}
+        onTouchMove={handleContentTouchMove}
+        onTouchEnd={handleContentTouchEnd}
+        onTouchCancel={handleContentTouchCancel}
+        onPointerDown={handleContentPointerDown}
+        onPointerMove={handleContentPointerMove}
+        onPointerUp={handleContentPointerEnd}
+        onPointerCancel={handleContentPointerCancel}
+        onClickCapture={handleContentClickCapture}
         style={{
           ...style,
           transform: dragY > 0 ? `translateY(${dragY}px)` : style?.transform,
@@ -191,16 +438,10 @@ function SheetContent({
           </SheetPrimitive.Close>
         ) : null}
         <div
-          className="mx-auto mt-4 hidden h-5 w-28 shrink-0 touch-none cursor-grab items-center justify-center rounded-full active:cursor-grabbing group-data-[side=bottom]/sheet-content:flex"
-          role="button"
-          tabIndex={isBottomSheet ? 0 : -1}
-          aria-label="Arraste para baixo para fechar"
-          onPointerDown={handleDragStart}
-          onPointerMove={handleDragMove}
-          onPointerUp={handleDragEnd}
-          onPointerCancel={handleDragEnd}
+          className="mx-auto mt-4 hidden h-5 w-28 shrink-0 cursor-grab items-center justify-center rounded-full active:cursor-grabbing group-data-[side=bottom]/sheet-content:flex"
+          aria-hidden="true"
         >
-          <span className="block h-1 w-[100px] rounded-full bg-muted-foreground/30 transition-colors hover:bg-muted-foreground/45" />
+          <span className="block h-1 w-[100px] rounded-full bg-muted" />
         </div>
         {children}
         {showCloseButton && !isBottomSheet && (

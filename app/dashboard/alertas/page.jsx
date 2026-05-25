@@ -814,8 +814,8 @@ function GrupoAlertasSheet({ grupo, open, onOpenChange, onVerAlerta }) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[520px]! sm:max-w-none!">
-        <SheetHeader>
+      <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[520px]! sm:max-w-none!">
+        <SheetHeader className="shrink-0">
           <SheetTitle>{grupo?.maquinaNome || "Ocorrencias da maquina"}</SheetTitle>
         </SheetHeader>
         <div data-lenis-prevent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
@@ -1386,8 +1386,8 @@ export default function AlertasPage() {
             }
           }}
         >
-          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
-            <SheetHeader>
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
+            <SheetHeader className="shrink-0">
               {modoSheet === "ver" && grupoRetornoDetalhes ? (
                 <div className="flex items-start gap-3">
                   <Button
@@ -1412,10 +1412,26 @@ export default function AlertasPage() {
                 </>
               )}
             </SheetHeader>
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
               {modoSheet === "ver" && alertaSelecionado ? (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <span className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">{alertaSelecionado.maquinaNome}</span>
+                        <span className="line-clamp-2 text-sm text-muted-foreground">{alertaSelecionado.sensorNome}</span>
+                      </div>
+                      <StatusAlertaBadge value={alertaSelecionado.status} />
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <TipoAlertaBadge value={alertaSelecionado.tipo} />
+                      <SeveridadeBadge value={alertaSelecionado.severidade} />
+                      <Badge variant="outline" className="px-3 text-muted-foreground">
+                        {Math.max(Number(alertaSelecionado.ocorrencias) || 1, 1)} ocorr.
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="hidden grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <FieldLabelWithHelp
                         help={TIPOS_ALERTA_HELP[alertaSelecionado.tipo]}
@@ -1439,7 +1455,7 @@ export default function AlertasPage() {
                       <StatusAlertaBadge value={alertaSelecionado.status} />
                     </div>
                   </div>
-                  <Separator />
+                  <Separator className="hidden" />
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
                       <Label className="text-xs text-muted-foreground">Máquina</Label>
@@ -1478,7 +1494,7 @@ export default function AlertasPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-auto w-full cursor-pointer justify-between gap-3 px-3 py-3 text-left"
+                    className="hidden h-auto w-full cursor-pointer justify-between gap-3 px-3 py-3 text-left"
                     onClick={abrirHistoricoManutencao}
                   >
                     <span className="flex min-w-0 items-center gap-2">
@@ -1534,12 +1550,30 @@ export default function AlertasPage() {
                 </>
               )}
             </div>
-            {modoSheet !== "ver" ? (
-              <SheetFooter className="px-4 pb-4 sm:flex-row sm:justify-end">
-                <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)}>Cancelar</Button>
-                <Button className="cursor-pointer" onClick={salvar}>Registrar alerta</Button>
+            {modoSheet === "ver" && alertaSelecionado ? (
+              <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-auto w-full cursor-pointer justify-between gap-3 px-3 py-3 text-left"
+                  onClick={abrirHistoricoManutencao}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <HistoryIcon className="size-4 shrink-0 text-[#3B2867] dark:text-white" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">Historico de Manutencao</span>
+                      <span className="block truncate text-xs text-muted-foreground">Abrir cronofluxo de eventos</span>
+                    </span>
+                  </span>
+                  <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                </Button>
               </SheetFooter>
-            ) : null}
+            ) : (
+              <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)] sm:flex-row sm:justify-end">
+                <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)}>Cancelar</Button>
+                <Button className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={salvar}>Registrar alerta</Button>
+              </SheetFooter>
+            )}
           </SheetContent>
         </Sheet>
 
@@ -1552,8 +1586,8 @@ export default function AlertasPage() {
             }
           }}
         >
-          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! sm:w-[420px]! sm:max-w-none!">
-            <SheetHeader>
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
+            <SheetHeader className="shrink-0">
               <div className="flex items-start gap-3">
                 <Button
                   type="button"
