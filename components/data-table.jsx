@@ -123,7 +123,7 @@ function MaquinaMobileCard({ maquina, onOpen }) {
   return (
     <button
       type="button"
-      className="flex w-full cursor-pointer items-center gap-4 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      className="flex w-full cursor-pointer items-center gap-3 rounded-lg border bg-card p-2 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
       onClick={() => onOpen(maquina)}
     >
       <span className="flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted text-muted-foreground">
@@ -134,13 +134,13 @@ function MaquinaMobileCard({ maquina, onOpen }) {
         )}
       </span>
 
-      <span className="flex min-w-0 flex-1 flex-col gap-3">
+      <span className="flex min-w-0 min-h-[110px] justify-between flex-1 flex-col gap-3">
         <span className="flex min-w-0 flex-col">
           <span className="line-clamp-2 text-xl font-medium leading-tight text-foreground">{maquina.nome}</span>
           <span className="text-sm text-muted-foreground">{maquina.setor}</span>
         </span>
 
-        <span className="flex items-center justify-between gap-3">
+        <span className="flex items-center justify-between gap-1">
           <span className="flex min-w-0 items-center gap-2">
             {hasIntegridade ? (
               <span className={`w-12 text-lg font-medium tabular-nums ${integridadeTextColor}`}>
@@ -150,7 +150,7 @@ function MaquinaMobileCard({ maquina, onOpen }) {
               <span className="w-12 text-lg font-medium tabular-nums text-muted-foreground">--</span>
             )}
           </span>
-          <span className="flex shrink-0 items-center gap-2">
+          <span className="flex shrink-0 items-center gap-1">
             <CriticidadeBadge value={maquina.criticidade} />
             <StatusBadge value={status} />
           </span>
