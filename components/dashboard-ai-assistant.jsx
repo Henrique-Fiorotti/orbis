@@ -112,38 +112,38 @@ const CHAT_TITLE_STOPWORDS = new Set([
 const PAGE_CONTEXTS = [
   {
     path: "/dashboard/maquinas",
-    label: "MÃ¡quinas",
-    description: "gestÃ£o e leitura operacional das mÃ¡quinas cadastradas",
+    label: "Máquinas",
+    description: "gestão e leitura operacional das máquinas cadastradas",
   },
   {
     path: "/dashboard/sensores",
     label: "Sensores",
-    description: "monitoramento de sensores, status e Ãºltimas leituras",
+    description: "monitoramento de sensores, status e últimas leituras",
   },
   {
     path: "/dashboard/alertas",
     label: "Alertas",
-    description: "alertas, severidade, status e priorizaÃ§Ã£o de atendimento",
+    description: "alertas, severidade, status e priorização de atendimento",
   },
   {
     path: "/dashboard/tecnicos",
-    label: "TÃ©cnicos",
-    description: "equipe tÃ©cnica, disponibilidade e cadastro de usuÃ¡rios tÃ©cnicos",
+    label: "Técnicos",
+    description: "equipe técnica, disponibilidade e cadastro de usuários técnicos",
   },
   {
     path: "/dashboard/relatorios",
-    label: "RelatÃ³rios",
-    description: "anÃ¡lises, grÃ¡ficos e consolidaÃ§Ã£o de indicadores",
+    label: "Relatórios",
+    description: "análises, gráficos e consolidação de indicadores",
   },
   {
     path: "/dashboard/perfil",
     label: "Perfil",
-    description: "dados e preferÃªncias do usuÃ¡rio autenticado",
+    description: "dados e preferências do usuário autenticado",
   },
   {
     path: "/dashboard",
     label: "Dashboard",
-    description: "visÃ£o geral operacional com mÃ¡quinas, sensores e alertas",
+    description: "visão geral operacional com máquinas, sensores e alertas",
   },
 ]
 
@@ -151,7 +151,7 @@ const SUGGESTED_PROMPTS = [
   {
     icon: AlertTriangleIcon,
     label: "Resumir alertas ativos",
-    prompt: "Resuma os alertas ativos e diga o que precisa de atenÃ§Ã£o primeiro.",
+    prompt: "Resuma os alertas ativos e diga o que precisa de atenção primeiro.",
   },
   {
     icon: SparklesIcon,
@@ -161,12 +161,12 @@ const SUGGESTED_PROMPTS = [
   {
     icon: LucideEye,
     label: "Conferir sensores",
-    prompt: "Quais sensores parecem exigir uma verificaÃ§Ã£o mais cuidadosa?",
+    prompt: "Quais sensores parecem exigir uma verificação mais cuidadosa?",
   },
   {
     icon: FileTextIcon,
-    label: "Planejar prÃ³ximos passos",
-    prompt: "Monte uma lista curta de prÃ³ximos passos para manter a operaÃ§Ã£o estÃ¡vel hoje.",
+    label: "Planejar próximos  passos",
+    prompt: "Monte uma lista curta de próximos passos para manter a operação estável hoje.",
   },
 ]
 
@@ -543,7 +543,7 @@ function EmptyPromptState({ fullscreen = false, onSelectPrompt }) {
             "m-0 text-xl font-semibold leading-tight text-foreground",
             fullscreen ? "text-center" : "text-left"
           )}>
-            O que posso olhar por vocÃª?
+            O que posso olhar por você?
           </h3>
         </div>
 
