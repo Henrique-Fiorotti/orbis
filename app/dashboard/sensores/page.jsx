@@ -32,6 +32,7 @@ import {
   CircleCheckIcon,
   EllipsisVerticalIcon,
   EyeIcon,
+  FileTextIcon,
   NfcIcon,
   PencilIcon,
   PlusIcon,
@@ -51,11 +52,20 @@ import {
 } from "@tanstack/react-table"
 
 import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
+import { getAuthSession } from "@/lib/auth-session"
+import { requestDashboardJson } from "@/lib/dashboard-api"
 import { tempoRelativo } from "@/lib/utils"
 import { parseDecimalInput, sanitizeDecimalInput } from "@/lib/form-formatters"
 
 const SEM_MAQUINA_VALUE = "__sem_maquina__"
 const FILTER_ALL_VALUE = "__all__"
+const MANUAL_MAX_FILE_SIZE = 25 * 1024 * 1024
+const PREVIEW_FIELD_LABELS = {
+  idealTemperatura: "Temp. ideal",
+  limiteTemperatura: "Limite temp.",
+  idealVibracao: "Vibracao ideal",
+  limiteVibracao: "Limite vibracao",
+}
 
 const formVazio = {
   tipo: "",
@@ -451,6 +461,209 @@ function UnitInput({ id, value, onChange, unit, placeholder, decimalPlaces = 2 }
   )
 }
 
+function toFiniteManualNumber(value) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function normalizeManualUnit(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u00ba/g, "\u00b0")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+}
+
+function formatManualNumber(value) {
+  if (!Number.isFinite(value)) {
+    return "--"
+  }
+
+  return String(Number(value.toFixed(2)))
+}
+
+function getUnitLabel(unit, fallback) {
+  return typeof unit === "string" && unit.trim() ? unit.trim() : fallback
+}
+
+function parseTemperaturePreviewValue(value, unit) {
+  const rawNumber = toFiniteManualNumber(value)
+
+  if (rawNumber === null) {
+    return { rawNumber: null, appliedNumber: null, canApply: false, converted: false }
+  }
+
+  const normalizedUnit = normalizeManualUnit(unit)
+
+  if (!normalizedUnit || ["c", "\u00b0c", "celsius", "degc"].includes(normalizedUnit)) {
+    return { rawNumber, appliedNumber: rawNumber, canApply: true, converted: false }
+  }
+
+  if (["f", "\u00b0f", "fahrenheit", "degf"].includes(normalizedUnit)) {
+    return { rawNumber, appliedNumber: (rawNumber - 32) * (5 / 9), canApply: true, converted: true }
+  }
+
+  return { rawNumber, appliedNumber: null, canApply: false, converted: false }
+}
+
+function isMillimetersPerSecondUnit(unit) {
+  const normalizedUnit = normalizeManualUnit(unit)
+
+  return [
+    "mm/s",
+    "mms",
+    "mmseg",
+    "mm/srms",
+    "mm/s-rms",
+    "mm/sec",
+    "mmpersecond",
+    "milimetrosporsegundo",
+    "milimetro/segundo",
+  ].includes(normalizedUnit)
+}
+
+function parseVibrationPreviewValue(value, unit) {
+  const rawNumber = toFiniteManualNumber(value)
+
+  if (rawNumber === null) {
+    return { rawNumber: null, appliedNumber: null, canApply: false, converted: false }
+  }
+
+  return {
+    rawNumber,
+    appliedNumber: isMillimetersPerSecondUnit(unit) ? rawNumber : null,
+    canApply: isMillimetersPerSecondUnit(unit),
+    converted: false,
+  }
+}
+
+function buildManualPreviewField({ label, rawValue, unit, fallbackUnit, parser }) {
+  const parsed = parser(rawValue, unit)
+  const displayUnit = getUnitLabel(unit, fallbackUnit)
+  const normalizedUnit = parsed.converted ? fallbackUnit : displayUnit
+  const displayValue =
+    parsed.rawNumber === null
+      ? "--"
+      : parsed.converted
+        ? `${formatManualNumber(parsed.rawNumber)} ${displayUnit} / ${formatManualNumber(parsed.appliedNumber)} ${fallbackUnit}`
+        : `${formatManualNumber(parsed.rawNumber)} ${normalizedUnit}`.trim()
+
+  return {
+    label,
+    displayValue,
+    formValue: parsed.canApply ? formatManualNumber(parsed.appliedNumber) : "",
+    canApply: parsed.canApply,
+    hasValue: parsed.rawNumber !== null,
+  }
+}
+
+function normalizeManualPreviewPayload(payload) {
+  const specs = payload?.especificacoes && typeof payload.especificacoes === "object" ? payload.especificacoes : {}
+  const unidadeTemperatura = specs.unidadeTemperatura ?? null
+  const unidadeVibracao = specs.unidadeVibracao ?? null
+
+  return {
+    nomeArquivo: typeof payload?.nomeArquivo === "string" ? payload.nomeArquivo : "manual.pdf",
+    confianca: typeof specs.confianca === "string" ? specs.confianca : "",
+    observacoes: Array.isArray(specs.observacoes)
+      ? specs.observacoes.map((item) => String(item || "").trim()).filter(Boolean)
+      : [],
+    fields: {
+      idealTemperatura: buildManualPreviewField({
+        label: PREVIEW_FIELD_LABELS.idealTemperatura,
+        rawValue: specs.temperaturaIdeal,
+        unit: unidadeTemperatura,
+        fallbackUnit: "\u00b0C",
+        parser: parseTemperaturePreviewValue,
+      }),
+      limiteTemperatura: buildManualPreviewField({
+        label: PREVIEW_FIELD_LABELS.limiteTemperatura,
+        rawValue: specs.temperaturaMaxima,
+        unit: unidadeTemperatura,
+        fallbackUnit: "\u00b0C",
+        parser: parseTemperaturePreviewValue,
+      }),
+      idealVibracao: buildManualPreviewField({
+        label: PREVIEW_FIELD_LABELS.idealVibracao,
+        rawValue: specs.vibracaoIdeal,
+        unit: unidadeVibracao,
+        fallbackUnit: "",
+        parser: parseVibrationPreviewValue,
+      }),
+      limiteVibracao: buildManualPreviewField({
+        label: PREVIEW_FIELD_LABELS.limiteVibracao,
+        rawValue: specs.vibracaoMaxima,
+        unit: unidadeVibracao,
+        fallbackUnit: "",
+        parser: parseVibrationPreviewValue,
+      }),
+    },
+  }
+}
+
+function getManualPreviewAppliedValues(preview) {
+  const applied = {}
+
+  for (const [field, item] of Object.entries(preview?.fields || {})) {
+    if (item.canApply && item.formValue) {
+      applied[field] = item.formValue
+    }
+  }
+
+  return applied
+}
+
+function clearMatchingAppliedPreviewFields(current, appliedValues) {
+  if (!appliedValues || Object.keys(appliedValues).length === 0) {
+    return current
+  }
+
+  let changed = false
+  const next = { ...current }
+
+  for (const [field, value] of Object.entries(appliedValues)) {
+    if (next[field] === value) {
+      next[field] = ""
+      changed = true
+    }
+  }
+
+  return changed ? next : current
+}
+
+function getManualFileValidationMessage(file) {
+  if (!file) {
+    return "Selecione um manual em PDF."
+  }
+
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+
+  if (!isPdf) {
+    return "Use um arquivo PDF."
+  }
+
+  if (file.size > MANUAL_MAX_FILE_SIZE) {
+    return "O manual deve ter no maximo 25 MB."
+  }
+
+  return ""
+}
+
+function ManualPreviewField({ field }) {
+  return (
+    <div className="flex min-h-20 flex-col gap-1 rounded-md border bg-background px-2.5 py-2">
+      <span className="text-xs text-muted-foreground">{field.label}</span>
+      <span className="text-sm font-medium tabular-nums">{field.displayValue}</span>
+      {field.hasValue ? (
+        <Badge variant={field.canApply ? "secondary" : "outline"} className="mt-auto w-fit px-1.5 text-[10px]">
+          {field.canApply ? "Aplicado" : "Nao aplicado"}
+        </Badge>
+      ) : null}
+    </div>
+  )
+}
+
 export default function SensoresPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -473,12 +686,17 @@ export default function SensoresPage() {
   const [modoSheet, setModoSheet] = React.useState("criar")
   const [sensorSelecionado, setSensorSelecionado] = React.useState(null)
   const [form, setForm] = React.useState(formVazio)
+  const [manualArquivo, setManualArquivo] = React.useState(null)
+  const [manualPreview, setManualPreview] = React.useState(null)
+  const [manualPreviewAplicado, setManualPreviewAplicado] = React.useState(null)
+  const [manualPreviewLoading, setManualPreviewLoading] = React.useState(false)
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [sensorExcluir, setSensorExcluir] = React.useState(null)
   const [sorting, setSorting] = React.useState([])
   const [columnFilters, setColumnFilters] = React.useState([])
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false)
+  const manualInputRef = React.useRef(null)
   const sensorAbertoPelaUrlRef = React.useRef(null)
 
   const loadingInicial = useDashboardMetricsLoading(carregando && sensores.length === 0)
@@ -547,6 +765,23 @@ export default function SensoresPage() {
     }
   }, [searchParams, sensores])
 
+  function resetManualAssistState() {
+    setManualArquivo(null)
+    setManualPreview(null)
+    setManualPreviewAplicado(null)
+    setManualPreviewLoading(false)
+
+    if (manualInputRef.current) {
+      manualInputRef.current.value = ""
+    }
+  }
+
+  function clearManualPreviewFromCurrentForm() {
+    setForm((current) => clearMatchingAppliedPreviewFields(current, manualPreviewAplicado))
+    setManualPreview(null)
+    setManualPreviewAplicado(null)
+  }
+
   function abrirCriar() {
     if (!canManageSensores) {
       return
@@ -554,6 +789,7 @@ export default function SensoresPage() {
 
     setModoSheet("criar")
     setForm(formVazio)
+    resetManualAssistState()
     setSensorSelecionado(null)
     setSheetAberto(true)
   }
@@ -564,6 +800,7 @@ export default function SensoresPage() {
     }
 
     setModoSheet("editar")
+    resetManualAssistState()
     setForm({
       tipo: sensor.tipo ?? "",
       maquinaId: sensor.maquinaId ? String(sensor.maquinaId) : "",
@@ -578,6 +815,7 @@ export default function SensoresPage() {
 
   function abrirVer(sensor) {
     setModoSheet("ver")
+    resetManualAssistState()
     setSensorSelecionado(sensor)
     setSheetAberto(true)
   }
@@ -586,13 +824,94 @@ export default function SensoresPage() {
     const maquinaId = getSelectedMaquinaId(value)
 
     setForm((current) => ({
-      ...current,
+      ...clearMatchingAppliedPreviewFields(current, manualPreviewAplicado),
       maquinaId: maquinaId === null ? "" : String(maquinaId),
     }))
+    setManualPreview(null)
+    setManualPreviewAplicado(null)
   }
 
   function setFormField(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function handleManualFileChange(event) {
+    const file = event.target.files?.[0] ?? null
+
+    clearManualPreviewFromCurrentForm()
+
+    if (!file) {
+      setManualArquivo(null)
+      return
+    }
+
+    const validationMessage = getManualFileValidationMessage(file)
+
+    if (validationMessage) {
+      setManualArquivo(null)
+      event.target.value = ""
+      toast.error(validationMessage)
+      return
+    }
+
+    setManualArquivo(file)
+  }
+
+  async function gerarPreviewManual() {
+    const maquinaId = getSelectedMaquinaId(form.maquinaId)
+
+    if (!maquinaId) {
+      toast.error("Selecione a maquina vinculada ao sensor.")
+      return
+    }
+
+    const validationMessage = getManualFileValidationMessage(manualArquivo)
+
+    if (validationMessage) {
+      toast.error(validationMessage)
+      return
+    }
+
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      toast.error("Faca login para analisar o manual.")
+      return
+    }
+
+    const formData = new FormData()
+    formData.append("manual", manualArquivo)
+    formData.append("maquinaId", String(maquinaId))
+
+    setManualPreviewLoading(true)
+
+    try {
+      const payload = await requestDashboardJson("/maquinas/manual/preview", session.accessToken, "o preview do manual", {
+        method: "POST",
+        body: formData,
+      })
+      const preview = normalizeManualPreviewPayload(payload)
+      const appliedValues = getManualPreviewAppliedValues(preview)
+      const appliedCount = Object.keys(appliedValues).length
+
+      setManualPreview(preview)
+      setManualPreviewAplicado(appliedCount > 0 ? appliedValues : null)
+      setForm((current) => ({
+        ...clearMatchingAppliedPreviewFields(current, manualPreviewAplicado),
+        ...appliedValues,
+      }))
+
+      if (appliedCount > 0) {
+        toast.success("Preview aplicado aos limites do sensor.")
+      } else {
+        toast("Preview gerado sem valores compativeis para aplicar.")
+      }
+    } catch (error) {
+      setManualPreview(null)
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel analisar o manual.")
+    } finally {
+      setManualPreviewLoading(false)
+    }
   }
 
   function validarFormulario() {
@@ -670,6 +989,7 @@ export default function SensoresPage() {
 
       setSheetAberto(false)
       setForm(formVazio)
+      resetManualAssistState()
       setSensorSelecionado(null)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível salvar o sensor.")
@@ -1176,6 +1496,71 @@ export default function SensoresPage() {
                         : "Obrigatório: o back-end exige uma máquina para criar ou atualizar sensores."}
                     </span>
                   </div>
+                  {modoSheet === "criar" ? (
+                    <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 flex-col gap-1">
+                          <Label htmlFor="manual-sensor">Manual PDF</Label>
+                          <span className="truncate text-xs text-muted-foreground">
+                            {manualArquivo ? manualArquivo.name : "Nenhum arquivo selecionado"}
+                          </span>
+                        </div>
+                        {manualPreview?.confianca ? (
+                          <Badge variant="secondary" className="shrink-0 px-1.5">
+                            Confianca {manualPreview.confianca}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <input
+                        ref={manualInputRef}
+                        id="manual-sensor"
+                        type="file"
+                        accept="application/pdf"
+                        aria-label="Manual PDF"
+                        className="sr-only"
+                        onChange={handleManualFileChange}
+                        disabled={manualPreviewLoading || salvando}
+                      />
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="cursor-pointer justify-start sm:flex-1"
+                          onClick={() => manualInputRef.current?.click()}
+                          disabled={manualPreviewLoading || salvando}
+                        >
+                          <FileTextIcon className="mr-1 size-4" />
+                          <span className="truncate">{manualArquivo ? manualArquivo.name : "Selecionar PDF"}</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          className="cursor-pointer"
+                          onClick={gerarPreviewManual}
+                          disabled={manualPreviewLoading || salvando}
+                        >
+                          <SearchIcon className="mr-1 size-4" />
+                          {manualPreviewLoading ? "Analisando..." : "Preview"}
+                        </Button>
+                      </div>
+                      {manualPreview ? (
+                        <div className="flex flex-col gap-3">
+                          <div className="grid grid-cols-2 gap-2">
+                            <ManualPreviewField field={manualPreview.fields.idealTemperatura} />
+                            <ManualPreviewField field={manualPreview.fields.limiteTemperatura} />
+                            <ManualPreviewField field={manualPreview.fields.idealVibracao} />
+                            <ManualPreviewField field={manualPreview.fields.limiteVibracao} />
+                          </div>
+                          {manualPreview.observacoes.length > 0 ? (
+                            <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
+                              {manualPreview.observacoes.map((observacao, index) => (
+                                <li key={`${observacao}-${index}`}>{observacao}</li>
+                              ))}
+                            </ul>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <Separator />
                   <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-2">
@@ -1257,7 +1642,7 @@ export default function SensoresPage() {
                 <Button variant="outline" className="cursor-pointer" onClick={() => setSheetAberto(false)} disabled={salvando}>
                   Cancelar
                 </Button>
-                <Button className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={salvar} disabled={salvando}>
+                <Button className="cursor-pointer" onClick={salvar} disabled={salvando || manualPreviewLoading}>
                   {salvando ? "Salvando..." : modoSheet === "criar" ? "Cadastrar" : "Salvar alterações"}
                 </Button>
               </SheetFooter>
