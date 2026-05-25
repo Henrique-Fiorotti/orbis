@@ -960,7 +960,7 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
     [maquina, statusExibicao, integridadeExibicao]
   )
   const [openSections, setOpenSections] = React.useState({
-    predicao: true,
+    predicao: false,
     sensores: false,
   })
   const [predictionInsights, setPredictionInsights] = React.useState({
@@ -975,7 +975,7 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
 
   React.useEffect(() => {
     setOpenSections({
-      predicao: true,
+      predicao: false,
       sensores: false,
     })
   }, [maquina?.id])
