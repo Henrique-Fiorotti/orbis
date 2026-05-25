@@ -39,7 +39,7 @@ const TEAM_MEMBERS = [
   {
     name: "Guilherme Orlof",
     role: "Desenvolvedor IoT e Frontend",
-    image: "/gui.jpeg",
+    image: "/guilherme.jpeg",
     initials: "GO",
     cardClass: "bg-[#5E17EB] dark:bg-[#5E17EB]",
     links: {
@@ -53,7 +53,7 @@ const TEAM_MEMBERS = [
   {
     name: "Gustavo Cagega",
     role: "Desenvolvedor Backend",
-    // image: "/gustavo.jpeg",
+    image: "/gustavo.jpeg",
     initials: "GC",
     cardClass: "bg-[#7C3AED] dark:bg-[#7C3AED]",
     links: {
@@ -68,7 +68,7 @@ const TEAM_MEMBERS = [
     name: "Henrique Fiorotti",
     role: "Desenvolvedor Frontend",
     initials: "HF",
-    image: "/henrique.jpeg",
+    image: "/henrique (2).jpeg",
     cardClass: "bg-[#5E17EB] dark:bg-[#5E17EB]",
     links: {
       linkedin: "https://linkedin.com/in/usuario",
@@ -81,6 +81,7 @@ const TEAM_MEMBERS = [
   {
     name: "Murilo Almeida",
     role: "Desenvolvedor Mobile",
+    image: "/murilo.jpeg",
     initials: "MA",
     cardClass: "bg-[#7C3AED] dark:bg-[#7C3AED]",
     links: {
@@ -158,7 +159,8 @@ export default function CreativeTeamSection() {
             Conheça as mentes por trás do Orbis
           </h2>
           <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-[var(--landing-muted)] sm:text-lg">
-            Uma equipe apaixonada por inovação, dados e experiências simples para transformar manutenção em decisão inteligente.
+            {/* Uma equipe apaixonada por sistemas, animações, fluidez e experiências simples para transformar a sua operação em uma decisão inteligente. */}
+            Sistemas fluidos e experiências simples: transformamos a sua operação em uma decisão inteligente.
           </p>
         </div>
 
