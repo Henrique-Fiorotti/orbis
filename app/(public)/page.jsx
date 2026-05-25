@@ -434,8 +434,6 @@ export default function HomePage() {
         </div>
       </section >
 
-      <Separator orientation="horizontal" /> {/* Linha que separa */}
-
       {/* Planos */}
       <div id="planos" className={styles.gridBackgroundSection} style={DEFERRED_SECTION_STYLE}>
         <RevealOnScroll>
