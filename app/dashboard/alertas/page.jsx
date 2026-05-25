@@ -715,12 +715,12 @@ function HistoricoManutencaoPanel({
   )
 }
 
-function GrupoTiposResumo({ tipos = [] }) {
+function GrupoTiposResumo({ tipos = [], compact = false }) {
   const visiveis = tipos.slice(0, 2)
   const restante = Math.max(tipos.length - visiveis.length, 0)
 
   return (
-    <div className="flex min-w-[180px] flex-wrap items-center gap-1.5">
+    <div className={`flex flex-wrap items-center ${compact ? "min-w-0 gap-1" : "min-w-[180px] gap-1.5"}`}>
       {visiveis.map((tipo) => (
         <TipoAlertaBadge key={tipo} value={tipo} />
       ))}
@@ -752,6 +752,60 @@ function GrupoSensoresResumo({ sensores = [] }) {
         <span className="text-xs text-muted-foreground">+{restante} sensor(es)</span>
       ) : null}
     </div>
+  )
+}
+
+function GrupoAlertasMobileCard({ grupo, onOpen }) {
+  const sensoresVisiveis = (grupo.sensores ?? []).slice(0, 2)
+  const sensoresRestantes = Math.max((grupo.sensores?.length ?? 0) - sensoresVisiveis.length, 0)
+  const ocorrencias = Math.max(Number(grupo.totalOcorrencias) || Number(grupo.totalAlertas) || 1, 1)
+
+  return (
+    <button
+      type="button"
+      className="flex min-h-[110px] w-full cursor-pointer flex-col justify-between gap-3 rounded-lg border bg-card p-2 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      onClick={() => onOpen(grupo)}
+    >
+      <span className="flex min-w-0 items-start justify-between gap-2">
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="line-clamp-2 text-lg font-medium leading-tight text-foreground">
+            {grupo.maquinaNome || "Maquina nao informada"}
+          </span>
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted-foreground">
+            {sensoresVisiveis.length ? (
+              sensoresVisiveis.map((sensor) => (
+                <span key={sensor} className="max-w-full truncate">
+                  {sensor}
+                </span>
+              ))
+            ) : (
+              <span>Sensor nao informado</span>
+            )}
+            {sensoresRestantes > 0 ? <span>+{sensoresRestantes} sensor(es)</span> : null}
+          </span>
+        </span>
+        <ChevronRightIcon className="mt-1 size-4 shrink-0 text-muted-foreground" />
+      </span>
+
+      <span className="flex flex-col gap-2">
+        <span className="flex flex-wrap items-center gap-1">
+          <GrupoTiposResumo tipos={grupo.tipos} compact />
+        </span>
+
+        <span className="flex flex-wrap items-center justify-between gap-1">
+          <span className="flex flex-wrap items-center gap-1">
+            <StatusAlertaBadge value={grupo.principalStatus} />
+            <Badge variant="outline" className={`px-1.5 text-xs ${grupo.temRepetidos ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
+              {ocorrencias} ocorr.
+            </Badge>
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <ClockIcon className="size-3" />
+            {tempoRelativo(grupo.ultimaOcorrenciaEm)}
+          </span>
+        </span>
+      </span>
+    </button>
   )
 }
 
@@ -902,7 +956,19 @@ function AlertasTable({ data, onVerGrupo }) {
 
   return (
     <>
-      <div className="min-h-[500px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
+      <div className="flex flex-col gap-4 md:hidden">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => (
+            <GrupoAlertasMobileCard key={row.id} grupo={row.original} onOpen={onVerGrupo} />
+          ))
+        ) : (
+          <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+            Nenhuma maquina com alertas encontrada.
+          </div>
+        )}
+      </div>
+
+      <div className="hidden min-h-[500px] overflow-auto rounded-lg border bg-card md:block dark:border-gray-700! dark:bg-[#0F172A]">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
