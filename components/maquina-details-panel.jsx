@@ -555,15 +555,11 @@ function PredicaoResumoCard({ maquina, summary, predicaoAlertas, predicaoRisco, 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <ActivityIcon className="size-4 shrink-0 text-[#5E17EB]" />
             <Label>Resumo preditivo</Label>
           </div>
           <p className="mt-2 text-sm font-semibold leading-snug">{summary.title}</p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{summary.description}</p>
         </div>
-        <Badge variant="outline" className="shrink-0 border-[#5E17EB]/35 bg-background/80 px-2 text-xs text-[#7c3aed] dark:text-[#A780FF]">
-          {summary.badge}
-        </Badge>
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">

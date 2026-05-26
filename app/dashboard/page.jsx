@@ -391,7 +391,7 @@ function TechnicianDashboard() {
                   />
                 ))
               ) : (
-                <EmptyPanel title="Sem alertas pendentes" description="Quando novos alertas forem gerados, eles aparecem aqui para triagem." />
+                <EmptyPanel title="Sem alertas pendentes" description="Quando novos alertas forem gerados, eles aparecem aqui para atendimento." />
               )}
             </div>
           </section>

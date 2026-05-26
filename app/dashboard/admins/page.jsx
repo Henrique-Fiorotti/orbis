@@ -37,7 +37,7 @@ import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { SiteHeader } from "@/components/site-header"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DirectoryTableSkeleton } from "@/components/dashboard-skeletons"
+import { DirectoryPageSkeleton } from "@/components/dashboard-skeletons"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { TablePagination } from "@/components/table-pagination"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
@@ -706,6 +706,15 @@ export default function AdminsPage() {
     return null
   }
 
+  if (loadingInicial) {
+    return (
+      <>
+        <SiteHeader />
+        <DirectoryPageSkeleton label="Carregando administradores" metricCards={0} showAction={canManageAdmins} />
+      </>
+    )
+  }
+
   function getResumoCardClass(filtro) {
     return `${cardResumoBaseClass} ${
       filtroResumo === filtro
@@ -766,9 +775,7 @@ export default function AdminsPage() {
           />
         </div>
 
-        {loadingInicial ? (
-          <DirectoryTableSkeleton label="Carregando administradores" />
-        ) : errorSemDados ? (
+        {errorSemDados ? (
           <StatePanel message={mensagem || "Não foi possível carregar os administradores."} tone="error" />
         ) : (
           <>
