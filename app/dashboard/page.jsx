@@ -75,9 +75,12 @@ const MACHINE_ALERT_STATUS_LABEL = {
 }
 
 const technicianCardClass =
-  "@container/card bg-linear-to-t from-primary/5 to-card shadow-xs transition-colors hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 dark:bg-card"
+  "@container/card shadow-xs transition-colors hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 dark:bg-card"
 
 const technicianPanelClass =
+  "rounded-xl border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]"
+
+const technicianPriorityPanelClass =
   "rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]"
 
 function normalizeText(value) {
@@ -296,13 +299,16 @@ function TechnicianDashboard() {
     () => alertas.filter((alerta) => ["ATIVO", "EM_ANDAMENTO"].includes(alerta.status) && alerta.severidade === "ALTA"),
     [alertas]
   )
-  const resolvidosHoje = React.useMemo(() => {
-    const resolvidos = alertas.filter((alerta) => alerta.status === "RESOLVIDO" && isToday(alerta.atualizadoEm || alerta.ultimaOcorrenciaEm || alerta.criadoEm))
-    const resolvidosComResponsavel = resolvidos.filter((alerta) => alerta.tecnicoId || alerta.tecnicoNome)
-    return resolvidosComResponsavel.length > 0
-      ? resolvidosComResponsavel.filter((alerta) => isAlertAssignedToUser(alerta, usuario)).length
-      : resolvidos.length
-  }, [alertas, usuario])
+  const atendimentosConcluidos = React.useMemo(
+    () => alertas
+      .filter((alerta) => alerta.status === "RESOLVIDO" && (isAlertAssignedToUser(alerta, usuario) || atendimentosIniciados.has(alerta.id)))
+      .sort((a, b) => getAlertTimestamp(b) - getAlertTimestamp(a)),
+    [alertas, atendimentosIniciados, usuario]
+  )
+  const resolvidosHoje = React.useMemo(
+    () => atendimentosConcluidos.filter((alerta) => isToday(alerta.atualizadoEm || alerta.ultimaOcorrenciaEm || alerta.criadoEm)).length,
+    [atendimentosConcluidos]
+  )
   const maquinasSobAtencao = React.useMemo(() => {
     const grouped = new Map()
 
@@ -418,7 +424,7 @@ function TechnicianDashboard() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.75fr)]">
-          <section id="tour-technician-priority" className={technicianPanelClass}>
+          <section id="tour-technician-priority" className={technicianPriorityPanelClass}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Prioridade agora</h2>
@@ -469,7 +475,35 @@ function TechnicianDashboard() {
               </div>
             </section>
 
-            <section id="tour-technician-operation" className={technicianPanelClass}>
+            <section id="tour-technician-completed" className={technicianPanelClass}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Atendimentos concluídos</h2>
+                  <p className="text-sm text-muted-foreground">Histórico de alertas resolvidos por você.</p>
+                </div>
+                <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
+                  {atendimentosConcluidos.length} concluído(s)
+                </Badge>
+              </div>
+              <Separator className="my-4" />
+              <div className="flex max-h-[360px] flex-col gap-3 overflow-y-auto pr-1">
+                {atendimentosConcluidos.length > 0 ? (
+                  atendimentosConcluidos.map((alerta) => (
+                    <AlertListItem
+                      key={alerta.id}
+                      alerta={alerta}
+                      onOpen={abrirAlerta}
+                      onStart={solicitarInicioAtendimento}
+                      starting={startingAlertId === alerta.id}
+                    />
+                  ))
+                ) : (
+                  <EmptyPanel title="Nenhum atendimento concluído" description="Quando você resolver alertas, o histórico aparece aqui." />
+                )}
+              </div>
+            </section>
+
+            {/* <section id="tour-technician-operation" className={technicianPanelClass}>
               <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Sinais da operação</h2>
               <p className="text-sm text-muted-foreground">Resumo rápido para orientar sua ronda.</p>
               <Separator className="my-4" />
@@ -483,7 +517,7 @@ function TechnicianDashboard() {
                   <p className="mt-1 text-2xl font-semibold text-[#3B2867] dark:text-white">{sensoresOffline}</p>
                 </div>
               </div>
-            </section>
+            </section> */}
           </div>
         </div>
 
@@ -536,7 +570,7 @@ function TechnicianDashboard() {
 
       <Dialog open={Boolean(alertaConfirmacao)} onOpenChange={alternarConfirmacaoAtendimento}>
         <DialogContent className="w-[calc(100vw-2rem)] max-w-md gap-0 overflow-hidden p-0 sm:max-w-lg" showCloseButton={!startingAlertId}>
-          <DialogHeader className="border-b bg-linear-to-br from-primary/10 via-card to-card px-5 py-5 pr-12">
+          <DialogHeader className="border-b bg-card px-5 py-5 pr-12">
             <div className="flex items-start gap-3">
               <span className="mt-0.5 inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200">
                 <WrenchIcon className="size-5" />

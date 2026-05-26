@@ -113,6 +113,14 @@ const TECHNICIAN_TOUR_STEPS = [
     align: "start",
   },
   {
+    target: "#tour-technician-completed",
+    title: "Atendimentos concluÃ­dos",
+    description:
+      "Consulte o histÃ³rico de alertas resolvidos por vocÃª e abra os detalhes quando precisar revisar um atendimento.",
+    side: "top",
+    align: "start",
+  },
+  {
     target: "#tour-technician-operation",
     title: "Sinais da operação",
     description:
