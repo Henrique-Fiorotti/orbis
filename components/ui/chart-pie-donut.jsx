@@ -25,6 +25,7 @@ import {
 import { ChartHelp } from "@/components/ui/chart-help"
 import { getDistribuicaoStatusMaquinas } from "@/lib/orbis-dashboard"
 import { withMaquinaAlertasStatus } from "@/lib/maquinas-table"
+import { cn } from "@/lib/utils"
 
 export const description = "Distribuição operacional das máquinas"
 
@@ -57,7 +58,7 @@ function EmptyState({ message, tone = "muted" }) {
   )
 }
 
-export function ChartPieDonut() {
+export function ChartPieDonut({ className = "mx-4 flex w-auto flex-col lg:mx-6 xl:mx-0 xl:mr-6 xl:w-2/6" }) {
   const { status, mensagem, maquinas: dashboardMaquinas, errors } = useDashboardCharts()
   const { maquinas: maquinasCadastradas, status: maquinasStatus, mensagem: maquinasMensagem } = useMaquinas()
   const { alertas, status: alertasStatus } = useAlertas()
@@ -85,13 +86,13 @@ export function ChartPieDonut() {
       <DashboardChartSkeleton
         variant="donut"
         centeredHeader
-        className="mx-4 flex w-auto flex-col lg:mx-6 xl:mx-0 xl:mr-6 xl:w-2/6"
+        className={className}
       />
     )
   }
 
   return (
-    <Card className="mx-4 flex w-auto flex-col lg:mx-6 xl:mx-0 xl:mr-6 xl:w-2/6">
+    <Card className={cn("flex flex-col", className)}>
       <CardHeader className="items-center pb-0">
         <CardTitle>Status das máquinas</CardTitle>
         <CardDescription>{loading ? "Carregando distribuição..." : `Atualizado em ${hoje}`}</CardDescription>

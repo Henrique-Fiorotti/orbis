@@ -505,14 +505,14 @@ function AdminDashboard() {
                 <div className="w-full min-w-0 px-4 lg:px-6 xl:w-4/6">
                   <ChartAreaInteractive />
                 </div>
-                <ChartPieDonut />
+                <ChartRadarDots className="mx-4 flex w-auto flex-col lg:mx-6 xl:mx-0 xl:mr-6 xl:w-2/6" />
               </div>
 
               <div
                 id="tour-charts-secondary"
                 className="flex w-full flex-col gap-4 px-4 lg:gap-6 lg:px-6 xl:flex-row"
               >
-                <ChartRadarDots />
+                <ChartPieDonut className="w-full xl:w-1/3" />
                 <ChartBarStacked />
               </div>
 
