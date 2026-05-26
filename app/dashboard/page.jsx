@@ -7,7 +7,6 @@ import {
   AlertTriangleIcon,
   ArrowRightIcon,
   CheckCircle2Icon,
-  CircleDotIcon,
   ClockIcon,
   ClipboardListIcon,
   GaugeIcon,
@@ -28,6 +27,8 @@ import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { ChartPieDonut } from "@/components/ui/chart-pie-donut"
 import { ChartBarStacked } from "@/components/ui/chart-bar-stacked"
@@ -72,6 +73,12 @@ const MACHINE_ALERT_STATUS_LABEL = {
   COM_ALERTA: "Com alerta",
   EM_ANDAMENTO: "Em andamento",
 }
+
+const technicianCardClass =
+  "@container/card bg-linear-to-t from-primary/5 to-card shadow-xs transition-colors hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 dark:bg-card"
+
+const technicianPanelClass =
+  "rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]"
 
 function normalizeText(value) {
   return String(value ?? "")
@@ -121,27 +128,49 @@ function isAlertAssignedToUser(alerta, usuario) {
   return false
 }
 
-function MetricCard({ icon: Icon, label, value, sub, tone = "purple" }) {
-  const iconClass = {
-    purple: "border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200",
-    red: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
-    yellow: "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300",
-    green: "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
+function MetricCard({ icon: Icon, label, value, sub, badge, tone = "purple", featured = false }) {
+  const toneConfig = {
+    purple: {
+      icon: "border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200",
+      badge: "border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200",
+    },
+    red: {
+      icon: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
+      badge: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
+    },
+    yellow: {
+      icon: "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300",
+      badge: "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300",
+    },
+    green: {
+      icon: "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
+      badge: "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
+    },
   }[tone]
 
   return (
-    <div className="flex min-h-[118px] flex-col justify-between rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-muted-foreground">{label}</span>
-        <span className={`inline-flex size-9 items-center justify-center rounded-lg border ${iconClass}`}>
+    <Card className={`${technicianCardClass} ${featured ? "border-[#5E17EB]! border-2" : ""}`}>
+      <CardHeader className="min-h-[88px]">
+        <CardDescription className={featured ? "" : "text-black! dark:text-white!"}>{label}</CardDescription>
+        <CardTitle className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${featured ? "text-[#5E17EB]!" : ""}`}>
+          {value}
+        </CardTitle>
+        <CardAction>
+          <span className={`inline-flex size-9 items-center justify-center rounded-lg border ${toneConfig.icon}`}>
+            <Icon className="size-4" />
+          </span>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        <div className="line-clamp-1 flex items-center gap-2 font-medium">
+          {sub}
           <Icon className="size-4" />
-        </span>
-      </div>
-      <div className="flex flex-col gap-1">
-        <span className="text-3xl font-semibold text-[#3B2867] dark:text-white">{value}</span>
-        <span className="text-xs text-muted-foreground">{sub}</span>
-      </div>
-    </div>
+        </div>
+        <Badge variant="outline" className={toneConfig.badge}>
+          {badge}
+        </Badge>
+      </CardFooter>
+    </Card>
   )
 }
 
@@ -163,7 +192,7 @@ function SeveridadeBadge({ value }) {
 
 function EmptyPanel({ title, description }) {
   return (
-    <div className="flex min-h-[180px] flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 px-4 text-center">
+    <div className="flex min-h-[180px] flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 px-4 text-center">
       <ClipboardListIcon className="mb-3 size-8 text-muted-foreground" />
       <p className="text-sm font-medium text-foreground">{title}</p>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
@@ -173,7 +202,7 @@ function EmptyPanel({ title, description }) {
 
 function AlertListItem({ alerta, onOpen, onStart, starting }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+    <div className="flex flex-col gap-3 rounded-xl border bg-card/80 p-3 shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB]/70 dark:border-gray-700! dark:bg-[#0F172A]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -211,7 +240,7 @@ function MachineAttentionItem({ item, onOpen }) {
   return (
     <button
       type="button"
-      className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors hover:border-[#5E17EB] dark:border-gray-700! dark:bg-[#0F172A]"
+      className="flex min-h-[118px] cursor-pointer flex-col justify-between gap-3 rounded-xl border bg-card/80 p-3 text-left shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB] hover:ring-[#5E17EB]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 dark:border-gray-700! dark:bg-[#0F172A]"
       onClick={() => onOpen(item)}
     >
       <div className="flex items-start justify-between gap-3">
@@ -247,6 +276,7 @@ function TechnicianDashboard() {
   const { maquinas, status: maquinasStatus, recarregarMaquinas } = useMaquinas()
   const { sensores, status: sensoresStatus, recarregarSensores } = useSensores()
   const [startingAlertId, setStartingAlertId] = React.useState(null)
+  const [alertaConfirmacao, setAlertaConfirmacao] = React.useState(null)
   const [atendimentosIniciados, setAtendimentosIniciados] = React.useState(() => new Set())
 
   const loading = alertasStatus === "loading" || maquinasStatus === "loading" || sensoresStatus === "loading"
@@ -325,11 +355,32 @@ function TechnicianDashboard() {
     router.push(`/dashboard/alertas?maquina=${encodeURIComponent(item.maquinaNome)}`)
   }
 
+  function solicitarInicioAtendimento(alerta) {
+    setAlertaConfirmacao(alerta)
+  }
+
+  function alternarConfirmacaoAtendimento(open) {
+    if (!open && !startingAlertId) {
+      setAlertaConfirmacao(null)
+    }
+  }
+
+  function abrirDetalhesConfirmacao() {
+    if (!alertaConfirmacao) {
+      return
+    }
+
+    const alerta = alertaConfirmacao
+    setAlertaConfirmacao(null)
+    abrirAlerta(alerta)
+  }
+
   async function iniciarAtendimento(alerta) {
     try {
       setStartingAlertId(alerta.id)
       await atualizarStatus(alerta.id, "EM_ANDAMENTO")
       setAtendimentosIniciados((current) => new Set(current).add(alerta.id))
+      setAlertaConfirmacao(null)
       toast.success("Atendimento iniciado.")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o atendimento.")
@@ -359,15 +410,15 @@ function TechnicianDashboard() {
           />
         </div>
 
-        <div id="tour-technician-metrics" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={WrenchIcon} label="Meus atendimentos" value={meusAtendimentos.length} sub="Alertas assumidos por você" tone="purple" />
-          <MetricCard icon={ClipboardListIcon} label="Pendentes" value={alertasAtivos.length} sub="Disponíveis para iniciar" tone="red" />
-          <MetricCard icon={CheckCircle2Icon} label="Resolvidos hoje" value={resolvidosHoje} sub="Finalizados no dia" tone="green" />
-          <MetricCard icon={ShieldAlertIcon} label="Críticos" value={criticos.length} sub="Severidade alta em aberto" tone="yellow" />
+        <div id="tour-technician-metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard icon={WrenchIcon} label="Meus atendimentos" value={meusAtendimentos.length} sub="Alertas assumidos por você" badge="Sua fila" tone="purple" featured />
+          <MetricCard icon={ClipboardListIcon} label="Pendentes" value={alertasAtivos.length} sub="Disponíveis para iniciar" badge="Aguardando" tone="red" />
+          <MetricCard icon={CheckCircle2Icon} label="Resolvidos hoje" value={resolvidosHoje} sub="Finalizados no dia" badge="Hoje" tone="green" />
+          <MetricCard icon={ShieldAlertIcon} label="Críticos" value={criticos.length} sub="Severidade alta em aberto" badge="Alta prioridade" tone="yellow" />
         </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.75fr)]">
-          <section id="tour-technician-priority" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+          <section id="tour-technician-priority" className={technicianPanelClass}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Prioridade agora</h2>
@@ -386,7 +437,7 @@ function TechnicianDashboard() {
                     key={alerta.id}
                     alerta={alerta}
                     onOpen={abrirAlerta}
-                    onStart={iniciarAtendimento}
+                    onStart={solicitarInicioAtendimento}
                     starting={startingAlertId === alerta.id}
                   />
                 ))
@@ -397,7 +448,7 @@ function TechnicianDashboard() {
           </section>
 
           <div className="flex flex-col gap-4">
-            <section id="tour-technician-active" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+            <section id="tour-technician-active" className={technicianPanelClass}>
               <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Meus alertas em andamento</h2>
               <p className="text-sm text-muted-foreground">Atendimentos vinculados ao seu usuário.</p>
               <Separator className="my-4" />
@@ -408,7 +459,7 @@ function TechnicianDashboard() {
                       key={alerta.id}
                       alerta={alerta}
                       onOpen={abrirAlerta}
-                      onStart={iniciarAtendimento}
+                      onStart={solicitarInicioAtendimento}
                       starting={startingAlertId === alerta.id}
                     />
                   ))
@@ -418,16 +469,16 @@ function TechnicianDashboard() {
               </div>
             </section>
 
-            <section id="tour-technician-operation" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+            <section id="tour-technician-operation" className={technicianPanelClass}>
               <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Sinais da operação</h2>
               <p className="text-sm text-muted-foreground">Resumo rápido para orientar sua ronda.</p>
               <Separator className="my-4" />
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border bg-muted/20 p-3">
+                <div className="rounded-xl border bg-card/70 p-3 shadow-xs ring-1 ring-foreground/5">
                   <span className="text-xs text-muted-foreground">Máquinas cadastradas</span>
                   <p className="mt-1 text-2xl font-semibold text-[#3B2867] dark:text-white">{maquinas.length}</p>
                 </div>
-                <div className="rounded-lg border bg-muted/20 p-3">
+                <div className="rounded-xl border bg-card/70 p-3 shadow-xs ring-1 ring-foreground/5">
                   <span className="text-xs text-muted-foreground">Sensores offline</span>
                   <p className="mt-1 text-2xl font-semibold text-[#3B2867] dark:text-white">{sensoresOffline}</p>
                 </div>
@@ -436,7 +487,7 @@ function TechnicianDashboard() {
           </div>
         </div>
 
-        <section id="tour-technician-machines" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+        <section id="tour-technician-machines" className={technicianPanelClass}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Máquinas sob atenção</h2>
@@ -459,21 +510,21 @@ function TechnicianDashboard() {
         </section>
 
         <section id="tour-technician-shortcuts" className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/alertas")}>
+          <Button variant="outline" className="h-auto cursor-pointer justify-between rounded-xl bg-card p-4 shadow-xs transition-colors hover:border-[#5E17EB] hover:text-[#5E17EB]" onClick={() => router.push("/dashboard/alertas")}>
             <span className="flex items-center gap-2">
               <AlertTriangleIcon className="size-4 text-[#5E17EB]" />
               Alertas em aberto
             </span>
             <ArrowRightIcon className="size-4" />
           </Button>
-          <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/maquinas")}>
+          <Button variant="outline" className="h-auto cursor-pointer justify-between rounded-xl bg-card p-4 shadow-xs transition-colors hover:border-[#5E17EB] hover:text-[#5E17EB]" onClick={() => router.push("/dashboard/maquinas")}>
             <span className="flex items-center gap-2">
               <WashingMachineIcon className="size-4 text-[#5E17EB]" />
               Máquinas
             </span>
             <ArrowRightIcon className="size-4" />
           </Button>
-          <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/sensores")}>
+          <Button variant="outline" className="h-auto cursor-pointer justify-between rounded-xl bg-card p-4 shadow-xs transition-colors hover:border-[#5E17EB] hover:text-[#5E17EB]" onClick={() => router.push("/dashboard/sensores")}>
             <span className="flex items-center gap-2">
               <NfcIcon className="size-4 text-[#5E17EB]" />
               Sensores
@@ -482,6 +533,88 @@ function TechnicianDashboard() {
           </Button>
         </section>
       </div>
+
+      <Dialog open={Boolean(alertaConfirmacao)} onOpenChange={alternarConfirmacaoAtendimento}>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md gap-0 overflow-hidden p-0 sm:max-w-lg" showCloseButton={!startingAlertId}>
+          <DialogHeader className="border-b bg-linear-to-br from-primary/10 via-card to-card px-5 py-5 pr-12">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200">
+                <WrenchIcon className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <DialogTitle className="text-lg font-semibold leading-snug text-[#3B2867] dark:text-white">
+                  Deseja iniciar esse atendimento?
+                </DialogTitle>
+                <DialogDescription className="mt-1 leading-relaxed">
+                  Confirme para assumir o alerta e movê-lo para seus atendimentos em andamento.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {alertaConfirmacao ? (
+            <div className="flex flex-col gap-3 px-5 py-4">
+              <div className="overflow-hidden rounded-xl border bg-card shadow-xs ring-1 ring-foreground/5">
+                <div className="border-l-4 border-[#5E17EB] p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[#3B2867] dark:text-white">
+                        {alertaConfirmacao.maquinaNome}
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">{alertaConfirmacao.sensorNome}</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full border bg-muted/30 px-2 py-1 text-xs text-muted-foreground">
+                      <ClockIcon className="size-3.5" />
+                      {tempoRelativo(getAlertDate(alertaConfirmacao))}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <SeveridadeBadge value={alertaConfirmacao.severidade} />
+                    <StatusBadge status={alertaConfirmacao.status} />
+                  </div>
+
+                  <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-foreground">
+                    {alertaConfirmacao.mensagem}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="flex w-full cursor-pointer items-center justify-between rounded-xl border bg-card px-4 py-3 text-left text-sm font-medium text-[#3B2867] shadow-xs transition-colors hover:border-[#5E17EB] hover:text-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 disabled:cursor-not-allowed disabled:opacity-60 dark:text-white dark:hover:text-purple-200"
+                onClick={abrirDetalhesConfirmacao}
+                disabled={Boolean(startingAlertId)}
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <AlertTriangleIcon className="size-4 shrink-0 text-[#5E17EB]" />
+                  Ver detalhes antes de assumir
+                </span>
+                <ArrowRightIcon className="size-4 shrink-0" />
+              </button>
+            </div>
+          ) : null}
+
+          <DialogFooter className="mx-0 mb-0 rounded-none border-t bg-muted/35 p-4 sm:justify-end">
+            <Button
+              variant="outline"
+              className="w-full cursor-pointer sm:w-auto"
+              onClick={() => alternarConfirmacaoAtendimento(false)}
+              disabled={Boolean(startingAlertId)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="w-full cursor-pointer sm:w-auto"
+              onClick={() => alertaConfirmacao && iniciarAtendimento(alertaConfirmacao)}
+              disabled={!alertaConfirmacao || Boolean(startingAlertId)}
+            >
+              {startingAlertId ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
+              Iniciar atendimento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <DashboardTour variant="tecnico" />
     </>
