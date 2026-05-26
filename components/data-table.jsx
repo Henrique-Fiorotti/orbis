@@ -16,7 +16,7 @@ import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, Dr
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MaquinaDetailsPanel, MaquinaImagePreview } from "@/components/maquina-details-panel"
+import { MaquinaDetailsPanel } from "@/components/maquina-details-panel"
 import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import { TablePagination } from "@/components/table-pagination"
 import { CircleCheckIcon, CircleMinusIcon, AlertTriangleIcon, ImageIcon, EllipsisVerticalIcon, ChevronDownIcon, PlusIcon, ArrowRightIcon, SlidersHorizontalIcon, WashingMachineIcon } from "lucide-react"
@@ -670,20 +670,17 @@ function MachineDetailsDrawer({
           "overflow-hidden",
           isMobile
             ? "!inset-0 !mt-0 !h-[100dvh] !max-h-[100dvh] !w-full !max-w-none !rounded-none !border-0"
-            : "!w-[420px] !max-w-[420px] sm:!max-w-[420px]"
+            : "!w-[560px] !max-w-[560px] sm:!max-w-[560px]"
         )}
       >
-        <div className="px-4 pt-4">
-          <MaquinaImagePreview maquina={item} />
-        </div>
         <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.nome}</DrawerTitle>
-          <DrawerDescription>{item.setor} - {item.tipo}</DrawerDescription>
+          <DrawerTitle>Detalhes da máquina</DrawerTitle>
+          <DrawerDescription>Veja o resumo operacional e execute ações rápidas.</DrawerDescription>
         </DrawerHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 text-sm">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2 text-sm">
           <MaquinaDetailsPanel maquina={item} sensores={sensores} sensorError={sensorError} />
         </div>
-        <DrawerFooter>
+        <DrawerFooter className="border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
           <Button className="cursor-pointer" onClick={() => onViewAlerts?.(item)}>Ver alertas desta máquina</Button>
           <DrawerClose asChild><Button variant="outline">Fechar</Button></DrawerClose>
         </DrawerFooter>

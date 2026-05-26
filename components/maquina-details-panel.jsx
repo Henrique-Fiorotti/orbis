@@ -9,6 +9,7 @@ import {
   CircleCheckIcon,
   CircleHelpIcon,
   CircleMinusIcon,
+  GaugeIcon,
   ImageIcon,
   Maximize2Icon,
   ThermometerIcon,
@@ -1343,6 +1344,31 @@ function DetailsAccordionSection({ title, icon: Icon, meta, open, onToggle, chil
   )
 }
 
+function MachineDetailItem({ label, value, children }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1 rounded-lg border bg-background px-3 py-3">
+      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
+      <div className="min-w-0 text-sm font-medium text-foreground">
+        {children ?? value ?? "-"}
+      </div>
+    </div>
+  )
+}
+
+function MachineDetailSection({ title, icon: Icon, children }) {
+  return (
+    <section className="grid gap-3">
+      <div className="flex items-center gap-2 text-sm font-semibold text-[#3B2867] dark:text-white">
+        <Icon className="size-4" />
+        {title}
+      </div>
+      <div className="grid gap-3">
+        {children}
+      </div>
+    </section>
+  )
+}
+
 function IntegridadeBar({ value, inactive = false }) {
   const normalizedValue = Math.round(Number(value))
 
@@ -1377,32 +1403,34 @@ export function MaquinaImagePreview({ maquina, className = "" }) {
 
   return (
     <>
-      <div className={cn("relative aspect-video w-full overflow-hidden rounded-lg border bg-muted", className)}>
-        {imageSrc ? (
-          <>
-            <img src={imageSrc} alt={imageAlt} className="size-full object-contain" />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="icon-sm"
-                  className="absolute left-2 top-2 shadow-sm"
-                  onClick={() => setFullImageOpen(true)}
-                >
-                  <Maximize2Icon className="size-4" />
-                  <span className="sr-only">Ver foto inteira</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Ver foto inteira</TooltipContent>
-            </Tooltip>
-          </>
-        ) : (
+      {imageSrc ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              data-sheet-drag-ignore
+              className={cn(
+                "group relative aspect-video w-full overflow-hidden rounded-lg border bg-muted text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                className
+              )}
+              onClick={() => setFullImageOpen(true)}
+            >
+              <img src={imageSrc} alt={imageAlt} className="size-full object-contain transition-transform duration-200 group-hover:scale-[1.015]" />
+              <span className="absolute left-2 top-2 flex size-8 items-center justify-center rounded-md bg-background/90 text-foreground shadow-sm backdrop-blur">
+                <Maximize2Icon className="size-4" />
+                <span className="sr-only">Ver foto inteira</span>
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">Ver foto inteira</TooltipContent>
+        </Tooltip>
+      ) : (
+        <div className={cn("relative aspect-video w-full overflow-hidden rounded-lg border bg-muted", className)}>
           <div className="flex size-full items-center justify-center text-muted-foreground">
             <ImageIcon className="size-8" />
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <Dialog open={fullImageOpen} onOpenChange={setFullImageOpen}>
         <DialogContent className="w-[min(960px,calc(100vw-2rem))]! max-w-none! overflow-hidden p-0">
@@ -1430,6 +1458,45 @@ export function MaquinaUploadImagePreview({ src, alt = "Imagem da máquina", cla
           <ImageIcon className="size-8" />
         </div>
       )}
+    </div>
+  )
+}
+
+function MaquinaSummaryCard({ maquina, statusExibicao, integridadeExibicao, totalSensores }) {
+  const roundedIntegridade = Math.round(Number(integridadeExibicao))
+  const integridadeLabel = Number.isFinite(roundedIntegridade)
+    ? `${roundedIntegridade}%`
+    : "--"
+  const integridadeBadgeClass = !Number.isFinite(roundedIntegridade)
+    ? "text-muted-foreground"
+    : roundedIntegridade < 50
+      ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+      : roundedIntegridade < 75
+        ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300"
+        : "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
+
+  return (
+    <div className="rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-2 md:p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+      <div className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[7rem_minmax(0,1fr)_auto]">
+        <MaquinaImagePreview maquina={maquina} className="!size-24 !aspect-square shrink-0 !rounded-xl !border-2 !border-border/80 shadow-sm sm:!size-28" />
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-col gap-1">
+            <h2 className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">{maquina.nome}</h2>
+            <p className="line-clamp-2 text-sm text-muted-foreground">{maquina.setor} - {maquina.tipo}</p>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <CriticidadeBadge value={maquina.criticidade} />
+            <Badge variant="outline" className="hidden md:flex px-3 text-muted-foreground">
+              {totalSensores} {totalSensores === 1 ? "sensor" : "sensores"}
+            </Badge>
+            <Badge variant="outline" className={cn("px-3", integridadeBadgeClass)}>
+              {integridadeLabel}
+            </Badge>
+            <StatusBadge value={statusExibicao} />
+          </div>
+        </div>
+    
+      </div>
     </div>
   )
 }
@@ -1577,51 +1644,52 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
   }
 
   return (
-    <div className={cn("flex flex-col gap-4 text-sm mt-5", className)}>
+    <div className={cn("flex flex-col gap-5 text-sm", className)}>
       {sensorError ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
           {sensorError}
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1">
-          <Label>Importância</Label>
-          <CriticidadeBadge value={maquina.criticidade} />
+      <MaquinaSummaryCard
+        maquina={maquina}
+        statusExibicao={statusExibicao}
+        integridadeExibicao={integridadeExibicao}
+        totalSensores={totalSensores}
+      />
+
+      <MachineDetailSection title="Resumo operacional" icon={GaugeIcon}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <MachineDetailItem label="Importância">
+            <CriticidadeBadge value={maquina.criticidade} />
+          </MachineDetailItem>
+          <MachineDetailItem label="Status">
+            <StatusBadge value={statusExibicao} />
+          </MachineDetailItem>
+          <MachineDetailItem label="Integridade">
+            <IntegridadeBar value={integridadeExibicao} inactive={statusExibicao === "SEM_SENSOR"} />
+          </MachineDetailItem>
+          <MachineDetailItem label="Estabilidade">
+            <span className="flex items-center gap-1.5">
+              <span>{formatMetric(maquina.scoreEstabilidade, "%", 0)}</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Como a estabilidade da máquina é calculada"
+                    className="flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <CircleHelpIcon className="size-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={6} className="max-w-64 text-left leading-relaxed">
+                  O score de estabilidade da máquina considera a condição operacional consolidada, incluindo integridade e comportamento das leituras dos sensores. Quanto mais perto de 100%, mais estável ela está.
+                </TooltipContent>
+              </Tooltip>
+            </span>
+          </MachineDetailItem>
         </div>
-        <div className="flex flex-col gap-1">
-          <Label>Status</Label>
-          <StatusBadge value={statusExibicao} />
-        </div>
-        <div className="col-span-2 flex flex-col gap-2">
-          <Label>Integridade</Label>
-          <IntegridadeBar value={integridadeExibicao} inactive={statusExibicao === "SEM_SENSOR"} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1.5">
-            <Label>Estabilidade</Label>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Como a estabilidade da máquina é calculada"
-                  className="flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <CircleHelpIcon className="size-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" sideOffset={6} className="max-w-64 text-left leading-relaxed">
-                O score de estabilidade da máquina considera a condição operacional consolidada, incluindo integridade e comportamento das leituras dos sensores. Quanto mais perto de 100%, mais estável ela está.
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <span className="font-medium">{formatMetric(maquina.scoreEstabilidade, "%", 0)}</span>
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label>Sensores vinculados</Label>
-          <span className="font-medium">{totalSensores}</span>
-        </div>
-      </div>
+      </MachineDetailSection>
 
       <div className="flex flex-col gap-2">
         <DetailsAccordionSection
