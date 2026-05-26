@@ -7,6 +7,7 @@ import {
   AlertTriangleIcon,
   ArrowRightIcon,
   CheckCircle2Icon,
+  ChevronRightIcon,
   ClockIcon,
   ClipboardListIcon,
   GaugeIcon,
@@ -28,7 +29,7 @@ import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Separator } from "@/components/ui/separator"
 import { ChartPieDonut } from "@/components/ui/chart-pie-donut"
 import { ChartBarStacked } from "@/components/ui/chart-bar-stacked"
@@ -62,6 +63,14 @@ const STATUS_LABEL = {
   EM_ANDAMENTO: "Em andamento",
   RESOLVIDO: "Resolvido",
   CANCELADO: "Cancelado",
+}
+
+const TIPO_ALERTA_LABEL = {
+  LIMITE_ULTRAPASSADO: "Limite ultrapassado",
+  TENDENCIA_CURTA: "Tendência curta",
+  TENDENCIA_LONGA: "Tendência longa",
+  DEGRADACAO_ACELERADA: "Degradação acelerada",
+  INSTABILIDADE: "Instabilidade",
 }
 
 const MACHINE_ALERT_STATUS_BADGE_CLASS = {
@@ -193,6 +202,24 @@ function SeveridadeBadge({ value }) {
   )
 }
 
+function TipoAlertaBadge({ value }) {
+  return (
+    <Badge variant="outline" className="border-purple-200 bg-purple-50 px-1.5 font-normal text-[#3B2867] dark:border-primary/40 dark:bg-primary/10 dark:text-purple-200">
+      {TIPO_ALERTA_LABEL[value] ?? value ?? "Alerta"}
+    </Badge>
+  )
+}
+
+function OcorrenciasBadge({ value }) {
+  const count = Math.max(Number(value) || 1, 1)
+
+  return (
+    <Badge variant="outline" className="border-slate-200 bg-slate-50 px-1.5 font-normal text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
+      {count} ocorr.
+    </Badge>
+  )
+}
+
 function EmptyPanel({ title, description }) {
   return (
     <div className="flex min-h-[180px] flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 px-4 text-center">
@@ -203,37 +230,81 @@ function EmptyPanel({ title, description }) {
   )
 }
 
-function AlertListItem({ alerta, onOpen, onStart, starting }) {
+function AlertListItem({ alerta, onOpen }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card/80 p-3 shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB]/70 dark:border-gray-700! dark:bg-[#0F172A]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <button
+      type="button"
+      className="group flex min-h-[116px] w-full cursor-pointer flex-col justify-between rounded-xl border bg-card p-3 text-left shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB] hover:ring-[#5E17EB]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 dark:border-gray-700! dark:bg-[#0F172A]"
+      onClick={() => onOpen(alerta)}
+    >
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-[#3B2867] dark:text-white">{alerta.maquinaNome}</span>
-            <SeveridadeBadge value={alerta.severidade} />
-            <StatusBadge status={alerta.status} />
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">{alerta.sensorNome}</p>
+          <p className="truncate text-base font-semibold leading-tight text-[#3B2867] dark:text-white">{alerta.maquinaNome}</p>
+          <p className="mt-1 truncate text-sm text-muted-foreground">{alerta.sensorNome}</p>
+        </div>
+        <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-[#5E17EB]" />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <TipoAlertaBadge value={alerta.tipo} />
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={alerta.status} />
+          <OcorrenciasBadge value={alerta.ocorrencias} />
         </div>
         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
           <ClockIcon className="size-3.5" />
           {tempoRelativo(getAlertDate(alerta))}
         </span>
       </div>
+    </button>
+  )
+}
 
-      <p className="line-clamp-2 text-sm leading-relaxed text-foreground">{alerta.mensagem}</p>
+function PriorityAlertCard({ alerta, imageSrc, onOpen }) {
+  return (
+    <div className="flex min-h-[150px] flex-col gap-4 rounded-xl border bg-card p-3 shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB]/70 sm:min-h-[132px] sm:flex-row sm:items-center dark:border-gray-700! dark:bg-[#0F172A]">
+      <div className="flex aspect-[4/3] w-full shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-slate-300 bg-slate-400 text-sm font-medium text-slate-950 shadow-inner sm:size-[116px]">
+        {imageSrc ? (
+          <img src={imageSrc} alt="" className="size-full object-cover" />
+        ) : (
+          <span>FOTO</span>
+        )}
+      </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {alerta.status === "ATIVO" ? (
-          <Button size="sm" className="cursor-pointer" onClick={() => onStart(alerta)} disabled={starting}>
-            {starting ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
-            Iniciar atendimento
+      <div className="flex min-w-0 flex-1 flex-col  gap-2 justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-lg font-semibold leading-tight text-[#3B2867] dark:text-white">{alerta.maquinaNome}</p>
+              <p className="mt-1 truncate text-sm text-muted-foreground">{alerta.sensorNome}</p>
+            </div>
+            <span className="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground">
+              <ClockIcon className="size-4" />
+              {tempoRelativo(getAlertDate(alerta))}
+            </span>
+          </div>
+        </div>
+
+
+
+        <div className="mt-auto flex justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <TipoAlertaBadge value={alerta.tipo} />
+            <StatusBadge status={alerta.status} />
+            <OcorrenciasBadge value={alerta.ocorrencias} />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="cursor-pointer rounded-full border-[#8B00FF] px-5 text-[#7C00FF] hover:border-[#7C00FF] hover:bg-[#7C00FF]/10 hover:text-[#6B00E8]"
+            onClick={() => onOpen(alerta)}
+          >
+            Ver Detalhes &gt;
           </Button>
-        ) : null}
-        <Button variant="outline" size="sm" className="cursor-pointer hover:border-[#5E17EB] hover:text-[#5E17EB]" onClick={() => onOpen(alerta)}>
-          Ver detalhes
-          <ArrowRightIcon className="ml-1 size-4" />
-        </Button>
+        </div>
       </div>
     </div>
   )
@@ -243,7 +314,7 @@ function MachineAttentionItem({ item, onOpen }) {
   return (
     <button
       type="button"
-      className="flex min-h-[118px] cursor-pointer flex-col justify-between gap-3 rounded-xl border bg-card/80 p-3 text-left shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB] hover:ring-[#5E17EB]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 dark:border-gray-700! dark:bg-[#0F172A]"
+      className="group flex min-h-[118px] cursor-pointer flex-col justify-between gap-3 rounded-xl border bg-card/80 p-3 text-left shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB] hover:ring-[#5E17EB]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 dark:border-gray-700! dark:bg-[#0F172A]"
       onClick={() => onOpen(item)}
     >
       <div className="flex items-start justify-between gap-3">
@@ -251,11 +322,14 @@ function MachineAttentionItem({ item, onOpen }) {
           <p className="truncate text-sm font-semibold text-[#3B2867] dark:text-white">{item.maquinaNome}</p>
           <p className="text-xs text-muted-foreground">{item.sensores.size} sensor(es) em atenção</p>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <Badge variant="outline" className={`px-1.5 ${MACHINE_ALERT_STATUS_BADGE_CLASS[item.statusMaquina] ?? MACHINE_ALERT_STATUS_BADGE_CLASS.COM_ALERTA}`}>
-            {MACHINE_ALERT_STATUS_LABEL[item.statusMaquina] ?? "Com alerta"}
-          </Badge>
-          <SeveridadeBadge value={item.severidade} />
+        <div className="flex shrink-0 items-start gap-2">
+          <div className="flex flex-col items-end gap-1">
+            <Badge variant="outline" className={`px-1.5 ${MACHINE_ALERT_STATUS_BADGE_CLASS[item.statusMaquina] ?? MACHINE_ALERT_STATUS_BADGE_CLASS.COM_ALERTA}`}>
+              {MACHINE_ALERT_STATUS_LABEL[item.statusMaquina] ?? "Com alerta"}
+            </Badge>
+            <SeveridadeBadge value={item.severidade} />
+          </div>
+          <ChevronRightIcon className="mt-0.5 size-4 text-muted-foreground transition-colors group-hover:text-[#5E17EB]" />
         </div>
       </div>
       <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
@@ -279,7 +353,7 @@ function TechnicianDashboard() {
   const { maquinas, status: maquinasStatus, recarregarMaquinas } = useMaquinas()
   const { sensores, status: sensoresStatus, recarregarSensores } = useSensores()
   const [startingAlertId, setStartingAlertId] = React.useState(null)
-  const [alertaConfirmacao, setAlertaConfirmacao] = React.useState(null)
+  const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
   const [atendimentosIniciados, setAtendimentosIniciados] = React.useState(() => new Set())
 
   const loading = alertasStatus === "loading" || maquinasStatus === "loading" || sensoresStatus === "loading"
@@ -309,6 +383,27 @@ function TechnicianDashboard() {
     () => atendimentosConcluidos.filter((alerta) => isToday(alerta.atualizadoEm || alerta.ultimaOcorrenciaEm || alerta.criadoEm)).length,
     [atendimentosConcluidos]
   )
+  const imagensMaquinas = React.useMemo(() => {
+    const map = new Map()
+
+    for (const maquina of maquinas) {
+      const image = maquina.imagem || maquina.caminhoImagem
+
+      if (!image) {
+        continue
+      }
+
+      if (maquina.id !== null && maquina.id !== undefined) {
+        map.set(`id:${String(maquina.id)}`, image)
+      }
+
+      if (maquina.nome) {
+        map.set(`nome:${normalizeText(maquina.nome)}`, image)
+      }
+    }
+
+    return map
+  }, [maquinas])
   const maquinasSobAtencao = React.useMemo(() => {
     const grouped = new Map()
 
@@ -322,10 +417,12 @@ function TechnicianDashboard() {
         statusMaquina: "EM_ANDAMENTO",
         severidade: alerta.severidade,
         ultimaOcorrenciaEm: getAlertDate(alerta),
+        alertas: [],
       }
 
       existing.total += 1
       existing.sensores.add(alerta.sensorNome)
+      existing.alertas.push(alerta)
 
       if (alerta.status === "ATIVO") {
         existing.statusMaquina = "COM_ALERTA"
@@ -349,36 +446,41 @@ function TechnicianDashboard() {
   }, [alertas])
   const sensoresOffline = React.useMemo(() => sensores.filter((sensor) => sensor.status === "OFFLINE").length, [sensores])
 
+  function getAlertaMaquinaImagem(alerta) {
+    if (alerta?.maquinaId !== null && alerta?.maquinaId !== undefined) {
+      const byId = imagensMaquinas.get(`id:${String(alerta.maquinaId)}`)
+
+      if (byId) {
+        return byId
+      }
+    }
+
+    return imagensMaquinas.get(`nome:${normalizeText(alerta?.maquinaNome)}`) || ""
+  }
+
   async function refreshAll() {
     await Promise.allSettled([recarregarAlertas(), recarregarMaquinas(), recarregarSensores()])
   }
 
   function abrirAlerta(alerta) {
-    router.push(`/dashboard/alertas?alertaId=${encodeURIComponent(alerta.id)}`)
+    setAlertaSelecionado(alerta)
   }
 
   function abrirMaquina(item) {
-    router.push(`/dashboard/alertas?maquina=${encodeURIComponent(item.maquinaNome)}`)
-  }
+    const alerta = item?.alertas?.[0]
 
-  function solicitarInicioAtendimento(alerta) {
-    setAlertaConfirmacao(alerta)
-  }
-
-  function alternarConfirmacaoAtendimento(open) {
-    if (!open && !startingAlertId) {
-      setAlertaConfirmacao(null)
-    }
-  }
-
-  function abrirDetalhesConfirmacao() {
-    if (!alertaConfirmacao) {
+    if (alerta) {
+      setAlertaSelecionado(alerta)
       return
     }
 
-    const alerta = alertaConfirmacao
-    setAlertaConfirmacao(null)
-    abrirAlerta(alerta)
+    router.push(`/dashboard/alertas?maquina=${encodeURIComponent(item.maquinaNome)}`)
+  }
+
+  function alternarDetalhesAtendimento(open) {
+    if (!open && !startingAlertId) {
+      setAlertaSelecionado(null)
+    }
   }
 
   async function iniciarAtendimento(alerta) {
@@ -386,7 +488,7 @@ function TechnicianDashboard() {
       setStartingAlertId(alerta.id)
       await atualizarStatus(alerta.id, "EM_ANDAMENTO")
       setAtendimentosIniciados((current) => new Set(current).add(alerta.id))
-      setAlertaConfirmacao(null)
+      setAlertaSelecionado(null)
       toast.success("Atendimento iniciado.")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o atendimento.")
@@ -439,12 +541,11 @@ function TechnicianDashboard() {
             <div className="flex flex-col gap-3">
               {alertasPrioritarios.length > 0 ? (
                 alertasPrioritarios.map((alerta) => (
-                  <AlertListItem
+                  <PriorityAlertCard
                     key={alerta.id}
                     alerta={alerta}
+                    imageSrc={getAlertaMaquinaImagem(alerta)}
                     onOpen={abrirAlerta}
-                    onStart={solicitarInicioAtendimento}
-                    starting={startingAlertId === alerta.id}
                   />
                 ))
               ) : (
@@ -465,8 +566,6 @@ function TechnicianDashboard() {
                       key={alerta.id}
                       alerta={alerta}
                       onOpen={abrirAlerta}
-                      onStart={solicitarInicioAtendimento}
-                      starting={startingAlertId === alerta.id}
                     />
                   ))
                 ) : (
@@ -493,8 +592,6 @@ function TechnicianDashboard() {
                       key={alerta.id}
                       alerta={alerta}
                       onOpen={abrirAlerta}
-                      onStart={solicitarInicioAtendimento}
-                      starting={startingAlertId === alerta.id}
                     />
                   ))
                 ) : (
@@ -568,87 +665,92 @@ function TechnicianDashboard() {
         </section>
       </div>
 
-      <Dialog open={Boolean(alertaConfirmacao)} onOpenChange={alternarConfirmacaoAtendimento}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-md gap-0 overflow-hidden p-0 sm:max-w-lg" showCloseButton={!startingAlertId}>
-          <DialogHeader className="border-b bg-card px-5 py-5 pr-12">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200">
-                <WrenchIcon className="size-5" />
-              </span>
-              <div className="min-w-0">
-                <DialogTitle className="text-lg font-semibold leading-snug text-[#3B2867] dark:text-white">
-                  Deseja iniciar esse atendimento?
-                </DialogTitle>
-                <DialogDescription className="mt-1 leading-relaxed">
-                  Confirme para assumir o alerta e movê-lo para seus atendimentos em andamento.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
+      <Drawer direction="right" open={Boolean(alertaSelecionado)} onOpenChange={alternarDetalhesAtendimento}>
+        <DrawerContent className="w-[calc(100vw-1rem)] max-w-md overflow-hidden bg-background sm:max-w-lg">
+          {alertaSelecionado ? (
+            <>
+              <DrawerHeader className="border-b px-5 py-5 text-left">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <DrawerTitle className="truncate text-lg font-semibold text-[#3B2867] dark:text-white">
+                      {alertaSelecionado.maquinaNome}
+                    </DrawerTitle>
+                    <DrawerDescription className="mt-1">{alertaSelecionado.sensorNome}</DrawerDescription>
+                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full border bg-muted/30 px-2 py-1 text-xs text-muted-foreground">
+                    <ClockIcon className="size-3.5" />
+                    {tempoRelativo(getAlertDate(alertaSelecionado))}
+                  </span>
+                </div>
+              </DrawerHeader>
 
-          {alertaConfirmacao ? (
-            <div className="flex flex-col gap-3 px-5 py-4">
-              <div className="overflow-hidden rounded-xl border bg-card shadow-xs ring-1 ring-foreground/5">
-                <div className="border-l-4 border-[#5E17EB] p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[#3B2867] dark:text-white">
-                        {alertaConfirmacao.maquinaNome}
-                      </p>
-                      <p className="mt-1 text-sm text-muted-foreground">{alertaConfirmacao.sensorNome}</p>
-                    </div>
-                    <span className="inline-flex items-center gap-1 rounded-full border bg-muted/30 px-2 py-1 text-xs text-muted-foreground">
-                      <ClockIcon className="size-3.5" />
-                      {tempoRelativo(getAlertDate(alertaConfirmacao))}
-                    </span>
+              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
+                <div className="rounded-xl border bg-card p-4 shadow-xs ring-1 ring-foreground/5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <TipoAlertaBadge value={alertaSelecionado.tipo} />
+                    <StatusBadge status={alertaSelecionado.status} />
+                    <SeveridadeBadge value={alertaSelecionado.severidade} />
+                    <OcorrenciasBadge value={alertaSelecionado.ocorrencias} />
                   </div>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <SeveridadeBadge value={alertaConfirmacao.severidade} />
-                    <StatusBadge status={alertaConfirmacao.status} />
-                  </div>
-
-                  <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-foreground">
-                    {alertaConfirmacao.mensagem}
+                  <p className="mt-4 text-sm leading-relaxed text-foreground">
+                    {alertaSelecionado.mensagem}
                   </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border bg-card p-3 shadow-xs">
+                    <span className="text-xs text-muted-foreground">Última ocorrência</span>
+                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                      {tempoRelativo(getAlertDate(alertaSelecionado))}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border bg-card p-3 shadow-xs">
+                    <span className="text-xs text-muted-foreground">Ocorrências</span>
+                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                      {Math.max(Number(alertaSelecionado.ocorrencias) || 1, 1)}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border bg-card p-3 shadow-xs">
+                    <span className="text-xs text-muted-foreground">Status</span>
+                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                      {STATUS_LABEL[alertaSelecionado.status] ?? alertaSelecionado.status}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border bg-card p-3 shadow-xs">
+                    <span className="text-xs text-muted-foreground">Severidade</span>
+                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                      {alertaSelecionado.severidade ? alertaSelecionado.severidade.charAt(0) + alertaSelecionado.severidade.slice(1).toLowerCase() : "Média"}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="flex w-full cursor-pointer items-center justify-between rounded-xl border bg-card px-4 py-3 text-left text-sm font-medium text-[#3B2867] shadow-xs transition-colors hover:border-[#5E17EB] hover:text-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 disabled:cursor-not-allowed disabled:opacity-60 dark:text-white dark:hover:text-purple-200"
-                onClick={abrirDetalhesConfirmacao}
-                disabled={Boolean(startingAlertId)}
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <AlertTriangleIcon className="size-4 shrink-0 text-[#5E17EB]" />
-                  Ver detalhes antes de assumir
-                </span>
-                <ArrowRightIcon className="size-4 shrink-0" />
-              </button>
-            </div>
+              <DrawerFooter className="border-t bg-muted/35 p-4">
+                {alertaSelecionado.status === "ATIVO" ? (
+                  <Button
+                    className="w-full cursor-pointer"
+                    onClick={() => iniciarAtendimento(alertaSelecionado)}
+                    disabled={Boolean(startingAlertId)}
+                  >
+                    {startingAlertId ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
+                    Iniciar atendimento
+                  </Button>
+                ) : (
+                  <Button className="w-full" disabled>
+                    {alertaSelecionado.status === "RESOLVIDO" ? "Atendimento concluído" : "Atendimento em andamento"}
+                  </Button>
+                )}
+                <DrawerClose asChild>
+                  <Button variant="outline" className="w-full cursor-pointer" disabled={Boolean(startingAlertId)}>
+                    Fechar
+                  </Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </>
           ) : null}
-
-          <DialogFooter className="mx-0 mb-0 rounded-none border-t bg-muted/35 p-4 sm:justify-end">
-            <Button
-              variant="outline"
-              className="w-full cursor-pointer sm:w-auto"
-              onClick={() => alternarConfirmacaoAtendimento(false)}
-              disabled={Boolean(startingAlertId)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              className="w-full cursor-pointer sm:w-auto"
-              onClick={() => alertaConfirmacao && iniciarAtendimento(alertaConfirmacao)}
-              disabled={!alertaConfirmacao || Boolean(startingAlertId)}
-            >
-              {startingAlertId ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
-              Iniciar atendimento
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
       <DashboardTour variant="tecnico" />
     </>
