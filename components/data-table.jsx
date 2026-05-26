@@ -21,7 +21,7 @@ import { TableColumnHeaderMenu } from "@/components/table-column-header-menu"
 import { TablePagination } from "@/components/table-pagination"
 import { CircleCheckIcon, CircleMinusIcon, AlertTriangleIcon, ImageIcon, EllipsisVerticalIcon, ChevronDownIcon, PlusIcon, ArrowRightIcon, SlidersHorizontalIcon, WashingMachineIcon } from "lucide-react"
 import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
-import { cn, tempoRelativo } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import {
   MAQUINA_IMPORTANCIA_FILTER_OPTIONS as IMPORTANCIA_FILTER_OPTIONS,
   MAQUINA_IMPORTANCIA_SORT_OPTIONS as IMPORTANCIA_SORT_OPTIONS,
@@ -31,7 +31,6 @@ import {
   MAQUINA_STATUS_SORT_OPTIONS as STATUS_SORT_OPTIONS,
   getMaquinaIntegridadeExibicao,
   getMaquinaStatusExibicao,
-  getMaquinaUltimaLeituraExibicao,
   importanciaMaquinaSortFn,
   integridadeMaquinaFilterFn as integridadeFilterFn,
   selectMaquinaFilterFn as selectFilterFn,
@@ -344,26 +343,16 @@ function getTableColumns(canManageMaquinas, actions) {
       filterFn: integridadeFilterFn,
     },
     {
-      id: "ultimaLeituraEm",
-      accessorFn: getMaquinaUltimaLeituraExibicao,
-      header: "Último sinal",
-      cell: ({ row }) => (
-        <span className="text-muted-foreground text-sm">
-          {row.getValue("ultimaLeituraEm") ? tempoRelativo(row.getValue("ultimaLeituraEm")) : "Sem leitura"}
-        </span>
-      ),
-    },
-    {
       id: "actions",
       cell: ({ row }) => (
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
               <EllipsisVerticalIcon />
               <span className="sr-only">Abrir menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-32">
+          <DropdownMenuContent align="end" sideOffset={8} collisionPadding={{ top: 96, right: 16, bottom: 16, left: 16 }} className="z-[80] w-32">
             <DropdownMenuItem onSelect={() => runAfterCurrentOverlayCloses(() => actions.onViewDetails(row.original))}>
               Ver detalhes
             </DropdownMenuItem>
@@ -464,7 +453,7 @@ function MaquinasTable({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="relative z-0 h-14">
+                <TableRow key={row.id} className="h-14">
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                   ))}
