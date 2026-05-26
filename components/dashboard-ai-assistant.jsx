@@ -2022,7 +2022,7 @@ export function DashboardAiAssistant() {
                     <div
                       className={cn(
                         "relative flex shrink-0 items-center justify-end overflow-hidden transition-[width] duration-200 ease-out",
-                        hasTypedMessage ? "w-9" : "w-[70px]"
+                        hasTypedMessage ? "w-9" : "w-[66px]"
                       )}
                     >
                       <div
@@ -2062,7 +2062,7 @@ export function DashboardAiAssistant() {
                               type="button"
                               tabIndex={hasTypedMessage ? -1 : 0}
                               className={cn(
-                                "inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-foreground text-background shadow-sm transition hover:scale-105 hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50",
+                                "inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-foreground text-background ring-1 ring-black/5 transition-colors hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50 dark:ring-white/10",
                                 activeSpeechMode === "instant" && "animate-pulse"
                               )}
                               disabled={loading ? false : !speechSupported}
@@ -2086,7 +2086,7 @@ export function DashboardAiAssistant() {
                             type="submit"
                             tabIndex={hasTypedMessage ? 0 : -1}
                             className={cn(
-                              "absolute right-0 inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#7c3aed] text-white shadow-sm transition-all duration-200 ease-out hover:scale-105 hover:bg-[#6d28d9] disabled:cursor-not-allowed",
+                              "absolute right-0 inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#7c3aed] text-white transition-all duration-200 ease-out hover:bg-[#6d28d9] disabled:cursor-not-allowed",
                               hasTypedMessage
                                 ? cn("translate-y-0 scale-100", canSend ? "opacity-100" : "opacity-50")
                                 : "pointer-events-none translate-y-2 scale-75 opacity-0"
