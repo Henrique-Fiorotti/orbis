@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
+import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts"
 
 import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -30,13 +30,9 @@ import {
 import { ChartHelp } from "@/components/ui/chart-help"
 
 const chartConfig = {
-  limite: {
-    label: "Limite ultrapassado",
-    color: "var(--primary)",
-  },
-  tendencia: {
-    label: "Tendência / degradação",
-    color: "var(--chart-3)",
+  integridade: {
+    label: "Integridade média",
+    color: "var(--chart-5)",
   },
 }
 
@@ -84,7 +80,7 @@ function ChartMessage({ message, tone = "muted" }) {
 
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile()
-  const { status, mensagem, alertTrendData, errors, notices } = useDashboardCharts()
+  const { status, mensagem, integrityTrendData, errors, notices } = useDashboardCharts()
   const [timeRange, setTimeRange] = React.useState("7d")
 
   React.useEffect(() => {
@@ -94,19 +90,20 @@ export function ChartAreaInteractive() {
   }, [isMobile])
 
   const filteredData = React.useMemo(() => {
-    if (alertTrendData.length === 0) {
+    if (integrityTrendData.length === 0) {
       return []
     }
 
-    const referenceDate = parseChartDate(alertTrendData[alertTrendData.length - 1].date)
+    const referenceDate = parseChartDate(integrityTrendData[integrityTrendData.length - 1].date)
     const startDate = new Date(referenceDate)
     startDate.setUTCDate(referenceDate.getUTCDate() - getRangeDays(timeRange) + 1)
 
-    return alertTrendData.filter((item) => parseChartDate(item.date) >= startDate)
-  }, [alertTrendData, timeRange])
+    return integrityTrendData.filter((item) => parseChartDate(item.date) >= startDate)
+  }, [integrityTrendData, timeRange])
 
-  const loading = status === "loading" && alertTrendData.length === 0
-  const chartError = errors.alertTrend || (status === "error" && alertTrendData.length === 0 ? mensagem : "")
+  const hasVisibleData = filteredData.some((item) => Number.isFinite(Number(item.integridade)))
+  const loading = status === "loading" && integrityTrendData.length === 0
+  const chartError = errors.integrityTrend || (status === "error" && integrityTrendData.length === 0 ? mensagem : "")
 
   if (loading) {
     return <DashboardChartSkeleton />
@@ -115,7 +112,7 @@ export function ChartAreaInteractive() {
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Tendência de alertas</CardTitle>
+        <CardTitle>Gráfico de integridade</CardTitle>
         <CardDescription>{loading ? "Carregando série temporal..." : getRangeLabel(timeRange)}</CardDescription>
         <CardAction>
           <ToggleGroup
@@ -158,23 +155,19 @@ export function ChartAreaInteractive() {
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         {loading ? (
-          <ChartMessage message="Sincronizando alertas do dashboard com a API..." />
+          <ChartMessage message="Sincronizando histórico de integridade com a API..." />
         ) : chartError && filteredData.length === 0 ? (
           <ChartMessage message={chartError} tone="error" />
-        ) : filteredData.length === 0 ? (
-          <ChartMessage message="Não há dados suficientes para montar a tendência de alertas." />
+        ) : !hasVisibleData ? (
+          <ChartMessage message="Não há dados suficientes para montar o gráfico de integridade." />
         ) : (
           <>
             <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
               <AreaChart data={filteredData}>
                 <defs>
-                  <linearGradient id="fillLimite" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-limite)" stopOpacity={1} />
-                    <stop offset="95%" stopColor="var(--color-limite)" stopOpacity={0.1} />
-                  </linearGradient>
-                  <linearGradient id="fillTendencia" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-tendencia)" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="var(--color-tendencia)" stopOpacity={0.1} />
+                  <linearGradient id="fillIntegridade" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-integridade)" stopOpacity={0.85} />
+                    <stop offset="95%" stopColor="var(--color-integridade)" stopOpacity={0.08} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid vertical={false} />
@@ -191,6 +184,23 @@ export function ChartAreaInteractive() {
                     })
                   }
                 />
+                <YAxis
+                  width={34}
+                  domain={[0, 100]}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <ReferenceLine
+                  y={70}
+                  stroke="#f59e0b"
+                  strokeDasharray="4 4"
+                />
+                <ReferenceLine
+                  y={30}
+                  stroke="#ef4444"
+                  strokeDasharray="4 4"
+                />
                 <ChartTooltip
                   cursor={false}
                   content={
@@ -202,22 +212,27 @@ export function ChartAreaInteractive() {
                         })
                       }
                       indicator="dot"
+                      formatter={(value, name, item) => (
+                        <div className="flex min-w-36 items-center justify-between gap-3">
+                          <span className="text-muted-foreground">Integridade média</span>
+                          <span className="font-mono font-medium text-foreground tabular-nums">
+                            {Number(value).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%
+                          </span>
+                          {item?.payload?.maquinas ? (
+                            <span className="text-muted-foreground">{item.payload.maquinas} máquinas</span>
+                          ) : null}
+                        </div>
+                      )}
                     />
                   }
                 />
                 <Area
-                  dataKey="tendencia"
+                  dataKey="integridade"
                   type="natural"
-                  fill="url(#fillTendencia)"
-                  stroke="var(--color-tendencia)"
-                  stackId="a"
-                />
-                <Area
-                  dataKey="limite"
-                  type="natural"
-                  fill="url(#fillLimite)"
-                  stroke="var(--color-limite)"
-                  stackId="a"
+                  fill="url(#fillIntegridade)"
+                  stroke="var(--color-integridade)"
+                  strokeWidth={2}
+                  connectNulls
                 />
               </AreaChart>
             </ChartContainer>
@@ -227,8 +242,8 @@ export function ChartAreaInteractive() {
       </CardContent>
       <CardFooter className="justify-end border-t-0 bg-transparent px-4 pt-0 sm:px-6">
         <ChartHelp>
-          <span>Picos indicam dias com mais alertas. Use para investigar máquinas e setores que pioraram.</span>
-          {notices.alertTrend ? <span className="mt-2 block text-muted-foreground">{notices.alertTrend}</span> : null}
+          <span>A curva mostra a integridade média da frota a partir do histórico das máquinas. Linhas tracejadas marcam atenção em 70% e falha em 30%.</span>
+          {notices.integrityTrend ? <span className="mt-2 block text-muted-foreground">{notices.integrityTrend}</span> : null}
         </ChartHelp>
       </CardFooter>
     </Card>
