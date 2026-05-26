@@ -26,6 +26,12 @@ import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -59,6 +65,10 @@ const ORB_MIN_HEIGHT = 420
 const ORB_EXPANDED_MAX_WIDTH = 1120
 const ORB_EXPANDED_MAX_HEIGHT = 760
 const ORB_WINDOW_MARGIN = 16
+const ORB_MOBILE_FULLSCREEN_BREAKPOINT = 768
+const ORB_MOBILE_HISTORY_SWIPE_EDGE = 28
+const ORB_MOBILE_HISTORY_SWIPE_DISTANCE = 64
+const ORB_MOBILE_HISTORY_SWIPE_MAX_VERTICAL = 48
 const ORB_BUTTON_SIZE = 48
 const ORB_TRANSITION_MS = 460
 const ORB_BUTTON_RADIUS = 24
@@ -583,6 +593,10 @@ function getAssistantViewport() {
   }
 }
 
+function isMobileAssistantViewport() {
+  return getAssistantViewport().width <= ORB_MOBILE_FULLSCREEN_BREAKPOINT
+}
+
 function clampAssistantRect(rect) {
   const viewport = getAssistantViewport()
   const maxWidth = Math.max(240, viewport.width - ORB_WINDOW_MARGIN * 2)
@@ -597,6 +611,17 @@ function clampAssistantRect(rect) {
   const y = Math.min(Math.max(rect.y, ORB_WINDOW_MARGIN), maxY)
 
   return { x, y, width, height }
+}
+
+function getMobileFullscreenAssistantRect() {
+  const viewport = getAssistantViewport()
+
+  return {
+    x: 0,
+    y: 0,
+    width: viewport.width,
+    height: viewport.height,
+  }
 }
 
 
@@ -643,6 +668,10 @@ function getExpandedAssistantSize(viewport) {
 }
 
 function getExpandedAssistantRect() {
+  if (isMobileAssistantViewport()) {
+    return getMobileFullscreenAssistantRect()
+  }
+
   const viewport = getAssistantViewport()
   const size = getExpandedAssistantSize(viewport)
   const width = Math.min(size.width, viewport.width - ORB_WINDOW_MARGIN * 2)
@@ -717,6 +746,7 @@ export function DashboardAiAssistant() {
   const [open, setOpen] = React.useState(false)
   const [assistantPhase, setAssistantPhase] = React.useState("closed")
   const [fullscreen, setFullscreen] = React.useState(false)
+  const [mobileFullscreenLocked, setMobileFullscreenLocked] = React.useState(false)
   const [assistantRect, setAssistantRect] = React.useState(null)
   const [isMovingWindow, setIsMovingWindow] = React.useState(false)
   const [isResizingWindow, setIsResizingWindow] = React.useState(false)
@@ -757,6 +787,7 @@ export function DashboardAiAssistant() {
   const activeOrbButtonPositionRef = React.useRef(activeOrbButtonPosition)
   const skipNextOrbClickRef = React.useRef(false)
   const animationTimersRef = React.useRef([])
+  const mobileHistorySwipeRef = React.useRef(null)
 
   const trimmedInput = input.trim()
   const hasTypedMessage = trimmedInput.length > 0
@@ -777,9 +808,31 @@ export function DashboardAiAssistant() {
       ? ORB_TRANSITION_MS
       : ORB_TRANSITION_MS
   const assistantBorderRadius =
-    assistantPhase === "opening-start" || assistantPhase === "closing"
+    mobileFullscreenLocked
+      ? 0
+      : assistantPhase === "opening-start" || assistantPhase === "closing"
       ? ORB_BUTTON_RADIUS
       : ORB_PANEL_RADIUS
+
+  React.useEffect(() => {
+    function syncMobileFullscreenState() {
+      const isMobileViewport = isMobileAssistantViewport()
+
+      setMobileFullscreenLocked(isMobileViewport)
+
+      if (open && isMobileViewport) {
+        setFullscreen(true)
+        setAssistantRect(getMobileFullscreenAssistantRect())
+      }
+    }
+
+    syncMobileFullscreenState()
+    window.addEventListener("resize", syncMobileFullscreenState)
+
+    return () => {
+      window.removeEventListener("resize", syncMobileFullscreenState)
+    }
+  }, [open])
 
   React.useEffect(() => {
     activeOrbButtonPositionRef.current = activeOrbButtonPosition
@@ -863,6 +916,14 @@ export function DashboardAiAssistant() {
     }
 
     function handleResize() {
+      if (isMobileAssistantViewport()) {
+        setMobileFullscreenLocked(true)
+        setFullscreen(true)
+        setAssistantRect(getMobileFullscreenAssistantRect())
+        return
+      }
+
+      setMobileFullscreenLocked(false)
       setAssistantRect((current) => {
         if (!current) {
           return fullscreen ? getExpandedAssistantRect() : getCompactAssistantRect(activeOrbButtonPositionRef.current)
@@ -1186,6 +1247,7 @@ export function DashboardAiAssistant() {
     activeChatIdRef.current = null
     messagesRef.current = []
     setMessages([])
+    setHistorySidebarOpen(false)
   }
 
   function openChat(chatId) {
@@ -1208,6 +1270,7 @@ export function DashboardAiAssistant() {
     activeChatIdRef.current = chat.id
     messagesRef.current = chat.messages
     setMessages(chat.messages)
+    setHistorySidebarOpen(false)
   }
 
   function deleteChat(chatId) {
@@ -1424,6 +1487,57 @@ export function DashboardAiAssistant() {
     scrollElement.scrollTop += event.deltaY
   }
 
+  function beginMobileHistorySwipe(event) {
+    if (
+      !mobileFullscreenLocked ||
+      historySidebarOpen ||
+      event.button !== 0 ||
+      event.clientX > ORB_MOBILE_HISTORY_SWIPE_EDGE
+    ) {
+      return
+    }
+
+    if (event.target instanceof HTMLElement && event.target.closest("button,a,input,textarea,[role='menuitem']")) {
+      return
+    }
+
+    mobileHistorySwipeRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+    }
+  }
+
+  function handleMobileHistorySwipeMove(event) {
+    const swipe = mobileHistorySwipeRef.current
+
+    if (!swipe || swipe.pointerId !== event.pointerId) {
+      return
+    }
+
+    const deltaX = event.clientX - swipe.startX
+    const deltaY = event.clientY - swipe.startY
+
+    if (
+      deltaX >= ORB_MOBILE_HISTORY_SWIPE_DISTANCE &&
+      Math.abs(deltaY) <= ORB_MOBILE_HISTORY_SWIPE_MAX_VERTICAL
+    ) {
+      mobileHistorySwipeRef.current = null
+      event.preventDefault()
+      setHistorySidebarOpen(true)
+    }
+  }
+
+  function endMobileHistorySwipe(event) {
+    const swipe = mobileHistorySwipeRef.current
+
+    if (!swipe || swipe.pointerId !== event.pointerId) {
+      return
+    }
+
+    mobileHistorySwipeRef.current = null
+  }
+
   function clearAssistantAnimationTimers() {
     animationTimersRef.current.forEach((timerId) => window.clearTimeout(timerId))
     animationTimersRef.current = []
@@ -1439,9 +1553,11 @@ export function DashboardAiAssistant() {
   }
 
   function openAssistant(options = {}) {
-    const shouldOpenFullscreen = options.fullscreen === true
+    const shouldLockMobileFullscreen = isMobileAssistantViewport()
+    const shouldOpenFullscreen = options.fullscreen === true || shouldLockMobileFullscreen
 
     clearAssistantAnimationTimers()
+    setMobileFullscreenLocked(shouldLockMobileFullscreen)
 
     if (open && assistantReady) {
       setFullscreen(shouldOpenFullscreen)
@@ -1454,7 +1570,11 @@ export function DashboardAiAssistant() {
     setFullscreen(shouldOpenFullscreen)
     setHistorySidebarOpen(false)
     setAssistantPhase("opening-start")
-    setAssistantRect(getOrbButtonRect(activeOrbButtonPosition))
+    setAssistantRect(
+      shouldLockMobileFullscreen
+        ? getMobileFullscreenAssistantRect()
+        : getOrbButtonRect(activeOrbButtonPosition)
+    )
     setOpen(true)
 
     window.requestAnimationFrame(() => {
@@ -1489,7 +1609,7 @@ export function DashboardAiAssistant() {
   }
 
   function beginWindowMove(event) {
-    if (!fullscreen || event.button !== 0) {
+    if (!fullscreen || mobileFullscreenLocked || event.button !== 0) {
       return
     }
 
@@ -1511,7 +1631,7 @@ export function DashboardAiAssistant() {
   }
 
   function beginWindowResize(event) {
-    if (!fullscreen || event.button !== 0) {
+    if (!fullscreen || mobileFullscreenLocked || event.button !== 0) {
       return
     }
 
@@ -1665,6 +1785,10 @@ export function DashboardAiAssistant() {
   }
 
   function toggleFullscreen() {
+    if (mobileFullscreenLocked) {
+      return
+    }
+
     setFullscreen((current) => !current)
   }
 
@@ -1731,6 +1855,63 @@ export function DashboardAiAssistant() {
     )
   }
 
+  function renderHistoryPanel({ mobile = false } = {}) {
+    return (
+      <div className={cn("flex h-full flex-col", mobile ? "w-full" : "w-72")}>
+        <div className="border-b bg-background/70 px-3 py-3 dark:bg-white/[0.03]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="m-0 truncate text-sm font-semibold text-foreground">Historico</h3>
+              <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                {chatHistory.length} {chatHistory.length === 1 ? "conversa" : "conversas"}
+              </p>
+            </div>
+            {mobile ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="cursor-pointer p-0!"
+                onClick={() => setHistorySidebarOpen(false)}
+                aria-label="Fechar historico"
+              >
+                <XIcon className="size-4" />
+              </Button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            className="h-9 cursor-pointer justify-start rounded-[8px] shadow-sm"
+            onClick={startNewChat}
+          >
+            <PlusIcon className="size-4" />
+            Nova conversa
+          </Button>
+          <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+            {chatHistory.length > 0 ? (
+              <div className="grid gap-1">
+                {chatHistory.map((chat) => renderHistoryButton(chat, "sidebar"))}
+              </div>
+            ) : (
+              <div className="flex h-full min-h-36 flex-col items-center justify-center rounded-[8px] border border-dashed bg-background/60 px-4 text-center">
+                <MessageSquareIcon className="mb-2 size-5 text-muted-foreground" />
+                <p className="m-0 text-sm font-medium text-foreground">Sem conversas ainda</p>
+                <p className="m-0 mt-1 text-xs leading-relaxed text-muted-foreground">
+                  Suas conversas recentes aparecem aqui.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const orbButtonRect = orbDragRect ?? getOrbButtonRect(activeOrbButtonPosition)
   const orbTooltipSide = activeOrbButtonPosition.endsWith("left") ? "right" : "left"
   const placeholder = "Pergunte ao Orb "
@@ -1742,9 +1923,19 @@ export function DashboardAiAssistant() {
         <section
           aria-label="Orb"
           onWheelCapture={handleAssistantWheelCapture}
-          onPointerMove={handleWindowPointerMove}
-          onPointerUp={endWindowAction}
-          onPointerCancel={endWindowAction}
+          onPointerDownCapture={beginMobileHistorySwipe}
+          onPointerMove={(event) => {
+            handleMobileHistorySwipeMove(event)
+            handleWindowPointerMove(event)
+          }}
+          onPointerUp={(event) => {
+            endMobileHistorySwipe(event)
+            endWindowAction(event)
+          }}
+          onPointerCancel={(event) => {
+            endMobileHistorySwipe(event)
+            endWindowAction(event)
+          }}
           style={
             assistantRect
               ? {
@@ -1759,6 +1950,7 @@ export function DashboardAiAssistant() {
           }
           className={cn(
             "fixed z-40 flex origin-bottom-right transform-gpu flex-col overflow-hidden overscroll-contain border bg-white text-foreground opacity-100 shadow-2xl will-change-[left,top,width,height,border-radius] dark:bg-[#1e2939]",
+            mobileFullscreenLocked && "border-0 shadow-none",
             (isMovingWindow || isResizingWindow)
               ? "transition-none"
               : "transition-[left,top,width,height,border-radius,box-shadow] ease-[cubic-bezier(0.22,1,0.36,1)]",
@@ -1768,8 +1960,8 @@ export function DashboardAiAssistant() {
             className={cn(
               "flex items-center gap-3 border-b px-4 py-3 transition-opacity duration-150",
               assistantReady ? "opacity-100" : "pointer-events-none opacity-0",
-              fullscreen && "cursor-move select-none",
-              fullscreen && "touch-none",
+              fullscreen && !mobileFullscreenLocked && "cursor-move select-none",
+              fullscreen && !mobileFullscreenLocked && "touch-none",
               isMovingWindow && "cursor-grabbing"
             )}
             onPointerDown={beginWindowMove}
@@ -1806,16 +1998,18 @@ export function DashboardAiAssistant() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="cursor-pointer p-0!"
-              onClick={toggleFullscreen}
-              aria-label={fullscreen ? "Sair da tela cheia" : "Expandir IA"}
-            >
-              {fullscreen ? <Minimize2Icon className="size-4 " /> : <Maximize2Icon className="size-4" />}
-            </Button>
+            {!mobileFullscreenLocked ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="cursor-pointer p-0!"
+                onClick={toggleFullscreen}
+                aria-label={fullscreen ? "Sair da tela cheia" : "Expandir IA"}
+              >
+                {fullscreen ? <Minimize2Icon className="size-4 " /> : <Maximize2Icon className="size-4" />}
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="ghost"
@@ -1832,7 +2026,7 @@ export function DashboardAiAssistant() {
             "flex min-h-0 flex-1 transition-opacity duration-150",
             assistantReady ? "opacity-100" : "pointer-events-none opacity-0"
           )}>
-            {fullscreen ? (
+            {fullscreen && !mobileFullscreenLocked ? (
               <aside
                 className={cn(
                   "min-h-0 shrink-0 overflow-hidden border-r bg-muted/30 transition-[width,opacity] duration-300 ease-out dark:bg-[#172033]",
@@ -1840,46 +2034,7 @@ export function DashboardAiAssistant() {
                 )}
                 aria-hidden={!historySidebarOpen}
               >
-                <div className="flex h-full w-72 flex-col">
-                  <div className="border-b bg-background/70 px-3 py-3 dark:bg-white/[0.03]">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="m-0 truncate text-sm font-semibold text-foreground">Historico</h3>
-                        <p className="m-0 mt-0.5 text-xs text-muted-foreground">
-                          {chatHistory.length} {chatHistory.length === 1 ? "conversa" : "conversas"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
-                    <Button
-                      type="button"
-                      variant="default"
-                      size="sm"
-                      className="h-9 cursor-pointer justify-start rounded-[8px] shadow-sm"
-                      onClick={startNewChat}
-                    >
-                      <PlusIcon className="size-4" />
-                      Nova conversa
-                    </Button>
-                    <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-                      {chatHistory.length > 0 ? (
-                        <div className="grid gap-1">
-                          {chatHistory.map((chat) => renderHistoryButton(chat, "sidebar"))}
-                        </div>
-                      ) : (
-                        <div className="flex h-full min-h-36 flex-col items-center justify-center rounded-[8px] border border-dashed bg-background/60 px-4 text-center">
-                          <MessageSquareIcon className="mb-2 size-5 text-muted-foreground" />
-                          <p className="m-0 text-sm font-medium text-foreground">Sem conversas ainda</p>
-                          <p className="m-0 mt-1 text-xs leading-relaxed text-muted-foreground">
-                            Suas conversas recentes aparecem aqui.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {renderHistoryPanel()}
               </aside>
             ) : null}
 
@@ -2133,7 +2288,7 @@ export function DashboardAiAssistant() {
               </form>
             </div>
           </div>
-          {fullscreen ? (
+          {fullscreen && !mobileFullscreenLocked ? (
             <div
               className="absolute bottom-0 right-0 z-10 size-5 cursor-nwse-resize touch-none"
               onPointerDown={beginWindowResize}
@@ -2143,6 +2298,22 @@ export function DashboardAiAssistant() {
             </div>
           ) : null}
         </section>
+      ) : null}
+
+      {mobileFullscreenLocked ? (
+        <Drawer
+          open={historySidebarOpen}
+          onOpenChange={setHistorySidebarOpen}
+          direction="left"
+          shouldScaleBackground={false}
+        >
+          <DrawerContent className="h-[100dvh]! w-screen! max-w-none! rounded-none! border-0! bg-white p-0 dark:bg-[#1e2939]">
+            <DrawerHeader className="sr-only">
+              <DrawerTitle>Historico de conversas</DrawerTitle>
+            </DrawerHeader>
+            {renderHistoryPanel({ mobile: true })}
+          </DrawerContent>
+        </Drawer>
       ) : null}
 
       {!open && orbButtonVisible ? (
