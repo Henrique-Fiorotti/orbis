@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import Lenis from "lenis"
 import {
   AlertTriangleIcon,
+  ArrowUpIcon,
   AudioLinesIcon,
   FileTextIcon,
   Loader2Icon,
@@ -758,6 +759,7 @@ export function DashboardAiAssistant() {
   const animationTimersRef = React.useRef([])
 
   const trimmedInput = input.trim()
+  const hasTypedMessage = trimmedInput.length > 0
   const promptPayload = React.useMemo(
     () => buildPromptPayload(trimmedInput, pageContexts),
     [pageContexts, trimmedInput]
@@ -2017,47 +2019,90 @@ export function DashboardAiAssistant() {
                       aria-label="Pergunta para a IA"
                     />
 
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className={cn(
-                            "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition hover:bg-background/80 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
-                            activeSpeechMode === "transcribe" && "bg-[#7c3aed] text-white hover:bg-[#6d28d9]"
-                          )}
-                          disabled={loading || !speechSupported}
-                          onClick={() => startSpeechRecognition({ autoSend: false })}
-                          aria-label={activeSpeechMode === "transcribe" ? "Parar transcrição por voz" : "Transcrever pergunta por voz"}
-                          aria-pressed={activeSpeechMode === "transcribe"}
-                        >
-                          {activeSpeechMode === "transcribe" ? <MicOffIcon className="size-3.5" /> : <MicIcon className="size-3.5" />}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={8}>
-                        {speechSupported ? (activeSpeechMode === "transcribe" ? "Parar transcrição" : "Ditado para revisar") : "Voz indisponível"}
-                      </TooltipContent>
-                    </Tooltip>
+                    <div
+                      className={cn(
+                        "relative flex shrink-0 items-center justify-end overflow-hidden transition-[width] duration-200 ease-out",
+                        hasTypedMessage ? "w-9" : "w-[70px]"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "flex items-center gap-1.5 transition-all duration-200 ease-out",
+                          hasTypedMessage
+                            ? "pointer-events-none translate-x-3 scale-90 opacity-0"
+                            : "translate-x-0 scale-100 opacity-100"
+                        )}
+                      >
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              tabIndex={hasTypedMessage ? -1 : 0}
+                              className={cn(
+                                "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition hover:bg-background/80 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
+                                activeSpeechMode === "transcribe" && "bg-[#7c3aed] text-white hover:bg-[#6d28d9]"
+                              )}
+                              disabled={loading || !speechSupported}
+                              onClick={() => startSpeechRecognition({ autoSend: false })}
+                              aria-hidden={hasTypedMessage}
+                              aria-label={activeSpeechMode === "transcribe" ? "Parar transcrição por voz" : "Transcrever pergunta por voz"}
+                              aria-pressed={activeSpeechMode === "transcribe"}
+                            >
+                              {activeSpeechMode === "transcribe" ? <MicOffIcon className="size-3.5" /> : <MicIcon className="size-3.5" />}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={8}>
+                            {speechSupported ? (activeSpeechMode === "transcribe" ? "Parar transcrição" : "Ditado para revisar") : "Voz indisponível"}
+                          </TooltipContent>
+                        </Tooltip>
 
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className={cn(
-                            "inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-foreground text-background shadow-sm transition hover:scale-105 hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50",
-                            activeSpeechMode === "instant" && "animate-pulse"
-                          )}
-                          disabled={loading ? false : !speechSupported}
-                          onClick={loading ? cancelResponse : () => startSpeechRecognition({ autoSend: true })}
-                          aria-label={loading ? "Cancelar resposta" : "Conversar com o Orb por áudio"}
-                          aria-pressed={activeSpeechMode === "instant"}
-                        >
-                          {loading ? <SquareIcon className="size-3.5 fill-current" /> : <AudioLinesIcon className="size-4" />}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" sideOffset={8}>
-                        {loading ? "Cancelar resposta" : "Falar e enviar automaticamente"}
-                      </TooltipContent>
-                    </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              tabIndex={hasTypedMessage ? -1 : 0}
+                              className={cn(
+                                "inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-foreground text-background shadow-sm transition hover:scale-105 hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50",
+                                activeSpeechMode === "instant" && "animate-pulse"
+                              )}
+                              disabled={loading ? false : !speechSupported}
+                              onClick={loading ? cancelResponse : () => startSpeechRecognition({ autoSend: true })}
+                              aria-hidden={hasTypedMessage}
+                              aria-label={loading ? "Cancelar resposta" : "Conversar com o Orb por áudio"}
+                              aria-pressed={activeSpeechMode === "instant"}
+                            >
+                              {loading ? <SquareIcon className="size-3.5 fill-current" /> : <AudioLinesIcon className="size-4" />}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" sideOffset={8}>
+                            {loading ? "Cancelar resposta" : "Falar e enviar automaticamente"}
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="submit"
+                            tabIndex={hasTypedMessage ? 0 : -1}
+                            className={cn(
+                              "absolute right-0 inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#7c3aed] text-white shadow-sm transition-all duration-200 ease-out hover:scale-105 hover:bg-[#6d28d9] disabled:cursor-not-allowed",
+                              hasTypedMessage
+                                ? cn("translate-y-0 scale-100", canSend ? "opacity-100" : "opacity-50")
+                                : "pointer-events-none translate-y-2 scale-75 opacity-0"
+                            )}
+                            disabled={!canSend}
+                            aria-hidden={!hasTypedMessage}
+                            aria-label="Enviar mensagem"
+                          >
+                            <ArrowUpIcon className="size-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" sideOffset={8}>
+                          Enviar mensagem
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
 
                   {showInputMeta ? (
