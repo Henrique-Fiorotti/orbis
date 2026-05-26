@@ -242,6 +242,73 @@ export function DashboardTableSkeleton({ className }) {
   )
 }
 
+export function DirectoryTableSkeleton({ label = "Carregando diretorio", className }) {
+  const headerWidths = ["w-36", "w-28", "w-44", "w-24", "w-20", "w-8"]
+  const rows = Array.from({ length: 8 })
+
+  return (
+    <LoadingRegion label={label} className={cn("flex flex-col gap-4", className)}>
+      <div className="flex flex-col gap-4 md:hidden">
+        {rows.slice(0, 4).map((_, index) => (
+          <div
+            key={index}
+            className="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]"
+          >
+            <Skeleton className="size-14 shrink-0 rounded-full" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-5 w-40 max-w-full" />
+              <Skeleton className="h-4 w-56 max-w-full" />
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden min-h-[500px] overflow-hidden rounded-lg border bg-card md:block dark:border-gray-700! dark:bg-[#0F172A]">
+        <div className="grid grid-cols-[minmax(220px,1.4fr)_minmax(150px,1fr)_minmax(220px,1.2fr)_120px_110px_48px] items-center gap-4 border-b bg-muted px-4 py-3">
+          {headerWidths.map((width, index) => (
+            <Skeleton key={index} className={cn("h-4", width)} />
+          ))}
+        </div>
+        <div className="divide-y">
+          {rows.map((_, rowIndex) => (
+            <div
+              key={rowIndex}
+              className="grid grid-cols-[minmax(220px,1.4fr)_minmax(150px,1fr)_minmax(220px,1.2fr)_120px_110px_48px] items-center gap-4 px-4 py-4"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <Skeleton className="size-10 shrink-0 rounded-full" />
+                <div className="min-w-0 space-y-2">
+                  <Skeleton className="h-4 w-44 max-w-full" />
+                  <Skeleton className="h-3 w-32 max-w-full" />
+                </div>
+              </div>
+              <Skeleton className="h-4 w-32 max-w-full" />
+              <Skeleton className="h-4 w-52 max-w-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="size-8 rounded-md" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between px-1">
+        <Skeleton className="hidden h-4 w-56 lg:block" />
+        <div className="ml-auto flex items-center gap-3">
+          <Skeleton className="h-8 w-20 rounded-md" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="size-8 rounded-md" />
+          <Skeleton className="size-8 rounded-md" />
+        </div>
+      </div>
+    </LoadingRegion>
+  )
+}
+
 export function DashboardPageSkeleton() {
   return (
     <div className="@container/main flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
