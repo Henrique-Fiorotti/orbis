@@ -234,6 +234,36 @@ function MachineAttentionItem({ item, onOpen }) {
   )
 }
 
+function DashboardShortcuts({ id = "dashboard-shortcuts" }) {
+  const router = useRouter()
+
+  return (
+    <section id={id} className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/alertas")}>
+        <span className="flex items-center gap-2">
+          <AlertTriangleIcon className="size-4 text-[#5E17EB]" />
+          Alertas em aberto
+        </span>
+        <ArrowRightIcon className="size-4" />
+      </Button>
+      <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/maquinas")}>
+        <span className="flex items-center gap-2">
+          <WashingMachineIcon className="size-4 text-[#5E17EB]" />
+          Máquinas
+        </span>
+        <ArrowRightIcon className="size-4" />
+      </Button>
+      <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/sensores")}>
+        <span className="flex items-center gap-2">
+          <NfcIcon className="size-4 text-[#5E17EB]" />
+          Sensores
+        </span>
+        <ArrowRightIcon className="size-4" />
+      </Button>
+    </section>
+  )
+}
+
 function TechnicianDashboard() {
   const router = useRouter()
   const usuario = getAuthSessionUser()
@@ -391,7 +421,7 @@ function TechnicianDashboard() {
                   />
                 ))
               ) : (
-                <EmptyPanel title="Sem alertas pendentes" description="Quando novos alertas forem gerados, eles aparecem aqui para triagem." />
+                <EmptyPanel title="Sem alertas pendentes" description="Quando novos alertas forem gerados, eles aparecem aqui para atendimento." />
               )}
             </div>
           </section>
@@ -458,29 +488,7 @@ function TechnicianDashboard() {
           )}
         </section>
 
-        <section id="tour-technician-shortcuts" className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/alertas")}>
-            <span className="flex items-center gap-2">
-              <AlertTriangleIcon className="size-4 text-[#5E17EB]" />
-              Alertas em aberto
-            </span>
-            <ArrowRightIcon className="size-4" />
-          </Button>
-          <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/maquinas")}>
-            <span className="flex items-center gap-2">
-              <WashingMachineIcon className="size-4 text-[#5E17EB]" />
-              Máquinas
-            </span>
-            <ArrowRightIcon className="size-4" />
-          </Button>
-          <Button variant="outline" className="h-auto cursor-pointer justify-between p-4" onClick={() => router.push("/dashboard/sensores")}>
-            <span className="flex items-center gap-2">
-              <NfcIcon className="size-4 text-[#5E17EB]" />
-              Sensores
-            </span>
-            <ArrowRightIcon className="size-4" />
-          </Button>
-        </section>
+        <DashboardShortcuts id="tour-technician-shortcuts" />
       </div>
 
       <DashboardTour variant="tecnico" />
@@ -516,6 +524,9 @@ function AdminDashboard() {
                 <ChartBarStacked />
               </div>
 
+              <div className="px-4 lg:px-6">
+                <DashboardShortcuts />
+              </div>
             </DashboardChartsProvider>
           </div>
         </div>

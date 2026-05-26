@@ -901,7 +901,11 @@ export default function MaquinasPage() {
         )}
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
+          <SheetContent
+            side="right"
+            mobileSide="bottom"
+            className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!"
+          >
             {modoSheet === "ver" && maquinaDetalhada ? (
               <div key="ver" className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
                 <div className="shrink-0 px-4 pt-4 bg-gradient-to-b from-popover to-popover/80">
@@ -1008,7 +1012,7 @@ export default function MaquinasPage() {
             <DialogHeader>
               <DialogTitle>Confirmar exclusão</DialogTitle>
               <DialogDescription>
-                A máquina <strong>{maquinaExcluir?.nome}</strong> ficará inativa no banco de dados (active: false). Os sensores vinculados também ficarão inativos. Tem certeza que deseja excluir?
+                A máquina <strong>{maquinaExcluir?.nome}</strong> ficará inativa no banco de dados. Os sensores vinculados também ficarão inativos. Tem certeza que deseja excluir?
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
@@ -1017,12 +1021,7 @@ export default function MaquinasPage() {
                 <span className="font-medium">
                   {sensoresVinculadosExclusao > 0
                     ? `${sensoresVinculadosExclusao} sensor(es) vinculado(s) serão inativados.`
-                    : "Nenhum sensor vinculado foi informado pela API."}
-                </span>
-                <span>
-                  {sensoresVinculadosExclusao > 0
-                    ? "A exclusão será enviada para a API. O backend deve aplicar soft delete na máquina e inativar os sensores relacionados."
-                    : "A exclusão será enviada para a API e a máquina deve sair das listagens ativas."}
+                    : ""}
                 </span>
               </div>
             </div>

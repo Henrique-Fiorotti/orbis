@@ -103,6 +103,26 @@ const formVazio = {
   mensagem: "",
 }
 
+const ALERTA_TAB_STYLES = {
+  "em-aberto": {
+    trigger: "border-red-500/30! text-red-600! hover:border-red-500/50! hover:bg-red-500/10! hover:text-red-700! focus:border-red-500/60! focus:bg-red-500/10! focus:text-red-700! data-[state=active]:border-red-500/70! data-[state=active]:bg-red-500/15! data-[state=active]:text-red-700! data-[state=active]:shadow-none! dark:text-red-300! dark:hover:bg-red-500/15! dark:hover:text-red-200! dark:focus:bg-red-500/15! dark:focus:text-red-200! dark:data-[state=active]:bg-red-500/20! dark:data-[state=active]:text-red-200!",
+    badge: "border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!",
+  },
+  "em-andamento": {
+    trigger: "border-yellow-500/30! text-yellow-600! hover:border-yellow-500/50! hover:bg-yellow-500/10! hover:text-yellow-700! focus:border-yellow-500/60! focus:bg-yellow-500/10! focus:text-yellow-700! data-[state=active]:border-yellow-500/70! data-[state=active]:bg-yellow-500/15! data-[state=active]:text-yellow-700! data-[state=active]:shadow-none! dark:text-yellow-300! dark:hover:bg-yellow-500/15! dark:hover:text-yellow-200! dark:focus:bg-yellow-500/15! dark:focus:text-yellow-200! dark:data-[state=active]:bg-yellow-500/20! dark:data-[state=active]:text-yellow-200!",
+    badge: "border-yellow-200! bg-yellow-100! text-yellow-700! dark:border-yellow-900/60! dark:bg-yellow-950/30! dark:text-yellow-300!",
+  },
+  repetidos: {
+    trigger: "border-orange-500/30! text-orange-600! hover:border-orange-500/50! hover:bg-orange-500/10! hover:text-orange-700! focus:border-orange-500/60! focus:bg-orange-500/10! focus:text-orange-700! data-[state=active]:border-orange-500/70! data-[state=active]:bg-orange-500/15! data-[state=active]:text-orange-700! data-[state=active]:shadow-none! dark:text-orange-300! dark:hover:bg-orange-500/15! dark:hover:text-orange-200! dark:focus:bg-orange-500/15! dark:focus:text-orange-200! dark:data-[state=active]:bg-orange-500/20! dark:data-[state=active]:text-orange-200!",
+    badge: "border-orange-200! bg-orange-100! text-orange-700! dark:border-orange-900/60! dark:bg-orange-950/30! dark:text-orange-300!",
+  },
+  concluidos: {
+    trigger: "border-green-500/30! text-green-600! hover:border-green-500/50! hover:bg-green-500/10! hover:text-green-700! focus:border-green-500/60! focus:bg-green-500/10! focus:text-green-700! data-[state=active]:border-green-500/70! data-[state=active]:bg-green-500/15! data-[state=active]:text-green-700! data-[state=active]:shadow-none! dark:text-green-300! dark:hover:bg-green-500/15! dark:hover:text-green-200! dark:focus:bg-green-500/15! dark:focus:text-green-200! dark:data-[state=active]:bg-green-500/20! dark:data-[state=active]:text-green-200!",
+    badge: "border-green-200! bg-green-100! text-green-700! dark:border-green-900/60! dark:bg-green-950/30! dark:text-green-300!",
+  },
+}
+const ALERTA_TAB_TRIGGER_BASE = "h-8! px-4! py-1.5!"
+
 function SeveridadeBadge({ value }) {
   const styles = {
     ALTA: "bg-red-100 text-red-700 border-red-200 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
@@ -809,8 +829,72 @@ function GrupoAlertasMobileCard({ grupo, onOpen }) {
   )
 }
 
+function GrupoAlertaCard({ alerta, onVerAlerta, muted = false }) {
+  return (
+    <div className={`rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A] ${muted ? "opacity-65 transition-opacity hover:opacity-90" : ""}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <TipoAlertaBadge value={alerta.tipo} />
+        <StatusAlertaBadge value={alerta.status} />
+        <SeveridadeBadge value={alerta.severidade} />
+      </div>
+      <div className="mt-3 flex flex-col gap-1">
+        <span className="text-sm font-medium text-foreground">{alerta.sensorNome}</span>
+        <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{alerta.mensagem}</p>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <ClockIcon className="size-3" />
+            {tempoRelativo(getUltimaOcorrencia(alerta))}
+          </span>
+          <Badge variant="outline" className={`px-1.5 text-xs ${isAlertaRepetido(alerta) ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
+            {Math.max(Number(alerta.ocorrencias) || 1, 1)} ocorr.
+          </Badge>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="cursor-pointer hover:border-[#5E17EB] hover:bg-[#5E17EB] hover:text-white dark:hover:border-[#5E17EB] dark:hover:bg-[#5E17EB] dark:hover:text-white"
+          onClick={() => onVerAlerta(alerta)}
+        >
+          <EyeIcon className="mr-1 size-4" />
+          Ver detalhes
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function GrupoAlertasAccordion({ title, icon: Icon, badgeClassName, count, defaultOpen = false, children }) {
+  if (count === 0) {
+    return null
+  }
+
+  return (
+    <details open={defaultOpen} className="group rounded-lg border bg-card shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm font-medium text-foreground [&::-webkit-details-marker]:hidden">
+        <span className="flex min-w-0 items-center gap-2">
+          <Icon className="size-4 shrink-0" />
+          <span>{title}</span>
+          <Badge variant="outline" className={`px-1.5 text-xs ${badgeClassName}`}>
+            {count}
+          </Badge>
+        </span>
+        <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
+      </summary>
+      <div className="flex flex-col gap-3 border-t px-3 py-3">
+        {children}
+      </div>
+    </details>
+  )
+}
+
 function GrupoAlertasSheet({ grupo, open, onOpenChange, onVerAlerta }) {
   const alertas = grupo?.alertas ?? []
+  const alertasEmAberto = alertas.filter((alerta) => alerta.status === "ATIVO")
+  const alertasEmAndamento = alertas.filter((alerta) => alerta.status === "EM_ANDAMENTO")
+  const alertasResolvidos = alertas.filter((alerta) => alerta.status === "RESOLVIDO")
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -820,40 +904,40 @@ function GrupoAlertasSheet({ grupo, open, onOpenChange, onVerAlerta }) {
         </SheetHeader>
         <div data-lenis-prevent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
           <div className="flex flex-col gap-3">
-            {alertas.map((alerta) => (
-              <div key={alerta.id} className="rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
-                <div className="flex flex-wrap items-center gap-2">
-                  <TipoAlertaBadge value={alerta.tipo} />
-                  <StatusAlertaBadge value={alerta.status} />
-                  <SeveridadeBadge value={alerta.severidade} />
-                </div>
-                <div className="mt-3 flex flex-col gap-1">
-                  <span className="text-sm font-medium text-foreground">{alerta.sensorNome}</span>
-                  <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{alerta.mensagem}</p>
-                </div>
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                      <ClockIcon className="size-3" />
-                      {tempoRelativo(getUltimaOcorrencia(alerta))}
-                    </span>
-                    <Badge variant="outline" className={`px-1.5 text-xs ${isAlertaRepetido(alerta) ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
-                      {Math.max(Number(alerta.ocorrencias) || 1, 1)} ocorr.
-                    </Badge>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="cursor-pointer hover:border-[#5E17EB] hover:bg-[#5E17EB] hover:text-white dark:hover:border-[#5E17EB] dark:hover:bg-[#5E17EB] dark:hover:text-white"
-                    onClick={() => onVerAlerta(alerta)}
-                  >
-                    <EyeIcon className="mr-1 size-4" />
-                    Ver detalhes
-                  </Button>
-                </div>
-              </div>
-            ))}
+            <GrupoAlertasAccordion
+              title="Em aberto"
+              icon={ShieldAlertIcon}
+              count={alertasEmAberto.length}
+              defaultOpen
+              badgeClassName="border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+            >
+              {alertasEmAberto.map((alerta) => (
+                <GrupoAlertaCard key={alerta.id} alerta={alerta} onVerAlerta={onVerAlerta} />
+              ))}
+            </GrupoAlertasAccordion>
+
+            <GrupoAlertasAccordion
+              title="Em andamento"
+              icon={WrenchIcon}
+              count={alertasEmAndamento.length}
+              defaultOpen
+              badgeClassName="border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300"
+            >
+              {alertasEmAndamento.map((alerta) => (
+                <GrupoAlertaCard key={alerta.id} alerta={alerta} onVerAlerta={onVerAlerta} />
+              ))}
+            </GrupoAlertasAccordion>
+
+            <GrupoAlertasAccordion
+              title="Resolvidos"
+              icon={CircleCheckIcon}
+              count={alertasResolvidos.length}
+              badgeClassName="border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
+            >
+              {alertasResolvidos.map((alerta) => (
+                <GrupoAlertaCard key={alerta.id} alerta={alerta} onVerAlerta={onVerAlerta} muted />
+              ))}
+            </GrupoAlertasAccordion>
           </div>
 
           {alertas.length === 0 ? (
@@ -884,11 +968,6 @@ function AlertasTable({ data, onVerGrupo }) {
           <span className="text-xs text-muted-foreground">{row.original.totalAlertas} alerta(s)</span>
         </button>
       ),
-    },
-    {
-      id: "tipos",
-      header: "Tipos",
-      cell: ({ row }) => <GrupoTiposResumo tipos={row.original.tipos} />,
     },
     {
       accessorKey: "principalStatus",
@@ -1311,7 +1390,7 @@ export default function AlertasPage() {
             value={<MetricValue value={totalEmAberto} loading={loadingInicial} />}
             badge={loadingInicial ? "Atualizando" : "Abertos"}
             badgeClass={totalEmAberto > 0 ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300" : ""}
-            footer={loadingInicial ? "Conferindo alertas..." : `${totalEmAberto} aguardando triagem`}
+            footer={loadingInicial ? "Conferindo alertas..." : `${totalEmAberto} aguardando atendimento`}
             selected={filtroResumo === "em-aberto"}
             onClick={() => setFiltroResumo("em-aberto")}
           />
@@ -1320,7 +1399,7 @@ export default function AlertasPage() {
             icon={WrenchIcon}
             label="Em andamento"
             value={<MetricValue value={totalEmAndamento} loading={loadingInicial} />}
-            badge={loadingInicial ? "Atualizando" : "Em curso"}
+            badge={loadingInicial ? "Atualizando" : "Em manutenção"}
             badgeClass={totalEmAndamento > 0 ? "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300" : ""}
             footer={loadingInicial ? "Sincronizando status..." : `${totalEmAndamento} em atendimento`}
             selected={filtroResumo === "em-andamento"}
@@ -1361,18 +1440,18 @@ export default function AlertasPage() {
           <StatePanel message={mensagem || "Não foi possível carregar os alertas."} tone="error" />
         ) : (
           <Tabs value={filtroResumo} onValueChange={setFiltroResumo} className="min-w-0 w-full flex-col gap-4">
-            <TabsList className="w-full responsivo max-w-full justify-start overflow-x-auto overflow-y-hidden px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <TabsTrigger value="em-aberto" className="cursor-pointer shrink-0 flex-none">
-                Em aberto{emAberto.length > 0 && <Badge variant="secondary" className="ml-1.5 border-red-200! bg-red-100! text-red-700! dark:border-red-900/60! dark:bg-red-950/30! dark:text-red-300!">{emAberto.length}</Badge>}
+            <TabsList className="w-full responsivo max-w-full justify-start overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <TabsTrigger value="em-aberto" className={`cursor-pointer shrink-0 flex-none ${ALERTA_TAB_TRIGGER_BASE} ${ALERTA_TAB_STYLES["em-aberto"].trigger}`}>
+                Em aberto{emAberto.length > 0 && <Badge variant="secondary" className={`ml-1.5 ${ALERTA_TAB_STYLES["em-aberto"].badge}`}>{emAberto.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="em-andamento" className="cursor-pointer shrink-0 flex-none">
-                Em andamento{emAndamento.length > 0 && <Badge variant="secondary" className="ml-1.5 border-yellow-200! bg-yellow-100! text-yellow-700! dark:border-yellow-900/60! dark:bg-yellow-950/30! dark:text-yellow-300!">{emAndamento.length}</Badge>}
+              <TabsTrigger value="em-andamento" className={`cursor-pointer shrink-0 flex-none ${ALERTA_TAB_TRIGGER_BASE} ${ALERTA_TAB_STYLES["em-andamento"].trigger}`}>
+                Em andamento{emAndamento.length > 0 && <Badge variant="secondary" className={`ml-1.5 ${ALERTA_TAB_STYLES["em-andamento"].badge}`}>{emAndamento.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="repetidos" className="cursor-pointer shrink-0 flex-none">
-                Repetidos{repetidos.length > 0 && <Badge variant="secondary" className="ml-1.5 border-orange-200! bg-orange-100! text-orange-700! dark:border-orange-900/60! dark:bg-orange-950/30! dark:text-orange-300!">{repetidos.length}</Badge>}
+              <TabsTrigger value="repetidos" className={`cursor-pointer shrink-0 flex-none ${ALERTA_TAB_TRIGGER_BASE} ${ALERTA_TAB_STYLES.repetidos.trigger}`}>
+                Repetidos{repetidos.length > 0 && <Badge variant="secondary" className={`ml-1.5 ${ALERTA_TAB_STYLES.repetidos.badge}`}>{repetidos.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="concluidos" className="cursor-pointer shrink-0 flex-none">
-                Concluidos{concluidos.length > 0 && <Badge variant="secondary" className="ml-1.5">{concluidos.length}</Badge>}
+              <TabsTrigger value="concluidos" className={`cursor-pointer shrink-0 flex-none ${ALERTA_TAB_TRIGGER_BASE} ${ALERTA_TAB_STYLES.concluidos.trigger}`}>
+                Concluidos{concluidos.length > 0 && <Badge variant="secondary" className={`ml-1.5 ${ALERTA_TAB_STYLES.concluidos.badge}`}>{concluidos.length}</Badge>}
               </TabsTrigger>
             </TabsList>
             {[

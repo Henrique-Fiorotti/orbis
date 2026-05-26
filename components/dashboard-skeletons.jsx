@@ -309,6 +309,47 @@ export function DirectoryTableSkeleton({ label = "Carregando diretorio", classNa
   )
 }
 
+export function DirectoryPageSkeleton({
+  label = "Carregando diretorio",
+  metricCards = 4,
+  showAction = true,
+  className,
+}) {
+  return (
+    <LoadingRegion label={label} className={cn("flex flex-col gap-6 p-4 md:p-6", className)}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <Skeleton className="size-8 rounded-lg" />
+          <div className="flex min-w-0 items-center gap-2">
+            <Skeleton className="size-5 rounded-sm" />
+            <Skeleton className="h-6 w-36 max-w-full" />
+          </div>
+        </div>
+        {showAction ? <Skeleton className="h-9 w-36 rounded-md" /> : null}
+      </div>
+
+      <Skeleton className="h-px w-full" />
+
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
+        <Skeleton className="h-4 w-48 max-w-full" />
+        <Skeleton className="size-8 rounded-md" />
+      </div>
+
+      {metricCards > 0 ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: metricCards }).map((_, index) => (
+            <MetricCardSkeleton key={index} highlighted={index === 0} />
+          ))}
+        </div>
+      ) : null}
+
+      <Skeleton className="h-9 w-full max-w-sm rounded-md" />
+
+      <DirectoryTableSkeleton label={label} />
+    </LoadingRegion>
+  )
+}
+
 export function DashboardPageSkeleton() {
   return (
     <div className="@container/main flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
