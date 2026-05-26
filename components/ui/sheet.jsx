@@ -98,6 +98,7 @@ function SheetContent({
   onTouchStart,
   onTouchEnd,
   onTouchCancel,
+  overlayClassName,
   style,
   ...props
 }) {
@@ -406,7 +407,7 @@ function SheetContent({
 
   return (
     <SheetPortal>
-      <SheetOverlay />
+      <SheetOverlay className={overlayClassName} />
       <SheetPrimitive.Content
         data-slot="sheet-content"
         data-side={effectiveSide}

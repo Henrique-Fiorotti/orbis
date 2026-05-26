@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
@@ -30,6 +31,7 @@ import {
   ArrowLeftIcon,
   ChevronDownIcon,
   CircleCheckIcon,
+  CircleHelpIcon,
   EllipsisVerticalIcon,
   EyeIcon,
   FileTextIcon,
@@ -1464,11 +1466,11 @@ export default function SensoresPage() {
                 <>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="tipo">
-                      Tipo do sensor <span className="text-red-500">*</span>
+                      Nome do sensor <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="tipo"
-                      placeholder="Ex: TEMPERATURA_VIBRACAO"
+                      placeholder="Ex: Sensor-setor-máquina"
                       value={form.tipo}
                       onChange={(event) => setFormField("tipo", event.target.value)}
                     />
@@ -1493,14 +1495,30 @@ export default function SensoresPage() {
                     <span className={`text-xs ${form.maquinaId ? "text-muted-foreground" : "font-medium text-red-600 dark:text-red-300"}`}>
                       {form.maquinaId
                         ? "Sensor será vinculado à máquina selecionada no cadastro da API."
-                        : "Obrigatório: o back-end exige uma máquina para criar ou atualizar sensores."}
+                        : ""}
                     </span>
                   </div>
                   {modoSheet === "criar" ? (
                     <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 flex-col gap-1">
-                          <Label htmlFor="manual-sensor">Manual PDF</Label>
+                          <div className="flex items-center gap-1.5">
+                            <Label htmlFor="manual-sensor">Manual PDF</Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="inline-flex size-5 cursor-help items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/40"
+                                  aria-label="Ajuda sobre manual PDF"
+                                >
+                                  <CircleHelpIcon className="size-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" sideOffset={6} className="max-w-64 text-left leading-relaxed">
+                                Anexe um manual em PDF da máquina para tentar preencher automaticamente os campos de limite e ideal do sensor.
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                           <span className="truncate text-xs text-muted-foreground">
                             {manualArquivo ? manualArquivo.name : "Nenhum arquivo selecionado"}
                           </span>

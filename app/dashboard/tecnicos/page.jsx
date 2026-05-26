@@ -21,7 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
-import { DirectoryTableSkeleton } from "@/components/dashboard-skeletons"
+import { DirectoryPageSkeleton } from "@/components/dashboard-skeletons"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
 import { TablePagination } from "@/components/table-pagination"
@@ -630,6 +630,15 @@ export default function TecnicosPage() {
     return null
   }
 
+  if (loadingInicial) {
+    return (
+      <>
+        <SiteHeader />
+        <DirectoryPageSkeleton label="Carregando técnicos" />
+      </>
+    )
+  }
+
   return (
     <>
       <SiteHeader />
@@ -729,9 +738,7 @@ export default function TecnicosPage() {
           <Input placeholder="Buscar por nome, especialidade ou e-mail..." value={busca} onChange={e => setBusca(e.target.value)} className="pl-8 dark:border-gray-600" />
         </div>
 
-        {loadingInicial ? (
-          <DirectoryTableSkeleton label="Carregando tecnicos" />
-        ) : errorSemDados ? (
+        {errorSemDados ? (
           <StatePanel message={mensagem || "Não foi possível carregar os técnicos."} tone="error" />
         ) : (
           <>

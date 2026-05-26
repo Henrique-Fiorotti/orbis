@@ -1009,7 +1009,7 @@ export default function MaquinasPage() {
             <DialogHeader>
               <DialogTitle>Confirmar exclusão</DialogTitle>
               <DialogDescription>
-                A máquina <strong>{maquinaExcluir?.nome}</strong> ficará inativa no banco de dados (active: false). Os sensores vinculados também ficarão inativos. Tem certeza que deseja excluir?
+                A máquina <strong>{maquinaExcluir?.nome}</strong> ficará inativa no banco de dados. Os sensores vinculados também ficarão inativos. Tem certeza que deseja excluir?
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
@@ -1018,12 +1018,7 @@ export default function MaquinasPage() {
                 <span className="font-medium">
                   {sensoresVinculadosExclusao > 0
                     ? `${sensoresVinculadosExclusao} sensor(es) vinculado(s) serão inativados.`
-                    : "Nenhum sensor vinculado foi informado pela API."}
-                </span>
-                <span>
-                  {sensoresVinculadosExclusao > 0
-                    ? "A exclusão será enviada para a API. O backend deve aplicar soft delete na máquina e inativar os sensores relacionados."
-                    : "A exclusão será enviada para a API e a máquina deve sair das listagens ativas."}
+                    : ""}
                 </span>
               </div>
             </div>
