@@ -23,7 +23,6 @@ import { DashboardChartsProvider } from "@/components/context/dashboard-charts-c
 import { useAlertas } from "@/components/context/alertas-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
 import { useSensores } from "@/components/context/sensores-context"
-import { DataTable } from "@/components/data-table"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
@@ -517,9 +516,6 @@ function AdminDashboard() {
                 <ChartBarStacked />
               </div>
 
-              <div id="tour-data-table">
-                <DataTable />
-              </div>
             </DashboardChartsProvider>
           </div>
         </div>

@@ -61,14 +61,6 @@ const ADMIN_TOUR_STEPS = [
     side: "top",
     align: "center",
   },
-  {
-    target: "#tour-data-table",
-    title: "Tabela de máquinas",
-    description:
-      "Lista as máquinas, status, integridade e último sinal. Clique no nome para ver detalhes.",
-    side: "top",
-    align: "start",
-  },
 ]
 
 const TECHNICIAN_TOUR_STEPS = [

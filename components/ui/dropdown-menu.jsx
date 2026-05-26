@@ -4,13 +4,47 @@ import * as React from "react"
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { setSmoothScrollLock } from "@/lib/scroll-lock"
 import { CheckIcon, ChevronRightIcon } from "lucide-react"
 import Link from "next/link"
 
 function DropdownMenu({
+  open,
+  defaultOpen,
+  onOpenChange,
   ...props
 }) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+  const lockId = React.useId()
+  const isControlled = open !== undefined
+  const [internalOpen, setInternalOpen] = React.useState(Boolean(defaultOpen))
+  const currentOpen = isControlled ? open : internalOpen
+
+  React.useEffect(() => {
+    if (!currentOpen) {
+      return undefined
+    }
+
+    setSmoothScrollLock(lockId, true)
+    return () => setSmoothScrollLock(lockId, false)
+  }, [currentOpen, lockId])
+
+  const handleOpenChange = React.useCallback((nextOpen) => {
+    if (!isControlled) {
+      setInternalOpen(nextOpen)
+    }
+
+    onOpenChange?.(nextOpen)
+  }, [isControlled, onOpenChange])
+
+  return (
+    <DropdownMenuPrimitive.Root
+      data-slot="dropdown-menu"
+      open={open}
+      defaultOpen={defaultOpen}
+      onOpenChange={handleOpenChange}
+      {...props}
+    />
+  );
 }
 
 function DropdownMenuPortal({

@@ -926,6 +926,7 @@ function AlertasTable({ data, onVerGrupo }) {
 
         return (
           <DropdownMenu
+            modal={false}
             open={openActionMenuId === menuId}
             onOpenChange={(open) => setOpenActionMenuId(open ? menuId : null)}
           >
@@ -934,7 +935,7 @@ function AlertasTable({ data, onVerGrupo }) {
                 <EllipsisVerticalIcon />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" sideOffset={8} collisionPadding={{ top: 96, right: 16, bottom: 16, left: 16 }} className="z-[80] w-48">
               <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => onVerGrupo(grupo))}>
                 <EyeIcon className="mr-1 size-4" /> Ver ocorrencias
               </DropdownMenuItem>
@@ -984,7 +985,7 @@ function AlertasTable({ data, onVerGrupo }) {
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="relative z-0">
+                <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                   ))}
