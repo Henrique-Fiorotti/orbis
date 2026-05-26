@@ -6,24 +6,20 @@ import { useSensores } from "@/components/context/sensores-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import {
   fetchDashboardJson,
-  fetchFirstAvailableDashboardJson,
   getHttpErrorStatus,
   normalizeMaquinaCollection,
   normalizeSensorCollection,
+  requestDashboardJson,
 } from "@/lib/dashboard-api"
 import {
-  getAlertTrendDataFromApi,
-  getAlertTrendDataFromSnapshot,
+  getIntegrityTrendDataFromHistories,
+  getIntegrityTrendDataFromSnapshot,
+  getMachineIntegrityTrendOptions,
+  normalizeHistoricoIntegridadeCollection,
 } from "@/lib/orbis-dashboard"
 
 /** @typedef {import("@/lib/orbis-types").WithChildrenProps} WithChildrenProps */
 /** @typedef {import("@/lib/orbis-types").DashboardChartsContextValue} DashboardChartsContextValue */
-
-const OPTIONAL_ALERT_TREND_ENDPOINTS = [
-  "/dashboard/alertas-por-dia",
-  "/dashboard/alertas-tendencia",
-  "/dashboard/evolucao-alertas",
-]
 
 /** @type {DashboardChartsContextValue} */
 const INITIAL_STATE = {
@@ -31,14 +27,15 @@ const INITIAL_STATE = {
   mensagem: "Carregando dados do dashboard...",
   maquinas: [],
   sensores: [],
-  alertTrendData: [],
+  integrityTrendData: [],
+  machineIntegrityOptions: [],
   errors: {
     maquinas: "",
     sensores: "",
-    alertTrend: "",
+    integrityTrend: "",
   },
   notices: {
-    alertTrend: "",
+    integrityTrend: "",
   },
 }
 
@@ -69,21 +66,16 @@ export function DashboardChartsProvider({ children }) {
     async function carregarGraficos() {
       setState(INITIAL_STATE)
 
-      const [maquinasResult, sensoresResult, alertTrendResult] = await Promise.allSettled([
+      const [maquinasResult, sensoresResult] = await Promise.allSettled([
         fetchDashboardJson("/maquinas", session.accessToken, "as máquinas do dashboard"),
         fetchDashboardJson("/sensores", session.accessToken, "os sensores do dashboard"),
-        fetchFirstAvailableDashboardJson(
-          OPTIONAL_ALERT_TREND_ENDPOINTS,
-          session.accessToken,
-          "a tendência de alertas do dashboard"
-        ),
       ])
 
       if (!isActive) {
         return
       }
 
-      const authError = [maquinasResult, sensoresResult, alertTrendResult]
+      const authError = [maquinasResult, sensoresResult]
         .filter((result) => result.status === "rejected")
         .map((result) => /** @type {PromiseRejectedResult} */ (result).reason)
         .find((error) => getHttpErrorStatus(error) === 401)
@@ -109,12 +101,58 @@ export function DashboardChartsProvider({ children }) {
         sensoresResult.status === "fulfilled"
           ? normalizeSensorCollection(sensoresResult.value)
           : []
-      const alertTrendPayload =
-        alertTrendResult.status === "fulfilled" ? alertTrendResult.value : null
 
-      const alertTrendData = alertTrendPayload
-        ? getAlertTrendDataFromApi(alertTrendPayload)
-        : getAlertTrendDataFromSnapshot(sensores, maquinas)
+      const historicoResults = maquinas.length > 0
+        ? await Promise.allSettled(
+            maquinas.map((maquina) =>
+              requestDashboardJson(
+                `/maquinas/${maquina.id}/historico-integridade?limite=90`,
+                session.accessToken,
+                `o histórico de integridade da máquina ${maquina.nome}`
+              )
+            )
+          )
+        : []
+
+      if (!isActive) {
+        return
+      }
+
+      const historicoAuthError = historicoResults
+        .filter((result) => result.status === "rejected")
+        .map((result) => /** @type {PromiseRejectedResult} */ (result).reason)
+        .find((error) => getHttpErrorStatus(error) === 401)
+
+      if (historicoAuthError) {
+        clearAuthSession()
+        setState({
+          ...INITIAL_STATE,
+          status: "error",
+          mensagem:
+            historicoAuthError instanceof Error
+              ? historicoAuthError.message
+              : "Sua sessão expirou. Faça login novamente.",
+        })
+        return
+      }
+
+      const machineHistories = historicoResults
+        .map((result, index) => {
+          const maquina = maquinas[index]
+
+          return {
+            maquina,
+            historico: result.status === "fulfilled"
+              ? normalizeHistoricoIntegridadeCollection(result.value, maquina)
+              : [],
+          }
+        })
+
+      const integrityTrendData = machineHistories.some((entry) => entry.historico.length > 0)
+        ? getIntegrityTrendDataFromHistories(machineHistories, maquinas)
+        : getIntegrityTrendDataFromSnapshot(maquinas)
+      const integrityReferenceDate = integrityTrendData[integrityTrendData.length - 1]?.date
+      const machineIntegrityOptions = getMachineIntegrityTrendOptions(machineHistories, maquinas, integrityReferenceDate)
 
       const errors = {
         maquinas:
@@ -125,32 +163,33 @@ export function DashboardChartsProvider({ children }) {
           sensoresResult.status === "rejected" && sensoresResult.reason instanceof Error
             ? sensoresResult.reason.message
             : "",
-        alertTrend:
-          alertTrendResult.status === "rejected" && alertTrendResult.reason instanceof Error
-            ? alertTrendResult.reason.message
-            : "",
+        integrityTrend: historicoResults
+          .filter((result) => result.status === "rejected" && result.reason instanceof Error)
+          .map((result) => /** @type {PromiseRejectedResult} */ (result).reason.message)
+          .find(Boolean) ?? "",
       }
 
       const notices = {
-        alertTrend:
-          !alertTrendPayload && (sensores.length > 0 || maquinas.length > 0)
-            ? errors.alertTrend
-              ? `${errors.alertTrend} Exibindo tendência derivada das últimas leituras sincronizadas.`
-              : "Tendência derivada das últimas leituras sincronizadas."
+        integrityTrend:
+          machineHistories.length > 0 && !machineHistories.some((entry) => entry.historico.length > 0) && maquinas.length > 0
+            ? errors.integrityTrend
+              ? `${errors.integrityTrend} Exibindo integridade média atual da frota.`
+              : "Histórico de integridade ainda indisponível. Exibindo integridade média atual da frota."
             : "",
       }
 
       const hasResolvedCoreData =
         maquinasResult.status === "fulfilled" || sensoresResult.status === "fulfilled"
       const firstError =
-        errors.maquinas || errors.sensores || errors.alertTrend || "Não foi possível carregar os dados do dashboard."
+        errors.maquinas || errors.sensores || errors.integrityTrend || "Não foi possível carregar os dados do dashboard."
 
       setState({
         status: hasResolvedCoreData ? "success" : "error",
         mensagem: hasResolvedCoreData ? "" : firstError,
         maquinas,
         sensores,
-        alertTrendData,
+        integrityTrendData,
+        machineIntegrityOptions,
         errors,
         notices,
       })

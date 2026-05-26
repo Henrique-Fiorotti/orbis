@@ -347,6 +347,22 @@ export interface AlertTrendChartDatum {
   tendencia: number;
 }
 
+export interface IntegridadeTrendChartDatum {
+  date: string;
+  integridade: number | null;
+  maquinas: number;
+  estimado?: boolean;
+}
+
+export interface MachineIntegridadeTrendOption {
+  id: number;
+  nome: string;
+  setor: string;
+  criticidade: string;
+  integridade: number;
+  data: IntegridadeTrendChartDatum[];
+}
+
 export interface StatusDistribuicaoChartDatum {
   status: "Estavel" | "Alerta" | "Critico";
   quantidade: number;
@@ -368,13 +384,14 @@ export interface DashboardChartsContextValue {
   mensagem: string;
   maquinas: Maquina[];
   sensores: Sensor[];
-  alertTrendData: AlertTrendChartDatum[];
+  integrityTrendData: IntegridadeTrendChartDatum[];
+  machineIntegrityOptions: MachineIntegridadeTrendOption[];
   errors: {
     maquinas: string;
     sensores: string;
-    alertTrend: string;
+    integrityTrend: string;
   };
   notices: {
-    alertTrend: string;
+    integrityTrend: string;
   };
 }

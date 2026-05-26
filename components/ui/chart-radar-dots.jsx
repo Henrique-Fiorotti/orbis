@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/chart"
 import { ChartHelp } from "@/components/ui/chart-help"
 import { getIntegridadePorSetor } from "@/lib/orbis-dashboard"
+import { cn } from "@/lib/utils"
 
 /** @typedef {import("@/lib/orbis-types").ChartConfig} ChartConfig */
 
@@ -47,18 +48,18 @@ function EmptyState({ message, tone = "muted" }) {
   )
 }
 
-export function ChartRadarDots() {
+export function ChartRadarDots({ className = "w-full xl:w-1/3" }) {
   const { status, mensagem, maquinas, errors } = useDashboardCharts()
   const chartData = React.useMemo(() => getIntegridadePorSetor(maquinas), [maquinas])
   const loading = status === "loading" && maquinas.length === 0
   const errorMessage = errors.maquinas || (status === "error" && maquinas.length === 0 ? mensagem : "")
 
   if (loading) {
-    return <DashboardChartSkeleton variant="radar" centeredHeader className="w-full xl:w-1/3" height="h-[280px]" />
+    return <DashboardChartSkeleton variant="radar" centeredHeader className={className} height="h-[280px]" />
   }
 
   return (
-    <Card className="w-full xl:w-1/3">
+    <Card className={cn("w-full", className)}>
       <CardHeader className="items-center">
         <CardTitle>Integridade por setor</CardTitle>
         <CardDescription>

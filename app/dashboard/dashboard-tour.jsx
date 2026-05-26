@@ -47,9 +47,9 @@ const ADMIN_TOUR_STEPS = [
   },
   {
     target: "#tour-charts-main",
-    title: "Alertas e status",
+    title: "Integridade e status",
     description:
-      "A tendência mostra quando os alertas aumentam. A rosquinha mostra a condição atual das máquinas.",
+      "O gráfico acompanha a integridade média da frota. A rosquinha mostra a condição atual das máquinas.",
     side: "top",
     align: "center",
   },
@@ -109,6 +109,14 @@ const TECHNICIAN_TOUR_STEPS = [
     title: "Meus alertas",
     description:
       "Aqui ficam os chamados já assumidos pelo técnico para continuar o acompanhamento.",
+    side: "top",
+    align: "start",
+  },
+  {
+    target: "#tour-technician-completed",
+    title: "Atendimentos concluÃ­dos",
+    description:
+      "Consulte o histÃ³rico de alertas resolvidos por vocÃª e abra os detalhes quando precisar revisar um atendimento.",
     side: "top",
     align: "start",
   },

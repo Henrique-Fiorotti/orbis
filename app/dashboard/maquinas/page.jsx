@@ -20,7 +20,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MaquinaDetailsPanel, MaquinaImagePreview, MaquinaUploadImagePreview } from "@/components/maquina-details-panel"
+import { MaquinaDetailsPanel, MaquinaUploadImagePreview } from "@/components/maquina-details-panel"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
 import { TablePagination } from "@/components/table-pagination"
@@ -901,41 +901,38 @@ export default function MaquinasPage() {
         )}
 
         <Sheet open={sheetAberto} onOpenChange={setSheetAberto}>
-          <SheetContent
-            side="right"
-            mobileSide="bottom"
-            className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!"
-          >
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[560px]! sm:max-w-none!">
             {modoSheet === "ver" && maquinaDetalhada ? (
               <div key="ver" className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
-                <div className="shrink-0 px-4 pt-4 bg-gradient-to-b from-popover to-popover/80">
-                  <MaquinaImagePreview maquina={maquinaDetalhada} className="h-28 aspect-auto sm:h-32" />
-                </div>
                 <SheetHeader className="shrink-0">
                   <SheetTitle>Detalhes da máquina</SheetTitle>
-                  <SheetDescription>{maquinaDetalhada.setor} - {maquinaDetalhada.tipo}</SheetDescription>
+                  <SheetDescription>Veja o resumo operacional e execute ações rápidas.</SheetDescription>
                 </SheetHeader>
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2">
                   <MaquinaDetailsPanel maquina={maquinaDetalhada} sensores={sensores} sensorError={sensorError} />
                 </div>
                 <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
-                  <Button 
-                    className={"w-full cursor-pointer"}
-                    type="button"
-                    onClick={() => router.push(`/dashboard/alertas?maquina=${encodeURIComponent(maquinaDetalhada.nome)}`)}
-                  >
-                    Ver alertas desta máquina
-                  </Button>
-                  {canManageMaquinas ? (
-                    <div className="flex gap-2">
-                      <Button className="cursor-pointer flex-1" onClick={() => abrirEditar(maquinaDetalhada)} disabled={salvando}>
-                        <PencilIcon className="mr-1 size-4" /> Editar
-                      </Button>
-                      <Button variant="destructive" className="cursor-pointer" onClick={() => confirmarExcluir(maquinaDetalhada)} disabled={salvando}>
-                        <Trash2Icon className="mr-1 size-4" /> Excluir
-                      </Button>
-                    </div>
-                  ) : null}
+                  <div className="grid w-full gap-2 sm:grid-cols-2">
+                    <Button
+                      variant="outline"
+                      className={canManageMaquinas ? "cursor-pointer" : "cursor-pointer sm:col-span-2"}
+                      type="button"
+                      onClick={() => router.push(`/dashboard/alertas?maquina=${encodeURIComponent(maquinaDetalhada.nome)}`)}
+                    >
+                      <EyeIcon className="mr-1 size-4" />
+                      Ver alertas
+                    </Button>
+                    {canManageMaquinas ? (
+                      <>
+                        <Button className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => abrirEditar(maquinaDetalhada)} disabled={salvando}>
+                          <PencilIcon className="mr-1 size-4" /> Editar
+                        </Button>
+                        <Button variant="destructive" className="cursor-pointer sm:col-span-2" onClick={() => confirmarExcluir(maquinaDetalhada)} disabled={salvando}>
+                          <Trash2Icon className="mr-1 size-4" /> Excluir
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
                 </SheetFooter>
               </div>
             ) : (

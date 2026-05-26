@@ -7,7 +7,7 @@ import {
   AlertTriangleIcon,
   ArrowRightIcon,
   CheckCircle2Icon,
-  CircleDotIcon,
+  ChevronRightIcon,
   ClockIcon,
   ClipboardListIcon,
   GaugeIcon,
@@ -28,6 +28,8 @@ import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Separator } from "@/components/ui/separator"
 import { ChartPieDonut } from "@/components/ui/chart-pie-donut"
 import { ChartBarStacked } from "@/components/ui/chart-bar-stacked"
@@ -63,6 +65,14 @@ const STATUS_LABEL = {
   CANCELADO: "Cancelado",
 }
 
+const TIPO_ALERTA_LABEL = {
+  LIMITE_ULTRAPASSADO: "Limite ultrapassado",
+  TENDENCIA_CURTA: "Tendência curta",
+  TENDENCIA_LONGA: "Tendência longa",
+  DEGRADACAO_ACELERADA: "Degradação acelerada",
+  INSTABILIDADE: "Instabilidade",
+}
+
 const MACHINE_ALERT_STATUS_BADGE_CLASS = {
   COM_ALERTA: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
   EM_ANDAMENTO: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300",
@@ -72,6 +82,15 @@ const MACHINE_ALERT_STATUS_LABEL = {
   COM_ALERTA: "Com alerta",
   EM_ANDAMENTO: "Em andamento",
 }
+
+const technicianCardClass =
+  "@container/card shadow-xs transition-colors hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 dark:bg-card"
+
+const technicianPanelClass =
+  "rounded-xl border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]"
+
+const technicianPriorityPanelClass =
+  "rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]"
 
 function normalizeText(value) {
   return String(value ?? "")
@@ -121,27 +140,49 @@ function isAlertAssignedToUser(alerta, usuario) {
   return false
 }
 
-function MetricCard({ icon: Icon, label, value, sub, tone = "purple" }) {
-  const iconClass = {
-    purple: "border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200",
-    red: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
-    yellow: "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300",
-    green: "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
+function MetricCard({ icon: Icon, label, value, sub, badge, tone = "purple", featured = false }) {
+  const toneConfig = {
+    purple: {
+      icon: "border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200",
+      badge: "border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200",
+    },
+    red: {
+      icon: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
+      badge: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
+    },
+    yellow: {
+      icon: "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300",
+      badge: "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300",
+    },
+    green: {
+      icon: "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
+      badge: "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
+    },
   }[tone]
 
   return (
-    <div className="flex min-h-[118px] flex-col justify-between rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-muted-foreground">{label}</span>
-        <span className={`inline-flex size-9 items-center justify-center rounded-lg border ${iconClass}`}>
+    <Card className={`${technicianCardClass} ${featured ? "border-[#5E17EB]! border-2" : ""}`}>
+      <CardHeader className="min-h-[88px]">
+        <CardDescription className={featured ? "" : "text-black! dark:text-white!"}>{label}</CardDescription>
+        <CardTitle className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${featured ? "text-[#5E17EB]!" : ""}`}>
+          {value}
+        </CardTitle>
+        <CardAction>
+          <span className={`inline-flex size-9 items-center justify-center rounded-lg border ${toneConfig.icon}`}>
+            <Icon className="size-4" />
+          </span>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        <div className="line-clamp-1 flex items-center gap-2 font-medium">
+          {sub}
           <Icon className="size-4" />
-        </span>
-      </div>
-      <div className="flex flex-col gap-1">
-        <span className="text-3xl font-semibold text-[#3B2867] dark:text-white">{value}</span>
-        <span className="text-xs text-muted-foreground">{sub}</span>
-      </div>
-    </div>
+        </div>
+        <Badge variant="outline" className={toneConfig.badge}>
+          {badge}
+        </Badge>
+      </CardFooter>
+    </Card>
   )
 }
 
@@ -161,9 +202,27 @@ function SeveridadeBadge({ value }) {
   )
 }
 
+function TipoAlertaBadge({ value }) {
+  return (
+    <Badge variant="outline" className="border-purple-200 bg-purple-50 px-1.5 font-normal text-[#3B2867] dark:border-primary/40 dark:bg-primary/10 dark:text-purple-200">
+      {TIPO_ALERTA_LABEL[value] ?? value ?? "Alerta"}
+    </Badge>
+  )
+}
+
+function OcorrenciasBadge({ value }) {
+  const count = Math.max(Number(value) || 1, 1)
+
+  return (
+    <Badge variant="outline" className="border-slate-200 bg-slate-50 px-1.5 font-normal text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
+      {count} ocorr.
+    </Badge>
+  )
+}
+
 function EmptyPanel({ title, description }) {
   return (
-    <div className="flex min-h-[180px] flex-col items-center justify-center rounded-lg border border-dashed bg-muted/20 px-4 text-center">
+    <div className="flex min-h-[180px] flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 px-4 text-center">
       <ClipboardListIcon className="mb-3 size-8 text-muted-foreground" />
       <p className="text-sm font-medium text-foreground">{title}</p>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
@@ -171,37 +230,81 @@ function EmptyPanel({ title, description }) {
   )
 }
 
-function AlertListItem({ alerta, onOpen, onStart, starting }) {
+function AlertListItem({ alerta, onOpen }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <button
+      type="button"
+      className="group flex min-h-[116px] w-full cursor-pointer flex-col justify-between rounded-xl border bg-card p-3 text-left shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB] hover:ring-[#5E17EB]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 dark:border-gray-700! dark:bg-[#0F172A]"
+      onClick={() => onOpen(alerta)}
+    >
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-[#3B2867] dark:text-white">{alerta.maquinaNome}</span>
-            <SeveridadeBadge value={alerta.severidade} />
-            <StatusBadge status={alerta.status} />
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">{alerta.sensorNome}</p>
+          <p className="truncate text-base font-semibold leading-tight text-[#3B2867] dark:text-white">{alerta.maquinaNome}</p>
+          <p className="mt-1 truncate text-sm text-muted-foreground">{alerta.sensorNome}</p>
+        </div>
+        <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-[#5E17EB]" />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <TipoAlertaBadge value={alerta.tipo} />
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={alerta.status} />
+          <OcorrenciasBadge value={alerta.ocorrencias} />
         </div>
         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
           <ClockIcon className="size-3.5" />
           {tempoRelativo(getAlertDate(alerta))}
         </span>
       </div>
+    </button>
+  )
+}
 
-      <p className="line-clamp-2 text-sm leading-relaxed text-foreground">{alerta.mensagem}</p>
+function PriorityAlertCard({ alerta, imageSrc, onOpen }) {
+  return (
+    <div className="flex min-h-[150px] flex-col gap-4 rounded-xl border bg-card p-3 shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB]/70 sm:min-h-[132px] sm:flex-row sm:items-center dark:border-gray-700! dark:bg-[#0F172A]">
+      <div className="flex aspect-[4/3] w-full shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-slate-300 bg-slate-400 text-sm font-medium text-slate-950 shadow-inner sm:size-[116px]">
+        {imageSrc ? (
+          <img src={imageSrc} alt="" className="size-full object-cover" />
+        ) : (
+          <span>FOTO</span>
+        )}
+      </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {alerta.status === "ATIVO" ? (
-          <Button size="sm" className="cursor-pointer" onClick={() => onStart(alerta)} disabled={starting}>
-            {starting ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
-            Iniciar atendimento
+      <div className="flex min-w-0 flex-1 flex-col  gap-2 justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-lg font-semibold leading-tight text-[#3B2867] dark:text-white">{alerta.maquinaNome}</p>
+              <p className="mt-1 truncate text-sm text-muted-foreground">{alerta.sensorNome}</p>
+            </div>
+            <span className="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground">
+              <ClockIcon className="size-4" />
+              {tempoRelativo(getAlertDate(alerta))}
+            </span>
+          </div>
+        </div>
+
+
+
+        <div className="mt-auto flex justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <TipoAlertaBadge value={alerta.tipo} />
+            <StatusBadge status={alerta.status} />
+            <OcorrenciasBadge value={alerta.ocorrencias} />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="cursor-pointer rounded-full border-[#8B00FF] px-5 text-[#7C00FF] hover:border-[#7C00FF] hover:bg-[#7C00FF]/10 hover:text-[#6B00E8]"
+            onClick={() => onOpen(alerta)}
+          >
+            Ver Detalhes &gt;
           </Button>
-        ) : null}
-        <Button variant="outline" size="sm" className="cursor-pointer hover:border-[#5E17EB] hover:text-[#5E17EB]" onClick={() => onOpen(alerta)}>
-          Ver detalhes
-          <ArrowRightIcon className="ml-1 size-4" />
-        </Button>
+        </div>
       </div>
     </div>
   )
@@ -211,7 +314,7 @@ function MachineAttentionItem({ item, onOpen }) {
   return (
     <button
       type="button"
-      className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors hover:border-[#5E17EB] dark:border-gray-700! dark:bg-[#0F172A]"
+      className="group flex min-h-[118px] cursor-pointer flex-col justify-between gap-3 rounded-xl border bg-card/80 p-3 text-left shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB] hover:ring-[#5E17EB]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 dark:border-gray-700! dark:bg-[#0F172A]"
       onClick={() => onOpen(item)}
     >
       <div className="flex items-start justify-between gap-3">
@@ -219,11 +322,14 @@ function MachineAttentionItem({ item, onOpen }) {
           <p className="truncate text-sm font-semibold text-[#3B2867] dark:text-white">{item.maquinaNome}</p>
           <p className="text-xs text-muted-foreground">{item.sensores.size} sensor(es) em atenção</p>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <Badge variant="outline" className={`px-1.5 ${MACHINE_ALERT_STATUS_BADGE_CLASS[item.statusMaquina] ?? MACHINE_ALERT_STATUS_BADGE_CLASS.COM_ALERTA}`}>
-            {MACHINE_ALERT_STATUS_LABEL[item.statusMaquina] ?? "Com alerta"}
-          </Badge>
-          <SeveridadeBadge value={item.severidade} />
+        <div className="flex shrink-0 items-start gap-2">
+          <div className="flex flex-col items-end gap-1">
+            <Badge variant="outline" className={`px-1.5 ${MACHINE_ALERT_STATUS_BADGE_CLASS[item.statusMaquina] ?? MACHINE_ALERT_STATUS_BADGE_CLASS.COM_ALERTA}`}>
+              {MACHINE_ALERT_STATUS_LABEL[item.statusMaquina] ?? "Com alerta"}
+            </Badge>
+            <SeveridadeBadge value={item.severidade} />
+          </div>
+          <ChevronRightIcon className="mt-0.5 size-4 text-muted-foreground transition-colors group-hover:text-[#5E17EB]" />
         </div>
       </div>
       <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
@@ -277,6 +383,7 @@ function TechnicianDashboard() {
   const { maquinas, status: maquinasStatus, recarregarMaquinas } = useMaquinas()
   const { sensores, status: sensoresStatus, recarregarSensores } = useSensores()
   const [startingAlertId, setStartingAlertId] = React.useState(null)
+  const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
   const [atendimentosIniciados, setAtendimentosIniciados] = React.useState(() => new Set())
 
   const loading = alertasStatus === "loading" || maquinasStatus === "loading" || sensoresStatus === "loading"
@@ -296,13 +403,37 @@ function TechnicianDashboard() {
     () => alertas.filter((alerta) => ["ATIVO", "EM_ANDAMENTO"].includes(alerta.status) && alerta.severidade === "ALTA"),
     [alertas]
   )
-  const resolvidosHoje = React.useMemo(() => {
-    const resolvidos = alertas.filter((alerta) => alerta.status === "RESOLVIDO" && isToday(alerta.atualizadoEm || alerta.ultimaOcorrenciaEm || alerta.criadoEm))
-    const resolvidosComResponsavel = resolvidos.filter((alerta) => alerta.tecnicoId || alerta.tecnicoNome)
-    return resolvidosComResponsavel.length > 0
-      ? resolvidosComResponsavel.filter((alerta) => isAlertAssignedToUser(alerta, usuario)).length
-      : resolvidos.length
-  }, [alertas, usuario])
+  const atendimentosConcluidos = React.useMemo(
+    () => alertas
+      .filter((alerta) => alerta.status === "RESOLVIDO" && (isAlertAssignedToUser(alerta, usuario) || atendimentosIniciados.has(alerta.id)))
+      .sort((a, b) => getAlertTimestamp(b) - getAlertTimestamp(a)),
+    [alertas, atendimentosIniciados, usuario]
+  )
+  const resolvidosHoje = React.useMemo(
+    () => atendimentosConcluidos.filter((alerta) => isToday(alerta.atualizadoEm || alerta.ultimaOcorrenciaEm || alerta.criadoEm)).length,
+    [atendimentosConcluidos]
+  )
+  const imagensMaquinas = React.useMemo(() => {
+    const map = new Map()
+
+    for (const maquina of maquinas) {
+      const image = maquina.imagem || maquina.caminhoImagem
+
+      if (!image) {
+        continue
+      }
+
+      if (maquina.id !== null && maquina.id !== undefined) {
+        map.set(`id:${String(maquina.id)}`, image)
+      }
+
+      if (maquina.nome) {
+        map.set(`nome:${normalizeText(maquina.nome)}`, image)
+      }
+    }
+
+    return map
+  }, [maquinas])
   const maquinasSobAtencao = React.useMemo(() => {
     const grouped = new Map()
 
@@ -316,10 +447,12 @@ function TechnicianDashboard() {
         statusMaquina: "EM_ANDAMENTO",
         severidade: alerta.severidade,
         ultimaOcorrenciaEm: getAlertDate(alerta),
+        alertas: [],
       }
 
       existing.total += 1
       existing.sensores.add(alerta.sensorNome)
+      existing.alertas.push(alerta)
 
       if (alerta.status === "ATIVO") {
         existing.statusMaquina = "COM_ALERTA"
@@ -343,16 +476,41 @@ function TechnicianDashboard() {
   }, [alertas])
   const sensoresOffline = React.useMemo(() => sensores.filter((sensor) => sensor.status === "OFFLINE").length, [sensores])
 
+  function getAlertaMaquinaImagem(alerta) {
+    if (alerta?.maquinaId !== null && alerta?.maquinaId !== undefined) {
+      const byId = imagensMaquinas.get(`id:${String(alerta.maquinaId)}`)
+
+      if (byId) {
+        return byId
+      }
+    }
+
+    return imagensMaquinas.get(`nome:${normalizeText(alerta?.maquinaNome)}`) || ""
+  }
+
   async function refreshAll() {
     await Promise.allSettled([recarregarAlertas(), recarregarMaquinas(), recarregarSensores()])
   }
 
   function abrirAlerta(alerta) {
-    router.push(`/dashboard/alertas?alertaId=${encodeURIComponent(alerta.id)}`)
+    setAlertaSelecionado(alerta)
   }
 
   function abrirMaquina(item) {
+    const alerta = item?.alertas?.[0]
+
+    if (alerta) {
+      setAlertaSelecionado(alerta)
+      return
+    }
+
     router.push(`/dashboard/alertas?maquina=${encodeURIComponent(item.maquinaNome)}`)
+  }
+
+  function alternarDetalhesAtendimento(open) {
+    if (!open && !startingAlertId) {
+      setAlertaSelecionado(null)
+    }
   }
 
   async function iniciarAtendimento(alerta) {
@@ -360,6 +518,7 @@ function TechnicianDashboard() {
       setStartingAlertId(alerta.id)
       await atualizarStatus(alerta.id, "EM_ANDAMENTO")
       setAtendimentosIniciados((current) => new Set(current).add(alerta.id))
+      setAlertaSelecionado(null)
       toast.success("Atendimento iniciado.")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o atendimento.")
@@ -389,15 +548,15 @@ function TechnicianDashboard() {
           />
         </div>
 
-        <div id="tour-technician-metrics" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={WrenchIcon} label="Meus atendimentos" value={meusAtendimentos.length} sub="Alertas assumidos por você" tone="purple" />
-          <MetricCard icon={ClipboardListIcon} label="Pendentes" value={alertasAtivos.length} sub="Disponíveis para iniciar" tone="red" />
-          <MetricCard icon={CheckCircle2Icon} label="Resolvidos hoje" value={resolvidosHoje} sub="Finalizados no dia" tone="green" />
-          <MetricCard icon={ShieldAlertIcon} label="Críticos" value={criticos.length} sub="Severidade alta em aberto" tone="yellow" />
+        <div id="tour-technician-metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard icon={WrenchIcon} label="Meus atendimentos" value={meusAtendimentos.length} sub="Alertas assumidos por você" badge="Sua fila" tone="purple" featured />
+          <MetricCard icon={ClipboardListIcon} label="Pendentes" value={alertasAtivos.length} sub="Disponíveis para iniciar" badge="Aguardando" tone="red" />
+          <MetricCard icon={CheckCircle2Icon} label="Resolvidos hoje" value={resolvidosHoje} sub="Finalizados no dia" badge="Hoje" tone="green" />
+          <MetricCard icon={ShieldAlertIcon} label="Críticos" value={criticos.length} sub="Severidade alta em aberto" badge="Alta prioridade" tone="yellow" />
         </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.75fr)]">
-          <section id="tour-technician-priority" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+          <section id="tour-technician-priority" className={technicianPriorityPanelClass}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Prioridade agora</h2>
@@ -412,12 +571,11 @@ function TechnicianDashboard() {
             <div className="flex flex-col gap-3">
               {alertasPrioritarios.length > 0 ? (
                 alertasPrioritarios.map((alerta) => (
-                  <AlertListItem
+                  <PriorityAlertCard
                     key={alerta.id}
                     alerta={alerta}
+                    imageSrc={getAlertaMaquinaImagem(alerta)}
                     onOpen={abrirAlerta}
-                    onStart={iniciarAtendimento}
-                    starting={startingAlertId === alerta.id}
                   />
                 ))
               ) : (
@@ -427,7 +585,7 @@ function TechnicianDashboard() {
           </section>
 
           <div className="flex flex-col gap-4">
-            <section id="tour-technician-active" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+            <section id="tour-technician-active" className={technicianPanelClass}>
               <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Meus alertas em andamento</h2>
               <p className="text-sm text-muted-foreground">Atendimentos vinculados ao seu usuário.</p>
               <Separator className="my-4" />
@@ -438,8 +596,6 @@ function TechnicianDashboard() {
                       key={alerta.id}
                       alerta={alerta}
                       onOpen={abrirAlerta}
-                      onStart={iniciarAtendimento}
-                      starting={startingAlertId === alerta.id}
                     />
                   ))
                 ) : (
@@ -448,25 +604,51 @@ function TechnicianDashboard() {
               </div>
             </section>
 
-            <section id="tour-technician-operation" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+            <section id="tour-technician-completed" className={technicianPanelClass}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Atendimentos concluídos</h2>
+                  <p className="text-sm text-muted-foreground">Histórico de alertas resolvidos por você.</p>
+                </div>
+                <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
+                  {atendimentosConcluidos.length} concluído(s)
+                </Badge>
+              </div>
+              <Separator className="my-4" />
+              <div className="flex max-h-[360px] flex-col gap-3 overflow-y-auto pr-1">
+                {atendimentosConcluidos.length > 0 ? (
+                  atendimentosConcluidos.map((alerta) => (
+                    <AlertListItem
+                      key={alerta.id}
+                      alerta={alerta}
+                      onOpen={abrirAlerta}
+                    />
+                  ))
+                ) : (
+                  <EmptyPanel title="Nenhum atendimento concluído" description="Quando você resolver alertas, o histórico aparece aqui." />
+                )}
+              </div>
+            </section>
+
+            {/* <section id="tour-technician-operation" className={technicianPanelClass}>
               <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Sinais da operação</h2>
               <p className="text-sm text-muted-foreground">Resumo rápido para orientar sua ronda.</p>
               <Separator className="my-4" />
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border bg-muted/20 p-3">
+                <div className="rounded-xl border bg-card/70 p-3 shadow-xs ring-1 ring-foreground/5">
                   <span className="text-xs text-muted-foreground">Máquinas cadastradas</span>
                   <p className="mt-1 text-2xl font-semibold text-[#3B2867] dark:text-white">{maquinas.length}</p>
                 </div>
-                <div className="rounded-lg border bg-muted/20 p-3">
+                <div className="rounded-xl border bg-card/70 p-3 shadow-xs ring-1 ring-foreground/5">
                   <span className="text-xs text-muted-foreground">Sensores offline</span>
                   <p className="mt-1 text-2xl font-semibold text-[#3B2867] dark:text-white">{sensoresOffline}</p>
                 </div>
               </div>
-            </section>
+            </section> */}
           </div>
         </div>
 
-        <section id="tour-technician-machines" className="rounded-lg border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+        <section id="tour-technician-machines" className={technicianPanelClass}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Máquinas sob atenção</h2>
@@ -488,8 +670,117 @@ function TechnicianDashboard() {
           )}
         </section>
 
-        <DashboardShortcuts id="tour-technician-shortcuts" />
+        <section id="tour-technician-shortcuts" className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <Button variant="outline" className="h-auto cursor-pointer justify-between rounded-xl bg-card p-4 shadow-xs transition-colors hover:border-[#5E17EB] hover:text-[#5E17EB]" onClick={() => router.push("/dashboard/alertas")}>
+            <span className="flex items-center gap-2">
+              <AlertTriangleIcon className="size-4 text-[#5E17EB]" />
+              Alertas em aberto
+            </span>
+            <ArrowRightIcon className="size-4" />
+          </Button>
+          <Button variant="outline" className="h-auto cursor-pointer justify-between rounded-xl bg-card p-4 shadow-xs transition-colors hover:border-[#5E17EB] hover:text-[#5E17EB]" onClick={() => router.push("/dashboard/maquinas")}>
+            <span className="flex items-center gap-2">
+              <WashingMachineIcon className="size-4 text-[#5E17EB]" />
+              Máquinas
+            </span>
+            <ArrowRightIcon className="size-4" />
+          </Button>
+          <Button variant="outline" className="h-auto cursor-pointer justify-between rounded-xl bg-card p-4 shadow-xs transition-colors hover:border-[#5E17EB] hover:text-[#5E17EB]" onClick={() => router.push("/dashboard/sensores")}>
+            <span className="flex items-center gap-2">
+              <NfcIcon className="size-4 text-[#5E17EB]" />
+              Sensores
+            </span>
+            <ArrowRightIcon className="size-4" />
+          </Button>
+        </section>
       </div>
+
+      <Drawer direction="right" open={Boolean(alertaSelecionado)} onOpenChange={alternarDetalhesAtendimento}>
+        <DrawerContent className="w-[calc(100vw-1rem)] max-w-md overflow-hidden bg-background sm:max-w-lg">
+          {alertaSelecionado ? (
+            <>
+              <DrawerHeader className="border-b px-5 py-5 text-left">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <DrawerTitle className="truncate text-lg font-semibold text-[#3B2867] dark:text-white">
+                      {alertaSelecionado.maquinaNome}
+                    </DrawerTitle>
+                    <DrawerDescription className="mt-1">{alertaSelecionado.sensorNome}</DrawerDescription>
+                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full border bg-muted/30 px-2 py-1 text-xs text-muted-foreground">
+                    <ClockIcon className="size-3.5" />
+                    {tempoRelativo(getAlertDate(alertaSelecionado))}
+                  </span>
+                </div>
+              </DrawerHeader>
+
+              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
+                <div className="rounded-xl border bg-card p-4 shadow-xs ring-1 ring-foreground/5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <TipoAlertaBadge value={alertaSelecionado.tipo} />
+                    <StatusBadge status={alertaSelecionado.status} />
+                    <SeveridadeBadge value={alertaSelecionado.severidade} />
+                    <OcorrenciasBadge value={alertaSelecionado.ocorrencias} />
+                  </div>
+
+                  <p className="mt-4 text-sm leading-relaxed text-foreground">
+                    {alertaSelecionado.mensagem}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border bg-card p-3 shadow-xs">
+                    <span className="text-xs text-muted-foreground">Última ocorrência</span>
+                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                      {tempoRelativo(getAlertDate(alertaSelecionado))}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border bg-card p-3 shadow-xs">
+                    <span className="text-xs text-muted-foreground">Ocorrências</span>
+                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                      {Math.max(Number(alertaSelecionado.ocorrencias) || 1, 1)}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border bg-card p-3 shadow-xs">
+                    <span className="text-xs text-muted-foreground">Status</span>
+                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                      {STATUS_LABEL[alertaSelecionado.status] ?? alertaSelecionado.status}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border bg-card p-3 shadow-xs">
+                    <span className="text-xs text-muted-foreground">Severidade</span>
+                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                      {alertaSelecionado.severidade ? alertaSelecionado.severidade.charAt(0) + alertaSelecionado.severidade.slice(1).toLowerCase() : "Média"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <DrawerFooter className="border-t bg-muted/35 p-4">
+                {alertaSelecionado.status === "ATIVO" ? (
+                  <Button
+                    className="w-full cursor-pointer"
+                    onClick={() => iniciarAtendimento(alertaSelecionado)}
+                    disabled={Boolean(startingAlertId)}
+                  >
+                    {startingAlertId ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
+                    Iniciar atendimento
+                  </Button>
+                ) : (
+                  <Button className="w-full" disabled>
+                    {alertaSelecionado.status === "RESOLVIDO" ? "Atendimento concluído" : "Atendimento em andamento"}
+                  </Button>
+                )}
+                <DrawerClose asChild>
+                  <Button variant="outline" className="w-full cursor-pointer" disabled={Boolean(startingAlertId)}>
+                    Fechar
+                  </Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </>
+          ) : null}
+        </DrawerContent>
+      </Drawer>
 
       <DashboardTour variant="tecnico" />
     </>
@@ -513,14 +804,14 @@ function AdminDashboard() {
                 <div className="w-full min-w-0 px-4 lg:px-6 xl:w-4/6">
                   <ChartAreaInteractive />
                 </div>
-                <ChartPieDonut />
+                <ChartRadarDots className="mx-4 flex w-auto flex-col lg:mx-6 xl:mx-0 xl:mr-6 xl:w-2/6" />
               </div>
 
               <div
                 id="tour-charts-secondary"
                 className="flex w-full flex-col gap-4 px-4 lg:gap-6 lg:px-6 xl:flex-row"
               >
-                <ChartRadarDots />
+                <ChartPieDonut className="w-full xl:w-1/3" />
                 <ChartBarStacked />
               </div>
 
