@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts"
+import { Area, AreaChart, CartesianGrid, Line, ReferenceLine, XAxis, YAxis } from "recharts"
 
 import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -34,6 +34,10 @@ const chartConfig = {
     label: "Integridade média",
     color: "var(--chart-5)",
   },
+  maquinaIntegridade: {
+    label: "Máquina selecionada",
+    color: "var(--chart-1)",
+  },
 }
 
 function getRangeDays(timeRange) {
@@ -64,6 +68,17 @@ function parseChartDate(value) {
   return new Date(`${value}T00:00:00Z`)
 }
 
+function getDefaultMachineId(options) {
+  const alta = options.filter((item) => String(item.criticidade).toUpperCase() === "ALTA")
+  const candidates = alta.length > 0 ? alta : options
+  const selected = [...candidates].sort((a, b) => {
+    const integridadeDiff = a.integridade - b.integridade
+    return integridadeDiff || a.nome.localeCompare(b.nome)
+  })[0]
+
+  return selected ? String(selected.id) : ""
+}
+
 function ChartMessage({ message, tone = "muted" }) {
   return (
     <div
@@ -80,8 +95,9 @@ function ChartMessage({ message, tone = "muted" }) {
 
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile()
-  const { status, mensagem, integrityTrendData, errors, notices } = useDashboardCharts()
+  const { status, mensagem, integrityTrendData, machineIntegrityOptions, errors, notices } = useDashboardCharts()
   const [timeRange, setTimeRange] = React.useState("7d")
+  const [selectedMachineId, setSelectedMachineId] = React.useState("")
 
   React.useEffect(() => {
     if (isMobile) {
@@ -89,19 +105,43 @@ export function ChartAreaInteractive() {
     }
   }, [isMobile])
 
+  React.useEffect(() => {
+    setSelectedMachineId((currentId) => {
+      if (currentId && machineIntegrityOptions.some((item) => String(item.id) === currentId)) {
+        return currentId
+      }
+
+      return getDefaultMachineId(machineIntegrityOptions)
+    })
+  }, [machineIntegrityOptions])
+
+  const selectedMachine = React.useMemo(
+    () => machineIntegrityOptions.find((item) => String(item.id) === selectedMachineId) ?? null,
+    [machineIntegrityOptions, selectedMachineId]
+  )
+
   const filteredData = React.useMemo(() => {
     if (integrityTrendData.length === 0) {
       return []
     }
 
+    const selectedDataByDate = new Map(
+      (selectedMachine?.data ?? []).map((item) => [item.date, item])
+    )
     const referenceDate = parseChartDate(integrityTrendData[integrityTrendData.length - 1].date)
     const startDate = new Date(referenceDate)
     startDate.setUTCDate(referenceDate.getUTCDate() - getRangeDays(timeRange) + 1)
 
-    return integrityTrendData.filter((item) => parseChartDate(item.date) >= startDate)
-  }, [integrityTrendData, timeRange])
+    return integrityTrendData
+      .filter((item) => parseChartDate(item.date) >= startDate)
+      .map((item) => ({
+        ...item,
+        maquinaIntegridade: selectedDataByDate.get(item.date)?.integridade ?? null,
+      }))
+  }, [integrityTrendData, selectedMachine, timeRange])
 
   const hasVisibleData = filteredData.some((item) => Number.isFinite(Number(item.integridade)))
+  const hasSelectedMachineData = filteredData.some((item) => Number.isFinite(Number(item.maquinaIntegridade)))
   const loading = status === "loading" && integrityTrendData.length === 0
   const chartError = errors.integrityTrend || (status === "error" && integrityTrendData.length === 0 ? mensagem : "")
 
@@ -113,8 +153,28 @@ export function ChartAreaInteractive() {
     <Card className="@container/card">
       <CardHeader>
         <CardTitle>Gráfico de integridade</CardTitle>
-        <CardDescription>{loading ? "Carregando série temporal..." : getRangeLabel(timeRange)}</CardDescription>
-        <CardAction>
+        <CardDescription>
+          {loading ? "Carregando série temporal..." : selectedMachine ? `${getRangeLabel(timeRange)} - ${selectedMachine.nome}` : getRangeLabel(timeRange)}
+        </CardDescription>
+        <CardAction className="flex flex-wrap items-center justify-end gap-2 rounded-none!">
+          {machineIntegrityOptions.length > 0 ? (
+            <Select value={selectedMachineId} onValueChange={setSelectedMachineId}>
+              <SelectTrigger
+                className="w-44 rounded-xl! **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate"
+                size="sm"
+                aria-label="Selecionar máquina"
+              >
+                <SelectValue placeholder="Selecionar máquina" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {machineIntegrityOptions.map((machine) => (
+                  <SelectItem key={machine.id} value={String(machine.id)} className="rounded-lg">
+                    {machine.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
           <ToggleGroup
             type="single"
             value={timeRange}
@@ -124,7 +184,7 @@ export function ChartAreaInteractive() {
               }
             }}
             variant="outline"
-            className="hidden *:data-[slot=toggle-group-item]:px-4! @[767px]/card:flex"
+            className="hidden *:data-[slot=toggle-group-item]:px-4! @[940px]/card:flex"
           >
             <ToggleGroupItem value="90d">Últimos 3 meses</ToggleGroupItem>
             <ToggleGroupItem value="30d">Últimos 30 dias</ToggleGroupItem>
@@ -139,9 +199,9 @@ export function ChartAreaInteractive() {
             }}
           >
             <SelectTrigger
-              className="flex w-40 rounded-xl! **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
+              className="flex w-40 rounded-xl! **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[940px]/card:hidden"
               size="sm"
-          aria-label="Selecionar período"
+              aria-label="Selecionar período"
             >
               <SelectValue placeholder="Filtrar" />
             </SelectTrigger>
@@ -214,11 +274,13 @@ export function ChartAreaInteractive() {
                       indicator="dot"
                       formatter={(value, name, item) => (
                         <div className="flex min-w-36 items-center justify-between gap-3">
-                          <span className="text-muted-foreground">Integridade média</span>
+                          <span className="text-muted-foreground">
+                            {item?.dataKey === "maquinaIntegridade" ? selectedMachine?.nome ?? "Máquina selecionada" : "Integridade média"}
+                          </span>
                           <span className="font-mono font-medium text-foreground tabular-nums">
                             {Number(value).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%
                           </span>
-                          {item?.payload?.maquinas ? (
+                          {item?.dataKey !== "maquinaIntegridade" && item?.payload?.maquinas ? (
                             <span className="text-muted-foreground">{item.payload.maquinas} máquinas</span>
                           ) : null}
                         </div>
@@ -234,6 +296,17 @@ export function ChartAreaInteractive() {
                   strokeWidth={2}
                   connectNulls
                 />
+                {selectedMachine && hasSelectedMachineData ? (
+                  <Line
+                    dataKey="maquinaIntegridade"
+                    type="natural"
+                    stroke="var(--color-maquinaIntegridade)"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 5 }}
+                    connectNulls
+                  />
+                ) : null}
               </AreaChart>
             </ChartContainer>
 
@@ -242,7 +315,7 @@ export function ChartAreaInteractive() {
       </CardContent>
       <CardFooter className="justify-end border-t-0 bg-transparent px-4 pt-0 sm:px-6">
         <ChartHelp>
-          <span>A curva mostra a integridade média da frota a partir do histórico das máquinas. Linhas tracejadas marcam atenção em 70% e falha em 30%.</span>
+          <span>A curva preenchida mostra a integridade média da frota. A segunda linha mostra a máquina selecionada; por padrão, a máquina de importância alta com menor integridade atual.</span>
           {notices.integrityTrend ? <span className="mt-2 block text-muted-foreground">{notices.integrityTrend}</span> : null}
         </ChartHelp>
       </CardFooter>

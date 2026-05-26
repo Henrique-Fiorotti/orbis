@@ -14,6 +14,7 @@ import {
 import {
   getIntegrityTrendDataFromHistories,
   getIntegrityTrendDataFromSnapshot,
+  getMachineIntegrityTrendOptions,
   normalizeHistoricoIntegridadeCollection,
 } from "@/lib/orbis-dashboard"
 
@@ -27,6 +28,7 @@ const INITIAL_STATE = {
   maquinas: [],
   sensores: [],
   integrityTrendData: [],
+  machineIntegrityOptions: [],
   errors: {
     maquinas: "",
     sensores: "",
@@ -149,6 +151,8 @@ export function DashboardChartsProvider({ children }) {
       const integrityTrendData = machineHistories.some((entry) => entry.historico.length > 0)
         ? getIntegrityTrendDataFromHistories(machineHistories, maquinas)
         : getIntegrityTrendDataFromSnapshot(maquinas)
+      const integrityReferenceDate = integrityTrendData[integrityTrendData.length - 1]?.date
+      const machineIntegrityOptions = getMachineIntegrityTrendOptions(machineHistories, maquinas, integrityReferenceDate)
 
       const errors = {
         maquinas:
@@ -185,6 +189,7 @@ export function DashboardChartsProvider({ children }) {
         maquinas,
         sensores,
         integrityTrendData,
+        machineIntegrityOptions,
         errors,
         notices,
       })
