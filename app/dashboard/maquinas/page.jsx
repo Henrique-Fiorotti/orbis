@@ -38,7 +38,6 @@ import {
 } from "@tanstack/react-table"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
-import { tempoRelativo } from "@/lib/utils"
 import {
   MAQUINA_IMPORTANCIA_FILTER_OPTIONS as IMPORTANCIA_FILTER_OPTIONS,
   MAQUINA_IMPORTANCIA_SORT_OPTIONS as IMPORTANCIA_SORT_OPTIONS,
@@ -48,7 +47,6 @@ import {
   MAQUINA_STATUS_SORT_OPTIONS as STATUS_SORT_OPTIONS,
   getMaquinaIntegridadeExibicao,
   getMaquinaStatusExibicao,
-  getMaquinaUltimaLeituraExibicao,
   importanciaMaquinaSortFn,
   integridadeMaquinaFilterFn as integridadeFilterFn,
   selectMaquinaFilterFn as selectFilterFn,
@@ -659,22 +657,13 @@ export default function MaquinasPage() {
       filterFn: integridadeFilterFn,
     },
     {
-      id: "ultimaLeituraEm",
-      accessorFn: getMaquinaUltimaLeituraExibicao,
-      header: "Último sinal",
-      cell: ({ row }) => (
-        <span className="text-muted-foreground text-sm">
-          {row.getValue("ultimaLeituraEm") ? tempoRelativo(row.getValue("ultimaLeituraEm")) : "Sem leitura"}
-        </span>
-      ),
-    },
-    {
       id: "actions",
       cell: ({ row }) => {
         const menuId = String(row.original.id ?? row.id)
 
         return (
           <DropdownMenu
+            modal={false}
             open={openActionMenuId === menuId}
             onOpenChange={(open) => setOpenActionMenuId(open ? menuId : null)}
           >
@@ -683,7 +672,7 @@ export default function MaquinasPage() {
                 <EllipsisVerticalIcon />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuContent align="end" sideOffset={8} collisionPadding={{ top: 96, right: 16, bottom: 16, left: 16 }} className="z-[80] w-36">
               <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}>
                 <EyeIcon className="mr-1 size-4" /> Ver detalhes
               </DropdownMenuItem>
@@ -890,7 +879,7 @@ export default function MaquinasPage() {
                 <TableBody>
                   {table.getRowModel().rows.length ? (
                     table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id} className="relative z-0">
+                      <TableRow key={row.id}>
                         {row.getVisibleCells().map((cell) => (
                           <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                         ))}
@@ -916,7 +905,7 @@ export default function MaquinasPage() {
             {modoSheet === "ver" && maquinaDetalhada ? (
               <div key="ver" className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">
                 <div className="shrink-0 px-4 pt-4 bg-gradient-to-b from-popover to-popover/80">
-                  <MaquinaImagePreview maquina={maquinaDetalhada} />
+                  <MaquinaImagePreview maquina={maquinaDetalhada} className="h-28 aspect-auto sm:h-32" />
                 </div>
                 <SheetHeader className="shrink-0">
                   <SheetTitle>Detalhes da máquina</SheetTitle>

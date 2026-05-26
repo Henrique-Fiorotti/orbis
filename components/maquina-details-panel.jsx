@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts"
 import {
   ActivityIcon,
   AlertTriangleIcon,
@@ -20,15 +21,16 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Label } from "@/components/ui/label"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   getMaquinaIntegridadeExibicao,
   getMaquinaStatusExibicao,
-  getMaquinaUltimaLeituraExibicao,
 } from "@/lib/maquinas-table"
 import { getAuthSession } from "@/lib/auth-session"
-import { getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
+import { extractCollection, getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
 import { cn, tempoRelativo } from "@/lib/utils"
 
 const PREDICAO_LIMIAR_MANUTENCAO = 70
@@ -90,6 +92,17 @@ const FONTE_LIMIAR_LABELS = {
   MAQUINA: "Máquina",
   TIPO_MAQUINA: "Tipo de máquina",
   GLOBAL: "Base global",
+}
+
+const REGRESSION_CHART_CONFIG = {
+  integridade: {
+    label: "Integridade real",
+    color: "var(--primary)",
+  },
+  regressao: {
+    label: "Regressao linear",
+    color: "var(--chart-3)",
+  },
 }
 
 function getMachineSensors(maquina, sensores) {
@@ -289,10 +302,37 @@ function unwrapPredictionPayload(payload, key) {
   return payload
 }
 
+function normalizeHistoricoIntegridadeCollection(payload) {
+  return extractCollection(payload)
+    .map((raw, index) => {
+      const integridade = getNumericValue(raw?.integridade, raw?.saude, raw?.healthScore)
+      const scoreEstabilidade = getNumericValue(raw?.scoreEstabilidade, raw?.estabilidade, raw?.stabilityScore)
+      const criadoEm = raw?.criadoEm ?? raw?.createdAt ?? raw?.dataCriacao ?? raw?.timestamp
+      const date = parseDateValue(criadoEm)
+
+      if (!date || integridade === null) {
+        return null
+      }
+
+      return {
+        id: raw?.id ?? `${date.toISOString()}-${index}`,
+        maquinaId: raw?.maquinaId ?? raw?.maquina?.id ?? null,
+        integridade,
+        scoreEstabilidade,
+        origem: raw?.origem ?? "",
+        observacao: raw?.observacao ?? "",
+        criadoEm: date.toISOString(),
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => Date.parse(a.criadoEm) - Date.parse(b.criadoEm))
+}
+
 async function fetchMachinePredictions(maquinaId, accessToken, signal) {
-  const [alertasResult, riscoResult] = await Promise.allSettled([
+  const [alertasResult, riscoResult, historicoResult] = await Promise.allSettled([
     requestDashboardJson(`/maquinas/${maquinaId}/predicao-alertas`, accessToken, "a predição de alertas", { signal }),
     requestDashboardJson(`/maquinas/${maquinaId}/predicao-risco`, accessToken, "a predição de risco", { signal }),
+    requestDashboardJson(`/maquinas/${maquinaId}/historico-integridade?limite=30`, accessToken, "o historico de integridade", { signal }),
   ])
 
   const alertas =
@@ -303,6 +343,10 @@ async function fetchMachinePredictions(maquinaId, accessToken, signal) {
     riscoResult.status === "fulfilled"
       ? unwrapPredictionPayload(riscoResult.value, "predicaoRisco")
       : null
+  const historico =
+    historicoResult.status === "fulfilled"
+      ? normalizeHistoricoIntegridadeCollection(historicoResult.value)
+      : []
   const errors = {
     alertas: alertasResult.status === "rejected" && alertasResult.reason instanceof Error
       ? alertasResult.reason.message
@@ -310,12 +354,15 @@ async function fetchMachinePredictions(maquinaId, accessToken, signal) {
     risco: riscoResult.status === "rejected" && riscoResult.reason instanceof Error
       ? riscoResult.reason.message
       : "",
+    historico: historicoResult.status === "rejected" && historicoResult.reason instanceof Error
+      ? historicoResult.reason.message
+      : "",
   }
-  const unauthorized = [alertasResult, riscoResult].some(
+  const unauthorized = [alertasResult, riscoResult, historicoResult].some(
     (result) => result.status === "rejected" && getHttpErrorStatus(result.reason) === 401
   )
 
-  return { alertas, risco, errors, unauthorized }
+  return { alertas, risco, historico, errors, unauthorized }
 }
 
 function calculateSensorHealthScore(sensor) {
@@ -426,6 +473,118 @@ function PredictionMetric({ label, value, sub }) {
   )
 }
 
+function getPredictionModel(predicao) {
+  const modelo = predicao?.modeloIntegridade
+
+  if (!modelo || typeof modelo !== "object") {
+    return null
+  }
+
+  const slope = getNumericValue(modelo.slope)
+  const intercept = getNumericValue(modelo.intercept)
+
+  if (slope === null || intercept === null) {
+    return null
+  }
+
+  return {
+    ...modelo,
+    r2: getNumericValue(modelo.r2),
+    slope,
+    intercept,
+    pontosUsados: getNumericValue(modelo.pontosUsados),
+  }
+}
+
+function getNextAlertSummary(predicao) {
+  const prediction = predicao?.proximoAlerta
+
+  if (!prediction) {
+    return {
+      value: "Sem previsao",
+      sub: formatPredictionReason(predicao?.ausenciaProximoAlerta?.motivo) || "Ainda sem evento previsivel.",
+    }
+  }
+
+  const tipo = ALERTA_TIPO_LABELS[prediction.tipo] ?? prediction.tipo ?? "Alerta"
+  const confidence = formatPercentProbability(prediction.confianca)
+
+  return {
+    value: formatPredictionDate(prediction.dataPrevista),
+    sub: `${tipo} - ${confidence} confianca`,
+  }
+}
+
+function getHighestRiskSummary(predicao) {
+  const riscos = predicao?.riscos && typeof predicao.riscos === "object" ? predicao.riscos : {}
+  const candidates = Object.entries(riscos)
+    .map(([type, risk]) => ({
+      type,
+      risk,
+      value: Number(risk?.["72h"]),
+    }))
+    .filter((item) => Number.isFinite(item.value))
+    .sort((a, b) => b.value - a.value)
+
+  if (candidates.length === 0) {
+    const reason = Object.values(riscos)
+      .map((risk) => formatPredictionReason(risk?.motivoAusencia))
+      .find(Boolean)
+
+    return {
+      value: "N/A",
+      sub: reason || "Risco ainda nao calculado.",
+    }
+  }
+
+  const top = candidates[0]
+  const label = RISCO_LABELS[top.type] ?? top.type
+
+  return {
+    value: `${label} ${formatPercentProbability(top.value)}`,
+    sub: `${getRiskBadgeLabel(top.risk?.classificacao)} em 72h`,
+  }
+}
+
+function PredicaoResumoCard({ maquina, summary, predicaoAlertas, predicaoRisco, onOpenRegression }) {
+  const nextAlert = getNextAlertSummary(predicaoAlertas)
+  const highestRisk = getHighestRiskSummary(predicaoRisco)
+
+  return (
+    <div className="rounded-lg border border-[#5E17EB]/25 bg-[#5E17EB]/5 p-3 dark:border-[#5E17EB]/45 dark:bg-[#5E17EB]/10">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <ActivityIcon className="size-4 shrink-0 text-[#5E17EB]" />
+            <Label>Resumo preditivo</Label>
+          </div>
+          <p className="mt-2 text-sm font-semibold leading-snug">{summary.title}</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{summary.description}</p>
+        </div>
+        <Badge variant="outline" className="shrink-0 border-[#5E17EB]/35 bg-background/80 px-2 text-xs text-[#7c3aed] dark:text-[#A780FF]">
+          {summary.badge}
+        </Badge>
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <PredictionMetric label="Status" value={summary.badge} sub={summary.title} />
+        <PredictionMetric
+          label="Falha prevista"
+          value={formatPredictionDate(maquina.previsaoManutencao)}
+          sub={formatDaysUntil(maquina.previsaoManutencao) || "Sem data confiavel"}
+        />
+        <PredictionMetric label="Proximo alerta" value={nextAlert.value} sub={nextAlert.sub} />
+        <PredictionMetric label="Maior risco 72h" value={highestRisk.value} sub={highestRisk.sub} />
+      </div>
+
+      <Button type="button" className="mt-3 w-full cursor-pointer" onClick={onOpenRegression}>
+        <ActivityIcon className="mr-1 size-4" />
+        Ver regressao
+      </Button>
+    </div>
+  )
+}
+
 function PredicaoManutencaoCard({
   maquina,
   sensoresDaMaquina,
@@ -518,7 +677,7 @@ function PredictionRemoteNotice({ loading, errors }) {
   if (loading) {
     return (
       <div className="rounded-lg border border-border/70 bg-background/80 p-3 text-xs text-muted-foreground">
-        Atualizando predições de risco e alertas...
+        Atualizando predicoes, risco e historico...
       </div>
     )
   }
@@ -724,6 +883,339 @@ function PredicaoRiscoCard({ predicao }) {
         <p className="mt-2 text-[11px] text-muted-foreground">Modelo: {predicao.modeloVersao}</p>
       ) : null}
     </div>
+  )
+}
+
+function getRegressionValue(modelo, hoursSinceBase) {
+  if (!modelo || !Number.isFinite(hoursSinceBase)) {
+    return null
+  }
+
+  const value = modelo.intercept + (modelo.slope * hoursSinceBase)
+  return Number.isFinite(value) ? Number(value.toFixed(2)) : null
+}
+
+function getChartDate(value) {
+  if (typeof value === "number") {
+    const date = new Date(value)
+    return Number.isFinite(date.getTime()) ? date : null
+  }
+
+  return parseDateValue(value)
+}
+
+function formatChartDate(value) {
+  const date = getChartDate(value)
+
+  if (!date) {
+    return ""
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date)
+}
+
+function formatChartTickDate(value) {
+  const date = getChartDate(value)
+
+  if (!date) {
+    return ""
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+  }).format(date)
+}
+
+function buildRegressionChartData(historico, modelo, previsaoManutencao) {
+  const points = Array.isArray(historico) ? historico : []
+
+  if (points.length === 0) {
+    return []
+  }
+
+  const baseTime = Date.parse(points[0].criadoEm)
+
+  if (!Number.isFinite(baseTime)) {
+    return []
+  }
+
+  const data = points
+    .map((point, index) => {
+      const timestamp = Date.parse(point.criadoEm)
+      const integridade = getNumericValue(point.integridade)
+
+      if (!Number.isFinite(timestamp) || integridade === null) {
+        return null
+      }
+
+      const hours = (timestamp - baseTime) / (1000 * 60 * 60)
+
+      return {
+        id: point.id ?? index,
+        timestamp,
+        integridade,
+        regressao: getRegressionValue(modelo, hours),
+        projected: false,
+      }
+    })
+    .filter(Boolean)
+
+  const forecastDate = parseDateValue(previsaoManutencao)
+  const lastTimestamp = data[data.length - 1]?.timestamp
+
+  if (modelo && forecastDate && Number.isFinite(lastTimestamp) && forecastDate.getTime() > lastTimestamp) {
+    const hours = (forecastDate.getTime() - baseTime) / (1000 * 60 * 60)
+
+    data.push({
+      id: "previsao-falha",
+      timestamp: forecastDate.getTime(),
+      integridade: null,
+      regressao: getRegressionValue(modelo, hours),
+      projected: true,
+    })
+  }
+
+  return data
+}
+
+function getRegressionNotice({ loading, errors, historico, modelo, predicaoAlertas }) {
+  if (loading) {
+    return {
+      tone: "muted",
+      title: "Atualizando regressao",
+      description: "Buscando historico de integridade e dados do modelo.",
+    }
+  }
+
+  if (errors?.historico && historico.length === 0) {
+    return {
+      tone: "warning",
+      title: "Historico indisponivel",
+      description: errors.historico,
+    }
+  }
+
+  if (historico.length === 0) {
+    return {
+      tone: "muted",
+      title: "Sem historico de integridade",
+      description: "A API ainda nao retornou pontos suficientes para desenhar a curva da maquina.",
+    }
+  }
+
+  const absenceReason =
+    predicaoAlertas?.ausenciaProximoAlerta?.motivo ||
+    predicaoAlertas?.ausenciaInstabilidade?.motivo
+
+  if (!modelo) {
+    return {
+      tone: "warning",
+      title: "Modelo indisponivel",
+      description: formatPredictionReason(absenceReason) || "O backend ainda nao retornou uma regressao para esta maquina.",
+    }
+  }
+
+  if (modelo.slope >= 0) {
+    return {
+      tone: "warning",
+      title: "Tendencia sem queda",
+      description: "A reta calculada nao aponta degradacao suficiente para projetar falha.",
+    }
+  }
+
+  if (modelo.r2 !== null && modelo.r2 < 0.6) {
+    return {
+      tone: "warning",
+      title: "Ajuste ainda fraco",
+      description: "O historico existe, mas o ajuste do modelo ainda nao atingiu confianca minima.",
+    }
+  }
+
+  return {
+    tone: "stable",
+    title: "Modelo calculado",
+    description: "A linha tracejada mostra a tendencia linear usada pelo algoritmo preditivo.",
+  }
+}
+
+function RegressionChartMessage({ message, tone = "muted" }) {
+  return (
+    <div
+      className={cn(
+        "flex h-[280px] items-center justify-center rounded-lg border border-dashed px-4 text-center text-sm",
+        tone === "warning"
+          ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-300"
+          : "border-border/70 bg-muted/20 text-muted-foreground"
+      )}
+    >
+      {message}
+    </div>
+  )
+}
+
+function PredictionRegressionChart({ data, loading, errors, hasRegression }) {
+  if (loading && data.length === 0) {
+    return <RegressionChartMessage message="Carregando historico da maquina..." />
+  }
+
+  if (data.length === 0) {
+    return (
+      <RegressionChartMessage
+        message={errors?.historico || "Nao ha pontos de integridade suficientes para montar o grafico."}
+        tone={errors?.historico ? "warning" : "muted"}
+      />
+    )
+  }
+
+  return (
+    <ChartContainer config={REGRESSION_CHART_CONFIG} className="aspect-auto h-[280px] w-full">
+      <LineChart data={data} margin={{ left: 0, right: 12, top: 12, bottom: 8 }}>
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="timestamp"
+          type="number"
+          domain={["dataMin", "dataMax"]}
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          minTickGap={28}
+          tickFormatter={formatChartTickDate}
+        />
+        <YAxis
+          width={36}
+          domain={[0, 100]}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={(value) => `${value}%`}
+        />
+        <ReferenceLine
+          y={PREDICAO_LIMIAR_MANUTENCAO}
+          stroke="#f59e0b"
+          strokeDasharray="4 4"
+          label={{ value: "Manutencao 70%", position: "insideTopRight", fill: "#d97706", fontSize: 11 }}
+        />
+        <ReferenceLine
+          y={PREDICAO_LIMIAR_FALHA}
+          stroke="#ef4444"
+          strokeDasharray="4 4"
+          label={{ value: "Falha 30%", position: "insideBottomRight", fill: "#dc2626", fontSize: 11 }}
+        />
+        <ChartTooltip
+          cursor={false}
+          content={
+            <ChartTooltipContent
+              labelFormatter={(value, payload) => formatChartDate(payload?.[0]?.payload?.timestamp ?? value)}
+              indicator="dot"
+            />
+          }
+        />
+        <Line
+          dataKey="integridade"
+          type="monotone"
+          stroke="var(--color-integridade)"
+          strokeWidth={2}
+          dot={{ r: 3 }}
+          activeDot={{ r: 5 }}
+          connectNulls={false}
+        />
+        {hasRegression ? (
+          <Line
+            dataKey="regressao"
+            type="monotone"
+            stroke="var(--color-regressao)"
+            strokeWidth={2}
+            strokeDasharray="6 5"
+            dot={false}
+            connectNulls
+          />
+        ) : null}
+      </LineChart>
+    </ChartContainer>
+  )
+}
+
+function PredictionRegressionSheet({
+  open,
+  onOpenChange,
+  maquina,
+  predicaoAlertas,
+  historico,
+  loading,
+  errors,
+}) {
+  const modelo = React.useMemo(() => getPredictionModel(predicaoAlertas), [predicaoAlertas])
+  const chartData = React.useMemo(
+    () => buildRegressionChartData(historico, modelo, maquina?.previsaoManutencao),
+    [historico, maquina?.previsaoManutencao, modelo]
+  )
+  const notice = getRegressionNotice({
+    loading,
+    errors,
+    historico,
+    modelo,
+    predicaoAlertas,
+  })
+  const noticeClasses = {
+    stable: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/25 dark:text-emerald-300",
+    warning: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-300",
+    muted: "border-border bg-muted/30 text-muted-foreground",
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[680px]! sm:max-w-none!">
+        <SheetHeader className="shrink-0 pr-12">
+          <SheetTitle>Regressao de integridade</SheetTitle>
+          <SheetDescription>{maquina?.nome ? `${maquina.nome} - historico e tendencia linear` : "Historico e tendencia linear"}</SheetDescription>
+        </SheetHeader>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+          <div className={cn("rounded-lg border px-3 py-2 text-xs leading-relaxed", noticeClasses[notice.tone])}>
+            <p className="font-semibold">{notice.title}</p>
+            <p className="mt-1">{notice.description}</p>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-border/70 bg-background/70 p-3">
+            <PredictionRegressionChart
+              data={chartData}
+              loading={loading}
+              errors={errors}
+              hasRegression={Boolean(modelo)}
+            />
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <PredictionMetric label="R2" value={modelo ? formatDecimal(modelo.r2, 2) : "N/A"} sub="Ajuste do modelo" />
+            <PredictionMetric label="Inclinacao" value={modelo ? formatDecimal(modelo.slope, 4) : "N/A"} sub="Pontos percentuais por hora" />
+            <PredictionMetric label="Pontos usados" value={formatCount(modelo?.pontosUsados ?? historico.length)} sub="Ate 30 pontos recentes" />
+            <PredictionMetric
+              label="Falha prevista"
+              value={formatPredictionDate(maquina?.previsaoManutencao)}
+              sub={formatDaysUntil(maquina?.previsaoManutencao) || "Sem data confiavel"}
+            />
+            <div className="sm:col-span-2">
+              <PredictionMetric
+                label="Janela ideal"
+                value={formatPredictionRange(maquina?.janelaManuInicio, maquina?.janelaManuFim)}
+                sub={maquina?.janelaManuFim ? `${PREDICAO_ANTECEDENCIA_FIM_JANELA_DIAS} dias antes da falha` : "Sem janela calculada"}
+              />
+            </div>
+          </div>
+
+          {errors?.alertas || errors?.risco ? (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-300">
+              {errors.alertas || errors.risco}
+            </div>
+          ) : null}
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -954,7 +1446,6 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
   )
   const statusExibicao = getMaquinaStatusExibicao(maquinaComTotalSensores)
   const integridadeExibicao = getMaquinaIntegridadeExibicao(maquinaComTotalSensores)
-  const ultimaLeituraExibicao = getMaquinaUltimaLeituraExibicao(maquinaComTotalSensores)
   const predictionSummary = React.useMemo(
     () => getPredictionSummary({ maquina, statusExibicao, integridadeExibicao }),
     [maquina, statusExibicao, integridadeExibicao]
@@ -963,13 +1454,16 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
     predicao: false,
     sensores: false,
   })
+  const [regressionSheetOpen, setRegressionSheetOpen] = React.useState(false)
   const [predictionInsights, setPredictionInsights] = React.useState({
     status: "idle",
     alertas: null,
     risco: null,
+    historico: [],
     errors: {
       alertas: "",
       risco: "",
+      historico: "",
     },
   })
 
@@ -978,6 +1472,7 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
       predicao: false,
       sensores: false,
     })
+    setRegressionSheetOpen(false)
   }, [maquina?.id])
 
   React.useEffect(() => {
@@ -988,9 +1483,11 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
         status: "idle",
         alertas: null,
         risco: null,
+        historico: [],
         errors: {
           alertas: "",
           risco: "",
+          historico: "",
         },
       })
       return
@@ -1003,9 +1500,11 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
         status: "error",
         alertas: null,
         risco: null,
+        historico: [],
         errors: {
           alertas: "Faça login para carregar as predições da máquina.",
           risco: "",
+          historico: "",
         },
       })
       return
@@ -1018,26 +1517,30 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
       status: "loading",
       alertas: null,
       risco: null,
+      historico: [],
       errors: {
         alertas: "",
         risco: "",
+        historico: "",
       },
     })
 
     fetchMachinePredictions(maquinaId, session.accessToken, controller.signal)
-      .then(({ alertas, risco, errors, unauthorized }) => {
+      .then(({ alertas, risco, historico, errors, unauthorized }) => {
         if (ignore) {
           return
         }
 
         setPredictionInsights({
-          status: alertas || risco ? "success" : "error",
+          status: alertas || risco || historico.length > 0 ? "success" : "error",
           alertas,
           risco,
+          historico,
           errors: unauthorized
             ? {
                 alertas: "Sua sessão expirou. Faça login novamente.",
                 risco: "",
+                historico: "",
               }
             : errors,
         })
@@ -1051,9 +1554,11 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
           status: "error",
           alertas: null,
           risco: null,
+          historico: [],
           errors: {
             alertas: error instanceof Error ? error.message : "Não foi possível carregar as predições da máquina.",
             risco: "",
+            historico: "",
           },
         })
       })
@@ -1116,12 +1621,6 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
           <Label>Sensores vinculados</Label>
           <span className="font-medium">{totalSensores}</span>
         </div>
-        <div className="col-span-2 flex flex-col gap-1">
-          <Label>Último sinal</Label>
-          <span className="font-medium">
-            {ultimaLeituraExibicao ? tempoRelativo(ultimaLeituraExibicao) : "Sem leitura"}
-          </span>
-        </div>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -1141,16 +1640,13 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
               loading={predictionInsights.status === "loading"}
               errors={predictionInsights.errors}
             />
-            <PredicaoManutencaoCard
+            <PredicaoResumoCard
               maquina={maquina}
-              sensoresDaMaquina={sensoresDaMaquina}
-              integridadeExibicao={integridadeExibicao}
-              statusExibicao={statusExibicao}
               summary={predictionSummary}
-              showHeader={false}
+              predicaoAlertas={predictionInsights.alertas}
+              predicaoRisco={predictionInsights.risco}
+              onOpenRegression={() => setRegressionSheetOpen(true)}
             />
-            <PredicaoAlertasCard predicao={predictionInsights.alertas} />
-            <PredicaoRiscoCard predicao={predictionInsights.risco} />
           </div>
         </DetailsAccordionSection>
 
@@ -1205,6 +1701,16 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
           </div>
         </DetailsAccordionSection>
       </div>
+
+      <PredictionRegressionSheet
+        open={regressionSheetOpen}
+        onOpenChange={setRegressionSheetOpen}
+        maquina={maquina}
+        predicaoAlertas={predictionInsights.alertas}
+        historico={predictionInsights.historico}
+        loading={predictionInsights.status === "loading"}
+        errors={predictionInsights.errors}
+      />
     </div>
   )
 }

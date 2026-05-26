@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
 
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
@@ -69,7 +70,15 @@ function isToday(value) {
   return date.toDateString() === today.toDateString()
 }
 
+function handleCardKeyDown(event, onClick) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault()
+    onClick()
+  }
+}
+
 export function SectionCards() {
+  const router = useRouter()
   const { status: maquinasStatus } = useMaquinas()
   const { status: sensoresStatus } = useSensores()
   const { status: tecnicosStatus } = useTecnicos()
@@ -159,7 +168,14 @@ export function SectionCards() {
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
-        <Card className="@container/card border-[#5E17EB]! border-2 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
+        <Card
+          role="link"
+          tabIndex={0}
+          aria-label="Abrir página de máquinas"
+          onClick={() => router.push("/dashboard/maquinas")}
+          onKeyDown={(event) => handleCardKeyDown(event, () => router.push("/dashboard/maquinas"))}
+          className="@container/card cursor-pointer border-[#5E17EB]! border-2 transition-colors hover:ring-[#5E17EB]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10"
+        >
           <CardHeader>
             <CardDescription>Máquinas ativas</CardDescription>
             <CardTitle className="text-[#5E17EB]! text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
@@ -183,7 +199,14 @@ export function SectionCards() {
           </CardFooter>
         </Card>
 
-        <Card className="@container/card hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
+        <Card
+          role="link"
+          tabIndex={0}
+          aria-label="Abrir página de alertas"
+          onClick={() => router.push("/dashboard/alertas")}
+          onKeyDown={(event) => handleCardKeyDown(event, () => router.push("/dashboard/alertas"))}
+          className="@container/card cursor-pointer hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10"
+        >
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Alertas ativos</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
@@ -210,7 +233,14 @@ export function SectionCards() {
           </CardFooter>
         </Card>
 
-        <Card className="@container/card hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10">
+        <Card
+          role="link"
+          tabIndex={0}
+          aria-label="Abrir página de sensores"
+          onClick={() => router.push("/dashboard/sensores")}
+          onKeyDown={(event) => handleCardKeyDown(event, () => router.push("/dashboard/sensores"))}
+          className="@container/card cursor-pointer hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 focus-within:border-[#5E17EB]! focus-within:ring-[#5E17EB]/10"
+        >
           <CardHeader>
             <CardDescription className="text-black! dark:text-white!">Sensores online</CardDescription>
             <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">

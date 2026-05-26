@@ -1539,13 +1539,13 @@ export default function AgendamentosPage() {
 
         return (
           <div className="text-right">
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="cursor-pointer size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon" disabled={actionBusy}>
                   <EllipsisVerticalIcon className="size-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuContent align="end" sideOffset={8} collisionPadding={{ top: 96, right: 16, bottom: 16, left: 16 }} className="z-[80] w-44">
                 <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => abrirVer(agendamento)}>
                   <EyeIcon className="mr-1 size-4" /> Ver detalhes
                 </DropdownMenuItem>
@@ -1766,7 +1766,7 @@ export default function AgendamentosPage() {
                 </TableRow>
               ) : (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} className="relative z-0">
+                  <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                     ))}

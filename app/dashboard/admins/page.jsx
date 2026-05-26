@@ -37,6 +37,7 @@ import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { SiteHeader } from "@/components/site-header"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DirectoryTableSkeleton } from "@/components/dashboard-skeletons"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { TablePagination } from "@/components/table-pagination"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
@@ -671,13 +672,13 @@ export default function AdminsPage() {
           {
             id: "actions",
             cell: ({ row }) => (
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
                     <EllipsisVerticalIcon />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-36">
+                <DropdownMenuContent align="end" sideOffset={8} collisionPadding={{ top: 96, right: 16, bottom: 16, left: 16 }} className="z-[80] w-36">
                   <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirEditar(row.original))}><PencilIcon className="size-4 mr-1" /> Editar</DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -766,7 +767,7 @@ export default function AdminsPage() {
         </div>
 
         {loadingInicial ? (
-          <StatePanel message="Sincronizando administradores com a API..." />
+          <DirectoryTableSkeleton label="Carregando administradores" />
         ) : errorSemDados ? (
           <StatePanel message={mensagem || "Não foi possível carregar os administradores."} tone="error" />
         ) : (
@@ -799,7 +800,7 @@ export default function AdminsPage() {
                 <TableBody>
                   {table.getRowModel().rows.length ? (
                     table.getRowModel().rows.map((row) => (
-                      <TableRow className="relative z-0" key={row.id}>
+                      <TableRow key={row.id}>
                         {row.getVisibleCells().map((cell) => (
                           <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                         ))}

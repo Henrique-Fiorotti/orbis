@@ -21,6 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
+import { DirectoryTableSkeleton } from "@/components/dashboard-skeletons"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
 import { TablePagination } from "@/components/table-pagination"
@@ -594,13 +595,13 @@ export default function TecnicosPage() {
     {
       id: "actions",
       cell: ({ row }) => (
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="cursor-pointer flex size-8 text-muted-foreground data-[state=open]:bg-muted" size="icon">
               <EllipsisVerticalIcon />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36">
+          <DropdownMenuContent align="end" sideOffset={8} collisionPadding={{ top: 96, right: 16, bottom: 16, left: 16 }} className="z-[80] w-36">
             <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => abrirVer(row.original))}><EyeIcon className="size-4 mr-1" /> Ver detalhes</DropdownMenuItem>
             {canManageTecnicos ? (
               <>
@@ -729,7 +730,7 @@ export default function TecnicosPage() {
         </div>
 
         {loadingInicial ? (
-          <StatePanel message="Sincronizando técnicos da página com a API..." />
+          <DirectoryTableSkeleton label="Carregando tecnicos" />
         ) : errorSemDados ? (
           <StatePanel message={mensagem || "Não foi possível carregar os técnicos."} tone="error" />
         ) : (
@@ -759,7 +760,7 @@ export default function TecnicosPage() {
             <TableBody>
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map(row => (
-                  <TableRow className="relative z-0" key={row.id}>
+                  <TableRow key={row.id}>
                     {row.getVisibleCells().map(cell => <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>)}
                   </TableRow>
                 ))
