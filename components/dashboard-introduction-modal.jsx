@@ -114,13 +114,10 @@ export function DashboardIntroductionModal() {
         </div>
 
         <div className="relative min-h-[260px] overflow-hidden bg-black md:min-h-[612px]">
-          <video
-            className="h-full min-h-[260px] w-full object-cover md:min-h-[612px] object-right"
+          <img
+            className="h-full min-h-[260px] w-full object-cover md:min-h-[612px] object-left"
             src={INTRODUCTION_VIDEO_SRC}
-            autoPlay
-            muted
-            loop
-            playsInline
+            alt="Introdução ao Orbis"
           />
           <button
             type="button"
