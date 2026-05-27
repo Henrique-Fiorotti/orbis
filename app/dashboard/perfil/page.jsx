@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { CODE_LENGTH, OtpCodeInput } from "@/components/ui/otp-code-input"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { clearAuthSession, getAuthSession, updateAuthSessionUser } from "@/lib/auth-session"
@@ -289,6 +290,7 @@ export default function PerfilPage() {
   const [salvandoSenha, setSalvandoSenha] = React.useState(false)
   const [senhaEtapa, setSenhaEtapa] = React.useState("solicitar")
   const [activeTab, setActiveTab] = React.useState("dados")
+  const [atendimentoSelecionado, setAtendimentoSelecionado] = React.useState(null)
   const inputFotoRef = React.useRef(null)
   const [senhas, setSenhas] = React.useState({
     atual: "",
@@ -323,6 +325,13 @@ export default function PerfilPage() {
     () => new Set(meusAtendimentos.map((alerta) => alerta.maquinaId ?? normalizeText(alerta.maquinaNome)).filter(Boolean)).size,
     [meusAtendimentos]
   )
+  const atendimentoDetalhado = React.useMemo(() => {
+    if (!atendimentoSelecionado?.id) {
+      return atendimentoSelecionado
+    }
+
+    return meusAtendimentos.find((alerta) => String(alerta.id) === String(atendimentoSelecionado.id)) ?? atendimentoSelecionado
+  }, [atendimentoSelecionado, meusAtendimentos])
 
   React.useEffect(() => {
     let isActive = true
@@ -698,6 +707,10 @@ export default function PerfilPage() {
     }
 
     await solicitarCodigoSenha()
+  }
+
+  function abrirDetalhesAtendimento(alerta) {
+    setAtendimentoSelecionado(alerta)
   }
 
   if (loading) {
@@ -1113,7 +1126,7 @@ export default function PerfilPage() {
                           key={alerta.id}
                           type="button"
                           className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-muted/15 px-3 py-3 text-left transition-colors hover:border-[#5E17EB]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30"
-                          onClick={() => router.push(`/dashboard/alertas?alertaId=${encodeURIComponent(alerta.id)}`)}
+                          onClick={() => abrirDetalhesAtendimento(alerta)}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
@@ -1150,7 +1163,7 @@ export default function PerfilPage() {
                         <AtendimentoMobileCard
                           key={alerta.id}
                           alerta={alerta}
-                          onOpen={(item) => router.push(`/dashboard/alertas?alertaId=${encodeURIComponent(item.id)}`)}
+                          onOpen={abrirDetalhesAtendimento}
                         />
                       ))
                     ) : (
@@ -1176,7 +1189,7 @@ export default function PerfilPage() {
                             <TableRow
                               key={alerta.id}
                               className="cursor-pointer"
-                              onClick={() => router.push(`/dashboard/alertas?alertaId=${encodeURIComponent(alerta.id)}`)}
+                              onClick={() => abrirDetalhesAtendimento(alerta)}
                             >
                               <TableCell className="font-medium text-sm whitespace-nowrap">
                                 <div className="flex min-w-0 flex-col">
@@ -1204,6 +1217,77 @@ export default function PerfilPage() {
             </TabsContent>
           ) : null}
         </Tabs>
+
+        <Sheet open={Boolean(atendimentoSelecionado)} onOpenChange={(open) => !open && setAtendimentoSelecionado(null)}>
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[560px]! sm:max-w-none!">
+            {atendimentoDetalhado ? (
+              <>
+                <SheetHeader className="shrink-0">
+                  <SheetTitle>Detalhes do atendimento</SheetTitle>
+                  <SheetDescription>{atendimentoDetalhado.sensorNome}</SheetDescription>
+                </SheetHeader>
+
+                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
+                  <div className="rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">{atendimentoDetalhado.maquinaNome}</p>
+                        <p className="mt-1 truncate text-sm text-muted-foreground">{atendimentoDetalhado.sensorNome}</p>
+                      </div>
+                      <StatusAlertaBadge value={atendimentoDetalhado.status} />
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Badge variant="outline" className="border-purple-200 bg-purple-50 px-1.5 text-xs font-normal text-[#3B2867] dark:border-primary/40 dark:bg-primary/10 dark:text-primary-foreground">
+                        {formatAlertType(atendimentoDetalhado.tipo)}
+                      </Badge>
+                      <Badge variant="outline" className="px-1.5 text-muted-foreground">
+                        {Math.max(Number(atendimentoDetalhado.ocorrencias) || 1, 1)} ocorr.
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs text-muted-foreground">Mensagem</Label>
+                    <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm leading-relaxed text-foreground">{atendimentoDetalhado.mensagem}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border bg-card p-3 shadow-xs">
+                      <span className="text-xs text-muted-foreground">Última ocorrência</span>
+                      <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                        {formatDateTime(getAlertDate(atendimentoDetalhado))}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 shadow-xs">
+                      <span className="text-xs text-muted-foreground">Ocorrências</span>
+                      <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                        {Math.max(Number(atendimentoDetalhado.ocorrencias) || 1, 1)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 shadow-xs">
+                      <span className="text-xs text-muted-foreground">Status</span>
+                      <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                        {atendimentoDetalhado.status === "RESOLVIDO" ? "Resolvido" : atendimentoDetalhado.status === "EM_ANDAMENTO" ? "Em andamento" : atendimentoDetalhado.status}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 shadow-xs">
+                      <span className="text-xs text-muted-foreground">Técnico</span>
+                      <p className="mt-1 truncate text-sm font-semibold text-[#3B2867] dark:text-white">
+                        {atendimentoDetalhado.tecnicoNome || perfil.nome || "Não informado"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
+                  <Button variant="outline" className="w-full cursor-pointer" onClick={() => setAtendimentoSelecionado(null)}>
+                    Fechar
+                  </Button>
+                </SheetFooter>
+              </>
+            ) : null}
+          </SheetContent>
+        </Sheet>
       </div>
     </>
   )

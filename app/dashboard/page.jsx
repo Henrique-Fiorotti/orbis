@@ -137,6 +137,22 @@ function isToday(value) {
   return date.toLocaleDateString("pt-BR") === new Date().toLocaleDateString("pt-BR")
 }
 
+function useMediaQuery(query) {
+  const [matches, setMatches] = React.useState(false)
+
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia(query)
+    const handleChange = () => setMatches(mediaQuery.matches)
+
+    handleChange()
+    mediaQuery.addEventListener("change", handleChange)
+
+    return () => mediaQuery.removeEventListener("change", handleChange)
+  }, [query])
+
+  return matches
+}
+
 function isAlertAssignedToUser(alerta, usuario) {
   if (!alerta || !usuario) {
     return false
@@ -514,6 +530,7 @@ function DashboardShortcuts({ id = "dashboard-shortcuts" }) {
 function TechnicianDashboard() {
   const router = useRouter()
   const usuario = getAuthSessionUser()
+  const isMobileDrawer = useMediaQuery("(max-width: 640px)")
   const {
     alertas,
     status: alertasStatus,
@@ -774,7 +791,7 @@ function TechnicianDashboard() {
           <MetricCard icon={ClockIcon} label="Em andamento" value={atendimentosDeOutrosTecnicos.length} sub="Atendimentos de outros técnicos" badge="Equipe" tone="yellow" onClick={() => focarSecaoTecnico("tour-technician-machines")} />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(300px,0.85fr)_minmax(320px,0.95fr)]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <section id="tour-technician-priority" className={getHighlightedPanelClass(technicianPriorityPanelClass, "tour-technician-priority")}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -955,8 +972,8 @@ function TechnicianDashboard() {
         </section>
       </div>
 
-      <Drawer direction="right" open={Boolean(alertaSelecionado)} onOpenChange={alternarDetalhesAtendimento}>
-        <DrawerContent className="w-[calc(100vw-1rem)] max-w-md overflow-hidden bg-background sm:max-w-lg">
+      <Drawer direction={isMobileDrawer ? "bottom" : "right"} open={Boolean(alertaSelecionado)} onOpenChange={alternarDetalhesAtendimento}>
+        <DrawerContent className="overflow-hidden bg-background data-[vaul-drawer-direction=bottom]:max-h-[92dvh] data-[vaul-drawer-direction=right]:w-[min(620px,calc(100vw-1rem))] data-[vaul-drawer-direction=right]:max-w-xl">
           {alertaSelecionado ? (
             <>
               <DrawerHeader className="border-b px-5 py-5 text-left">
