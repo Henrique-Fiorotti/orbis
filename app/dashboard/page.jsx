@@ -383,10 +383,12 @@ function TechnicianDashboard() {
   const { maquinas, status: maquinasStatus, recarregarMaquinas } = useMaquinas()
   const { sensores, status: sensoresStatus, recarregarSensores } = useSensores()
   const [startingAlertId, setStartingAlertId] = React.useState(null)
+  const [completingAlertId, setCompletingAlertId] = React.useState(null)
   const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
   const [atendimentosIniciados, setAtendimentosIniciados] = React.useState(() => new Set())
 
   const loading = alertasStatus === "loading" || maquinasStatus === "loading" || sensoresStatus === "loading"
+  const atendimentoActionPending = Boolean(startingAlertId || completingAlertId)
   const alertasAtivos = React.useMemo(() => alertas.filter((alerta) => alerta.status === "ATIVO"), [alertas])
   const alertasEmAndamento = React.useMemo(() => alertas.filter((alerta) => alerta.status === "EM_ANDAMENTO"), [alertas])
   const meusAtendimentos = React.useMemo(
@@ -508,9 +510,16 @@ function TechnicianDashboard() {
   }
 
   function alternarDetalhesAtendimento(open) {
-    if (!open && !startingAlertId) {
+    if (!open && !atendimentoActionPending) {
       setAlertaSelecionado(null)
     }
+  }
+
+  function podeConcluirAtendimento(alerta) {
+    return (
+      alerta?.status === "EM_ANDAMENTO" &&
+      (isAlertAssignedToUser(alerta, usuario) || atendimentosIniciados.has(alerta.id))
+    )
   }
 
   async function iniciarAtendimento(alerta) {
@@ -524,6 +533,25 @@ function TechnicianDashboard() {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o atendimento.")
     } finally {
       setStartingAlertId(null)
+    }
+  }
+
+  async function concluirAtendimento(alerta) {
+    if (!podeConcluirAtendimento(alerta)) {
+      toast.error("Este atendimento nao esta vinculado ao seu usuario.")
+      return
+    }
+
+    try {
+      setCompletingAlertId(alerta.id)
+      await atualizarStatus(alerta.id, "RESOLVIDO")
+      setAtendimentosIniciados((current) => new Set(current).add(alerta.id))
+      setAlertaSelecionado(null)
+      toast.success("Atendimento concluido.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel concluir o atendimento.")
+    } finally {
+      setCompletingAlertId(null)
     }
   }
 
@@ -761,10 +789,19 @@ function TechnicianDashboard() {
                   <Button
                     className="w-full cursor-pointer"
                     onClick={() => iniciarAtendimento(alertaSelecionado)}
-                    disabled={Boolean(startingAlertId)}
+                    disabled={atendimentoActionPending || salvando}
                   >
-                    {startingAlertId ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
+                    {startingAlertId === alertaSelecionado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
                     Iniciar atendimento
+                  </Button>
+                ) : podeConcluirAtendimento(alertaSelecionado) ? (
+                  <Button
+                    className="w-full cursor-pointer bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+                    onClick={() => concluirAtendimento(alertaSelecionado)}
+                    disabled={atendimentoActionPending || salvando}
+                  >
+                    {completingAlertId === alertaSelecionado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <CheckCircle2Icon className="mr-1 size-4" />}
+                    Concluir atendimento
                   </Button>
                 ) : (
                   <Button className="w-full" disabled>
@@ -772,7 +809,7 @@ function TechnicianDashboard() {
                   </Button>
                 )}
                 <DrawerClose asChild>
-                  <Button variant="outline" className="w-full cursor-pointer" disabled={Boolean(startingAlertId)}>
+                  <Button variant="outline" className="w-full cursor-pointer" disabled={atendimentoActionPending || salvando}>
                     Fechar
                   </Button>
                 </DrawerClose>
