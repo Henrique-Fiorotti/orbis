@@ -28,7 +28,7 @@ import { TablePagination } from "@/components/table-pagination"
 import {
   UsersIcon, EllipsisVerticalIcon, PlusIcon,
   ArrowLeftIcon, PencilIcon, Trash2Icon, EyeIcon, SearchIcon,
-  CircleCheckIcon, CircleMinusIcon, ImageIcon, RefreshCcwIcon,
+  ActivityIcon, CircleCheckIcon, CircleMinusIcon, ClockIcon, ImageIcon, RefreshCcwIcon,
 } from "lucide-react"
 import {
   flexRender, getCoreRowModel, getFilteredRowModel,
@@ -56,6 +56,20 @@ const ESPECIALIDADES = [
 const formVazio = {
   nome: "", email: "", senha: "", telefone: "",
   especialidade: "Elétrica Industrial", status: "ATIVO", foto: "",
+}
+
+const STATUS_ALERTA_LABEL = {
+  ATIVO: "Aberto",
+  EM_ANDAMENTO: "Em andamento",
+  RESOLVIDO: "Resolvido",
+  CANCELADO: "Cancelado",
+}
+
+const STATUS_ALERTA_BADGE_CLASS = {
+  ATIVO: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
+  EM_ANDAMENTO: "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300",
+  RESOLVIDO: "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
+  CANCELADO: "border-gray-200 bg-gray-50 text-gray-600 dark:border-border dark:bg-muted/30 dark:text-muted-foreground",
 }
 
 function getInitials(nome) {
@@ -165,6 +179,112 @@ function StatePanel({ message, tone = "muted" }) {
       }`}
     >
       {message}
+    </div>
+  )
+}
+
+function getAlertaData(alerta) {
+  return alerta?.ultimaOcorrenciaEm || alerta?.atualizadoEm || alerta?.criadoEm || ""
+}
+
+function getAlertaTimestamp(alerta) {
+  return Date.parse(getAlertaData(alerta)) || 0
+}
+
+function isAlertaDoTecnico(alerta, tecnico) {
+  if (!alerta || !tecnico) {
+    return false
+  }
+
+  if (alerta.tecnicoId !== null && alerta.tecnicoId !== undefined) {
+    return String(alerta.tecnicoId) === String(tecnico.id)
+  }
+
+  const nomeAlerta = normalizarBusca(alerta.tecnicoNome)
+  return Boolean(nomeAlerta) && nomeAlerta === normalizarBusca(tecnico.nome)
+}
+
+function StatusAlertaBadge({ value }) {
+  return (
+    <Badge variant="outline" className={`px-1.5 text-xs ${STATUS_ALERTA_BADGE_CLASS[value] ?? STATUS_ALERTA_BADGE_CLASS.ATIVO}`}>
+      {STATUS_ALERTA_LABEL[value] ?? value ?? "Alerta"}
+    </Badge>
+  )
+}
+
+function AtividadeStat({ label, value }) {
+  return (
+    <div className="rounded-lg border bg-background px-3 py-2">
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-lg font-semibold text-[#3B2867] dark:text-white">{value}</p>
+    </div>
+  )
+}
+
+function TecnicoAtividadeCard({ alertas, expanded, onToggle }) {
+  const total = alertas.length
+  const emAndamento = alertas.filter((alerta) => alerta.status === "EM_ANDAMENTO").length
+  const resolvidos = alertas.filter((alerta) => alerta.status === "RESOLVIDO").length
+  const visiveis = expanded ? alertas.slice(0, 8) : alertas.slice(0, 3)
+  const podeExpandir = total > 3
+
+  return (
+    <div className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <ActivityIcon className="size-4 text-[#5E17EB]" />
+            <h3 className="text-sm font-semibold text-[#3B2867] dark:text-white">Atividade recente</h3>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">Atendimentos vinculados a este tecnico.</p>
+        </div>
+        <Badge variant="outline" className="shrink-0 px-1.5 text-muted-foreground">
+          {total} total
+        </Badge>
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <AtividadeStat label="Total" value={total} />
+        <AtividadeStat label="Fila" value={emAndamento} />
+        <AtividadeStat label="Resolvidos" value={resolvidos} />
+      </div>
+
+      {total === 0 ? (
+        <div className="mt-4 rounded-lg border border-dashed bg-muted/20 px-3 py-6 text-center text-sm text-muted-foreground">
+          Nenhuma atividade vinculada a este tecnico.
+        </div>
+      ) : (
+        <div className="mt-4 flex flex-col gap-2">
+          {visiveis.map((alerta) => (
+            <div key={alerta.id} className="rounded-lg border bg-background p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[#3B2867] dark:text-white">{alerta.maquinaNome}</p>
+                  <p className="truncate text-xs text-muted-foreground">{alerta.sensorNome}</p>
+                </div>
+                <StatusAlertaBadge value={alerta.status} />
+              </div>
+              <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{alerta.mensagem}</p>
+              <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+                <ClockIcon className="size-3" />
+                {tempoRelativo(getAlertaData(alerta))}
+              </div>
+            </div>
+          ))}
+
+          {podeExpandir ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-1 w-full cursor-pointer"
+              onClick={onToggle}
+            >
+              {expanded ? "Mostrar menos" : `Ver mais ${Math.min(total - 3, 5)}`}
+            </Button>
+          ) : null}
+        </div>
+      )}
     </div>
   )
 }
@@ -294,6 +414,7 @@ export default function TecnicosPage() {
   const [form, setForm] = React.useState(formVazio)
   const [dialogExcluir, setDialogExcluir] = React.useState(false)
   const [tecnicoExcluir, setTecnicoExcluir] = React.useState(null)
+  const [atividadeExpandida, setAtividadeExpandida] = React.useState(false)
   const [limiteItems] = React.useState(10)
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const [filtroResumo, setFiltroResumo] = React.useState("TODOS")
@@ -338,6 +459,16 @@ export default function TecnicosPage() {
     () => tecnicosComAlertasAtendidos.reduce((total, tecnico) => total + tecnico.alertasAtendidos, 0),
     [tecnicosComAlertasAtendidos]
   )
+  const atividadeTecnicoSelecionado = React.useMemo(() => {
+    if (!tecnicoSelecionado) {
+      return []
+    }
+
+    return alertas
+      .filter((alerta) => isAlertaDoTecnico(alerta, tecnicoSelecionado))
+      .sort((a, b) => getAlertaTimestamp(b) - getAlertaTimestamp(a))
+  }, [alertas, tecnicoSelecionado])
+
   React.useEffect(() => {
     setTecnicoSelecionado((current) => {
       if (!current) {
@@ -347,6 +478,11 @@ export default function TecnicosPage() {
       return tecnicosComAlertasAtendidos.find((tecnico) => String(tecnico.id) === String(current.id)) ?? current
     })
   }, [tecnicosComAlertasAtendidos])
+
+  React.useEffect(() => {
+    setAtividadeExpandida(false)
+  }, [tecnicoSelecionado?.id, sheetAberto])
+
   const tecnicosFiltrados = React.useMemo(() => {
     const termo = normalizarBusca(busca)
 
@@ -835,10 +971,11 @@ export default function TecnicosPage() {
                     ))}
                   </div>
 
-                  <div className="flex flex-col gap-1 rounded-lg border bg-background px-3 py-3">
-                    <Label className="text-muted-foreground text-xs">Alertas atendidos</Label>
-                    <span className="text-2xl font-bold text-[#3B2867] dark:text-white">{tecnicoSelecionado.alertasAtendidos}</span>
-                  </div>
+                  <TecnicoAtividadeCard
+                    alertas={atividadeTecnicoSelecionado}
+                    expanded={atividadeExpandida}
+                    onToggle={() => setAtividadeExpandida((current) => !current)}
+                  />
 
                   <Separator className="hidden" />
 

@@ -6,7 +6,9 @@ import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { toast } from "sonner"
 
+import { useAdmins } from "@/components/context/admins-context"
 import { useAlertas } from "@/components/context/alertas-context"
+import { useTecnicos } from "@/components/context/tecnicos-context"
 import { Badge } from "@/components/ui/badge"
 import {
   Breadcrumb,
@@ -24,7 +26,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { AUTH_SESSION_UPDATED_EVENT, getAuthSessionUser } from "@/lib/auth-session"
+import { AUTH_SESSION_UPDATED_EVENT, getAuthSession, getAuthSessionUser, updateAuthSessionUser } from "@/lib/auth-session"
+import { getDashboardPermissions } from "@/lib/dashboard-permissions"
+import { updateUserActiveStatus } from "@/lib/user-status"
 import { cn, tempoRelativo } from "@/lib/utils"
 import {
   AlertTriangleIcon,
@@ -81,6 +85,13 @@ function getSaudacao() {
 
 function getPrimeiroNome(nome) {
   return String(nome ?? "").trim().split(/\s+/)[0] || "usuário"
+}
+
+function normalizarBusca(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
 }
 
 function formatBreadcrumbLabel(segment) {
@@ -199,11 +210,15 @@ export function SiteHeader({ tourId }) {
   const router = useRouter()
   const pathname = usePathname()
   const { alertas, status: alertasStatus } = useAlertas()
+  const { tecnicos, recarregarTecnicos } = useTecnicos()
+  const { admins, recarregarAdmins } = useAdmins()
   const [painelAberto, setPainelAberto] = React.useState(false)
   const [notificationPrefs, setNotificationPrefs] = React.useState(EMPTY_NOTIFICATION_PREFS)
   const [notificationStorageKey, setNotificationStorageKey] = React.useState("")
   const [mounted, setMounted] = React.useState(false)
   const [nomeUsuario, setNomeUsuario] = React.useState("usuário")
+  const [usuarioAtual, setUsuarioAtual] = React.useState(null)
+  const [salvandoPonto, setSalvandoPonto] = React.useState(false)
   const panelRef = React.useRef(null)
   const syncedInitialNotificationsRef = React.useRef(false)
   const notificationKeysRef = React.useRef(new Set())
@@ -216,6 +231,7 @@ export function SiteHeader({ tourId }) {
     function syncUserName() {
       const usuario = getAuthSessionUser()
 
+      setUsuarioAtual(usuario)
       setNomeUsuario(getPrimeiroNome(usuario?.nome))
       setNotificationStorageKey(getNotificationStorageKey(usuario))
     }
@@ -241,6 +257,22 @@ export function SiteHeader({ tourId }) {
     () => buildNotifications(alertas, notificationPrefs),
     [alertas, notificationPrefs]
   )
+  const permissions = React.useMemo(() => getDashboardPermissions(usuarioAtual), [usuarioAtual])
+  const perfilAtual = React.useMemo(() => {
+    if (!usuarioAtual) {
+      return null
+    }
+
+    const registros = permissions.isAdmin ? admins : tecnicos
+
+    return registros.find((registro) =>
+      (usuarioAtual.id !== null && usuarioAtual.id !== undefined && String(registro.id) === String(usuarioAtual.id)) ||
+      normalizarBusca(registro.nome) === normalizarBusca(usuarioAtual.nome)
+    ) ?? null
+  }, [admins, permissions.isAdmin, tecnicos, usuarioAtual])
+  const mostraPontoUsuario = permissions.isTecnico || permissions.isAdmin
+  const pontoAtivo = (perfilAtual?.status ?? (usuarioAtual?.ativo === false ? "INATIVO" : "ATIVO")) === "ATIVO"
+  const pontoLabel = pontoAtivo ? "Ficar inativo" : "Ficar ativo"
   const isDark = resolvedTheme === "dark"
   const naoLidas = notificacoes.filter((notificacao) => !notificacao.lida).length
   const sincronizandoNotificacoes = alertasStatus === "loading" && notificacoes.length === 0
@@ -323,6 +355,43 @@ export function SiteHeader({ tourId }) {
 
   function toggleTheme() {
     setTheme(isDark ? "light" : "dark")
+  }
+
+  async function alternarMeuPonto() {
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      toast.error("Faca login para atualizar seu ponto.")
+      return
+    }
+
+    const nextAtivo = !pontoAtivo
+    setSalvandoPonto(true)
+
+    try {
+      const payload = await updateUserActiveStatus(session.accessToken, session.usuario, nextAtivo, perfilAtual)
+
+      updateAuthSessionUser({
+        ...session.usuario,
+        ...(payload?.usuario && typeof payload.usuario === "object" ? payload.usuario : {}),
+        ...(payload?.dados && typeof payload.dados === "object" ? payload.dados : {}),
+        ativo: nextAtivo,
+      })
+
+      if (permissions.isAdmin) {
+        await recarregarAdmins().catch(() => {})
+      }
+
+      if (permissions.isTecnico) {
+        await recarregarTecnicos().catch(() => {})
+      }
+
+      toast.success(nextAtivo ? "Voce ficou ativo." : "Voce ficou inativo.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel atualizar seu ponto.")
+    } finally {
+      setSalvandoPonto(false)
+    }
   }
 
   function marcarTodasLidas() {
@@ -436,6 +505,36 @@ export function SiteHeader({ tourId }) {
               </TooltipContent>
             </Tooltip>
           )}
+
+          {mostraPontoUsuario ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={alternarMeuPonto}
+                  disabled={salvandoPonto}
+                  className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-transparent text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+                  aria-label={pontoLabel}
+                >
+                  {salvandoPonto ? (
+                    <Loader2Icon className="size-4 animate-spin" />
+                  ) : (
+                    <span
+                      className={cn(
+                        "block size-4 rounded-full border shadow-[0_0_0_2px_rgba(148,163,184,0.14)] transition-colors",
+                        pontoAtivo
+                          ? "border-green-300 bg-green-500 shadow-[0_0_0_4px_rgba(34,197,94,0.16)]"
+                          : "border-gray-300 bg-gray-400 dark:border-gray-600 dark:bg-gray-500"
+                      )}
+                    />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>{pontoAtivo ? "Ativo: clique para ficar inativo" : "Inativo: clique para ficar ativo"}</span>
+              </TooltipContent>
+            </Tooltip>
+          ) : null}
 
           <Tooltip>
             <TooltipTrigger asChild>

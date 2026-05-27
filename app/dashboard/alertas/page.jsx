@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
 import { useAlertas } from "@/components/context/alertas-context"
+import { useTecnicos } from "@/components/context/tecnicos-context"
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -166,6 +168,51 @@ function StatusAlertaBadge({ value }) {
   )
 }
 
+function TecnicoResponsavelCard({ tecnico }) {
+  if (!tecnico) {
+    return (
+      <div className="rounded-xl border border-dashed bg-muted/20 p-3 text-sm text-muted-foreground">
+        Nenhum técnico responsável informado.
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border bg-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+      <div className="flex min-w-0 items-start gap-3">
+        <Avatar className="size-12">
+          <AvatarImage src={tecnico.foto || undefined} alt={tecnico.nome} />
+          <AvatarFallback className="bg-purple-100 font-semibold text-purple-700 dark:bg-primary/20 dark:text-primary-foreground">
+            {getInitials(tecnico.nome)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-[#3B2867] dark:text-white">{tecnico.nome}</p>
+              <p className="truncate text-xs text-muted-foreground">{tecnico.especialidade || "Sem especialidade informada"}</p>
+            </div>
+            <Badge variant="outline" className="border-green-200 bg-green-50 px-1.5 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
+              Responsável
+            </Badge>
+          </div>
+
+          <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+            <div className="min-w-0 rounded-lg border bg-muted/25 px-2.5 py-2">
+              <span className="text-muted-foreground">E-mail</span>
+              <p className="truncate font-medium text-foreground">{tecnico.email || "Não informado"}</p>
+            </div>
+            <div className="min-w-0 rounded-lg border bg-muted/25 px-2.5 py-2">
+              <span className="text-muted-foreground">Telefone</span>
+              <p className="truncate font-medium text-foreground">{tecnico.telefone || "Não informado"}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function TipoAlertaBadge({ value }) {
   return (
     <Badge variant="outline" className="border-purple-200 bg-purple-50 px-1.5 text-xs font-normal text-[#3B2867] dark:border-primary/40 dark:bg-primary/10 dark:text-primary-foreground">
@@ -276,6 +323,62 @@ function normalizeUppercase(value) {
     .trim()
     .toUpperCase()
     .replace(/[\s-]+/g, "_")
+}
+
+function normalizeText(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+}
+
+function getInitials(value) {
+  return String(value ?? "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "T"
+}
+
+function getTecnicoResponsavel(alerta, tecnicos) {
+  if (!alerta) {
+    return null
+  }
+
+  const byId = alerta.tecnicoId !== null && alerta.tecnicoId !== undefined
+    ? tecnicos.find((tecnico) => String(tecnico.id) === String(alerta.tecnicoId))
+    : null
+
+  if (byId) {
+    return byId
+  }
+
+  const alertaTecnicoNome = normalizeText(alerta.tecnicoNome)
+  const byName = alertaTecnicoNome
+    ? tecnicos.find((tecnico) => normalizeText(tecnico.nome) === alertaTecnicoNome)
+    : null
+
+  if (byName) {
+    return byName
+  }
+
+  if (alerta.tecnicoNome || alerta.tecnicoId) {
+    return {
+      id: alerta.tecnicoId ?? null,
+      nome: alerta.tecnicoNome || `Técnico ${alerta.tecnicoId}`,
+      email: "",
+      telefone: "",
+      especialidade: "Dados do técnico não encontrados",
+      status: "ATIVO",
+      alertasAtendidos: 0,
+      criadoEm: "",
+      foto: null,
+    }
+  }
+
+  return null
 }
 
 function normalizeDateValue(value) {
@@ -1097,6 +1200,7 @@ export default function AlertasPage() {
     adicionarAlerta,
     recarregarAlertas,
   } = useAlertas()
+  const { tecnicos } = useTecnicos()
 
   const [busca, setBusca] = React.useState("")
   const [sheetAberto, setSheetAberto] = React.useState(false)
@@ -1140,6 +1244,10 @@ export default function AlertasPage() {
     return gruposAtualizados.find((grupo) => String(grupo.id) === String(grupoRetornoDetalhes.id)) ?? grupoRetornoDetalhes
   }, [grupoRetornoDetalhes, gruposAtualizados])
   const alertaDetalhado = modoSheet === "ver" ? alertaSelecionadoAtual : alertaSelecionado
+  const tecnicoAlertaDetalhado = React.useMemo(
+    () => getTecnicoResponsavel(alertaDetalhado, tecnicos),
+    [alertaDetalhado, tecnicos]
+  )
   const totalEmAberto = React.useMemo(() => alertasOrdenados.filter((alerta) => alerta.status === "ATIVO").length, [alertasOrdenados])
   const totalEmAndamento = React.useMemo(() => alertasOrdenados.filter((alerta) => alerta.status === "EM_ANDAMENTO").length, [alertasOrdenados])
   const totalRepetidos = React.useMemo(() => alertasOrdenados.filter((alerta) => isStatusAberto(alerta.status) && isAlertaRepetido(alerta)).length, [alertasOrdenados])
@@ -1489,7 +1597,7 @@ export default function AlertasPage() {
             }
           }}
         >
-          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[560px]! sm:max-w-none!">
             <SheetHeader className="shrink-0">
               {modoSheet === "ver" && grupoRetornoDetalhes ? (
                 <div className="flex items-start gap-3">
@@ -1569,11 +1677,8 @@ export default function AlertasPage() {
                       <span className="text-sm font-medium">{alertaDetalhado.sensorNome}</span>
                     </div>
                   </div>
-                  {alertaDetalhado.tecnicoNome ? (
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Técnico responsável</Label>
-                      <span className="text-sm font-medium">{alertaDetalhado.tecnicoNome}</span>
-                    </div>
+                  {alertaDetalhado.status === "EM_ANDAMENTO" || alertaDetalhado.status === "RESOLVIDO" || tecnicoAlertaDetalhado ? (
+                    <TecnicoResponsavelCard tecnico={tecnicoAlertaDetalhado} />
                   ) : null}
                   <div className="flex flex-col gap-1">
                     <Label className="text-xs text-muted-foreground">Mensagem</Label>
@@ -1689,7 +1794,7 @@ export default function AlertasPage() {
             }
           }}
         >
-          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[420px]! sm:max-w-none!">
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[560px]! sm:max-w-none!">
             <SheetHeader className="shrink-0">
               <div className="flex items-start gap-3">
                 <Button

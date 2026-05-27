@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
+import { useAlertas } from "@/components/context/alertas-context"
 import { Lock } from "lucide-react";
 import { ProfilePageSkeleton } from "@/components/dashboard-skeletons"
 import { SiteHeader } from "@/components/site-header"
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { CODE_LENGTH, OtpCodeInput } from "@/components/ui/otp-code-input"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { clearAuthSession, getAuthSession, updateAuthSessionUser } from "@/lib/auth-session"
@@ -26,7 +28,9 @@ import {
   AlertTriangleIcon,
   CalendarIcon,
   CameraIcon,
+  ChevronRightIcon,
   CircleCheckIcon,
+  ClipboardListIcon,
   ClockIcon,
   LockIcon,
   ShieldCheckIcon,
@@ -56,18 +60,13 @@ const EMPTY_PERFIL = {
   atualizadoEm: null,
 }
 
-const MAQUINAS_MOCK = [
-  { id: 1, nome: "Motor Esteira A-01", setor: "Setor A - Expedicao", criticidade: "ALTA", status: "OK" },
-  { id: 2, nome: "Compressor B-03", setor: "Setor B - Produção", criticidade: "MEDIA", status: "ALERTA" },
-  { id: 3, nome: "Torno CNC C-07", setor: "Setor C - Utilidades", criticidade: "BAIXA", status: "OK" },
-]
-
-const ALERTAS_MOCK = [
-  { id: 1, maquina: "Motor Esteira A-01", tipo: "Temperatura", data: "01/04/2026 - 14:22", status: "RESOLVIDO" },
-  { id: 2, maquina: "Compressor B-03", tipo: "Vibração", data: "30/03/2026 - 09:55", status: "RESOLVIDO" },
-  { id: 3, maquina: "Compressor B-03", tipo: "Tendência", data: "28/03/2026 - 17:08", status: "EM_ANDAMENTO" },
-  { id: 4, maquina: "Torno CNC C-07", tipo: "Temperatura", data: "25/03/2026 - 11:30", status: "RESOLVIDO" },
-]
+const TIPO_ALERTA_LABEL = {
+  LIMITE_ULTRAPASSADO: "Limite ultrapassado",
+  TENDENCIA_CURTA: "Tendência curta",
+  TENDENCIA_LONGA: "Tendência longa",
+  DEGRADACAO_ACELERADA: "Degradação acelerada",
+  INSTABILIDADE: "Instabilidade",
+}
 
 function normalizeString(value, fallback = "") {
   return typeof value === "string" ? value : fallback
@@ -142,6 +141,53 @@ function formatDateTime(value) {
   }).format(date)
 }
 
+function normalizeText(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+}
+
+function getAlertDate(alerta) {
+  return alerta?.atualizadoEm || alerta?.ultimaOcorrenciaEm || alerta?.criadoEm || ""
+}
+
+function getAlertTimestamp(alerta) {
+  const timestamp = Date.parse(getAlertDate(alerta))
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+function isToday(value) {
+  const date = new Date(value)
+
+  if (!Number.isFinite(date.getTime())) {
+    return false
+  }
+
+  return date.toLocaleDateString("pt-BR") === new Date().toLocaleDateString("pt-BR")
+}
+
+function isAlertAssignedToPerfil(alerta, perfil) {
+  if (!alerta || !perfil) {
+    return false
+  }
+
+  if (alerta.tecnicoId !== null && alerta.tecnicoId !== undefined && perfil.id !== null && perfil.id !== undefined) {
+    return String(alerta.tecnicoId) === String(perfil.id)
+  }
+
+  if (alerta.tecnicoNome && perfil.nome) {
+    return normalizeText(alerta.tecnicoNome) === normalizeText(perfil.nome)
+  }
+
+  return false
+}
+
+function formatAlertType(value) {
+  return TIPO_ALERTA_LABEL[value] ?? value ?? "Alerta"
+}
+
 function getErrorMessage(error, fallback) {
   return error instanceof Error ? error.message : fallback
 }
@@ -192,8 +238,49 @@ function StatusAlertaBadge({ value }) {
   return <Badge variant="outline" className="px-1.5">{value}</Badge>
 }
 
+function AtendimentoMobileCard({ alerta, onOpen }) {
+  return (
+    <button
+      type="button"
+      className="group flex min-h-[124px] w-full cursor-pointer flex-col justify-between gap-3 rounded-lg border bg-card p-3 text-left shadow-sm transition-colors hover:border-[#5E17EB] focus-visible:border-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/20 dark:border-gray-700! dark:bg-[#0F172A]"
+      onClick={() => onOpen(alerta)}
+    >
+      <span className="flex min-w-0 items-start justify-between gap-2">
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="line-clamp-2 text-base font-medium leading-tight text-foreground">
+            {alerta.maquinaNome}
+          </span>
+          <span className="truncate text-sm text-muted-foreground">
+            {alerta.sensorNome}
+          </span>
+        </span>
+        <ChevronRightIcon className="mt-1 size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-[#5E17EB]" />
+      </span>
+
+      <span className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+        {alerta.mensagem}
+      </span>
+
+      <span className="flex flex-wrap items-center justify-between gap-2">
+        <span className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline" className="px-1.5 text-xs text-muted-foreground">
+            {formatAlertType(alerta.tipo)}
+          </Badge>
+          <StatusAlertaBadge value={alerta.status} />
+        </span>
+        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+          <ClockIcon className="size-3" />
+          {formatDateTime(getAlertDate(alerta))}
+        </span>
+      </span>
+    </button>
+  )
+}
+
 export default function PerfilPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const { alertas, status: alertasStatus } = useAlertas()
   const [perfil, setPerfil] = React.useState(EMPTY_PERFIL)
   const [form, setForm] = React.useState(EMPTY_FORM)
   const [status, setStatus] = React.useState("loading")
@@ -202,6 +289,8 @@ export default function PerfilPage() {
   const [salvandoFoto, setSalvandoFoto] = React.useState(false)
   const [salvandoSenha, setSalvandoSenha] = React.useState(false)
   const [senhaEtapa, setSenhaEtapa] = React.useState("solicitar")
+  const [activeTab, setActiveTab] = React.useState("dados")
+  const [atendimentoSelecionado, setAtendimentoSelecionado] = React.useState(null)
   const inputFotoRef = React.useRef(null)
   const [senhas, setSenhas] = React.useState({
     atual: "",
@@ -213,9 +302,36 @@ export default function PerfilPage() {
 
   const loading = status === "loading"
   const podeEditarIdentidade = status === "success" && perfil.role === "ADMIN"
-  const podeVerAtividade = status === "success" && perfil.role !== "ADMIN"
-  const alertasResolvidos = ALERTAS_MOCK.filter((a) => a.status === "RESOLVIDO").length
-  const alertasEmAndamento = ALERTAS_MOCK.filter((a) => a.status === "EM_ANDAMENTO").length
+  const podeVerMinhaAtividade = status === "success" && perfil.role === "TECNICO"
+  const meusAtendimentos = React.useMemo(
+    () => alertas
+      .filter((alerta) => isAlertAssignedToPerfil(alerta, perfil))
+      .sort((a, b) => getAlertTimestamp(b) - getAlertTimestamp(a)),
+    [alertas, perfil]
+  )
+  const atendimentosResolvidos = React.useMemo(
+    () => meusAtendimentos.filter((alerta) => alerta.status === "RESOLVIDO"),
+    [meusAtendimentos]
+  )
+  const atendimentosEmAndamento = React.useMemo(
+    () => meusAtendimentos.filter((alerta) => alerta.status === "EM_ANDAMENTO"),
+    [meusAtendimentos]
+  )
+  const resolvidosHoje = React.useMemo(
+    () => atendimentosResolvidos.filter((alerta) => isToday(getAlertDate(alerta))).length,
+    [atendimentosResolvidos]
+  )
+  const maquinasAtendidas = React.useMemo(
+    () => new Set(meusAtendimentos.map((alerta) => alerta.maquinaId ?? normalizeText(alerta.maquinaNome)).filter(Boolean)).size,
+    [meusAtendimentos]
+  )
+  const atendimentoDetalhado = React.useMemo(() => {
+    if (!atendimentoSelecionado?.id) {
+      return atendimentoSelecionado
+    }
+
+    return meusAtendimentos.find((alerta) => String(alerta.id) === String(atendimentoSelecionado.id)) ?? atendimentoSelecionado
+  }, [atendimentoSelecionado, meusAtendimentos])
 
   React.useEffect(() => {
     let isActive = true
@@ -275,6 +391,19 @@ export default function PerfilPage() {
       isActive = false
     }
   }, [router])
+
+  React.useEffect(() => {
+    const requestedTab = searchParams.get("tab")
+
+    if (requestedTab === "minha-atividade" && podeVerMinhaAtividade) {
+      setActiveTab("minha-atividade")
+      return
+    }
+
+    if (!podeVerMinhaAtividade) {
+      setActiveTab((current) => current === "minha-atividade" ? "dados" : current)
+    }
+  }, [podeVerMinhaAtividade, searchParams])
 
   async function salvarDados() {
     const session = getAuthSession()
@@ -580,6 +709,10 @@ export default function PerfilPage() {
     await solicitarCodigoSenha()
   }
 
+  function abrirDetalhesAtendimento(alerta) {
+    setAtendimentoSelecionado(alerta)
+  }
+
   if (loading) {
     return (
       <>
@@ -673,17 +806,17 @@ export default function PerfilPage() {
           </div>
         </div>
 
-        <Tabs defaultValue="dados">
-          <TabsList className="responsivo w-80 h-auto justify-start">
-            <TabsTrigger value="dados" className="gap-1.5">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="responsivo h-[35px]! w-full  max-w-full flex-wrap justify-start sm:w-fit">
+            <TabsTrigger value="dados" className="min-w-0 gap-1.5 ">
               <UserIcon className="size-3.5" /> Dados Pessoais
             </TabsTrigger>
-            <TabsTrigger value="seguranca" className="gap-1.5">
+            <TabsTrigger value="seguranca" className="min-w-0 gap-1.5">
               <LockIcon className="size-3.5" /> Segurança
             </TabsTrigger>
-            {podeVerAtividade ? (
-              <TabsTrigger value="atividade" className="gap-1.5">
-                <ActivityIcon className="size-3.5" /> Atividade
+            {podeVerMinhaAtividade ? (
+              <TabsTrigger value="minha-atividade" className="min-w-0 gap-1.5">
+                <ActivityIcon className="size-3.5" /> Minha atividade
               </TabsTrigger>
             ) : null}
           </TabsList>
@@ -955,84 +1088,206 @@ export default function PerfilPage() {
             </div>
           </TabsContent>
 
-          {podeVerAtividade ? (
-            <TabsContent value="atividade" className="flex flex-col gap-4 mt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {podeVerMinhaAtividade ? (
+            <TabsContent value="minha-atividade" className="flex flex-col gap-4 mt-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {[
-                  { label: "Alertas resolvidos este mês", value: alertasResolvidos },
-                  { label: "Máquinas sob responsabilidade", value: MAQUINAS_MOCK.length },
-                  { label: "Alertas em andamento", value: alertasEmAndamento },
-                ].map((stat) => (
-                  <div key={stat.label} className="rounded-xl border bg-card p-4">
-                    <p className="text-2xl font-bold text-[#5E17EB] dark:text-white">{stat.value}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+                  { label: "Total de atendimentos", value: meusAtendimentos.length, icon: ClipboardListIcon, tone: "text-[#5E17EB] bg-purple-50 dark:bg-primary/10 dark:text-primary" },
+                  { label: "Em andamento", value: atendimentosEmAndamento.length, icon: WrenchIcon, tone: "text-yellow-700 bg-yellow-50 dark:bg-yellow-950/30 dark:text-yellow-300" },
+                  { label: "Resolvidos hoje", value: resolvidosHoje, icon: CircleCheckIcon, tone: "text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-300" },
+                  { label: "Máquinas atendidas", value: maquinasAtendidas, icon: ActivityIcon, tone: "text-sky-700 bg-sky-50 dark:bg-sky-950/30 dark:text-sky-300" },
+                ].map(({ label, value, icon: Icon, tone }) => (
+                  <div key={label} className="rounded-xl border bg-card p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-2xl font-bold text-[#5E17EB] dark:text-white">{value}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+                      </div>
+                      <span className={`inline-flex size-9 items-center justify-center rounded-lg ${tone}`}>
+                        <Icon className="size-4" />
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
-                <div className="flex items-center gap-2 font-semibold text-sm">
-                  <WrenchIcon className="size-4 text-[#5E17EB] dark:text-primary" />
-                  Máquinas sob responsabilidade
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+                <div className="rounded-xl border bg-card p-4 sm:p-5">
+                  <div className="flex items-center gap-2 font-semibold text-sm">
+                    <WrenchIcon className="size-4 text-[#5E17EB] dark:text-primary" />
+                    Em andamento agora
+                  </div>
+                  <Separator className="my-4" />
+
+                  <div className="flex flex-col gap-3">
+                    {atendimentosEmAndamento.length > 0 ? (
+                      atendimentosEmAndamento.slice(0, 4).map((alerta) => (
+                        <button
+                          key={alerta.id}
+                          type="button"
+                          className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-muted/15 px-3 py-3 text-left transition-colors hover:border-[#5E17EB]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30"
+                          onClick={() => abrirDetalhesAtendimento(alerta)}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-foreground">{alerta.maquinaNome}</p>
+                              <p className="truncate text-xs text-muted-foreground">{alerta.sensorNome}</p>
+                            </div>
+                            <StatusAlertaBadge value={alerta.status} />
+                          </div>
+                          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{alerta.mensagem}</p>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+                        Nenhum atendimento em andamento agora.
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  {MAQUINAS_MOCK.map((m) => (
-                    <div
-                      key={m.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border px-4 py-3 hover:border-[#5E17EB]/40 dark:hover:border-primary/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-[#5E17EB] dark:bg-primary/10 dark:text-primary">
-                          <WrenchIcon className="size-4" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">{m.nome}</p>
-                          <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1">
-                            {m.setor} - <CriticidadeBadge value={m.criticidade} />
-                          </p>
-                        </div>
-                      </div>
-                      <div className="pl-12 sm:pl-0">
-                        <StatusMaquinaBadge value={m.status} />
-                      </div>
+                <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex items-center gap-2 font-semibold text-sm">
+                      <ActivityIcon className="size-4 text-[#5E17EB] dark:text-primary" />
+                      Todos os meus atendimentos
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <Badge variant="outline" className="text-muted-foreground">
+                      {alertasStatus === "loading" ? "Atualizando" : `${meusAtendimentos.length} registro(s)`}
+                    </Badge>
+                  </div>
 
-              <div className="rounded-xl border bg-card p-4 sm:p-5 flex flex-col gap-3">
-                <div className="flex items-center gap-2 font-semibold text-sm">
-                  <ActivityIcon className="size-4 text-[#5E17EB] dark:text-primary" />
-                  Histórico de alertas atendidos
-                </div>
+                  <div className="flex flex-col gap-3 md:hidden">
+                    {meusAtendimentos.length > 0 ? (
+                      meusAtendimentos.map((alerta) => (
+                        <AtendimentoMobileCard
+                          key={alerta.id}
+                          alerta={alerta}
+                          onOpen={abrirDetalhesAtendimento}
+                        />
+                      ))
+                    ) : (
+                      <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+                        Nenhum atendimento vinculado ao seu usuário ainda.
+                      </div>
+                    )}
+                  </div>
 
-                <div className="min-h-[300px] overflow-auto rounded-lg border bg-card dark:border-gray-700! dark:bg-[#0F172A]">
-                  <Table>
-                    <TableHeader className="sticky top-0 z-10 bg-muted">
-                      <TableRow>
-                        <TableHead className="whitespace-nowrap">Máquina</TableHead>
-                        <TableHead className="whitespace-nowrap">Tipo</TableHead>
-                        <TableHead className="whitespace-nowrap">Data</TableHead>
-                        <TableHead className="whitespace-nowrap">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {ALERTAS_MOCK.map((a) => (
-                        <TableRow key={a.id}>
-                          <TableCell className="font-medium text-sm whitespace-nowrap">{a.maquina}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{a.tipo}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{a.data}</TableCell>
-                          <TableCell><StatusAlertaBadge value={a.status} /></TableCell>
+                  <div className="hidden min-h-[360px] overflow-auto rounded-lg border bg-card md:block dark:border-gray-700! dark:bg-[#0F172A]">
+                    <Table>
+                      <TableHeader className="sticky top-0 z-10 bg-muted">
+                        <TableRow>
+                          <TableHead className="whitespace-nowrap">Máquina</TableHead>
+                          <TableHead className="whitespace-nowrap">Tipo</TableHead>
+                          <TableHead className="whitespace-nowrap">Data</TableHead>
+                          <TableHead className="whitespace-nowrap">Status</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {meusAtendimentos.length > 0 ? (
+                          meusAtendimentos.map((alerta) => (
+                            <TableRow
+                              key={alerta.id}
+                              className="cursor-pointer"
+                              onClick={() => abrirDetalhesAtendimento(alerta)}
+                            >
+                              <TableCell className="font-medium text-sm whitespace-nowrap">
+                                <div className="flex min-w-0 flex-col">
+                                  <span className="truncate">{alerta.maquinaNome}</span>
+                                  <span className="truncate text-xs font-normal text-muted-foreground">{alerta.sensorNome}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatAlertType(alerta.tipo)}</TableCell>
+                              <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{formatDateTime(getAlertDate(alerta))}</TableCell>
+                              <TableCell><StatusAlertaBadge value={alerta.status} /></TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                              Nenhum atendimento vinculado ao seu usuário ainda.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               </div>
             </TabsContent>
           ) : null}
         </Tabs>
+
+        <Sheet open={Boolean(atendimentoSelecionado)} onOpenChange={(open) => !open && setAtendimentoSelecionado(null)}>
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[560px]! sm:max-w-none!">
+            {atendimentoDetalhado ? (
+              <>
+                <SheetHeader className="shrink-0">
+                  <SheetTitle>Detalhes do atendimento</SheetTitle>
+                  <SheetDescription>{atendimentoDetalhado.sensorNome}</SheetDescription>
+                </SheetHeader>
+
+                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
+                  <div className="rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">{atendimentoDetalhado.maquinaNome}</p>
+                        <p className="mt-1 truncate text-sm text-muted-foreground">{atendimentoDetalhado.sensorNome}</p>
+                      </div>
+                      <StatusAlertaBadge value={atendimentoDetalhado.status} />
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Badge variant="outline" className="border-purple-200 bg-purple-50 px-1.5 text-xs font-normal text-[#3B2867] dark:border-primary/40 dark:bg-primary/10 dark:text-primary-foreground">
+                        {formatAlertType(atendimentoDetalhado.tipo)}
+                      </Badge>
+                      <Badge variant="outline" className="px-1.5 text-muted-foreground">
+                        {Math.max(Number(atendimentoDetalhado.ocorrencias) || 1, 1)} ocorr.
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-xs text-muted-foreground">Mensagem</Label>
+                    <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm leading-relaxed text-foreground">{atendimentoDetalhado.mensagem}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border bg-card p-3 shadow-xs">
+                      <span className="text-xs text-muted-foreground">Última ocorrência</span>
+                      <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                        {formatDateTime(getAlertDate(atendimentoDetalhado))}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 shadow-xs">
+                      <span className="text-xs text-muted-foreground">Ocorrências</span>
+                      <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                        {Math.max(Number(atendimentoDetalhado.ocorrencias) || 1, 1)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 shadow-xs">
+                      <span className="text-xs text-muted-foreground">Status</span>
+                      <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
+                        {atendimentoDetalhado.status === "RESOLVIDO" ? "Resolvido" : atendimentoDetalhado.status === "EM_ANDAMENTO" ? "Em andamento" : atendimentoDetalhado.status}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border bg-card p-3 shadow-xs">
+                      <span className="text-xs text-muted-foreground">Técnico</span>
+                      <p className="mt-1 truncate text-sm font-semibold text-[#3B2867] dark:text-white">
+                        {atendimentoDetalhado.tecnicoNome || perfil.nome || "Não informado"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
+                  <Button variant="outline" className="w-full cursor-pointer" onClick={() => setAtendimentoSelecionado(null)}>
+                    Fechar
+                  </Button>
+                </SheetFooter>
+              </>
+            ) : null}
+          </SheetContent>
+        </Sheet>
       </div>
     </>
   )

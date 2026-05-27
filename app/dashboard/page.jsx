@@ -7,12 +7,12 @@ import {
   AlertTriangleIcon,
   ArrowRightIcon,
   CheckCircle2Icon,
+  ChevronLeftIcon,
   ChevronRightIcon,
   ClockIcon,
   ClipboardListIcon,
   GaugeIcon,
   Loader2Icon,
-  ShieldAlertIcon,
   WrenchIcon,
   WashingMachineIcon,
   NfcIcon,
@@ -23,9 +23,11 @@ import { DashboardChartsProvider } from "@/components/context/dashboard-charts-c
 import { useAlertas } from "@/components/context/alertas-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
 import { useSensores } from "@/components/context/sensores-context"
+import { useTecnicos } from "@/components/context/tecnicos-context"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -83,6 +85,8 @@ const MACHINE_ALERT_STATUS_LABEL = {
   EM_ANDAMENTO: "Em andamento",
 }
 
+const ATENDIMENTOS_CONCLUIDOS_PAGE_SIZE = 3
+
 const technicianCardClass =
   "@container/card shadow-xs transition-colors hover:border-[#5E17EB]! hover:ring-[#5E17EB]/50 dark:bg-card"
 
@@ -98,6 +102,15 @@ function normalizeText(value) {
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toLowerCase()
+}
+
+function getInitials(value) {
+  return String(value ?? "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "T"
 }
 
 function getAlertDate(alerta) {
@@ -124,6 +137,22 @@ function isToday(value) {
   return date.toLocaleDateString("pt-BR") === new Date().toLocaleDateString("pt-BR")
 }
 
+function useMediaQuery(query) {
+  const [matches, setMatches] = React.useState(false)
+
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia(query)
+    const handleChange = () => setMatches(mediaQuery.matches)
+
+    handleChange()
+    mediaQuery.addEventListener("change", handleChange)
+
+    return () => mediaQuery.removeEventListener("change", handleChange)
+  }, [query])
+
+  return matches
+}
+
 function isAlertAssignedToUser(alerta, usuario) {
   if (!alerta || !usuario) {
     return false
@@ -140,7 +169,60 @@ function isAlertAssignedToUser(alerta, usuario) {
   return false
 }
 
-function MetricCard({ icon: Icon, label, value, sub, badge, tone = "purple", featured = false }) {
+function getTecnicoResponsavel(alerta, tecnicos, usuario) {
+  if (!alerta) {
+    return null
+  }
+
+  const byId = alerta.tecnicoId !== null && alerta.tecnicoId !== undefined
+    ? tecnicos.find((tecnico) => String(tecnico.id) === String(alerta.tecnicoId))
+    : null
+
+  if (byId) {
+    return byId
+  }
+
+  const alertaTecnicoNome = normalizeText(alerta.tecnicoNome)
+  const byName = alertaTecnicoNome
+    ? tecnicos.find((tecnico) => normalizeText(tecnico.nome) === alertaTecnicoNome)
+    : null
+
+  if (byName) {
+    return byName
+  }
+
+  if (isAlertAssignedToUser(alerta, usuario)) {
+    return {
+      id: usuario?.id ?? alerta.tecnicoId ?? null,
+      nome: usuario?.nome || alerta.tecnicoNome || "Técnico responsável",
+      email: usuario?.email || "",
+      telefone: usuario?.telefone || "",
+      especialidade: usuario?.especialidade || "Sem especialidade informada",
+      status: "ATIVO",
+      alertasAtendidos: 0,
+      criadoEm: "",
+      foto: usuario?.fotoPerfil || null,
+    }
+  }
+
+  if (alerta.tecnicoNome || alerta.tecnicoId) {
+    return {
+      id: alerta.tecnicoId ?? null,
+      nome: alerta.tecnicoNome || `Técnico ${alerta.tecnicoId}`,
+      email: "",
+      telefone: "",
+      especialidade: "Dados do técnico não encontrados",
+      status: "ATIVO",
+      alertasAtendidos: 0,
+      criadoEm: "",
+      foto: null,
+    }
+  }
+
+  return null
+}
+
+function MetricCard({ icon: Icon, label, value, sub, badge, tone = "purple", featured = false, onClick }) {
   const toneConfig = {
     purple: {
       icon: "border-[#5E17EB]/20 bg-[#5E17EB]/10 text-[#5E17EB] dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/20 dark:text-purple-200",
@@ -160,8 +242,23 @@ function MetricCard({ icon: Icon, label, value, sub, badge, tone = "purple", fea
     },
   }[tone]
 
+  function handleKeyDown(event) {
+    if (!onClick || (event.key !== "Enter" && event.key !== " ")) {
+      return
+    }
+
+    event.preventDefault()
+    onClick()
+  }
+
   return (
-    <Card className={`${technicianCardClass} ${featured ? "border-[#5E17EB]! border-2" : ""}`}>
+    <Card
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      className={`${technicianCardClass} ${onClick ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/40" : ""} ${featured ? "border-[#5E17EB]! border-2" : ""}`}
+    >
       <CardHeader className="min-h-[88px]">
         <CardDescription className={featured ? "" : "text-black! dark:text-white!"}>{label}</CardDescription>
         <CardTitle className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${featured ? "text-[#5E17EB]!" : ""}`}>
@@ -217,6 +314,52 @@ function OcorrenciasBadge({ value }) {
     <Badge variant="outline" className="border-slate-200 bg-slate-50 px-1.5 font-normal text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
       {count} ocorr.
     </Badge>
+  )
+}
+
+function TecnicoResponsavelCard({ tecnico, compact = false }) {
+  if (!tecnico) {
+    return (
+      <div className="rounded-xl border border-dashed bg-muted/20 p-3 text-sm text-muted-foreground">
+        Nenhum técnico responsável informado.
+      </div>
+    )
+  }
+
+  return (
+    <div className={`rounded-xl border bg-card shadow-xs ring-1 ring-foreground/5 dark:border-gray-700! dark:bg-[#0F172A] ${compact ? "p-3" : "p-4"}`}>
+      <div className="flex min-w-0 items-start gap-3">
+        <Avatar className={compact ? "size-10" : "size-12"}>
+          <AvatarImage src={tecnico.foto || undefined} alt={tecnico.nome} />
+          <AvatarFallback className="bg-purple-100 font-semibold text-purple-700 dark:bg-primary/20 dark:text-primary-foreground">
+            {getInitials(tecnico.nome)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-[#3B2867] dark:text-white">{tecnico.nome}</p>
+              <p className="truncate text-xs text-muted-foreground">{tecnico.especialidade || "Sem especialidade informada"}</p>
+            </div>
+            <Badge variant="outline" className="border-green-200 bg-green-50 px-1.5 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
+              Responsável
+            </Badge>
+          </div>
+          {!compact ? (
+            <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+              <div className="min-w-0 rounded-lg border bg-muted/25 px-2.5 py-2">
+                <span className="text-muted-foreground">E-mail</span>
+                <p className="truncate font-medium text-foreground">{tecnico.email || "Não informado"}</p>
+              </div>
+              <div className="min-w-0 rounded-lg border bg-muted/25 px-2.5 py-2">
+                <span className="text-muted-foreground">Telefone</span>
+                <p className="truncate font-medium text-foreground">{tecnico.telefone || "Não informado"}</p>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -290,7 +433,7 @@ function PriorityAlertCard({ alerta, imageSrc, onOpen }) {
 
 
 
-        <div className="mt-auto flex justify-between">
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <TipoAlertaBadge value={alerta.tipo} />
             <StatusBadge status={alerta.status} />
@@ -311,16 +454,18 @@ function PriorityAlertCard({ alerta, imageSrc, onOpen }) {
 }
 
 function MachineAttentionItem({ item, onOpen }) {
+  const tecnico = item.tecnicoResponsavel
+
   return (
     <button
       type="button"
-      className="group flex min-h-[118px] cursor-pointer flex-col justify-between gap-3 rounded-xl border bg-card/80 p-3 text-left shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB] hover:ring-[#5E17EB]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 dark:border-gray-700! dark:bg-[#0F172A]"
+      className="group flex min-h-[148px] cursor-pointer flex-col justify-between gap-3 rounded-xl border bg-card/80 p-3 text-left shadow-xs ring-1 ring-foreground/5 transition-colors hover:border-[#5E17EB] hover:ring-[#5E17EB]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/30 dark:border-gray-700! dark:bg-[#0F172A]"
       onClick={() => onOpen(item)}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-[#3B2867] dark:text-white">{item.maquinaNome}</p>
-          <p className="text-xs text-muted-foreground">{item.sensores.size} sensor(es) em atenção</p>
+          <p className="text-xs text-muted-foreground">{item.sensores.size} sensor(es) em atendimento</p>
         </div>
         <div className="flex shrink-0 items-start gap-2">
           <div className="flex flex-col items-end gap-1">
@@ -330,6 +475,18 @@ function MachineAttentionItem({ item, onOpen }) {
             <SeveridadeBadge value={item.severidade} />
           </div>
           <ChevronRightIcon className="mt-0.5 size-4 text-muted-foreground transition-colors group-hover:text-[#5E17EB]" />
+        </div>
+      </div>
+      <div className="flex min-w-0 items-center gap-2 rounded-lg border bg-muted/25 px-2.5 py-2">
+        <Avatar className="size-8">
+          <AvatarImage src={tecnico?.foto || undefined} alt={tecnico?.nome || "Técnico responsável"} />
+          <AvatarFallback className="bg-purple-100 text-xs font-semibold text-purple-700 dark:bg-primary/20 dark:text-primary-foreground">
+            {getInitials(tecnico?.nome || item.tecnicoNome)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium text-foreground">{tecnico?.nome || item.tecnicoNome || "Responsável não informado"}</p>
+          <p className="truncate text-[11px] text-muted-foreground">{tecnico?.especialidade || "Técnico responsável pelo atendimento"}</p>
         </div>
       </div>
       <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
@@ -373,6 +530,7 @@ function DashboardShortcuts({ id = "dashboard-shortcuts" }) {
 function TechnicianDashboard() {
   const router = useRouter()
   const usuario = getAuthSessionUser()
+  const isMobileDrawer = useMediaQuery("(max-width: 640px)")
   const {
     alertas,
     status: alertasStatus,
@@ -382,11 +540,17 @@ function TechnicianDashboard() {
   } = useAlertas()
   const { maquinas, status: maquinasStatus, recarregarMaquinas } = useMaquinas()
   const { sensores, status: sensoresStatus, recarregarSensores } = useSensores()
+  const { tecnicos } = useTecnicos()
   const [startingAlertId, setStartingAlertId] = React.useState(null)
+  const [completingAlertId, setCompletingAlertId] = React.useState(null)
   const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
   const [atendimentosIniciados, setAtendimentosIniciados] = React.useState(() => new Set())
+  const [highlightedSection, setHighlightedSection] = React.useState("")
+  const [paginaConcluidos, setPaginaConcluidos] = React.useState(0)
+  const highlightTimerRef = React.useRef(null)
 
   const loading = alertasStatus === "loading" || maquinasStatus === "loading" || sensoresStatus === "loading"
+  const atendimentoActionPending = Boolean(startingAlertId || completingAlertId)
   const alertasAtivos = React.useMemo(() => alertas.filter((alerta) => alerta.status === "ATIVO"), [alertas])
   const alertasEmAndamento = React.useMemo(() => alertas.filter((alerta) => alerta.status === "EM_ANDAMENTO"), [alertas])
   const meusAtendimentos = React.useMemo(
@@ -395,13 +559,15 @@ function TechnicianDashboard() {
       .sort(sortByPriority),
     [alertasEmAndamento, atendimentosIniciados, usuario]
   )
+  const atendimentosDeOutrosTecnicos = React.useMemo(
+    () => alertasEmAndamento
+      .filter((alerta) => !isAlertAssignedToUser(alerta, usuario) && !atendimentosIniciados.has(alerta.id))
+      .sort(sortByPriority),
+    [alertasEmAndamento, atendimentosIniciados, usuario]
+  )
   const alertasPrioritarios = React.useMemo(
     () => [...alertasAtivos].sort(sortByPriority).slice(0, 5),
     [alertasAtivos]
-  )
-  const criticos = React.useMemo(
-    () => alertas.filter((alerta) => ["ATIVO", "EM_ANDAMENTO"].includes(alerta.status) && alerta.severidade === "ALTA"),
-    [alertas]
   )
   const atendimentosConcluidos = React.useMemo(
     () => alertas
@@ -409,10 +575,17 @@ function TechnicianDashboard() {
       .sort((a, b) => getAlertTimestamp(b) - getAlertTimestamp(a)),
     [alertas, atendimentosIniciados, usuario]
   )
-  const resolvidosHoje = React.useMemo(
-    () => atendimentosConcluidos.filter((alerta) => isToday(alerta.atualizadoEm || alerta.ultimaOcorrenciaEm || alerta.criadoEm)).length,
+  const atendimentosConcluidosHoje = React.useMemo(
+    () => atendimentosConcluidos.filter((alerta) => isToday(alerta.atualizadoEm || alerta.ultimaOcorrenciaEm || alerta.criadoEm)),
     [atendimentosConcluidos]
   )
+  const totalPaginasConcluidos = Math.max(Math.ceil(atendimentosConcluidosHoje.length / ATENDIMENTOS_CONCLUIDOS_PAGE_SIZE), 1)
+  const paginaConcluidosAtual = Math.min(paginaConcluidos, totalPaginasConcluidos - 1)
+  const atendimentosConcluidosPaginados = React.useMemo(() => {
+    const start = paginaConcluidosAtual * ATENDIMENTOS_CONCLUIDOS_PAGE_SIZE
+
+    return atendimentosConcluidosHoje.slice(start, start + ATENDIMENTOS_CONCLUIDOS_PAGE_SIZE)
+  }, [atendimentosConcluidosHoje, paginaConcluidosAtual])
   const imagensMaquinas = React.useMemo(() => {
     const map = new Map()
 
@@ -434,11 +607,12 @@ function TechnicianDashboard() {
 
     return map
   }, [maquinas])
-  const maquinasSobAtencao = React.useMemo(() => {
+  const maquinasEmAndamento = React.useMemo(() => {
     const grouped = new Map()
 
-    for (const alerta of alertas.filter((item) => ["ATIVO", "EM_ANDAMENTO"].includes(item.status))) {
+    for (const alerta of atendimentosDeOutrosTecnicos) {
       const key = String(alerta.maquinaId ?? alerta.maquinaNome)
+      const tecnicoResponsavel = getTecnicoResponsavel(alerta, tecnicos, usuario)
       const existing = grouped.get(key) ?? {
         maquinaId: alerta.maquinaId,
         maquinaNome: alerta.maquinaNome,
@@ -448,15 +622,13 @@ function TechnicianDashboard() {
         severidade: alerta.severidade,
         ultimaOcorrenciaEm: getAlertDate(alerta),
         alertas: [],
+        tecnicoResponsavel,
+        tecnicoNome: tecnicoResponsavel?.nome || alerta.tecnicoNome,
       }
 
       existing.total += 1
       existing.sensores.add(alerta.sensorNome)
       existing.alertas.push(alerta)
-
-      if (alerta.status === "ATIVO") {
-        existing.statusMaquina = "COM_ALERTA"
-      }
 
       if ((SEVERIDADE_ORDEM[alerta.severidade] ?? 0) > (SEVERIDADE_ORDEM[existing.severidade] ?? 0)) {
         existing.severidade = alerta.severidade
@@ -464,6 +636,8 @@ function TechnicianDashboard() {
 
       if (getAlertTimestamp(alerta) > Date.parse(existing.ultimaOcorrenciaEm || "")) {
         existing.ultimaOcorrenciaEm = getAlertDate(alerta)
+        existing.tecnicoResponsavel = tecnicoResponsavel
+        existing.tecnicoNome = tecnicoResponsavel?.nome || alerta.tecnicoNome
       }
 
       grouped.set(key, existing)
@@ -473,8 +647,45 @@ function TechnicianDashboard() {
       const severityDiff = (SEVERIDADE_ORDEM[b.severidade] ?? 0) - (SEVERIDADE_ORDEM[a.severidade] ?? 0)
       return severityDiff || Date.parse(b.ultimaOcorrenciaEm || "") - Date.parse(a.ultimaOcorrenciaEm || "")
     }).slice(0, 6)
-  }, [alertas])
+  }, [atendimentosDeOutrosTecnicos, tecnicos, usuario])
   const sensoresOffline = React.useMemo(() => sensores.filter((sensor) => sensor.status === "OFFLINE").length, [sensores])
+  const tecnicoAlertaSelecionado = React.useMemo(
+    () => getTecnicoResponsavel(alertaSelecionado, tecnicos, usuario),
+    [alertaSelecionado, tecnicos, usuario]
+  )
+
+  React.useEffect(() => {
+    setPaginaConcluidos((current) => Math.min(current, totalPaginasConcluidos - 1))
+  }, [totalPaginasConcluidos])
+
+  React.useEffect(() => {
+    return () => {
+      window.clearTimeout(highlightTimerRef.current)
+    }
+  }, [])
+
+  function getHighlightedPanelClass(baseClass, sectionId) {
+    const highlightClass =
+      "ring-2 ring-[#5E17EB]/70 shadow-[0_0_0_4px_rgba(94,23,235,0.14),0_0_32px_rgba(94,23,235,0.38)]"
+
+    return `${baseClass} scroll-mt-24 transition-[box-shadow,border-color,transform] duration-500 ${
+      highlightedSection === sectionId ? highlightClass : ""
+    }`
+  }
+
+  function focarSecaoTecnico(sectionId) {
+    const section = document.getElementById(sectionId)
+
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "center" })
+    }
+
+    window.clearTimeout(highlightTimerRef.current)
+    setHighlightedSection(sectionId)
+    highlightTimerRef.current = window.setTimeout(() => {
+      setHighlightedSection("")
+    }, 1800)
+  }
 
   function getAlertaMaquinaImagem(alerta) {
     if (alerta?.maquinaId !== null && alerta?.maquinaId !== undefined) {
@@ -508,9 +719,16 @@ function TechnicianDashboard() {
   }
 
   function alternarDetalhesAtendimento(open) {
-    if (!open && !startingAlertId) {
+    if (!open && !atendimentoActionPending) {
       setAlertaSelecionado(null)
     }
+  }
+
+  function podeConcluirAtendimento(alerta) {
+    return (
+      alerta?.status === "EM_ANDAMENTO" &&
+      (isAlertAssignedToUser(alerta, usuario) || atendimentosIniciados.has(alerta.id))
+    )
   }
 
   async function iniciarAtendimento(alerta) {
@@ -524,6 +742,25 @@ function TechnicianDashboard() {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o atendimento.")
     } finally {
       setStartingAlertId(null)
+    }
+  }
+
+  async function concluirAtendimento(alerta) {
+    if (!podeConcluirAtendimento(alerta)) {
+      toast.error("Este atendimento nao esta vinculado ao seu usuario.")
+      return
+    }
+
+    try {
+      setCompletingAlertId(alerta.id)
+      await atualizarStatus(alerta.id, "RESOLVIDO")
+      setAtendimentosIniciados((current) => new Set(current).add(alerta.id))
+      setAlertaSelecionado(null)
+      toast.success("Atendimento concluido.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel concluir o atendimento.")
+    } finally {
+      setCompletingAlertId(null)
     }
   }
 
@@ -548,15 +785,14 @@ function TechnicianDashboard() {
           />
         </div>
 
-        <div id="tour-technician-metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={WrenchIcon} label="Meus atendimentos" value={meusAtendimentos.length} sub="Alertas assumidos por você" badge="Sua fila" tone="purple" featured />
-          <MetricCard icon={ClipboardListIcon} label="Pendentes" value={alertasAtivos.length} sub="Disponíveis para iniciar" badge="Aguardando" tone="red" />
-          <MetricCard icon={CheckCircle2Icon} label="Resolvidos hoje" value={resolvidosHoje} sub="Finalizados no dia" badge="Hoje" tone="green" />
-          <MetricCard icon={ShieldAlertIcon} label="Críticos" value={criticos.length} sub="Severidade alta em aberto" badge="Alta prioridade" tone="yellow" />
+        <div id="tour-technician-metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <MetricCard icon={ClipboardListIcon} label="Pendentes" value={alertasAtivos.length} sub="Disponíveis para iniciar" badge="Aguardando" tone="red" featured onClick={() => focarSecaoTecnico("tour-technician-priority")} />
+          <MetricCard icon={WrenchIcon} label="Minha fila" value={meusAtendimentos.length} sub="Alertas assumidos por você" badge="Sua fila" tone="purple" onClick={() => focarSecaoTecnico("tour-technician-active")} />
+          <MetricCard icon={ClockIcon} label="Em andamento" value={atendimentosDeOutrosTecnicos.length} sub="Atendimentos de outros técnicos" badge="Equipe" tone="yellow" onClick={() => focarSecaoTecnico("tour-technician-machines")} />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.75fr)]">
-          <section id="tour-technician-priority" className={technicianPriorityPanelClass}>
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <section id="tour-technician-priority" className={getHighlightedPanelClass(technicianPriorityPanelClass, "tour-technician-priority")}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Prioridade agora</h2>
@@ -585,7 +821,7 @@ function TechnicianDashboard() {
           </section>
 
           <div className="flex flex-col gap-4">
-            <section id="tour-technician-active" className={technicianPanelClass}>
+            <section id="tour-technician-active" className={getHighlightedPanelClass(technicianPanelClass, "tour-technician-active")}>
               <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Meus alertas em andamento</h2>
               <p className="text-sm text-muted-foreground">Atendimentos vinculados ao seu usuário.</p>
               <Separator className="my-4" />
@@ -604,20 +840,32 @@ function TechnicianDashboard() {
               </div>
             </section>
 
-            <section id="tour-technician-completed" className={technicianPanelClass}>
+            <section id="tour-technician-completed" className={getHighlightedPanelClass(technicianPanelClass, "tour-technician-completed")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Atendimentos concluídos</h2>
-                  <p className="text-sm text-muted-foreground">Histórico de alertas resolvidos por você.</p>
+                  <p className="text-sm text-muted-foreground">Alertas resolvidos por você hoje.</p>
                 </div>
-                <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
-                  {atendimentosConcluidos.length} concluído(s)
-                </Badge>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
+                    {atendimentosConcluidosHoje.length} hoje
+                  </Badge>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer"
+                    onClick={() => router.push("/dashboard/perfil?tab=minha-atividade")}
+                  >
+                    Ver todos
+                    <ArrowRightIcon className="ml-1 size-4" />
+                  </Button>
+                </div>
               </div>
               <Separator className="my-4" />
-              <div className="flex max-h-[360px] flex-col gap-3 overflow-y-auto pr-1">
-                {atendimentosConcluidos.length > 0 ? (
-                  atendimentosConcluidos.map((alerta) => (
+              <div className="flex flex-col gap-3">
+                {atendimentosConcluidosHoje.length > 0 ? (
+                  atendimentosConcluidosPaginados.map((alerta) => (
                     <AlertListItem
                       key={alerta.id}
                       alerta={alerta}
@@ -625,9 +873,38 @@ function TechnicianDashboard() {
                     />
                   ))
                 ) : (
-                  <EmptyPanel title="Nenhum atendimento concluído" description="Quando você resolver alertas, o histórico aparece aqui." />
+                  <EmptyPanel title="Nenhum atendimento concluído hoje" description="Seu histórico completo fica em Perfil > Minha atividade." />
                 )}
               </div>
+              {atendimentosConcluidosHoje.length > ATENDIMENTOS_CONCLUIDOS_PAGE_SIZE ? (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+                  <span className="text-sm text-muted-foreground">
+                    Pag. {paginaConcluidosAtual + 1} de {totalPaginasConcluidos}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="size-8 cursor-pointer"
+                      onClick={() => setPaginaConcluidos((current) => Math.max(current - 1, 0))}
+                      disabled={paginaConcluidosAtual === 0}
+                    >
+                      <ChevronLeftIcon className="size-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="size-8 cursor-pointer"
+                      onClick={() => setPaginaConcluidos((current) => Math.min(current + 1, totalPaginasConcluidos - 1))}
+                      disabled={paginaConcluidosAtual >= totalPaginasConcluidos - 1}
+                    >
+                      <ChevronRightIcon className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </section>
 
             {/* <section id="tour-technician-operation" className={technicianPanelClass}>
@@ -646,29 +923,29 @@ function TechnicianDashboard() {
               </div>
             </section> */}
           </div>
-        </div>
 
-        <section id="tour-technician-machines" className={technicianPanelClass}>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Máquinas sob atenção</h2>
-              <p className="text-sm text-muted-foreground">Equipamentos com alertas ativos ou em atendimento.</p>
+          <section id="tour-technician-machines" className={getHighlightedPanelClass(technicianPanelClass, "tour-technician-machines")}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-semibold text-[#3B2867] dark:text-white">Em andamento</h2>
+                  <p className="text-sm text-muted-foreground">Atendimentos de outros técnicos da equipe.</p>
+                </div>
+              <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => router.push("/dashboard/maquinas")}>
+                Ver máquinas
+              </Button>
             </div>
-            <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => router.push("/dashboard/maquinas")}>
-              Ver máquinas
-            </Button>
-          </div>
-          <Separator className="my-4" />
-          {maquinasSobAtencao.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {maquinasSobAtencao.map((item) => (
-                <MachineAttentionItem key={`${item.maquinaId ?? item.maquinaNome}`} item={item} onOpen={abrirMaquina} />
-              ))}
-            </div>
-          ) : (
-            <EmptyPanel title="Nenhuma máquina sob atenção" description="Não há alertas ativos ou em andamento vinculados a máquinas agora." />
-          )}
-        </section>
+            <Separator className="my-4" />
+            {maquinasEmAndamento.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3">
+                {maquinasEmAndamento.map((item) => (
+                  <MachineAttentionItem key={`${item.maquinaId ?? item.maquinaNome}`} item={item} onOpen={abrirMaquina} />
+                ))}
+              </div>
+            ) : (
+              <EmptyPanel title="Nenhum atendimento de outros técnicos" description="Quando a equipe assumir novos atendimentos, eles aparecem aqui." />
+            )}
+          </section>
+        </div>
 
         <section id="tour-technician-shortcuts" className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <Button variant="outline" className="h-auto cursor-pointer justify-between rounded-xl bg-card p-4 shadow-xs transition-colors hover:border-[#5E17EB] hover:text-[#5E17EB]" onClick={() => router.push("/dashboard/alertas")}>
@@ -695,8 +972,8 @@ function TechnicianDashboard() {
         </section>
       </div>
 
-      <Drawer direction="right" open={Boolean(alertaSelecionado)} onOpenChange={alternarDetalhesAtendimento}>
-        <DrawerContent className="w-[calc(100vw-1rem)] max-w-md overflow-hidden bg-background sm:max-w-lg">
+      <Drawer direction={isMobileDrawer ? "bottom" : "right"} open={Boolean(alertaSelecionado)} onOpenChange={alternarDetalhesAtendimento}>
+        <DrawerContent className="overflow-hidden bg-background data-[vaul-drawer-direction=bottom]:max-h-[92dvh] data-[vaul-drawer-direction=right]:w-[min(620px,calc(100vw-1rem))] data-[vaul-drawer-direction=right]:max-w-xl">
           {alertaSelecionado ? (
             <>
               <DrawerHeader className="border-b px-5 py-5 text-left">
@@ -727,6 +1004,10 @@ function TechnicianDashboard() {
                     {alertaSelecionado.mensagem}
                   </p>
                 </div>
+
+                {alertaSelecionado.status === "EM_ANDAMENTO" || tecnicoAlertaSelecionado ? (
+                  <TecnicoResponsavelCard tecnico={tecnicoAlertaSelecionado} />
+                ) : null}
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border bg-card p-3 shadow-xs">
@@ -761,10 +1042,19 @@ function TechnicianDashboard() {
                   <Button
                     className="w-full cursor-pointer"
                     onClick={() => iniciarAtendimento(alertaSelecionado)}
-                    disabled={Boolean(startingAlertId)}
+                    disabled={atendimentoActionPending || salvando}
                   >
-                    {startingAlertId ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
+                    {startingAlertId === alertaSelecionado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
                     Iniciar atendimento
+                  </Button>
+                ) : podeConcluirAtendimento(alertaSelecionado) ? (
+                  <Button
+                    className="w-full cursor-pointer bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+                    onClick={() => concluirAtendimento(alertaSelecionado)}
+                    disabled={atendimentoActionPending || salvando}
+                  >
+                    {completingAlertId === alertaSelecionado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <CheckCircle2Icon className="mr-1 size-4" />}
+                    Concluir atendimento
                   </Button>
                 ) : (
                   <Button className="w-full" disabled>
@@ -772,7 +1062,7 @@ function TechnicianDashboard() {
                   </Button>
                 )}
                 <DrawerClose asChild>
-                  <Button variant="outline" className="w-full cursor-pointer" disabled={Boolean(startingAlertId)}>
+                  <Button variant="outline" className="w-full cursor-pointer" disabled={atendimentoActionPending || salvando}>
                     Fechar
                   </Button>
                 </DrawerClose>
