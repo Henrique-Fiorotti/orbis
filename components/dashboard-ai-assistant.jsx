@@ -377,6 +377,37 @@ function buildBackendHistory(messages) {
     .filter((message) => message.content.length > 0)
 }
 
+function getAssistantMessageExtras(payload) {
+  if (!payload || typeof payload !== "object") {
+    return {}
+  }
+
+  return {
+    ...(payload.requiresConfirmation && payload.confirmation
+      ? {
+        requiresConfirmation: true,
+        confirmation: payload.confirmation,
+      }
+      : {}),
+    ...(payload.confirmationResolved
+      ? {
+        confirmationResolved: true,
+        confirmationDecision: payload.confirmationDecision,
+        confirmationId: payload.confirmationId,
+        actionResult: payload.actionResult,
+      }
+      : {}),
+  }
+}
+
+function getConfirmationDecisionLabel(confirmation, decision) {
+  if (decision === "confirm") {
+    return String(confirmation?.confirmLabel || "Pode fazer")
+  }
+
+  return String(confirmation?.cancelLabel || "Cancelar")
+}
+
 function renderInlineMarkdown(text, keyPrefix) {
   const value = String(text || "")
   const parts = value.split(/(\*\*[^*\n]+\*\*|\*[^*\n]+\*)/g)
@@ -479,9 +510,21 @@ function useTypewriter(text, speed = 18) {
   return { displayed, isDone }
 }
 
-function ChatMessage({ message, animate = false, onAnimationComplete }) {
+function ChatMessage({ message, animate = false, onAnimationComplete, onConfirmationDecision, confirmationLoading = false }) {
   const isUser = message.role === "user"
   const isError = message.role === "error"
+  const hasPendingConfirmation =
+    !isUser &&
+    !isError &&
+    message.requiresConfirmation &&
+    message.confirmation?.id &&
+    !message.confirmationResolved
+  const confirmationStatus =
+    !isUser && !isError && message.confirmationResolved
+      ? message.confirmationDecision === "confirm"
+        ? "Ação confirmada"
+        : "Ação cancelada"
+      : ""
 
   const { displayed, isDone } = useTypewriter(animate ? message.content : "")
   const content = animate ? displayed : message.content
@@ -523,6 +566,34 @@ function ChatMessage({ message, animate = false, onAnimationComplete }) {
                 {context.label}
               </span>
             ))}
+          </div>
+        ) : null}
+        {hasPendingConfirmation ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 cursor-pointer rounded-[8px] px-3"
+              disabled={confirmationLoading}
+              onClick={() => onConfirmationDecision?.(message, "confirm")}
+            >
+              {getConfirmationDecisionLabel(message.confirmation, "confirm")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 cursor-pointer rounded-[8px] px-3"
+              disabled={confirmationLoading}
+              onClick={() => onConfirmationDecision?.(message, "cancel")}
+            >
+              {getConfirmationDecisionLabel(message.confirmation, "cancel")}
+            </Button>
+          </div>
+        ) : null}
+        {confirmationStatus ? (
+          <div className="mt-2 text-xs font-medium text-muted-foreground">
+            {confirmationStatus}
           </div>
         ) : null}
         <span className={cn(
@@ -1384,7 +1455,10 @@ export function DashboardAiAssistant() {
       }
 
       const baseMessages = showUserMessage ? [...messagesRef.current] : messagesRef.current
-      syncActiveChat([...baseMessages, createMessage("assistant", answer)])
+      syncActiveChat([
+        ...baseMessages,
+        createMessage("assistant", answer, getAssistantMessageExtras(payload)),
+      ])
     } catch (error) {
       if (error?.name === "AbortError") {
         const baseMessages = showUserMessage ? [...messagesRef.current] : messagesRef.current
@@ -1402,6 +1476,75 @@ export function DashboardAiAssistant() {
       })
       const baseMessages = showUserMessage ? [...messagesRef.current] : messagesRef.current
       syncActiveChat([...baseMessages, createMessage("error", getErrorMessage(error))])
+    } finally {
+      abortControllerRef.current = null
+      setLoading(false)
+    }
+  }
+
+  async function sendConfirmationDecision(message, decision) {
+    if (loading || !message?.confirmation?.id) {
+      return
+    }
+
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      setInlineError("Faça login para responder à confirmação da IA.")
+      return
+    }
+
+    const confirmation = message.confirmation
+    const decisionLabel = getConfirmationDecisionLabel(confirmation, decision)
+    const abortController = new AbortController()
+
+    setInlineError("")
+    setLastFailedRequest(null)
+    appendMessages(createMessage("user", decisionLabel))
+    abortControllerRef.current = abortController
+    setLoading(true)
+
+    try {
+      const historico = buildBackendHistory(messagesRef.current)
+      const payload = await askDashboardAi(decisionLabel, session.accessToken, {
+        signal: abortController.signal,
+        historico,
+        confirmationResponse: {
+          id: confirmation.id,
+          decision,
+        },
+      })
+      const answer = payload.resposta?.trim()
+
+      if (!answer) {
+        throw new Error("A IA retornou uma resposta vazia. Tente novamente.")
+      }
+
+      const resolvedMessages = messagesRef.current.map((currentMessage) =>
+        currentMessage.id === message.id
+          ? {
+            ...currentMessage,
+            confirmationResolved: true,
+            confirmationDecision: decision,
+          }
+          : currentMessage
+      )
+
+      syncActiveChat([
+        ...resolvedMessages,
+        createMessage("assistant", answer, getAssistantMessageExtras(payload)),
+      ])
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        syncActiveChat([...messagesRef.current, createMessage("error", "Resposta cancelada.")])
+        return
+      }
+
+      if (getHttpErrorStatus(error) === 401) {
+        clearAuthSession()
+      }
+
+      syncActiveChat([...messagesRef.current, createMessage("error", getErrorMessage(error))])
     } finally {
       abortControllerRef.current = null
       setLoading(false)
@@ -2063,6 +2206,8 @@ export function DashboardAiAssistant() {
                         message={message}
                         animate={message.role === "assistant" && index === messages.length - 1 && !message.animated}
                         onAnimationComplete={() => markMessageAnimated(message.id)}
+                        onConfirmationDecision={sendConfirmationDecision}
+                        confirmationLoading={loading}
                       />
                     ))
                   )}
