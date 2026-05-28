@@ -278,6 +278,15 @@ export interface DashboardAiResponse {
   confirmationDecision?: "confirm" | "cancel" | string | null;
   confirmationId?: string | null;
   actionResult?: Record<string, unknown> | null;
+  requiresDisambiguation?: boolean;
+  disambiguation?: {
+    type?: string;
+    entity?: string;
+    actionKey?: string;
+    actionLabel?: string;
+    message?: string;
+    options?: Array<Record<string, unknown>>;
+  } | null;
 }
 
 export interface ChartConfigItem {
