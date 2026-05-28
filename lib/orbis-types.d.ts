@@ -260,6 +260,33 @@ export interface DashboardAiResponse {
   pergunta: string;
   resposta: string;
   contextoGeradoEm: string | null;
+  requiresConfirmation?: boolean;
+  confirmation?: {
+    id: string;
+    type?: string;
+    actionKey?: string;
+    message?: string;
+    actionLabel?: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    confirmValue?: string;
+    cancelValue?: string;
+    summary?: Record<string, unknown>;
+    expiresAt?: string;
+  } | null;
+  confirmationResolved?: boolean;
+  confirmationDecision?: "confirm" | "cancel" | string | null;
+  confirmationId?: string | null;
+  actionResult?: Record<string, unknown> | null;
+  requiresDisambiguation?: boolean;
+  disambiguation?: {
+    type?: string;
+    entity?: string;
+    actionKey?: string;
+    actionLabel?: string;
+    message?: string;
+    options?: Array<Record<string, unknown>>;
+  } | null;
 }
 
 export interface ChartConfigItem {

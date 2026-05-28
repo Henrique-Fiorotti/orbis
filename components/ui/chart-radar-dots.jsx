@@ -88,6 +88,14 @@ export function ChartRadarDots({ className = "w-full xl:w-1/3" }) {
                 content={
                   <ChartTooltipContent
                     labelFormatter={(_, payload) => payload?.[0]?.payload?.setor ?? ""}
+                    formatter={(value) => (
+                      <div className="flex min-w-36 items-center justify-between gap-3">
+                        <span className="text-muted-foreground">Integridade média:</span>
+                        <span className="font-mono font-medium text-foreground tabular-nums">
+                          {Number(value).toLocaleString("pt-BR", { maximumFractionDigits:0})}%
+                        </span>
+                      </div>
+                    )}
                   />
                 }
               />

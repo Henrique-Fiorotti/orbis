@@ -377,6 +377,123 @@ function buildBackendHistory(messages) {
     .filter((message) => message.content.length > 0)
 }
 
+function getAssistantMessageExtras(payload, extras = {}) {
+  if (!payload || typeof payload !== "object") {
+    return extras
+  }
+
+  return {
+    ...extras,
+    ...(payload.requiresConfirmation && payload.confirmation
+      ? {
+        requiresConfirmation: true,
+        confirmation: payload.confirmation,
+      }
+      : {}),
+    ...(payload.confirmationResolved
+      ? {
+        confirmationResolved: true,
+        confirmationDecision: payload.confirmationDecision,
+        confirmationId: payload.confirmationId,
+        actionResult: payload.actionResult,
+      }
+      : {}),
+    ...(payload.requiresDisambiguation && payload.disambiguation
+      ? {
+        requiresDisambiguation: true,
+        disambiguation: payload.disambiguation,
+      }
+      : {}),
+  }
+}
+
+function getConfirmationDecisionLabel(confirmation, decision) {
+  if (decision === "confirm") {
+    return String(confirmation?.confirmLabel || "Pode fazer")
+  }
+
+  return String(confirmation?.cancelLabel || "Cancelar")
+}
+
+function getDisambiguationEntityLabel(entity) {
+  const normalized = String(entity || "").trim().toLowerCase()
+
+  if (normalized === "agendamento_relatorio") {
+    return "agendamento de relatório"
+  }
+
+  if (normalized === "sensor") {
+    return "sensor"
+  }
+
+  return normalized.replace(/_/g, " ") || "item"
+}
+
+function getDisambiguationOptionTitle(option, entity) {
+  const id = option?.id ?? option?.value ?? ""
+  const normalizedEntity = String(entity || "").trim().toLowerCase()
+
+  if (normalizedEntity === "sensor") {
+    const tipo = String(option?.tipo || "Sensor").trim()
+    const maquinaNome = String(option?.maquina?.nome || "").trim()
+
+    return `${tipo}${id ? ` #${id}` : ""}${maquinaNome ? ` - ${maquinaNome}` : ""}`
+  }
+
+  const nome = String(option?.nome || option?.name || option?.label || "").trim()
+
+  return `${id ? `#${id}` : "Opção"}${nome ? ` - ${nome}` : ""}`
+}
+
+function getDisambiguationOptionDetails(option) {
+  const details = []
+  const status = String(option?.status || "").trim()
+  const descricaoAgendamento = String(option?.descricaoAgendamento || "").trim()
+  const maquinaNome = String(option?.maquina?.nome || "").trim()
+  const maquinaSetor = String(option?.maquina?.setor || "").trim()
+  const destinatarios = Array.isArray(option?.destinatarios)
+    ? option.destinatarios.filter(Boolean).join(", ")
+    : ""
+
+  if (status) {
+    details.push(status)
+  }
+
+  if (descricaoAgendamento) {
+    details.push(descricaoAgendamento)
+  }
+
+  if (maquinaNome) {
+    details.push(maquinaSetor ? `${maquinaNome} (${maquinaSetor})` : maquinaNome)
+  }
+
+  if (destinatarios) {
+    details.push(destinatarios)
+  }
+
+  return details.join(" • ")
+}
+
+function buildDisambiguationQuestion(message, option) {
+  const disambiguation = message?.disambiguation || {}
+  const id = option?.id ?? option?.value
+  const entityLabel = getDisambiguationEntityLabel(disambiguation.entity)
+  const baseQuestion = String(message?.disambiguationOriginalQuestion || message?.content || "").trim()
+  const suffix = `Use ${entityLabel} ${id}.`
+
+  if (baseQuestion) {
+    const separator = /[.!?]$/.test(baseQuestion) ? " " : ". "
+    const question = `${baseQuestion}${separator}${suffix}`
+
+    if (question.length <= MAX_QUESTION_LENGTH) {
+      return question
+    }
+  }
+
+  const actionLabel = String(disambiguation.actionLabel || "Resolver ação").trim()
+  return `${actionLabel} usando ${entityLabel} ${id}.`
+}
+
 function renderInlineMarkdown(text, keyPrefix) {
   const value = String(text || "")
   const parts = value.split(/(\*\*[^*\n]+\*\*|\*[^*\n]+\*)/g)
@@ -479,9 +596,41 @@ function useTypewriter(text, speed = 18) {
   return { displayed, isDone }
 }
 
-function ChatMessage({ message, animate = false, onAnimationComplete }) {
+function ChatMessage({
+  message,
+  animate = false,
+  onAnimationComplete,
+  onConfirmationDecision,
+  onDisambiguationSelect,
+  confirmationLoading = false,
+}) {
   const isUser = message.role === "user"
   const isError = message.role === "error"
+  const hasPendingConfirmation =
+    !isUser &&
+    !isError &&
+    message.requiresConfirmation &&
+    message.confirmation?.id &&
+    !message.confirmationResolved
+  const disambiguationOptions = Array.isArray(message.disambiguation?.options)
+    ? message.disambiguation.options
+    : []
+  const hasPendingDisambiguation =
+    !isUser &&
+    !isError &&
+    message.requiresDisambiguation &&
+    disambiguationOptions.length > 0 &&
+    !message.disambiguationResolved
+  const confirmationStatus =
+    !isUser && !isError && message.confirmationResolved
+      ? message.confirmationDecision === "confirm"
+        ? "Ação confirmada"
+        : "Ação cancelada"
+      : ""
+  const disambiguationStatus =
+    !isUser && !isError && message.disambiguationResolved
+      ? "Alvo escolhido"
+      : ""
 
   const { displayed, isDone } = useTypewriter(animate ? message.content : "")
   const content = animate ? displayed : message.content
@@ -523,6 +672,63 @@ function ChatMessage({ message, animate = false, onAnimationComplete }) {
                 {context.label}
               </span>
             ))}
+          </div>
+        ) : null}
+        {hasPendingConfirmation ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 cursor-pointer rounded-[8px] px-3"
+              disabled={confirmationLoading}
+              onClick={() => onConfirmationDecision?.(message, "confirm")}
+            >
+              {getConfirmationDecisionLabel(message.confirmation, "confirm")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 cursor-pointer rounded-[8px] px-3"
+              disabled={confirmationLoading}
+              onClick={() => onConfirmationDecision?.(message, "cancel")}
+            >
+              {getConfirmationDecisionLabel(message.confirmation, "cancel")}
+            </Button>
+          </div>
+        ) : null}
+        {confirmationStatus ? (
+          <div className="mt-2 text-xs font-medium text-muted-foreground">
+            {confirmationStatus}
+          </div>
+        ) : null}
+        {hasPendingDisambiguation ? (
+          <div className="mt-3 grid gap-2 border-t pt-3">
+            {disambiguationOptions.map((option, index) => {
+              const key = String(option?.id ?? option?.value ?? index)
+              const title = getDisambiguationOptionTitle(option, message.disambiguation?.entity)
+              const details = getDisambiguationOptionDetails(option)
+
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className="grid w-full cursor-pointer gap-1 rounded-[8px] border bg-background/70 px-3 py-2 text-left text-xs transition hover:border-primary/40 hover:bg-background disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={confirmationLoading}
+                  onClick={() => onDisambiguationSelect?.(message, option)}
+                >
+                  <span className="font-medium text-foreground">{title}</span>
+                  {details ? (
+                    <span className="line-clamp-2 text-muted-foreground">{details}</span>
+                  ) : null}
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
+        {disambiguationStatus ? (
+          <div className="mt-2 text-xs font-medium text-muted-foreground">
+            {disambiguationStatus}
           </div>
         ) : null}
         <span className={cn(
@@ -1384,7 +1590,13 @@ export function DashboardAiAssistant() {
       }
 
       const baseMessages = showUserMessage ? [...messagesRef.current] : messagesRef.current
-      syncActiveChat([...baseMessages, createMessage("assistant", answer)])
+      syncActiveChat([
+        ...baseMessages,
+        createMessage("assistant", answer, getAssistantMessageExtras(payload, {
+          disambiguationOriginalQuestion: normalizedQuestion,
+          disambiguationContexts: contexts,
+        })),
+      ])
     } catch (error) {
       if (error?.name === "AbortError") {
         const baseMessages = showUserMessage ? [...messagesRef.current] : messagesRef.current
@@ -1402,6 +1614,155 @@ export function DashboardAiAssistant() {
       })
       const baseMessages = showUserMessage ? [...messagesRef.current] : messagesRef.current
       syncActiveChat([...baseMessages, createMessage("error", getErrorMessage(error))])
+    } finally {
+      abortControllerRef.current = null
+      setLoading(false)
+    }
+  }
+
+  async function sendConfirmationDecision(message, decision) {
+    if (loading || !message?.confirmation?.id) {
+      return
+    }
+
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      setInlineError("Faça login para responder à confirmação da IA.")
+      return
+    }
+
+    const confirmation = message.confirmation
+    const decisionLabel = getConfirmationDecisionLabel(confirmation, decision)
+    const abortController = new AbortController()
+
+    setInlineError("")
+    setLastFailedRequest(null)
+    appendMessages(createMessage("user", decisionLabel))
+    abortControllerRef.current = abortController
+    setLoading(true)
+
+    try {
+      const historico = buildBackendHistory(messagesRef.current)
+      const payload = await askDashboardAi(decisionLabel, session.accessToken, {
+        signal: abortController.signal,
+        historico,
+        confirmationResponse: {
+          id: confirmation.id,
+          decision,
+        },
+      })
+      const answer = payload.resposta?.trim()
+
+      if (!answer) {
+        throw new Error("A IA retornou uma resposta vazia. Tente novamente.")
+      }
+
+      const resolvedMessages = messagesRef.current.map((currentMessage) =>
+        currentMessage.id === message.id
+          ? {
+            ...currentMessage,
+            confirmationResolved: true,
+            confirmationDecision: decision,
+          }
+          : currentMessage
+      )
+
+      syncActiveChat([
+        ...resolvedMessages,
+        createMessage("assistant", answer, getAssistantMessageExtras(payload)),
+      ])
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        syncActiveChat([...messagesRef.current, createMessage("error", "Resposta cancelada.")])
+        return
+      }
+
+      if (getHttpErrorStatus(error) === 401) {
+        clearAuthSession()
+      }
+
+      syncActiveChat([...messagesRef.current, createMessage("error", getErrorMessage(error))])
+    } finally {
+      abortControllerRef.current = null
+      setLoading(false)
+    }
+  }
+
+  async function sendDisambiguationChoice(message, option) {
+    const selectedId = option?.id ?? option?.value
+
+    if (loading || !message?.disambiguation || selectedId === undefined || selectedId === null) {
+      return
+    }
+
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      setInlineError("Faça login para escolher uma opção da IA.")
+      return
+    }
+
+    const contexts = Array.isArray(message.disambiguationContexts)
+      ? message.disambiguationContexts
+      : []
+    const resolvedQuestion = buildDisambiguationQuestion(message, option)
+    const payloadQuestion = buildPromptPayload(resolvedQuestion, contexts)
+
+    if (payloadQuestion.length > MAX_QUESTION_LENGTH) {
+      setInlineError("A escolha gerou uma pergunta grande demais. Envie a opção desejada manualmente.")
+      return
+    }
+
+    const selectedLabel = `Usar ${getDisambiguationOptionTitle(option, message.disambiguation.entity)}`
+    const abortController = new AbortController()
+
+    setInlineError("")
+    setLastFailedRequest(null)
+    appendMessages(createMessage("user", selectedLabel))
+    abortControllerRef.current = abortController
+    setLoading(true)
+
+    try {
+      const historico = buildBackendHistory(messagesRef.current)
+      const payload = await askDashboardAi(payloadQuestion, session.accessToken, {
+        signal: abortController.signal,
+        historico,
+      })
+      const answer = payload.resposta?.trim()
+
+      if (!answer) {
+        throw new Error("A IA retornou uma resposta vazia. Tente novamente.")
+      }
+
+      const resolvedMessages = messagesRef.current.map((currentMessage) =>
+        currentMessage.id === message.id
+          ? {
+            ...currentMessage,
+            disambiguationResolved: true,
+            disambiguationSelectedOptionId: String(selectedId),
+          }
+          : currentMessage
+      )
+
+      syncActiveChat([
+        ...resolvedMessages,
+        createMessage("assistant", answer, getAssistantMessageExtras(payload, {
+          disambiguationOriginalQuestion: resolvedQuestion,
+          disambiguationContexts: contexts,
+        })),
+      ])
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        syncActiveChat([...messagesRef.current, createMessage("error", "Resposta cancelada.")])
+        return
+      }
+
+      if (getHttpErrorStatus(error) === 401) {
+        clearAuthSession()
+      }
+
+      syncActiveChat([...messagesRef.current, createMessage("error", getErrorMessage(error))])
     } finally {
       abortControllerRef.current = null
       setLoading(false)
@@ -2063,6 +2424,9 @@ export function DashboardAiAssistant() {
                         message={message}
                         animate={message.role === "assistant" && index === messages.length - 1 && !message.animated}
                         onAnimationComplete={() => markMessageAnimated(message.id)}
+                        onConfirmationDecision={sendConfirmationDecision}
+                        onDisambiguationSelect={sendDisambiguationChoice}
+                        confirmationLoading={loading}
                       />
                     ))
                   )}
