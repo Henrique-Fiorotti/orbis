@@ -225,6 +225,46 @@ function formatDecimal(value, digits = 2) {
   return parsed.toFixed(digits).replace(".", ",")
 }
 
+function formatR2Score(value) {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return "N/A"
+  }
+
+  return `${Math.round(Math.max(0, Math.min(1, parsed)) * 100)}%`
+}
+
+function formatSlopeAngle(value) {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return "N/A"
+  }
+
+  const angle = Math.atan(parsed) * (180 / Math.PI)
+
+  return `${angle.toFixed(2).replace(".", ",")}°`
+}
+
+function getSlopeAngleDescription(value) {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return "Sem tendencia calculada."
+  }
+
+  if (parsed < 0) {
+    return "Negativo indica queda da integridade."
+  }
+
+  if (parsed > 0) {
+    return "Positivo indica recuperacao ou alta."
+  }
+
+  return "Linha praticamente estavel."
+}
+
 function formatCount(value) {
   const parsed = Number(value)
 
@@ -233,6 +273,17 @@ function formatCount(value) {
   }
 
   return new Intl.NumberFormat("pt-BR").format(parsed)
+}
+
+function formatRecentPoints(value) {
+  const parsed = Number(value)
+  const count = Number.isFinite(parsed) ? Math.max(0, Math.min(30, Math.round(parsed))) : 0
+
+  if (count === 0) {
+    return "Sem pontos"
+  }
+
+  return `Ultimos ${count} pontos`
 }
 
 function formatPredictionReason(reason) {
@@ -1188,9 +1239,21 @@ function PredictionRegressionSheet({
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <PredictionMetric label="R2" value={modelo ? formatDecimal(modelo.r2, 2) : "N/A"} sub="Ajuste do modelo" />
-            <PredictionMetric label="Inclinacao" value={modelo ? formatDecimal(modelo.slope, 4) : "N/A"} sub="Pontos percentuais por hora" />
-            <PredictionMetric label="Pontos usados" value={formatCount(modelo?.pontosUsados ?? historico.length)} sub="Ate 30 pontos recentes" />
+            <PredictionMetric
+              label="Confianca do ajuste"
+              value={modelo ? formatR2Score(modelo.r2) : "N/A"}
+              sub="R2: quanto a linha explica os dados."
+            />
+            <PredictionMetric
+              label="Angulo da tendencia"
+              value={modelo ? formatSlopeAngle(modelo.slope) : "N/A"}
+              sub={modelo ? getSlopeAngleDescription(modelo.slope) : "Sem tendencia calculada."}
+            />
+            <PredictionMetric
+              label="Dados usados"
+              value={formatRecentPoints(modelo?.pontosUsados ?? historico.length)}
+              sub="Pontos recentes da maquina."
+            />
             <PredictionMetric
               label="Falha prevista"
               value={formatPredictionDate(maquina?.previsaoManutencao)}
