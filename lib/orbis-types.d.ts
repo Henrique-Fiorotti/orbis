@@ -250,7 +250,8 @@ export interface AlertasContextValue {
   carregando: boolean;
   salvando: boolean;
   adicionarAlerta: (dados: NovoAlertaInput) => Promise<void>;
-  atualizarStatus: (id: number, novoStatus: StatusAlerta) => Promise<void>;
+  atualizarStatus: (id: number, novoStatus: StatusAlerta, opcoes?: { observacao?: string }) => Promise<void>;
+  registrarRelatoAtendimento: (id: number, observacao: string) => Promise<void>;
   cancelarAlerta: (id: number) => Promise<void>;
   recarregarAlertas: () => Promise<void>;
   resetarDados: () => Promise<void>;

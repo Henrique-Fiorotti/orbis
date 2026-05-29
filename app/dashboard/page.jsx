@@ -11,8 +11,10 @@ import {
   ChevronRightIcon,
   ClockIcon,
   ClipboardListIcon,
+  FileTextIcon,
   GaugeIcon,
   Loader2Icon,
+  SaveIcon,
   WrenchIcon,
   WashingMachineIcon,
   NfcIcon,
@@ -536,6 +538,7 @@ function TechnicianDashboard() {
     status: alertasStatus,
     salvando,
     atualizarStatus,
+    registrarRelatoAtendimento,
     recarregarAlertas,
   } = useAlertas()
   const { maquinas, status: maquinasStatus, recarregarMaquinas } = useMaquinas()
@@ -543,14 +546,17 @@ function TechnicianDashboard() {
   const { tecnicos } = useTecnicos()
   const [startingAlertId, setStartingAlertId] = React.useState(null)
   const [completingAlertId, setCompletingAlertId] = React.useState(null)
+  const [savingReportId, setSavingReportId] = React.useState(null)
   const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
+  const [relatoManutencao, setRelatoManutencao] = React.useState("")
   const [atendimentosIniciados, setAtendimentosIniciados] = React.useState(() => new Set())
   const [highlightedSection, setHighlightedSection] = React.useState("")
   const [paginaConcluidos, setPaginaConcluidos] = React.useState(0)
   const highlightTimerRef = React.useRef(null)
 
   const loading = alertasStatus === "loading" || maquinasStatus === "loading" || sensoresStatus === "loading"
-  const atendimentoActionPending = Boolean(startingAlertId || completingAlertId)
+  const atendimentoActionPending = Boolean(startingAlertId || completingAlertId || savingReportId)
+  const relatoManutencaoTexto = relatoManutencao.trim()
   const alertasAtivos = React.useMemo(() => alertas.filter((alerta) => alerta.status === "ATIVO"), [alertas])
   const alertasEmAndamento = React.useMemo(() => alertas.filter((alerta) => alerta.status === "EM_ANDAMENTO"), [alertas])
   const meusAtendimentos = React.useMemo(
@@ -659,6 +665,10 @@ function TechnicianDashboard() {
   }, [totalPaginasConcluidos])
 
   React.useEffect(() => {
+    setRelatoManutencao("")
+  }, [alertaSelecionado?.id])
+
+  React.useEffect(() => {
     return () => {
       window.clearTimeout(highlightTimerRef.current)
     }
@@ -736,29 +746,65 @@ function TechnicianDashboard() {
       setStartingAlertId(alerta.id)
       await atualizarStatus(alerta.id, "EM_ANDAMENTO")
       setAtendimentosIniciados((current) => new Set(current).add(alerta.id))
-      setAlertaSelecionado(null)
-      toast.success("Atendimento iniciado.")
+      setAlertaSelecionado((current) =>
+        current?.id === alerta.id
+          ? {
+              ...current,
+              status: "EM_ANDAMENTO",
+              tecnicoId: current.tecnicoId ?? usuario?.id ?? null,
+              tecnicoNome: current.tecnicoNome || usuario?.nome || null,
+            }
+          : current
+      )
+      toast.success("Manutencao iniciada.")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível iniciar o atendimento.")
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel iniciar a manutencao.")
     } finally {
       setStartingAlertId(null)
     }
   }
 
+  async function salvarRelatoAtendimento(alerta) {
+    if (!podeConcluirAtendimento(alerta)) {
+      toast.error("Esta manutencao nao esta vinculada ao seu usuario.")
+      return
+    }
+
+    if (relatoManutencaoTexto.length < 3) {
+      toast.error("Informe um relato com pelo menos 3 caracteres.")
+      return
+    }
+
+    try {
+      setSavingReportId(alerta.id)
+      await registrarRelatoAtendimento(alerta.id, relatoManutencaoTexto)
+      toast.success("Relato registrado.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel registrar o relato.")
+    } finally {
+      setSavingReportId(null)
+    }
+  }
+
   async function concluirAtendimento(alerta) {
     if (!podeConcluirAtendimento(alerta)) {
-      toast.error("Este atendimento nao esta vinculado ao seu usuario.")
+      toast.error("Esta manutencao nao esta vinculada ao seu usuario.")
+      return
+    }
+
+    if (relatoManutencaoTexto && relatoManutencaoTexto.length < 3) {
+      toast.error("Informe um relato com pelo menos 3 caracteres.")
       return
     }
 
     try {
       setCompletingAlertId(alerta.id)
-      await atualizarStatus(alerta.id, "RESOLVIDO")
+      await atualizarStatus(alerta.id, "RESOLVIDO", { observacao: relatoManutencaoTexto })
       setAtendimentosIniciados((current) => new Set(current).add(alerta.id))
       setAlertaSelecionado(null)
-      toast.success("Atendimento concluido.")
+      toast.success("Manutencao concluida.")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel concluir o atendimento.")
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel concluir a manutencao.")
     } finally {
       setCompletingAlertId(null)
     }
@@ -1009,6 +1055,41 @@ function TechnicianDashboard() {
                   <TecnicoResponsavelCard tecnico={tecnicoAlertaSelecionado} />
                 ) : null}
 
+                {podeConcluirAtendimento(alertaSelecionado) ? (
+                  <div className="rounded-xl border bg-card p-4 shadow-xs ring-1 ring-foreground/5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label htmlFor="relato-manutencao" className="inline-flex items-center gap-2 text-sm font-semibold text-[#3B2867] dark:text-white">
+                        <FileTextIcon className="size-4 text-[#5E17EB]" />
+                        Relato da manutencao do alerta
+                      </label>
+                      <span className="text-xs tabular-nums text-muted-foreground">{relatoManutencao.length}/500</span>
+                    </div>
+                    <textarea
+                      id="relato-manutencao"
+                      value={relatoManutencao}
+                      maxLength={500}
+                      rows={5}
+                      onChange={(event) => setRelatoManutencao(event.target.value)}
+                      disabled={atendimentoActionPending || salvando}
+                      placeholder="Descreva o diagnostico, ajustes realizados e proximos cuidados."
+                      className="mt-3 min-h-[132px] w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30 dark:disabled:bg-input/80"
+                    />
+                    <div className="mt-3 flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="cursor-pointer"
+                        onClick={() => salvarRelatoAtendimento(alertaSelecionado)}
+                        disabled={atendimentoActionPending || salvando || relatoManutencaoTexto.length < 3}
+                      >
+                        {savingReportId === alertaSelecionado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <SaveIcon className="mr-1 size-4" />}
+                        Adicionar relato
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border bg-card p-3 shadow-xs">
                     <span className="text-xs text-muted-foreground">Última ocorrência</span>
@@ -1045,7 +1126,7 @@ function TechnicianDashboard() {
                     disabled={atendimentoActionPending || salvando}
                   >
                     {startingAlertId === alertaSelecionado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
-                    Iniciar atendimento
+                    Iniciar manutencao
                   </Button>
                 ) : podeConcluirAtendimento(alertaSelecionado) ? (
                   <Button
@@ -1054,11 +1135,11 @@ function TechnicianDashboard() {
                     disabled={atendimentoActionPending || salvando}
                   >
                     {completingAlertId === alertaSelecionado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <CheckCircle2Icon className="mr-1 size-4" />}
-                    Concluir atendimento
+                    Concluir manutencao
                   </Button>
                 ) : (
                   <Button className="w-full" disabled>
-                    {alertaSelecionado.status === "RESOLVIDO" ? "Atendimento concluído" : "Atendimento em andamento"}
+                    {alertaSelecionado.status === "RESOLVIDO" ? "Manutencao concluida" : "Manutencao em andamento"}
                   </Button>
                 )}
                 <DrawerClose asChild>
