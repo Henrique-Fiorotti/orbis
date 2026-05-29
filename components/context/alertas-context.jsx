@@ -85,6 +85,21 @@ function getOpenMaintenance(payload) {
   ) ?? null
 }
 
+function getTrimmedObservation(value) {
+  return typeof value === "string" ? value.trim() : ""
+}
+
+async function fetchOpenMaintenanceForAlert(accessToken, alertaId) {
+  const manutencoes = await fetchDashboardJson(`/manutencoes/alerta/${alertaId}`, accessToken, "as manutencoes do alerta")
+  const manutencao = getOpenMaintenance(manutencoes)
+
+  if (!manutencao?.id) {
+    throw new Error("Nao foi encontrada uma manutencao em andamento para este alerta.")
+  }
+
+  return manutencao
+}
+
 /**
  * @param {WithChildrenProps} props
  */
@@ -224,14 +239,16 @@ export function AlertasProvider({ children }) {
    * @param {number} id
    * @param {StatusAlerta} novoStatus
    */
-  async function atualizarStatus(id, novoStatus) {
+  async function atualizarStatus(id, novoStatus, opcoes = {}) {
+    const observacao = getTrimmedObservation(opcoes?.observacao)
+
     if (novoStatus === "EM_ANDAMENTO") {
       return await executarMutacao((accessToken) =>
-        requestDashboardJson("/manutencoes", accessToken, "o início do atendimento", {
+        requestDashboardJson("/manutencoes", accessToken, "o inicio da manutencao", {
           method: "POST",
           body: {
             alertaId: id,
-            observacao: "Atendimento iniciado pelo dashboard.",
+            observacao: observacao || "Manutencao iniciada pelo dashboard.",
           },
         })
       )
@@ -239,24 +256,43 @@ export function AlertasProvider({ children }) {
 
     if (novoStatus === "RESOLVIDO") {
       return await executarMutacao(async (accessToken) => {
-        const manutencoes = await fetchDashboardJson(`/manutencoes/alerta/${id}`, accessToken, "as manutencoes do alerta")
-        const manutencao = getOpenMaintenance(manutencoes)
+        const manutencao = await fetchOpenMaintenanceForAlert(accessToken, id)
+        const observacaoResolucao = observacao || getTrimmedObservation(manutencao.observacao) || "Manutencao concluida pelo dashboard."
 
         if (!manutencao?.id) {
           throw new Error("Não foi encontrada uma manutenção em andamento para este alerta.")
         }
 
-        return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "a resolução do alerta", {
+        return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "a conclusao da manutencao", {
           method: "PUT",
           body: {
             status: "RESOLVIDO",
-            observacao: manutencao.observacao || "Alerta resolvido pelo dashboard.",
+            observacao: observacaoResolucao,
           },
         })
       })
     }
 
     throw new Error("Este status não pode ser aplicado pelo fluxo atual do backend.")
+  }
+
+  async function registrarRelatoAtendimento(id, observacao) {
+    const relato = getTrimmedObservation(observacao)
+
+    if (relato.length < 3) {
+      throw new Error("Informe um relato com pelo menos 3 caracteres.")
+    }
+
+    return await executarMutacao(async (accessToken) => {
+      const manutencao = await fetchOpenMaintenanceForAlert(accessToken, id)
+
+      return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "o relato da manutencao", {
+        method: "PUT",
+        body: {
+          observacao: relato,
+        },
+      })
+    })
   }
 
   /**
@@ -282,6 +318,7 @@ export function AlertasProvider({ children }) {
     salvando,
     adicionarAlerta,
     atualizarStatus,
+    registrarRelatoAtendimento,
     cancelarAlerta,
     recarregarAlertas,
     resetarDados,
