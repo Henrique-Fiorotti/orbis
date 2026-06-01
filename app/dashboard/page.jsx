@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
   AlertTriangleIcon,
+  ArrowLeftIcon,
   ArrowRightIcon,
   CheckCircle2Icon,
   ChevronLeftIcon,
@@ -13,6 +14,7 @@ import {
   ClipboardListIcon,
   FileTextIcon,
   GaugeIcon,
+  HistoryIcon,
   Loader2Icon,
   SaveIcon,
   WrenchIcon,
@@ -21,6 +23,12 @@ import {
 } from "lucide-react"
 
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
+import { AlertaDetailsPanel } from "@/components/alerta-details-panel"
+import {
+  extractEventosFromAlertaPayload,
+  HistoricoManutencaoPanel,
+  normalizeEventoAlerta,
+} from "@/components/alerta-maintenance-history-panel"
 import { DashboardChartsProvider } from "@/components/context/dashboard-charts-context"
 import { useAlertas } from "@/components/context/alertas-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
@@ -33,13 +41,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Separator } from "@/components/ui/separator"
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { ChartPieDonut } from "@/components/ui/chart-pie-donut"
 import { ChartBarStacked } from "@/components/ui/chart-bar-stacked"
 import { ChartRadarDots } from "@/components/ui/chart-radar-dots"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
-import { getAuthSessionUser } from "@/lib/auth-session"
+import { getAuthSession, getAuthSessionUser } from "@/lib/auth-session"
+import { requestDashboardJson } from "@/lib/dashboard-api"
 import { tempoRelativo } from "@/lib/utils"
 import { DashboardTour } from "./dashboard-tour"
 
@@ -137,22 +146,6 @@ function isToday(value) {
   }
 
   return date.toLocaleDateString("pt-BR") === new Date().toLocaleDateString("pt-BR")
-}
-
-function useMediaQuery(query) {
-  const [matches, setMatches] = React.useState(false)
-
-  React.useEffect(() => {
-    const mediaQuery = window.matchMedia(query)
-    const handleChange = () => setMatches(mediaQuery.matches)
-
-    handleChange()
-    mediaQuery.addEventListener("change", handleChange)
-
-    return () => mediaQuery.removeEventListener("change", handleChange)
-  }, [query])
-
-  return matches
 }
 
 function isAlertAssignedToUser(alerta, usuario) {
@@ -532,7 +525,6 @@ function DashboardShortcuts({ id = "dashboard-shortcuts" }) {
 function TechnicianDashboard() {
   const router = useRouter()
   const usuario = getAuthSessionUser()
-  const isMobileDrawer = useMediaQuery("(max-width: 640px)")
   const {
     alertas,
     status: alertasStatus,
@@ -549,10 +541,15 @@ function TechnicianDashboard() {
   const [savingReportId, setSavingReportId] = React.useState(null)
   const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
   const [relatoManutencao, setRelatoManutencao] = React.useState("")
+  const [historicoAberto, setHistoricoAberto] = React.useState(false)
+  const [historicoStatus, setHistoricoStatus] = React.useState("idle")
+  const [historicoMensagem, setHistoricoMensagem] = React.useState("")
+  const [historicoEventos, setHistoricoEventos] = React.useState([])
   const [atendimentosIniciados, setAtendimentosIniciados] = React.useState(() => new Set())
   const [highlightedSection, setHighlightedSection] = React.useState("")
   const [paginaConcluidos, setPaginaConcluidos] = React.useState(0)
   const highlightTimerRef = React.useRef(null)
+  const historicoRequestIdRef = React.useRef(0)
 
   const loading = alertasStatus === "loading" || maquinasStatus === "loading" || sensoresStatus === "loading"
   const atendimentoActionPending = Boolean(startingAlertId || completingAlertId || savingReportId)
@@ -665,7 +662,8 @@ function TechnicianDashboard() {
   }, [totalPaginasConcluidos])
 
   React.useEffect(() => {
-    setRelatoManutencao("")
+    setRelatoManutencao((current) => current ? "" : current)
+    resetarHistoricoManutencao()
   }, [alertaSelecionado?.id])
 
   React.useEffect(() => {
@@ -730,8 +728,73 @@ function TechnicianDashboard() {
 
   function alternarDetalhesAtendimento(open) {
     if (!open && !atendimentoActionPending) {
+      resetarHistoricoManutencao()
       setAlertaSelecionado(null)
     }
+  }
+
+  function resetarHistoricoManutencao() {
+    historicoRequestIdRef.current += 1
+    setHistoricoAberto((current) => current ? false : current)
+    setHistoricoStatus((current) => current === "idle" ? current : "idle")
+    setHistoricoMensagem((current) => current ? "" : current)
+    setHistoricoEventos((current) => current.length > 0 ? [] : current)
+  }
+
+  async function carregarHistoricoManutencao(alertaId) {
+    const session = getAuthSession()
+    const requestId = historicoRequestIdRef.current + 1
+    historicoRequestIdRef.current = requestId
+
+    if (!session?.accessToken) {
+      setHistoricoStatus("error")
+      setHistoricoMensagem("Faca login para carregar o historico de manutencao.")
+      return
+    }
+
+    setHistoricoStatus("loading")
+    setHistoricoMensagem("")
+
+    try {
+      const eventosPayload = await requestDashboardJson(
+        `/alertas/${alertaId}/eventos`,
+        session.accessToken,
+        "os eventos do alerta"
+      )
+      const eventos = extractEventosFromAlertaPayload(eventosPayload)
+        .map(normalizeEventoAlerta)
+        .filter(Boolean)
+
+      if (historicoRequestIdRef.current !== requestId) {
+        return
+      }
+
+      setHistoricoEventos(eventos)
+      setHistoricoStatus("success")
+    } catch (error) {
+      if (historicoRequestIdRef.current !== requestId) {
+        return
+      }
+
+      setHistoricoStatus("error")
+      setHistoricoMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar o historico de manutencao.")
+    }
+  }
+
+  function abrirHistoricoManutencao() {
+    if (!alertaSelecionado?.id) {
+      return
+    }
+
+    setHistoricoAberto(true)
+
+    if (historicoStatus === "idle") {
+      carregarHistoricoManutencao(alertaSelecionado.id)
+    }
+  }
+
+  function voltarParaDetalhesAlerta() {
+    resetarHistoricoManutencao()
   }
 
   function podeConcluirAtendimento(alerta) {
@@ -1018,107 +1081,57 @@ function TechnicianDashboard() {
         </section>
       </div>
 
-      <Drawer direction={isMobileDrawer ? "bottom" : "right"} open={Boolean(alertaSelecionado)} onOpenChange={alternarDetalhesAtendimento}>
-        <DrawerContent className="overflow-hidden bg-background data-[vaul-drawer-direction=bottom]:max-h-[92dvh] data-[vaul-drawer-direction=right]:w-[min(620px,calc(100vw-1rem))] data-[vaul-drawer-direction=right]:max-w-xl">
+      <Sheet open={Boolean(alertaSelecionado)} onOpenChange={alternarDetalhesAtendimento}>
+        <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[560px]! sm:max-w-none!">
           {alertaSelecionado ? (
             <>
-              <DrawerHeader className="border-b px-5 py-5 text-left">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <DrawerTitle className="truncate text-lg font-semibold text-[#3B2867] dark:text-white">
-                      {alertaSelecionado.maquinaNome}
-                    </DrawerTitle>
-                    <DrawerDescription className="mt-1">{alertaSelecionado.sensorNome}</DrawerDescription>
-                  </div>
-                  <span className="inline-flex items-center gap-1 rounded-full border bg-muted/30 px-2 py-1 text-xs text-muted-foreground">
-                    <ClockIcon className="size-3.5" />
-                    {tempoRelativo(getAlertDate(alertaSelecionado))}
-                  </span>
-                </div>
-              </DrawerHeader>
+              <SheetHeader className="shrink-0">
+                <SheetTitle>Detalhes do alerta</SheetTitle>
+                <SheetDescription>Informacoes completas do alerta.</SheetDescription>
+              </SheetHeader>
 
-              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
-                <div className="rounded-xl border bg-card p-4 shadow-xs ring-1 ring-foreground/5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <TipoAlertaBadge value={alertaSelecionado.tipo} />
-                    <StatusBadge status={alertaSelecionado.status} />
-                    <SeveridadeBadge value={alertaSelecionado.severidade} />
-                    <OcorrenciasBadge value={alertaSelecionado.ocorrencias} />
-                  </div>
-
-                  <p className="mt-4 text-sm leading-relaxed text-foreground">
-                    {alertaSelecionado.mensagem}
-                  </p>
-                </div>
-
-                {alertaSelecionado.status === "EM_ANDAMENTO" || tecnicoAlertaSelecionado ? (
-                  <TecnicoResponsavelCard tecnico={tecnicoAlertaSelecionado} />
-                ) : null}
-
-                {podeConcluirAtendimento(alertaSelecionado) ? (
-                  <div className="rounded-xl border bg-card p-4 shadow-xs ring-1 ring-foreground/5">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label htmlFor="relato-manutencao" className="inline-flex items-center gap-2 text-sm font-semibold text-[#3B2867] dark:text-white">
-                        <FileTextIcon className="size-4 text-[#5E17EB]" />
-                        Relato da manutencao do alerta
-                      </label>
-                      <span className="text-xs tabular-nums text-muted-foreground">{relatoManutencao.length}/500</span>
+              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
+                <AlertaDetailsPanel
+                  alerta={alertaSelecionado}
+                  tecnico={tecnicoAlertaSelecionado}
+                  afterMessage={podeConcluirAtendimento(alertaSelecionado) ? (
+                    <div className="rounded-xl border bg-card p-4 shadow-sm ring-1 ring-foreground/5 dark:border-gray-700! dark:bg-[#0F172A]">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label htmlFor="relato-manutencao" className="inline-flex items-center gap-2 text-sm font-semibold text-[#3B2867] dark:text-white">
+                          <FileTextIcon className="size-4 text-[#5E17EB]" />
+                          Relato da manutencao do alerta
+                        </label>
+                        <span className="text-xs tabular-nums text-muted-foreground">{relatoManutencao.length}/500</span>
+                      </div>
+                      <textarea
+                        id="relato-manutencao"
+                        value={relatoManutencao}
+                        maxLength={500}
+                        rows={5}
+                        onChange={(event) => setRelatoManutencao(event.target.value)}
+                        disabled={atendimentoActionPending || salvando}
+                        placeholder="Descreva o diagnostico, ajustes realizados e proximos cuidados."
+                        className="mt-3 min-h-[132px] w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30 dark:disabled:bg-input/80"
+                      />
+                      <div className="mt-3 flex justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="cursor-pointer"
+                          onClick={() => salvarRelatoAtendimento(alertaSelecionado)}
+                          disabled={atendimentoActionPending || salvando || relatoManutencaoTexto.length < 3}
+                        >
+                          {savingReportId === alertaSelecionado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <SaveIcon className="mr-1 size-4" />}
+                          Adicionar relato
+                        </Button>
+                      </div>
                     </div>
-                    <textarea
-                      id="relato-manutencao"
-                      value={relatoManutencao}
-                      maxLength={500}
-                      rows={5}
-                      onChange={(event) => setRelatoManutencao(event.target.value)}
-                      disabled={atendimentoActionPending || salvando}
-                      placeholder="Descreva o diagnostico, ajustes realizados e proximos cuidados."
-                      className="mt-3 min-h-[132px] w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30 dark:disabled:bg-input/80"
-                    />
-                    <div className="mt-3 flex justify-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="cursor-pointer"
-                        onClick={() => salvarRelatoAtendimento(alertaSelecionado)}
-                        disabled={atendimentoActionPending || salvando || relatoManutencaoTexto.length < 3}
-                      >
-                        {savingReportId === alertaSelecionado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <SaveIcon className="mr-1 size-4" />}
-                        Adicionar relato
-                      </Button>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border bg-card p-3 shadow-xs">
-                    <span className="text-xs text-muted-foreground">Última ocorrência</span>
-                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
-                      {tempoRelativo(getAlertDate(alertaSelecionado))}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border bg-card p-3 shadow-xs">
-                    <span className="text-xs text-muted-foreground">Ocorrências</span>
-                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
-                      {Math.max(Number(alertaSelecionado.ocorrencias) || 1, 1)}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border bg-card p-3 shadow-xs">
-                    <span className="text-xs text-muted-foreground">Status</span>
-                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
-                      {STATUS_LABEL[alertaSelecionado.status] ?? alertaSelecionado.status}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border bg-card p-3 shadow-xs">
-                    <span className="text-xs text-muted-foreground">Severidade</span>
-                    <p className="mt-1 text-sm font-semibold text-[#3B2867] dark:text-white">
-                      {alertaSelecionado.severidade ? alertaSelecionado.severidade.charAt(0) + alertaSelecionado.severidade.slice(1).toLowerCase() : "Média"}
-                    </p>
-                  </div>
-                </div>
+                  ) : null}
+                />
               </div>
 
-              <DrawerFooter className="border-t bg-muted/35 p-4">
+              <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
                 {alertaSelecionado.status === "ATIVO" ? (
                   <Button
                     className="w-full cursor-pointer"
@@ -1142,16 +1155,67 @@ function TechnicianDashboard() {
                     {alertaSelecionado.status === "RESOLVIDO" ? "Manutencao concluida" : "Manutencao em andamento"}
                   </Button>
                 )}
-                <DrawerClose asChild>
-                  <Button variant="outline" className="w-full cursor-pointer" disabled={atendimentoActionPending || salvando}>
-                    Fechar
-                  </Button>
-                </DrawerClose>
-              </DrawerFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-auto w-full cursor-pointer justify-between gap-3 px-3 py-3 text-left"
+                  onClick={abrirHistoricoManutencao}
+                  disabled={atendimentoActionPending || salvando}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <HistoryIcon className="size-4 shrink-0 text-[#3B2867] dark:text-white" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">Historico de Manutencao</span>
+                      <span className="block truncate text-xs text-muted-foreground">Abrir cronofluxo de eventos</span>
+                    </span>
+                  </span>
+                  <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
+                </Button>
+              </SheetFooter>
             </>
           ) : null}
-        </DrawerContent>
-      </Drawer>
+        </SheetContent>
+      </Sheet>
+
+      {historicoAberto ? (
+        <Sheet
+          open={historicoAberto}
+          onOpenChange={(open) => {
+            setHistoricoAberto(open)
+            if (!open) {
+              resetarHistoricoManutencao()
+            }
+          }}
+        >
+          <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[560px]! sm:max-w-none!">
+            <SheetHeader className="shrink-0">
+              <div className="flex items-start gap-3">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="mt-0.5 cursor-pointer"
+                  aria-label="Voltar para detalhes do alerta"
+                  onClick={voltarParaDetalhesAlerta}
+                >
+                  <ArrowLeftIcon className="size-4" />
+                </Button>
+                <div className="min-w-0">
+                  <SheetTitle>Historico de Manutencao</SheetTitle>
+                  <SheetDescription>Eventos registrados para este alerta.</SheetDescription>
+                </div>
+              </div>
+            </SheetHeader>
+            <HistoricoManutencaoPanel
+              alerta={alertaSelecionado}
+              eventos={historicoEventos}
+              status={historicoStatus}
+              mensagem={historicoMensagem}
+              onRetry={() => alertaSelecionado?.id ? carregarHistoricoManutencao(alertaSelecionado.id) : null}
+            />
+          </SheetContent>
+        </Sheet>
+      ) : null}
 
       <DashboardTour variant="tecnico" />
     </>
