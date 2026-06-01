@@ -36,6 +36,7 @@ export default function HeroDashboard() {
         <Link
           href="/login"
           prefetch={false}
+          scroll={false}
           className="inline-block self-start rounded-[10px] border-2 border-transparent bg-[#7b39ed] px-7 py-[13px] text-center font-[Poppins] text-[0.9rem] font-semibold tracking-[0.01em] text-white transition-[background-color,color,border-color,transform] duration-200 hover:border-[#7b39ed] hover:bg-white hover:text-[#7b39ed]"
         >
           {dashboard.cta}

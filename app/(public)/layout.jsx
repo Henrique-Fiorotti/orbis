@@ -20,7 +20,7 @@ const openSans = Open_Sans({
 
 export default function RootLayout({ children }) {
   return (
-    <div className={`${poppins.variable} ${openSans.variable}`}>
+    <div className={`${poppins.variable} ${openSans.variable} landing-scrollbar-hidden`}>
       <LandingLanguageProvider>
         <Header />
         <HomeLoader />

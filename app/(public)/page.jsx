@@ -104,7 +104,7 @@ export default function HomePage() {
 
     url.searchParams.delete("login");
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
-    router.push("/login");
+    router.push("/login", { scroll: false });
   }, [router]);
 
   function handleHeroPointerMove(event) {
@@ -215,7 +215,7 @@ export default function HomePage() {
               marginBottom: "var(--hero-actions-margin)",
             }}
           >
-            <Link href="/login" prefetch={false} className={styles.primaryCta}>
+            <Link href="/login" prefetch={false} scroll={false} className={styles.primaryCta}>
               {home.hero.primaryCta}
             </Link>
             <Link href="#sobre" className={styles.secondaryCta}>
