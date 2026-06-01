@@ -103,9 +103,8 @@ export default function LoginModal() {
       return;
     }
 
-    const rect = art.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width - 0.5;
-    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    const x = event.clientX / window.innerWidth - 0.5;
+    const y = event.clientY / window.innerHeight - 0.5;
 
     art.style.setProperty("--login-art-shift-x", `${x * 28}px`);
     art.style.setProperty("--login-art-shift-y", `${y * 22}px`);
@@ -336,6 +335,8 @@ export default function LoginModal() {
 
       <div
         className={`landing-login-screen${closing ? " is-closing" : ""}`}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={resetPointerMove}
       >
         <button
           type="button"
@@ -350,8 +351,6 @@ export default function LoginModal() {
           <div
             ref={artRef}
             className="landing-login-art"
-            onPointerMove={handlePointerMove}
-            onPointerLeave={resetPointerMove}
             aria-hidden="true"
           >
             <Image
@@ -360,6 +359,7 @@ export default function LoginModal() {
               className="landing-login-image"
               width={520}
               height={520}
+              draggable={false}
               priority
             />
           </div>
