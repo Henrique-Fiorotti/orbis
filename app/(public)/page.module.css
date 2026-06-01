@@ -19,7 +19,7 @@
   --landing-feature-border: #ede9fe;
   --landing-feature-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   --landing-feature-shadow-hover: 0 16px 48px rgba(124, 58, 237, 0.12);
-  --landing-header-offset: clamp(60px, 5vw, 70px);
+  --landing-header-offset: 60px;
   font-family: "DM Sans", "Segoe UI", sans-serif;
   background: var(--landing-page-bg);
   color: var(--landing-text);
