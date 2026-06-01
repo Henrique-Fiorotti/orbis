@@ -91,6 +91,19 @@ body {
   display: none;
 }
 
+html:has(.landing-scrollbar-hidden),
+html:has(.landing-scrollbar-hidden) * {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html:has(.landing-scrollbar-hidden)::-webkit-scrollbar,
+html:has(.landing-scrollbar-hidden) *::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 h1,
 h2,
 h3,

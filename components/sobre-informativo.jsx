@@ -71,6 +71,7 @@ export default function SobreInformativo() {
                     href="/login"
                     style={{ width: "170px" }}
                     prefetch={false}
+                    scroll={false}
                     className={`${styles.primaryCta} max-[1029px]:self-center`}
                 >
                     {about.cta}

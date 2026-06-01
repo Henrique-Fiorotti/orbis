@@ -217,6 +217,7 @@ export default function Header() {
           <Link
             href="/login"
             prefetch={false}
+            scroll={false}
             className="hidden h-9 w-[92px] items-center justify-center rounded-[10px] border border-[#5e17eb] px-4 text-center text-[13.5px] text-[#5e17eb] transition-all duration-150 hover:bg-[#5e17eb] hover:text-gray-200 dark:bg-[#5e17eb]/30 dark:text-gray-300 dark:hover:bg-[#5e17eb] md:flex"
           >
             {copy.header.login}
@@ -283,6 +284,7 @@ export default function Header() {
           <Link
             href="/login"
             prefetch={false}
+            scroll={false}
             className="mt-2 flex justify-center text-[16px] px-4 py-2.5 rounded-[10px] border-2 border-[#5e17eb] text-[#5e17eb] hover:bg-[#5e17eb] hover:text-white transition-all duration-150"
           >
             {copy.header.login}
