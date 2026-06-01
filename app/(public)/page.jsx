@@ -31,7 +31,8 @@ const HERO_DASHBOARD_STYLE = {
 
 function Step({ n, title, desc, delay }) {
   return (
-    <RevealOnScroll delay={delay} offsetX={-32}>
+ 
+ <RevealOnScroll delay={delay} offsetX={-32}>
       <div
         style={{
           display: "flex",
