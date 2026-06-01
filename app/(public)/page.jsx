@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 
 import HeroDashboard from "@/components/hero-dashboard";
 import { getValidAuthSession, isAuthSessionRemembered } from "@/lib/auth-session";
+import AnimatedHeroText from "@/components/landing/animated-hero-text";
 import { useLandingLanguage } from "@/components/landing/language-provider";
+import AnimatedQuote from "@/components/landing/animated-quote";
 import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
 import Pricing from "@/components/pricing";
@@ -31,8 +33,7 @@ const HERO_DASHBOARD_STYLE = {
 
 function Step({ n, title, desc, delay }) {
   return (
- 
- <RevealOnScroll delay={delay} offsetX={-32}>
+    <RevealOnScroll delay={delay} offsetX={-32}>
       <div
         style={{
           display: "flex",
@@ -170,9 +171,12 @@ export default function HomePage() {
         </div>
 
         <div className={styles.heroContent}>
-          <h1
-            className={styles.heroTitle}
-            style={{
+          <AnimatedHeroText
+            titleLines={home.hero.titleLines}
+            subtitle={home.hero.subtitle}
+            titleClassName={styles.heroTitle}
+            subtitleClassName={styles.heroSubtitle}
+            titleStyle={{
               fontFamily: "'Poppins', sans-serif",
               fontSize: "var(--hero-title-size)",
               fontWeight: 200,
@@ -181,20 +185,7 @@ export default function HomePage() {
               marginBottom: "var(--hero-title-margin)",
               color: "var(--landing-heading)",
             }}
-          >
-            {home.hero.titleLines.map((line, index) => (
-              <span key={`${line.highlight}-${index}`}>
-                {line.before}
-                <span style={{ color: "#7c3aed" }}>{line.highlight}</span>
-                {line.after}
-                {index < home.hero.titleLines.length - 1 ? <br /> : null}
-              </span>
-            ))}
-          </h1>
-
-          <p
-            className={styles.heroSubtitle}
-            style={{
+            subtitleStyle={{
               fontSize: "var(--hero-subtitle-size)",
               color: "var(--landing-muted)",
               lineHeight: "var(--hero-subtitle-line-height)",
@@ -202,9 +193,7 @@ export default function HomePage() {
               maxWidth: "min(420px, 100%)",
               marginBottom: "var(--hero-subtitle-margin)",
             }}
-          >
-            {home.hero.subtitle}
-          </p>
+          />
 
           <div
             className={styles.heroActions}
@@ -274,39 +263,12 @@ export default function HomePage() {
         className={styles.quoteSection}
         style={DEFERRED_SECTION_STYLE}
       >
-        <RevealOnScroll className={styles.quoteContent}>
-          <div className={styles.quoteText}>
-            <p
-              style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: "clamp(1.4rem, 3vw, 2rem)",
-                fontWeight: 100,
-                lineHeight: 1.3,
-                letterSpacing: "-0.5px",
-                textAlign: "start",
-                color: "var(--landing-heading)",
-                marginBottom: "16px",
-              }}
-            >
-              {home.quote.before}
-              <span style={{ color: "#7c3aed" }}>{home.quote.highlight}</span>
-              {home.quote.middle}
-              <span style={{ color: "#7c3aed" }}>{home.quote.secondHighlight}</span>
-              {home.quote.after}
-            </p>
-            <p
-              style={{
-                fontSize: "0.82rem",
-                color: "var(--landing-muted)",
-                lineHeight: 1.6,
-                textAlign: "start",
-              }}
-            >
-              {home.quote.supportText}
-              <br />
-              <strong style={{ color: "var(--landing-heading)" }}>{home.quote.joinText}</strong>
-            </p>
-          </div>
+        <div className={styles.quoteContent}>
+          <AnimatedQuote
+            key={`${home.quote.before}-${home.quote.highlight}`}
+            quote={home.quote}
+            className={styles.quoteText}
+          />
           <img
             className={styles.quoteImage}
             src="/banner_hero.svg"
@@ -316,7 +278,7 @@ export default function HomePage() {
             loading="lazy"
             decoding="async"
           />
-        </RevealOnScroll>
+        </div>
       </section>
 
       {/* SrOrbis */}
