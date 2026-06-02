@@ -274,8 +274,7 @@
 }
 
 .primaryCta,
-.secondaryCta,
-.finalCta {
+.secondaryCta {
   display: inline-block;
   text-decoration: none;
 }
@@ -506,22 +505,6 @@
 
 .scrollButtonIcon {
   fill: var(--landing-button-fg);
-}
-
-.finalCta {
-  background: transparent;
-  color: #fff;
-  padding: 14px 32px;
-  border-radius: 10px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  font-weight: 500;
-  font-size: 0.9rem;
-  font-family: "Poppins", sans-serif;
-  transition: border-color 0.2s ease;
-}
-
-.finalCta:hover {
-  border-color: rgba(255, 255, 255, 0.9);
 }
 
 @keyframes landingFadeUp {

@@ -9,6 +9,7 @@ import { getValidAuthSession, isAuthSessionRemembered } from "@/lib/auth-session
 import AnimatedHeroText from "@/components/landing/animated-hero-text";
 import { useLandingLanguage } from "@/components/landing/language-provider";
 import AnimatedQuote from "@/components/landing/animated-quote";
+import HorizontalFinalQuote from "@/components/landing/horizontal-final-quote";
 import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
 import Pricing from "@/components/pricing";
@@ -405,49 +406,7 @@ export default function HomePage() {
       </div>
 
       {/* Linha roxa de transição */}
-      <section
-        style={{
-          background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
-          padding: "40px 8vw",
-          textAlign: "center",
-          ...DEFERRED_SECTION_STYLE,
-        }}
-      >
-        <h2
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
-            fontWeight: 200,
-            color: "#fff",
-            letterSpacing: "-1px",
-            marginBottom: "16px",
-          }}
-        >
-          {home.final.title}
-        </h2>
-        <p
-          style={{
-            color: "rgba(255,255,255,0.75)",
-            fontSize: "0.95rem",
-            marginBottom: "36px",
-            lineHeight: 1.6,
-          }}
-        >
-          {home.final.description}
-        </p>
-        <div
-          style={{
-            display: "flex",
-            gap: "14px",
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <Link href="/#contact" prefetch={false} className={styles.finalCta}>
-            {home.final.cta}
-          </Link>
-        </div>
-      </section>
+      <HorizontalFinalQuote quote={home.quote} />
 
       {/* SAQ */}
       <section id="contact" className={styles.gridBackgroundSection}>
