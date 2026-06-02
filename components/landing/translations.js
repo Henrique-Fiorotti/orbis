@@ -55,7 +55,7 @@ export const LANDING_COPY = {
       },
       login: "Entrar",
       languageLabel: "Idioma",
-      languageSelectLabel: "Selecionar idioma da landing page",
+      languageSelectLabel: "Selecionar idioma",
     },
     home: {
 
@@ -272,7 +272,7 @@ export const LANDING_COPY = {
         },
       ],
       cards: {
-        whatsapp: "Whatsapp",
+        whatsapp: "WhatsApp",
         email: "E-mail",
       },
       formTitle: "Fale Conosco",
@@ -353,7 +353,7 @@ export const LANDING_COPY = {
       eyebrow: "Acesso a conta",
       title: "Redefinir senha",
       subtitle: "Informe o e-mail da conta e o e-mail que deve receber o código. Depois valide o código enviado para criar uma nova senha.",
-      cardTitle: "Recuperacao de acesso",
+      cardTitle: "Recuperação de acesso",
       cardDescription: "O código expira em 15 minutos.",
       successTitle: "Senha redefinida",
       successDescription: "A nova senha foi salva. Você já pode voltar ao login.",
@@ -461,7 +461,7 @@ export const LANDING_COPY = {
       },
       login: "Sign in",
       languageLabel: "Language",
-      languageSelectLabel: "Select landing page language",
+      languageSelectLabel: "Select language",
     },
     home: {
       hero: {
@@ -849,7 +849,7 @@ export const LANDING_COPY = {
     header: {
       nav: [
         { label: "Inicio", href: "/#inicio" },
-        { label: "Sobre", href: "/#sobre" },
+        { label: "Acerca de", href: "/#sobre" },
         { label: "Planes", href: "/#planos" },
         { label: "Contacto", href: "/#contact" },
       ],
@@ -864,7 +864,7 @@ export const LANDING_COPY = {
       },
       login: "Entrar",
       languageLabel: "Idioma",
-      languageSelectLabel: "Seleccionar idioma de la landing page",
+      languageSelectLabel: "Seleccionar idioma",
     },
     home: {
       hero: {
@@ -875,7 +875,7 @@ export const LANDING_COPY = {
         ],
         subtitle: "Inteligencia operativa para empresas que no pueden equivocarse.",
         primaryCta: "Acceder a Orbis",
-        secondaryCta: "Sobre",
+        secondaryCta: "Acerca de",
         registerQuestion: "¿No tienes una cuenta?",
         registerCta: "Registrar empresa",
         scrollDownLabel: "Desplazarse hacia abajo",

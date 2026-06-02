@@ -9,6 +9,7 @@ import {
   getFinalQuoteAuthor,
   getFinalQuoteText,
 } from "@/lib/landing-final-quote.mjs";
+import { LANDING_LANGUAGE_CHANGE_START_EVENT } from "@/components/landing/language-provider";
 import { getHorizontalQuoteAnimationMetrics } from "@/lib/landing-horizontal-quote-animation.mjs";
 
 import styles from "./horizontal-final-quote.module.css";
@@ -17,6 +18,46 @@ gsap.registerPlugin(ScrollTrigger, SplitText);
 
 const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? React.useLayoutEffect : React.useEffect;
+
+const REFRESH_DELAYS = [0, 120, 360, 900, 1500];
+const LOADER_FALLBACK_DELAY = 3200;
+
+function waitForDocumentFonts() {
+  try {
+    return document.fonts?.ready ?? Promise.resolve();
+  } catch {
+    return Promise.resolve();
+  }
+}
+
+function waitForWindowLoad() {
+  if (document.readyState === "complete") {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    window.addEventListener("load", resolve, { once: true });
+  });
+}
+
+function waitForLandingLoader() {
+  if (window.__orbisLandingLoaderComplete === true) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    let timeoutId = 0;
+
+    function complete() {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("orbis:landing-loader-complete", complete);
+      resolve();
+    }
+
+    timeoutId = window.setTimeout(complete, LOADER_FALLBACK_DELAY);
+    window.addEventListener("orbis:landing-loader-complete", complete, { once: true });
+  });
+}
 
 export default function HorizontalFinalQuote({ quote }) {
   const sectionRef = React.useRef(null);
@@ -51,6 +92,10 @@ export default function HorizontalFinalQuote({ quote }) {
     let context = null;
     let split = null;
     let frameId = 0;
+    let refreshFrameId = 0;
+    let refreshTimeoutId = 0;
+    let resizeObserver = null;
+    const refreshTimeoutIds = [];
     let isDisposed = false;
 
     function getMetrics() {
@@ -60,12 +105,57 @@ export default function HorizontalFinalQuote({ quote }) {
       });
     }
 
-    async function setupAnimation() {
-      try {
-        await document.fonts?.ready;
-      } catch {
-        // Font readiness only improves SplitText measurements.
+    function scheduleRefresh() {
+      if (isDisposed || refreshFrameId) {
+        return;
       }
+
+      refreshFrameId = window.requestAnimationFrame(() => {
+        refreshFrameId = 0;
+
+        if (!isDisposed) {
+          ScrollTrigger.refresh();
+        }
+      });
+    }
+
+    function scheduleDebouncedRefresh() {
+      window.clearTimeout(refreshTimeoutId);
+      refreshTimeoutId = window.setTimeout(scheduleRefresh, 120);
+    }
+
+    function scheduleInitialRefreshes() {
+      REFRESH_DELAYS.forEach((delay) => {
+        const timeoutId = window.setTimeout(scheduleRefresh, delay);
+        refreshTimeoutIds.push(timeoutId);
+      });
+    }
+
+    function cleanupAnimation() {
+      window.cancelAnimationFrame(frameId);
+      window.cancelAnimationFrame(refreshFrameId);
+      window.clearTimeout(refreshTimeoutId);
+      refreshTimeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      refreshTimeoutIds.length = 0;
+      resizeObserver?.disconnect();
+      resizeObserver = null;
+      split?.revert();
+      split = null;
+      context?.revert();
+      context = null;
+    }
+
+    function handleLanguageChangeStart() {
+      isDisposed = true;
+      cleanupAnimation();
+    }
+
+    async function setupAnimation() {
+      await Promise.all([
+        waitForDocumentFonts(),
+        waitForWindowLoad(),
+        waitForLandingLoader(),
+      ]);
 
       if (isDisposed) {
         return;
@@ -157,17 +247,23 @@ export default function HorizontalFinalQuote({ quote }) {
 
         }, section);
 
-        ScrollTrigger.refresh();
+        scheduleInitialRefreshes();
+
+        if ("ResizeObserver" in window) {
+          resizeObserver = new ResizeObserver(scheduleDebouncedRefresh);
+          resizeObserver.observe(section);
+          resizeObserver.observe(track);
+        }
       });
     }
 
+    window.addEventListener(LANDING_LANGUAGE_CHANGE_START_EVENT, handleLanguageChangeStart);
     setupAnimation();
 
     return () => {
       isDisposed = true;
-      window.cancelAnimationFrame(frameId);
-      context?.revert();
-      split?.revert();
+      window.removeEventListener(LANDING_LANGUAGE_CHANGE_START_EVENT, handleLanguageChangeStart);
+      cleanupAnimation();
     };
   }, [authorText, quoteText]);
 

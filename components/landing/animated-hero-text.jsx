@@ -4,6 +4,8 @@ import * as React from "react";
 import { gsap } from "gsap";
 import { SplitText } from "gsap/SplitText";
 
+import { LANDING_LANGUAGE_CHANGE_START_EVENT } from "@/components/landing/language-provider";
+
 gsap.registerPlugin(SplitText);
 
 const useIsomorphicLayoutEffect =
@@ -143,6 +145,13 @@ export default function AnimatedHeroText({
       scheduleHeroIntro();
     }
 
+    function handleLanguageChangeStart() {
+      isDisposed = true;
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
+      resetAnimation();
+    }
+
     if (window.__orbisLandingLoaderComplete) {
       scheduleHeroIntro();
     } else {
@@ -151,6 +160,7 @@ export default function AnimatedHeroText({
     }
 
     window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener(LANDING_LANGUAGE_CHANGE_START_EVENT, handleLanguageChangeStart);
 
     return () => {
       isDisposed = true;
@@ -158,6 +168,7 @@ export default function AnimatedHeroText({
       window.clearTimeout(timeoutId);
       window.removeEventListener("orbis:landing-loader-complete", handleLandingLoaderComplete);
       window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener(LANDING_LANGUAGE_CHANGE_START_EVENT, handleLanguageChangeStart);
       resetAnimation();
     };
   }, [subtitle, titleKey]);
