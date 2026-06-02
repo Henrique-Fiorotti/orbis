@@ -4,14 +4,19 @@ import * as React from "react";
 import { gsap } from "gsap";
 import { SplitText } from "gsap/SplitText";
 
+import { LANDING_LANGUAGE_CHANGE_START_EVENT } from "@/components/landing/language-provider";
+
 gsap.registerPlugin(SplitText);
+
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? React.useLayoutEffect : React.useEffect;
 
 export default function AnimatedQuote({ quote, className = "" }) {
   const rootRef = React.useRef(null);
   const textRef = React.useRef(null);
   const metaRef = React.useRef(null);
 
-  React.useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const root = rootRef.current;
     const text = textRef.current;
     const meta = metaRef.current;
@@ -28,9 +33,18 @@ export default function AnimatedQuote({ quote, className = "" }) {
     let split = null;
     let timeline = null;
     let didAnimate = false;
+    let isDisposed = false;
+    let observer = null;
+
+    function cleanupAnimation() {
+      timeline?.kill();
+      timeline = null;
+      split?.revert();
+      split = null;
+    }
 
     function playAnimation() {
-      if (didAnimate) {
+      if (didAnimate || isDisposed) {
         return;
       }
 
@@ -69,15 +83,24 @@ export default function AnimatedQuote({ quote, className = "" }) {
         }, "-=0.26");
     }
 
+    function handleLanguageChangeStart() {
+      isDisposed = true;
+      observer?.disconnect();
+      cleanupAnimation();
+    }
+
+    window.addEventListener(LANDING_LANGUAGE_CHANGE_START_EVENT, handleLanguageChangeStart);
+
     if (typeof IntersectionObserver === "undefined") {
       playAnimation();
       return () => {
-        timeline?.kill();
-        split?.revert();
+        isDisposed = true;
+        window.removeEventListener(LANDING_LANGUAGE_CHANGE_START_EVENT, handleLanguageChangeStart);
+        cleanupAnimation();
       };
     }
 
-    const observer = new IntersectionObserver(
+    observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) {
           return;
@@ -92,9 +115,10 @@ export default function AnimatedQuote({ quote, className = "" }) {
     observer.observe(root);
 
     return () => {
+      isDisposed = true;
+      window.removeEventListener(LANDING_LANGUAGE_CHANGE_START_EVENT, handleLanguageChangeStart);
       observer.disconnect();
-      timeline?.kill();
-      split?.revert();
+      cleanupAnimation();
     };
   }, [
     quote.after,

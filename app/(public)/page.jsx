@@ -22,16 +22,6 @@ import CreativeTeamSection from "@/components/creative-team-section";
 import styles from "./page.module.css";
 import Image from "next/image";
 
-const DEFERRED_SECTION_STYLE = {
-  contentVisibility: "auto",
-  containIntrinsicSize: "720px",
-};
-
-const HERO_DASHBOARD_STYLE = {
-  contentVisibility: "auto",
-  containIntrinsicSize: "760px",
-};
-
 function Step({ n, title, desc, delay }) {
   return (
     <RevealOnScroll delay={delay} offsetX={-32}>
@@ -87,7 +77,7 @@ function Step({ n, title, desc, delay }) {
 }
 
 export default function HomePage() {
-  const { copy } = useLandingLanguage();
+  const { copy, locale } = useLandingLanguage();
   const { home } = copy;
   const router = useRouter();
   const heroSectionRef = React.useRef(null);
@@ -173,6 +163,7 @@ export default function HomePage() {
 
         <div className={styles.heroContent}>
           <AnimatedHeroText
+            key={`hero-${locale}`}
             titleLines={home.hero.titleLines}
             subtitle={home.hero.subtitle}
             titleClassName={styles.heroTitle}
@@ -260,13 +251,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section
-        className={styles.quoteSection}
-        style={DEFERRED_SECTION_STYLE}
-      >
+      <section className={styles.quoteSection}>
         <div className={styles.quoteContent}>
           <AnimatedQuote
-            key={`${home.quote.before}-${home.quote.highlight}`}
+            key={`quote-${locale}`}
             quote={home.quote}
             className={styles.quoteText}
           />
@@ -291,10 +279,7 @@ export default function HomePage() {
 
       {/* Carrossel  */}
 
-      <section
-        className={styles.benefitsSection}
-        style={DEFERRED_SECTION_STYLE}
-      >
+      <section className={styles.benefitsSection}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <p
             style={{
@@ -336,7 +321,6 @@ export default function HomePage() {
           background: "var(--landing-alt-bg)",
           transition: "background-color 0.25s ease",
           borderTop: "#7b39ed57 1px solid",
-          ...HERO_DASHBOARD_STYLE,
         }
         }
       >
@@ -348,7 +332,6 @@ export default function HomePage() {
       {/* Como Funciona */}
       < section
         className={`${styles.processSection} ${styles.gridBackgroundSection}`}
-        style={DEFERRED_SECTION_STYLE}
       >
         <div className={styles.processInner}>
           <div className={styles.processIntro}>
@@ -399,14 +382,14 @@ export default function HomePage() {
       </section >
 
       {/* Planos */}
-      <div id="planos" className={styles.gridBackgroundSection} style={DEFERRED_SECTION_STYLE}>
+      <div id="planos" className={styles.gridBackgroundSection}>
         <RevealOnScroll>
           <Pricing />
         </RevealOnScroll>
       </div>
 
       {/* Linha roxa de transição */}
-      <HorizontalFinalQuote quote={home.quote} />
+      <HorizontalFinalQuote key={`final-quote-${locale}`} quote={home.quote} />
 
       {/* SAQ */}
       <section id="contact" className={styles.gridBackgroundSection}>
