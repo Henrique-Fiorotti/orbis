@@ -849,7 +849,7 @@ export const LANDING_COPY = {
     header: {
       nav: [
         { label: "Inicio", href: "/#inicio" },
-        { label: "Acerca de", href: "/#sobre" },
+        { label: "Sobre", href: "/#sobre" },
         { label: "Planes", href: "/#planos" },
         { label: "Contacto", href: "/#contact" },
       ],
@@ -875,7 +875,7 @@ export const LANDING_COPY = {
         ],
         subtitle: "Inteligencia operativa para empresas que no pueden equivocarse.",
         primaryCta: "Acceder a Orbis",
-        secondaryCta: "Acerca de",
+        secondaryCta: "Sobre",
         registerQuestion: "¿No tienes una cuenta?",
         registerCta: "Registrar empresa",
         scrollDownLabel: "Desplazarse hacia abajo",

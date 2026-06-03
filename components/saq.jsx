@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 import { AlertCircleIcon, CheckCircle2Icon, Loader2Icon, SendIcon } from "lucide-react";
 
 import { useLandingLanguage } from "@/components/landing/language-provider";
@@ -435,7 +435,7 @@ export default function ContatoPage() {
 
     return (
         <div
-            className="px-4 sm:px-6 md:px-8 lg:px-10"
+            className="px-[8vw] max-[640px]:px-[6vw]"
             style={{
                 "--contact-panel-bg": colors.panelBg,
                 "--contact-panel-border": colors.panelBorder,
@@ -458,7 +458,7 @@ export default function ContatoPage() {
             }}
         >
             <div
-                className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-8 xl:grid-cols-2"
+                className="mx-auto grid w-full max-w-[1100px] grid-cols-1 gap-8 xl:grid-cols-2"
                 style={{ alignItems: "center" }}
             >
                 {/* ESQUERDA — FAQ */}
