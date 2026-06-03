@@ -73,9 +73,6 @@
 
 .heroTitle,
 .heroSubtitle {
-  opacity: 0;
-  visibility: hidden;
-  will-change: transform, opacity;
   perspective: 900px;
 }
 

@@ -6,9 +6,7 @@ import { useRouter } from "next/navigation";
 
 import HeroDashboard from "@/components/hero-dashboard";
 import { getValidAuthSession, isAuthSessionRemembered } from "@/lib/auth-session";
-import AnimatedHeroText from "@/components/landing/animated-hero-text";
 import { useLandingLanguage } from "@/components/landing/language-provider";
-import AnimatedQuote from "@/components/landing/animated-quote";
 import HorizontalFinalQuote from "@/components/landing/horizontal-final-quote";
 import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
@@ -162,13 +160,9 @@ export default function HomePage() {
         </div>
 
         <div className={styles.heroContent}>
-          <AnimatedHeroText
-            key={`hero-${locale}`}
-            titleLines={home.hero.titleLines}
-            subtitle={home.hero.subtitle}
-            titleClassName={styles.heroTitle}
-            subtitleClassName={styles.heroSubtitle}
-            titleStyle={{
+          <h1
+            className={styles.heroTitle}
+            style={{
               fontFamily: "'Poppins', sans-serif",
               fontSize: "var(--hero-title-size)",
               fontWeight: 200,
@@ -177,7 +171,20 @@ export default function HomePage() {
               marginBottom: "var(--hero-title-margin)",
               color: "var(--landing-heading)",
             }}
-            subtitleStyle={{
+          >
+            {home.hero.titleLines.map((line, index) => (
+              <span key={`${line.highlight}-${index}`}>
+                {line.before}
+                <span style={{ color: "#7c3aed" }}>{line.highlight}</span>
+                {line.after}
+                {index < home.hero.titleLines.length - 1 ? <br /> : null}
+              </span>
+            ))}
+          </h1>
+
+          <p
+            className={styles.heroSubtitle}
+            style={{
               fontSize: "var(--hero-subtitle-size)",
               color: "var(--landing-muted)",
               lineHeight: "var(--hero-subtitle-line-height)",
@@ -185,7 +192,9 @@ export default function HomePage() {
               maxWidth: "min(420px, 100%)",
               marginBottom: "var(--hero-subtitle-margin)",
             }}
-          />
+          >
+            {home.hero.subtitle}
+          </p>
 
           <div
             className={styles.heroActions}
@@ -251,24 +260,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className={styles.quoteSection}>
-        <div className={styles.quoteContent}>
-          <AnimatedQuote
-            key={`quote-${locale}`}
-            quote={home.quote}
-            className={styles.quoteText}
-          />
-          <img
-            className={styles.quoteImage}
-            src="/banner_hero.svg"
-            alt=""
-            width="545"
-            height="367"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
-      </section>
+      <HorizontalFinalQuote key={`final-quote-${locale}`} quote={home.quote} />
 
       {/* SrOrbis */}
       <section id="sobre" className={styles.srOrbisSection}>
@@ -387,9 +379,6 @@ export default function HomePage() {
           <Pricing />
         </RevealOnScroll>
       </div>
-
-      {/* Linha roxa de transição */}
-      <HorizontalFinalQuote key={`final-quote-${locale}`} quote={home.quote} />
 
       {/* SAQ */}
       <section id="contact" className={styles.gridBackgroundSection}>

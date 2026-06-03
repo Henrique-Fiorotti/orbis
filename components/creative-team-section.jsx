@@ -153,11 +153,11 @@ function TeamMemberCard({ member }) {
 
 export default function CreativeTeamSection() {
   return (
-    <section className="bg-transparent px-6 py-20 text-[var(--landing-heading)] transition-colors sm:px-8 lg:px-12">
-      <div className="mx-auto max-w-[1440px]">
+    <section className="bg-transparent px-[8vw] py-20 text-[var(--landing-heading)] transition-colors max-[640px]:px-[6vw]">
+      <div className="mx-auto max-w-[1100px]">
         <div className="mx-auto max-w-4xl text-center">
           <span className="inline-flex rounded-full border border-[var(--landing-secondary-border)] bg-[var(--landing-feature-bg)] px-3 py-1 text-sm text-[var(--landing-heading)] shadow-sm">
-            Equipe criativa
+            Equipe
           </span>
           <h2 className="mt-5 font-['Poppins',sans-serif] text-3xl font-semibold leading-tight tracking-normal text-[var(--landing-heading)] sm:text-4xl">
             Conheça as mentes por trás do Orbis
@@ -168,7 +168,7 @@ export default function CreativeTeamSection() {
           </p>
         </div>
 
-        <div className="mb-20 mt-20 grid gap-x-4 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="mb-20 mt-20 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
           {TEAM_MEMBERS.map((member) => (
             <TeamMemberCard key={member.name} member={member} />
           ))}

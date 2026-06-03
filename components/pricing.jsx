@@ -11,14 +11,14 @@ const Pricing = () => {
   const { pricing } = copy;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-transparent px-5! py-12 text-zinc-950 transition-colors sm:px-8! lg:px-15! dark:text-zinc-50">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-transparent px-[8vw] py-12 text-zinc-950 transition-colors max-[640px]:px-[6vw] dark:text-zinc-50">
       <h2 className="text-center text-3xl! font-semibold tracking-[-0.03em] sm:text-4xl!">
         {pricing.titleBefore} <span style={{ color: "var(--landing-accent-strong, #5E17EB)" }}>{pricing.titleHighlight}</span>
       </h2>
       <p className="mt-3 max-w-2xl text-center text-base text-muted-foreground sm:text-xl dark:text-zinc-400">
         {pricing.subtitleLines[0]} <br /> {pricing.subtitleLines[1]}
       </p>
-      <div className="mx-auto mt-8! grid h-auto! w-full max-w-(--breakpoint-lg) grid-cols-1 gap-6 sm:mt-16 lg:grid-cols-2 lg:gap-8">
+      <div className="mx-auto mt-8! grid h-auto! w-full max-w-[1100px] grid-cols-1 gap-6 sm:mt-16 lg:grid-cols-2 lg:gap-8">
         {pricing.plans.map((plan) => (
           <div
             className={`flex flex-col justify-between rounded-lg border bg-white p-6 transition-colors sm:p-8 lg:p-12 dark:bg-gray-900/70! dark:bg-[#111114] dark:border-white/10 ${plan.isPopular ? "border-1! border-[#5E17EB]! shadow-[0px_0px_38px_0px_rgba(94,23,235,0.3)]" : ""}`}

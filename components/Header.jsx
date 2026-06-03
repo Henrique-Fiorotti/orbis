@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Globe2Icon, MoonIcon, SunIcon, MenuIcon, XIcon } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import { useTheme } from '@/components/theme-provider'
 import { useLandingLanguage } from '@/components/landing/language-provider'
 
 const LANDING_HEADER_SECTIONS = [
