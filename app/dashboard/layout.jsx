@@ -15,7 +15,7 @@ import { DashboardRealtimeProvider } from "@/components/context/dashboard-realti
 import { MaquinasProvider } from "@/components/context/maquinas-context"
 import { SensoresProvider } from "@/components/context/sensores-context"
 import { TecnicosProvider } from "@/components/context/tecnicos-context"
-import { getValidAuthSession } from "@/lib/auth-session"
+import { AUTH_SESSION_UPDATED_EVENT, getValidAuthSession } from "@/lib/auth-session"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import SmoothScroll from "@/components/SmootScroll"
@@ -53,9 +53,11 @@ export default function DashboardLayout({ children }) {
     }
 
     window.addEventListener("storage", handleStorageChange)
+    window.addEventListener(AUTH_SESSION_UPDATED_EVENT, validateSession)
 
     return () => {
       window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener(AUTH_SESSION_UPDATED_EVENT, validateSession)
     }
   }, [router])
 
