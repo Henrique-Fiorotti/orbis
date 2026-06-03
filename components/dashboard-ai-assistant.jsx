@@ -1008,6 +1008,8 @@ export function DashboardAiAssistant() {
     !loading &&
     trimmedInput.length >= MIN_QUESTION_LENGTH &&
     promptPayload.length <= MAX_QUESTION_LENGTH
+  const showSpeechControls = !hasTypedMessage || speechListening
+  const showSendButton = hasTypedMessage && !speechListening
   pageContextsRef.current = pageContexts
   const assistantReady = assistantPhase === "open"
   const assistantTransitionDuration =
@@ -1400,7 +1402,7 @@ export function DashboardAiAssistant() {
           return current
         }
 
-        return speechFinalTranscriptRef.current ? "TranscriÃ§Ã£o concluÃ­da." : ""
+        return speechFinalTranscriptRef.current ? "Transcrição conclui­da." : ""
       })
     }
 
@@ -2591,29 +2593,29 @@ export function DashboardAiAssistant() {
                     <div
                       className={cn(
                         "relative flex shrink-0 items-center justify-end overflow-hidden transition-[width] duration-200 ease-out",
-                        hasTypedMessage ? "w-9" : "w-[66px]"
+                        showSpeechControls ? "w-[72px]" : "w-9"
                       )}
                     >
                       <div
                         className={cn(
                           "flex items-center gap-1.5 transition-all duration-200 ease-out",
-                          hasTypedMessage
-                            ? "pointer-events-none translate-x-3 scale-90 opacity-0"
-                            : "translate-x-0 scale-100 opacity-100"
+                          showSpeechControls
+                            ? "translate-x-0 scale-100 opacity-100"
+                            : "pointer-events-none translate-x-3 scale-90 opacity-0"
                         )}
                       >
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <button
                               type="button"
-                              tabIndex={hasTypedMessage ? -1 : 0}
+                              tabIndex={showSpeechControls ? 0 : -1}
                               className={cn(
                                 "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition hover:bg-background/80 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
                                 activeSpeechMode === "transcribe" && "bg-[#7c3aed] text-white hover:bg-[#6d28d9]"
                               )}
                               disabled={loading || !speechSupported}
                               onClick={() => startSpeechRecognition({ autoSend: false })}
-                              aria-hidden={hasTypedMessage}
+                              aria-hidden={!showSpeechControls}
                               aria-label={activeSpeechMode === "transcribe" ? "Parar transcrição por voz" : "Transcrever pergunta por voz"}
                               aria-pressed={activeSpeechMode === "transcribe"}
                             >
@@ -2629,14 +2631,14 @@ export function DashboardAiAssistant() {
                           <TooltipTrigger asChild>
                             <button
                               type="button"
-                              tabIndex={hasTypedMessage ? -1 : 0}
+                              tabIndex={showSpeechControls ? 0 : -1}
                               className={cn(
                                 "inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-foreground text-background ring-1 ring-black/5 transition-colors hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50 dark:ring-white/10",
                                 activeSpeechMode === "instant" && "animate-pulse"
                               )}
                               disabled={loading ? false : !speechSupported}
                               onClick={loading ? cancelResponse : () => startSpeechRecognition({ autoSend: true })}
-                              aria-hidden={hasTypedMessage}
+                              aria-hidden={!showSpeechControls}
                               aria-label={loading ? "Cancelar resposta" : "Conversar com o Orb por áudio"}
                               aria-pressed={activeSpeechMode === "instant"}
                             >
@@ -2653,15 +2655,15 @@ export function DashboardAiAssistant() {
                         <TooltipTrigger asChild>
                           <button
                             type="submit"
-                            tabIndex={hasTypedMessage ? 0 : -1}
+                            tabIndex={showSendButton ? 0 : -1}
                             className={cn(
                               "absolute right-0 inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#7c3aed] text-white transition-all duration-200 ease-out hover:bg-[#6d28d9] disabled:cursor-not-allowed",
-                              hasTypedMessage
+                              showSendButton
                                 ? cn("translate-y-0 scale-100", canSend ? "opacity-100" : "opacity-50")
                                 : "pointer-events-none translate-y-2 scale-75 opacity-0"
                             )}
                             disabled={!canSend}
-                            aria-hidden={!hasTypedMessage}
+                            aria-hidden={!showSendButton}
                             aria-label="Enviar mensagem"
                           >
                             <ArrowUpIcon className="size-4" />
