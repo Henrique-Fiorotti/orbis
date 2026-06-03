@@ -36,7 +36,6 @@ export function NavUser({user, pathname}){
       setOpenMobile(false)
     }
   }
-
   //alterei para não precisar clicar duas vezes para sair, uma para fechar o menu e outra para deslogar
 async function handleLogout() {
   closeMobileSidebar()
