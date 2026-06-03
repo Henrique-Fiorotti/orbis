@@ -4,7 +4,9 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import AnimatedHeroKeyword from "@/components/landing/animated-hero-keyword";
 import HeroDashboard from "@/components/hero-dashboard";
+import HeroMorphVisual from "@/components/landing/hero-morph-visual";
 import { getValidAuthSession, isAuthSessionRemembered } from "@/lib/auth-session";
 import { useLandingLanguage } from "@/components/landing/language-provider";
 import HorizontalFinalQuote from "@/components/landing/horizontal-final-quote";
@@ -18,7 +20,12 @@ import SlideOpacity from "@/components/carousel-10";
 import CreativeTeamSection from "@/components/creative-team-section";
 
 import styles from "./page.module.css";
-import Image from "next/image";
+
+const HERO_KEYWORD_VARIANTS = {
+  pt: ["seguras", "automáticas", "precisas", "rápidas", "inteligentes"],
+  en: ["safe", "automated", "precise", "fast", "intelligent"],
+  es: ["seguras", "automáticas", "precisas", "rápidas", "inteligentes"],
+};
 
 function Step({ n, title, desc, delay }) {
   return (
@@ -79,6 +86,10 @@ export default function HomePage() {
   const { home } = copy;
   const router = useRouter();
   const heroSectionRef = React.useRef(null);
+  const heroKeywordVariants = HERO_KEYWORD_VARIANTS[locale] ?? HERO_KEYWORD_VARIANTS.pt;
+  const [heroKeywordIndex, setHeroKeywordIndex] = React.useState(0);
+  const heroDynamicKeyword =
+    heroKeywordVariants[heroKeywordIndex] ?? home.hero.titleLines[1]?.highlight ?? "";
 
   React.useEffect(() => {
     if (isAuthSessionRemembered() && getValidAuthSession()) {
@@ -96,6 +107,10 @@ export default function HomePage() {
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
     router.push("/login", { scroll: false });
   }, [router]);
+
+  React.useEffect(() => {
+    setHeroKeywordIndex(0);
+  }, [locale]);
 
   function handleHeroPointerMove(event) {
     const section = heroSectionRef.current;
@@ -149,14 +164,7 @@ export default function HomePage() {
         />
 
         <div className={styles.heroVisual}>
-          <Image
-            src="/orbis-spline-heroo.svg"
-            alt={home.hero.splineTitle}
-            className={styles.heroImage}
-            width={450}
-            height={450}
-            priority
-          />
+          <HeroMorphVisual ariaLabel={home.hero.splineTitle} onShapeChange={setHeroKeywordIndex} />
         </div>
 
         <div className={styles.heroContent}>
@@ -175,8 +183,16 @@ export default function HomePage() {
             {home.hero.titleLines.map((line, index) => (
               <span key={`${line.highlight}-${index}`}>
                 {line.before}
-                <span style={{ color: "#7c3aed" }}>{line.highlight}</span>
-                {line.after}
+                {index === 1 ? (
+                  <AnimatedHeroKeyword
+                    word={heroDynamicKeyword}
+                    className={styles.heroDynamicKeyword}
+                    reserveWords={heroKeywordVariants}
+                  />
+                ) : (
+                  <span style={{ color: "#7c3aed" }}>{line.highlight}</span>
+                )}
+                {index === 1 ? "" : line.after}
                 {index < home.hero.titleLines.length - 1 ? <br /> : null}
               </span>
             ))}
