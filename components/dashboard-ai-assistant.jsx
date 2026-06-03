@@ -42,6 +42,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useOptionalDashboardPreferences } from "@/components/context/dashboard-preferences-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { askDashboardAi, getHttpErrorStatus } from "@/lib/dashboard-api"
+import { setSmoothScrollLock } from "@/lib/scroll-lock"
 import { cn } from "@/lib/utils"
 
 const MIN_QUESTION_LENGTH = 3
@@ -1007,6 +1008,8 @@ export function DashboardAiAssistant() {
     !loading &&
     trimmedInput.length >= MIN_QUESTION_LENGTH &&
     promptPayload.length <= MAX_QUESTION_LENGTH
+  const showSpeechControls = !hasTypedMessage || speechListening
+  const showSendButton = hasTypedMessage && !speechListening
   pageContextsRef.current = pageContexts
   const assistantReady = assistantPhase === "open"
   const assistantTransitionDuration =
@@ -1088,6 +1091,54 @@ export function DashboardAiAssistant() {
     }
 
   }, [open])
+
+  React.useEffect(() => {
+    const shouldLockPageScroll = open && mobileFullscreenLocked
+    setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, shouldLockPageScroll)
+
+    if (!shouldLockPageScroll || typeof window === "undefined") {
+      return () => {
+        setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, false)
+      }
+    }
+
+    const root = document.documentElement
+    const body = document.body
+    const scrollY = window.scrollY
+    const previousRootOverflow = root.style.overflow
+    const previousRootOverscrollBehavior = root.style.overscrollBehavior
+    const previousBodyOverflow = body.style.overflow
+    const previousBodyOverscrollBehavior = body.style.overscrollBehavior
+    const previousBodyPosition = body.style.position
+    const previousBodyTop = body.style.top
+    const previousBodyLeft = body.style.left
+    const previousBodyRight = body.style.right
+    const previousBodyWidth = body.style.width
+
+    root.style.overflow = "hidden"
+    root.style.overscrollBehavior = "none"
+    body.style.overflow = "hidden"
+    body.style.overscrollBehavior = "none"
+    body.style.position = "fixed"
+    body.style.top = `-${scrollY}px`
+    body.style.left = "0"
+    body.style.right = "0"
+    body.style.width = "100%"
+
+    return () => {
+      setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, false)
+      root.style.overflow = previousRootOverflow
+      root.style.overscrollBehavior = previousRootOverscrollBehavior
+      body.style.overflow = previousBodyOverflow
+      body.style.overscrollBehavior = previousBodyOverscrollBehavior
+      body.style.position = previousBodyPosition
+      body.style.top = previousBodyTop
+      body.style.left = previousBodyLeft
+      body.style.right = previousBodyRight
+      body.style.width = previousBodyWidth
+      window.scrollTo(0, scrollY)
+    }
+  }, [mobileFullscreenLocked, open])
 
   React.useEffect(() => {
     function handleExternalOpen(event) {
@@ -1351,7 +1402,7 @@ export function DashboardAiAssistant() {
           return current
         }
 
-        return speechFinalTranscriptRef.current ? "TranscriÃ§Ã£o concluÃ­da." : ""
+        return speechFinalTranscriptRef.current ? "Transcrição conclui­da." : ""
       })
     }
 
@@ -2311,7 +2362,7 @@ export function DashboardAiAssistant() {
           }
           className={cn(
             "fixed z-40 flex origin-bottom-right transform-gpu flex-col overflow-hidden overscroll-contain border bg-white text-foreground opacity-100 shadow-2xl will-change-[left,top,width,height,border-radius] dark:bg-[#1e2939]",
-            mobileFullscreenLocked && "border-0 shadow-none",
+            mobileFullscreenLocked && "border-0 shadow-none [touch-action:pan-y]",
             (isMovingWindow || isResizingWindow)
               ? "transition-none"
               : "transition-[left,top,width,height,border-radius,box-shadow] ease-[cubic-bezier(0.22,1,0.36,1)]",
@@ -2405,7 +2456,8 @@ export function DashboardAiAssistant() {
                 aria-live="polite"
                 className={cn(
                   "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4",
-                  fullscreen && "md:px-8 lg:px-10"
+                  fullscreen && "md:px-8 lg:px-10",
+                  mobileFullscreenLocked && "[touch-action:pan-y]"
                 )}
               >
                 <div
@@ -2541,29 +2593,29 @@ export function DashboardAiAssistant() {
                     <div
                       className={cn(
                         "relative flex shrink-0 items-center justify-end overflow-hidden transition-[width] duration-200 ease-out",
-                        hasTypedMessage ? "w-9" : "w-[66px]"
+                        showSpeechControls ? "w-[72px]" : "w-9"
                       )}
                     >
                       <div
                         className={cn(
                           "flex items-center gap-1.5 transition-all duration-200 ease-out",
-                          hasTypedMessage
-                            ? "pointer-events-none translate-x-3 scale-90 opacity-0"
-                            : "translate-x-0 scale-100 opacity-100"
+                          showSpeechControls
+                            ? "translate-x-0 scale-100 opacity-100"
+                            : "pointer-events-none translate-x-3 scale-90 opacity-0"
                         )}
                       >
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <button
                               type="button"
-                              tabIndex={hasTypedMessage ? -1 : 0}
+                              tabIndex={showSpeechControls ? 0 : -1}
                               className={cn(
                                 "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition hover:bg-background/80 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
                                 activeSpeechMode === "transcribe" && "bg-[#7c3aed] text-white hover:bg-[#6d28d9]"
                               )}
                               disabled={loading || !speechSupported}
                               onClick={() => startSpeechRecognition({ autoSend: false })}
-                              aria-hidden={hasTypedMessage}
+                              aria-hidden={!showSpeechControls}
                               aria-label={activeSpeechMode === "transcribe" ? "Parar transcrição por voz" : "Transcrever pergunta por voz"}
                               aria-pressed={activeSpeechMode === "transcribe"}
                             >
@@ -2579,14 +2631,14 @@ export function DashboardAiAssistant() {
                           <TooltipTrigger asChild>
                             <button
                               type="button"
-                              tabIndex={hasTypedMessage ? -1 : 0}
+                              tabIndex={showSpeechControls ? 0 : -1}
                               className={cn(
                                 "inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-foreground text-background ring-1 ring-black/5 transition-colors hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50 dark:ring-white/10",
                                 activeSpeechMode === "instant" && "animate-pulse"
                               )}
                               disabled={loading ? false : !speechSupported}
                               onClick={loading ? cancelResponse : () => startSpeechRecognition({ autoSend: true })}
-                              aria-hidden={hasTypedMessage}
+                              aria-hidden={!showSpeechControls}
                               aria-label={loading ? "Cancelar resposta" : "Conversar com o Orb por áudio"}
                               aria-pressed={activeSpeechMode === "instant"}
                             >
@@ -2603,15 +2655,15 @@ export function DashboardAiAssistant() {
                         <TooltipTrigger asChild>
                           <button
                             type="submit"
-                            tabIndex={hasTypedMessage ? 0 : -1}
+                            tabIndex={showSendButton ? 0 : -1}
                             className={cn(
                               "absolute right-0 inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#7c3aed] text-white transition-all duration-200 ease-out hover:bg-[#6d28d9] disabled:cursor-not-allowed",
-                              hasTypedMessage
+                              showSendButton
                                 ? cn("translate-y-0 scale-100", canSend ? "opacity-100" : "opacity-50")
                                 : "pointer-events-none translate-y-2 scale-75 opacity-0"
                             )}
                             disabled={!canSend}
-                            aria-hidden={!hasTypedMessage}
+                            aria-hidden={!showSendButton}
                             aria-label="Enviar mensagem"
                           >
                             <ArrowUpIcon className="size-4" />
