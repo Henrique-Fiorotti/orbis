@@ -39,7 +39,7 @@ export function NavUser({user, pathname}){
     }
   }
   //alterei para não precisar clicar duas vezes para sair, uma para fechar o menu e outra para deslogar
-function handleLogout() {
+async function handleLogout() {
   if (logoutPending) {
     return
   }
