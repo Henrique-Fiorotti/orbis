@@ -42,6 +42,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useOptionalDashboardPreferences } from "@/components/context/dashboard-preferences-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { askDashboardAi, getHttpErrorStatus } from "@/lib/dashboard-api"
+import { setSmoothScrollLock } from "@/lib/scroll-lock"
 import { cn } from "@/lib/utils"
 
 const MIN_QUESTION_LENGTH = 3
@@ -1088,6 +1089,54 @@ export function DashboardAiAssistant() {
     }
 
   }, [open])
+
+  React.useEffect(() => {
+    const shouldLockPageScroll = open && mobileFullscreenLocked
+    setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, shouldLockPageScroll)
+
+    if (!shouldLockPageScroll || typeof window === "undefined") {
+      return () => {
+        setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, false)
+      }
+    }
+
+    const root = document.documentElement
+    const body = document.body
+    const scrollY = window.scrollY
+    const previousRootOverflow = root.style.overflow
+    const previousRootOverscrollBehavior = root.style.overscrollBehavior
+    const previousBodyOverflow = body.style.overflow
+    const previousBodyOverscrollBehavior = body.style.overscrollBehavior
+    const previousBodyPosition = body.style.position
+    const previousBodyTop = body.style.top
+    const previousBodyLeft = body.style.left
+    const previousBodyRight = body.style.right
+    const previousBodyWidth = body.style.width
+
+    root.style.overflow = "hidden"
+    root.style.overscrollBehavior = "none"
+    body.style.overflow = "hidden"
+    body.style.overscrollBehavior = "none"
+    body.style.position = "fixed"
+    body.style.top = `-${scrollY}px`
+    body.style.left = "0"
+    body.style.right = "0"
+    body.style.width = "100%"
+
+    return () => {
+      setSmoothScrollLock(ORB_FULLSCREEN_SCROLL_LOCK, false)
+      root.style.overflow = previousRootOverflow
+      root.style.overscrollBehavior = previousRootOverscrollBehavior
+      body.style.overflow = previousBodyOverflow
+      body.style.overscrollBehavior = previousBodyOverscrollBehavior
+      body.style.position = previousBodyPosition
+      body.style.top = previousBodyTop
+      body.style.left = previousBodyLeft
+      body.style.right = previousBodyRight
+      body.style.width = previousBodyWidth
+      window.scrollTo(0, scrollY)
+    }
+  }, [mobileFullscreenLocked, open])
 
   React.useEffect(() => {
     function handleExternalOpen(event) {
@@ -2311,7 +2360,7 @@ export function DashboardAiAssistant() {
           }
           className={cn(
             "fixed z-40 flex origin-bottom-right transform-gpu flex-col overflow-hidden overscroll-contain border bg-white text-foreground opacity-100 shadow-2xl will-change-[left,top,width,height,border-radius] dark:bg-[#1e2939]",
-            mobileFullscreenLocked && "border-0 shadow-none",
+            mobileFullscreenLocked && "border-0 shadow-none [touch-action:pan-y]",
             (isMovingWindow || isResizingWindow)
               ? "transition-none"
               : "transition-[left,top,width,height,border-radius,box-shadow] ease-[cubic-bezier(0.22,1,0.36,1)]",
@@ -2405,7 +2454,8 @@ export function DashboardAiAssistant() {
                 aria-live="polite"
                 className={cn(
                   "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4",
-                  fullscreen && "md:px-8 lg:px-10"
+                  fullscreen && "md:px-8 lg:px-10",
+                  mobileFullscreenLocked && "[touch-action:pan-y]"
                 )}
               >
                 <div
