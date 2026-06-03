@@ -551,12 +551,10 @@ export default function AdminsPage() {
         })
         toast.success("Administrador cadastrado com sucesso!")
       } else {
-        await executarMutacao(`/usuarios/${adminSelecionado.id}`, {
+        await executarMutacao("/usuarios/alterar-ativo", {
           method: "PUT",
-          contextLabel: "a atualização do administrador",
+          contextLabel: "o status do administrador",
           body: {
-            nome,
-            ...(telefone ? { telefone } : {}),
             ativo: form.status === "ATIVO",
           },
         })

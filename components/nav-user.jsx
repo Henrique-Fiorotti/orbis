@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
-import { canToggleUserStatus, updateUserActiveStatus } from "@/lib/user-status"
+import { updateUserActiveStatus } from "@/lib/user-status"
 import { EllipsisVerticalIcon, CircleUserRoundIcon, LogOutIcon } from "lucide-react"
 
 export function NavUser({user, pathname}){
@@ -48,8 +48,8 @@ function handleLogout() {
   closeMobileSidebar()
   const session = getAuthSession()
 
-  if (session?.accessToken && canToggleUserStatus(session.usuario)) {
-    void updateUserActiveStatus(session.accessToken, session.usuario, false).catch(() => {})
+  if (session?.accessToken) {
+    await updateUserActiveStatus(session.accessToken, session.usuario, false).catch(() => {})
   }
 
   clearAuthSession()
