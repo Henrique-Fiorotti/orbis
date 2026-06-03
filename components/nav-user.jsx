@@ -1,4 +1,5 @@
 "use client"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -29,6 +30,7 @@ import { EllipsisVerticalIcon, CircleUserRoundIcon, LogOutIcon } from "lucide-re
 export function NavUser({user, pathname}){
   const { isMobile, setOpenMobile } = useSidebar()
   const router = useRouter()
+  const [logoutPending, setLogoutPending] = useState(false)
   const profileActive = pathname === "/dashboard/perfil"
 
   function closeMobileSidebar() {
@@ -37,16 +39,22 @@ export function NavUser({user, pathname}){
     }
   }
   //alterei para não precisar clicar duas vezes para sair, uma para fechar o menu e outra para deslogar
-async function handleLogout() {
+function handleLogout() {
+  if (logoutPending) {
+    return
+  }
+
+  setLogoutPending(true)
   closeMobileSidebar()
   const session = getAuthSession()
 
   if (session?.accessToken && canToggleUserStatus(session.usuario)) {
-    await updateUserActiveStatus(session.accessToken, session.usuario, false).catch(() => {})
+    void updateUserActiveStatus(session.accessToken, session.usuario, false).catch(() => {})
   }
 
   clearAuthSession()
   router.replace("/")
+  router.refresh()
 }
 
   return (
@@ -103,7 +111,7 @@ async function handleLogout() {
             <DropdownMenuSeparator />
             <Tooltip>
               <TooltipTrigger asChild>
-                <DropdownMenuItem className={"cursor-pointer"} onClick={handleLogout}>
+                <DropdownMenuItem className={"cursor-pointer"} disabled={logoutPending} onClick={handleLogout}>
                   <LogOutIcon />
                   Sair
                 </DropdownMenuItem>
