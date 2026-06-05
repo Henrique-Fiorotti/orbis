@@ -194,6 +194,3 @@ O projeto é compatível com plataformas como Vercel, Render, Railway e ambiente
 3. Execute `npm run build` para validar a aplicação.
 4. Abra um pull request com descrição objetiva, evidências de teste e impactos esperados.
 
-## Licença
-
-Este projeto está marcado como privado no `package.json`. Defina uma licença antes de distribuir, reutilizar ou publicar o código fora do contexto autorizado.
