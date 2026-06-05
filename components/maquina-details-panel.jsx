@@ -32,24 +32,17 @@ import {
 } from "@/lib/maquinas-table"
 import { getAuthSession } from "@/lib/auth-session"
 import { extractCollection, getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
+import {
+  formatCoveredHours,
+  formatPredictionReason,
+  getPredictionModelMetadata,
+  getPredictionOperationalStatus,
+} from "@/lib/prediction-contract.mjs"
 import { cn, tempoRelativo } from "@/lib/utils"
 
 const PREDICAO_LIMIAR_MANUTENCAO = 70
 const PREDICAO_LIMIAR_FALHA = 30
 const PREDICAO_ANTECEDENCIA_FIM_JANELA_DIAS = 2
-
-const PREDICAO_MOTIVOS_AUSENCIA = {
-  historico_insuficiente: "Histórico insuficiente para sustentar o cálculo.",
-  modelo_nao_pode_ser_calculado: "O modelo não pôde ser calculado com a base atual.",
-  tendencia_nao_confiavel: "A tendência atual não atingiu confiança mínima.",
-  sem_historico_de_alertas_do_tipo: "Não há histórico suficiente desse tipo de alerta.",
-  evento_ja_ocorrido: "O evento previsto já ocorreu.",
-  previsao_fora_da_janela: "A previsão ficou fora da janela monitorada.",
-  sem_alerta_previsivel: "Nenhum alerta previsível foi encontrado.",
-  leituras_insuficientes: "Leituras insuficientes nas janelas recentes.",
-  sem_leitura_recente: "Não há leitura recente para calcular o risco.",
-  historico_de_alertas_insuficiente: "Histórico de alertas insuficiente.",
-}
 
 const FATOR_RISCO_LABELS = {
   proporcao_acima_limite_24h: "leituras acima do limite em 24h",
@@ -286,14 +279,6 @@ function formatRecentPoints(value) {
   return `Ultimos ${count} pontos`
 }
 
-function formatPredictionReason(reason) {
-  if (!reason) {
-    return ""
-  }
-
-  return PREDICAO_MOTIVOS_AUSENCIA[reason] ?? reason.replace(/_/g, " ")
-}
-
 function formatRiskFactor(value) {
   if (!value) {
     return ""
@@ -525,36 +510,79 @@ function PredictionMetric({ label, value, sub }) {
   )
 }
 
+function PredictionOperationalNotice({ status }) {
+  if (!status?.state) {
+    return null
+  }
+
+  const toneClasses = {
+    stable: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/25 dark:text-emerald-300",
+    warning: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-300",
+    critical: "border-red-200 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/25 dark:text-red-300",
+    muted: "border-border bg-muted/30 text-muted-foreground",
+  }
+  const badgeClasses = {
+    stable: "border-emerald-200 bg-white text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
+    warning: "border-amber-200 bg-white text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300",
+    critical: "border-red-200 bg-white text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300",
+    muted: "border-border bg-background text-muted-foreground",
+  }
+
+  return (
+    <div className={cn("rounded-md border px-3 py-2 text-xs leading-relaxed", toneClasses[status.tone] ?? toneClasses.muted)}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold">{status.title}</p>
+          <p className="mt-1">{status.description}</p>
+        </div>
+        <Badge variant="outline" className={cn("shrink-0 px-2 text-[11px]", badgeClasses[status.tone] ?? badgeClasses.muted)}>
+          {status.urgencyLabel || status.badge}
+        </Badge>
+      </div>
+      {status.sourceLabel || status.reasonLabel ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {status.sourceLabel ? (
+            <Badge variant="outline" className="border-current/20 bg-background/60 px-2 text-[11px]">
+              {status.sourceLabel}
+            </Badge>
+          ) : null}
+          {status.reasonLabel ? (
+            <Badge variant="outline" className="border-current/20 bg-background/60 px-2 text-[11px]">
+              {status.reasonLabel}
+            </Badge>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function getPredictionModel(predicao) {
-  const modelo = predicao?.modeloIntegridade
+  const modelo = getPredictionModelMetadata(predicao?.modeloIntegridade)
 
-  if (!modelo || typeof modelo !== "object") {
+  if (!modelo) {
     return null
   }
 
-  const slope = getNumericValue(modelo.slope)
-  const intercept = getNumericValue(modelo.intercept)
-
-  if (slope === null || intercept === null) {
+  if (modelo.slope === null || modelo.intercept === null) {
     return null
   }
 
-  return {
-    ...modelo,
-    r2: getNumericValue(modelo.r2),
-    slope,
-    intercept,
-    pontosUsados: getNumericValue(modelo.pontosUsados),
-  }
+  return modelo
 }
 
 function getNextAlertSummary(predicao) {
   const prediction = predicao?.proximoAlerta
+  const operationalStatus = getPredictionOperationalStatus(predicao)
 
   if (!prediction) {
+    const reason =
+      formatPredictionReason(predicao?.ausenciaProximoAlerta?.motivo) ||
+      operationalStatus?.reasonLabel
+
     return {
-      value: "Sem previsao",
-      sub: formatPredictionReason(predicao?.ausenciaProximoAlerta?.motivo) || "Ainda sem evento previsivel.",
+      value: operationalStatus?.badge || "Sem previsao",
+      sub: reason || operationalStatus?.description || "Ainda sem evento previsivel.",
     }
   }
 
@@ -601,6 +629,7 @@ function getHighestRiskSummary(predicao) {
 function PredicaoResumoCard({ maquina, summary, predicaoAlertas, predicaoRisco, onOpenRegression }) {
   const nextAlert = getNextAlertSummary(predicaoAlertas)
   const highestRisk = getHighestRiskSummary(predicaoRisco)
+  const operationalStatus = getPredictionOperationalStatus(predicaoAlertas)
 
   return (
     <div className="rounded-lg border border-[#5E17EB]/25 bg-[#5E17EB]/5 p-3 dark:border-[#5E17EB]/45 dark:bg-[#5E17EB]/10">
@@ -614,8 +643,23 @@ function PredicaoResumoCard({ maquina, summary, predicaoAlertas, predicaoRisco, 
         </div>
       </div>
 
+      {operationalStatus ? (
+        <div className="mt-3">
+          <PredictionOperationalNotice status={operationalStatus} />
+        </div>
+      ) : null}
+
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <PredictionMetric label="Status" value={summary.badge} sub={summary.title} />
+        <PredictionMetric
+          label="Status IA"
+          value={operationalStatus?.badge ?? summary.badge}
+          sub={operationalStatus?.reasonLabel || operationalStatus?.title || summary.title}
+        />
+        <PredictionMetric
+          label="Decisao"
+          value={operationalStatus?.urgencyLabel ?? "N/A"}
+          sub={operationalStatus?.sourceLabel || "Aguardando backend"}
+        />
         <PredictionMetric
           label="Falha prevista"
           value={formatPredictionDate(maquina.previsaoManutencao)}
@@ -743,7 +787,7 @@ function PredictionRemoteNotice({ loading, errors }) {
   )
 }
 
-function PredicaoAlertaItem({ title, prediction, absence }) {
+function PredicaoAlertaItem({ title, prediction, absence, fallbackReason }) {
   if (!prediction) {
     return (
       <div className="rounded-md border border-border/70 bg-background/80 p-3">
@@ -754,7 +798,7 @@ function PredicaoAlertaItem({ title, prediction, absence }) {
           </Badge>
         </div>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          {formatPredictionReason(absence?.motivo) || "O backend não retornou uma previsão para esta janela."}
+          {formatPredictionReason(absence?.motivo) || formatPredictionReason(fallbackReason) || "O backend não retornou uma previsão para esta janela."}
         </p>
       </div>
     )
@@ -795,31 +839,48 @@ function PredicaoAlertasCard({ predicao }) {
     return null
   }
 
-  const modelo = predicao.modeloIntegridade
+  const modelo = getPredictionModel(predicao)
+  const operationalStatus = getPredictionOperationalStatus(predicao)
 
   return (
     <div className="rounded-lg border border-border/70 bg-background/60 p-3">
-      <div className="mb-3 flex items-center gap-2">
-        <AlertTriangleIcon className="size-4 text-[#5E17EB]" />
-        <Label>Alertas preditivos</Label>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <AlertTriangleIcon className="size-4 text-[#5E17EB]" />
+          <Label>Alertas preditivos</Label>
+        </div>
+        {operationalStatus ? (
+          <Badge variant="outline" className="shrink-0 border-[#5E17EB]/35 bg-background/80 px-2 text-xs text-[#7c3aed] dark:text-[#A780FF]">
+            {operationalStatus.badge}
+          </Badge>
+        ) : null}
       </div>
-      <div className="grid gap-3">
+      <PredictionOperationalNotice status={operationalStatus} />
+      <div className={cn("grid gap-3", operationalStatus ? "mt-3" : "")}>
         <PredicaoAlertaItem
           title="Próximo alerta"
           prediction={predicao.proximoAlerta}
           absence={predicao.ausenciaProximoAlerta}
+          fallbackReason={predicao.motivo}
         />
         <PredicaoAlertaItem
           title="Instabilidade"
           prediction={predicao.instabilidade}
           absence={predicao.ausenciaInstabilidade}
+          fallbackReason={predicao.motivo}
         />
       </div>
       {modelo ? (
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
           <PredictionMetric label="R²" value={formatDecimal(modelo.r2, 2)} sub="Ajuste do modelo" />
           <PredictionMetric label="Inclinação" value={formatDecimal(modelo.slope, 2)} sub="Tendência" />
           <PredictionMetric label="Pontos" value={formatCount(modelo.pontosUsados)} sub="Histórico usado" />
+          <PredictionMetric label="Janela" value={formatCoveredHours(modelo.janelaHorasCoberta)} sub="Cobertura temporal" />
+          <PredictionMetric
+            label="Último ponto"
+            value={modelo.ultimoPontoEm ? formatPredictionDate(modelo.ultimoPontoEm) : "N/A"}
+            sub="Base mais recente"
+          />
         </div>
       ) : null}
     </div>
@@ -1058,6 +1119,7 @@ function getRegressionNotice({ loading, errors, historico, modelo, predicaoAlert
   }
 
   const absenceReason =
+    predicaoAlertas?.motivo ||
     predicaoAlertas?.ausenciaProximoAlerta?.motivo ||
     predicaoAlertas?.ausenciaInstabilidade?.motivo
 
@@ -1253,6 +1315,16 @@ function PredictionRegressionSheet({
               label="Dados usados"
               value={formatRecentPoints(modelo?.pontosUsados ?? historico.length)}
               sub="Pontos recentes da maquina."
+            />
+            <PredictionMetric
+              label="Cobertura temporal"
+              value={modelo ? formatCoveredHours(modelo.janelaHorasCoberta) : "N/A"}
+              sub="Janela dos pontos usados."
+            />
+            <PredictionMetric
+              label="Ultimo ponto"
+              value={modelo?.ultimoPontoEm ? formatPredictionDate(modelo.ultimoPontoEm) : "N/A"}
+              sub="Base mais recente do modelo."
             />
             <PredictionMetric
               label="Falha prevista"
@@ -1774,6 +1846,8 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
               predicaoRisco={predictionInsights.risco}
               onOpenRegression={() => setRegressionSheetOpen(true)}
             />
+            <PredicaoAlertasCard predicao={predictionInsights.alertas} />
+            <PredicaoRiscoCard predicao={predictionInsights.risco} />
           </div>
         </DetailsAccordionSection>
 
