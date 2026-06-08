@@ -1,14 +1,33 @@
 "use client"
 
 import * as React from "react"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { CameraIcon, ImageUpIcon, RotateCcwIcon, Trash2Icon } from "lucide-react"
+import { toast } from "sonner"
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpg", "image/jpeg", "image/webp"]
+const MAX_IMAGE_SIZE = 15 * 1024 * 1024
+const ACTION_BUTTON_CLASS =
+  "flex min-h-[56px] w-full cursor-pointer items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-left transition-colors hover:border-[#5E17EB]/60 hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-45"
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
 }
 
-async function cropAvatar(file, centerX, centerY) {
+function getCoverCropRect(imageWidth, imageHeight, positionX, positionY) {
+  const sourceSize = Math.min(imageWidth, imageHeight)
+
+  return {
+    sx: clamp((imageWidth - sourceSize) * (positionX / 100), 0, imageWidth - sourceSize),
+    sy: clamp((imageHeight - sourceSize) * (positionY / 100), 0, imageHeight - sourceSize),
+    sourceSize,
+  }
+}
+
+async function cropAvatar(file, positionX, positionY) {
   const imageUrl = URL.createObjectURL(file)
   const image = new Image()
 
@@ -16,48 +35,25 @@ async function cropAvatar(file, centerX, centerY) {
   await image.decode()
 
   const outputSize = 512
-  const sourceSize = Math.min(image.naturalWidth, image.naturalHeight)
-
-  const sx = clamp(
-    image.naturalWidth * (centerX / 100) - sourceSize / 2,
-    0,
-    image.naturalWidth - sourceSize
-  )
-
-  const sy = clamp(
-    image.naturalHeight * (centerY / 100) - sourceSize / 2,
-    0,
-    image.naturalHeight - sourceSize
-  )
-
+  const { sx, sy, sourceSize } = getCoverCropRect(image.naturalWidth, image.naturalHeight, positionX, positionY)
   const canvas = document.createElement("canvas")
   canvas.width = outputSize
   canvas.height = outputSize
 
   const ctx = canvas.getContext("2d")
-
-  ctx.drawImage(
-    image,
-    sx,
-    sy,
-    sourceSize,
-    sourceSize,
-    0,
-    0,
-    outputSize,
-    outputSize
-  )
+  ctx.drawImage(image, sx, sy, sourceSize, sourceSize, 0, 0, outputSize, outputSize)
 
   URL.revokeObjectURL(imageUrl)
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
-        resolve(
-          new File([blob], "foto-perfil.webp", {
-            type: "image/webp",
-          })
-        )
+        if (!blob) {
+          reject(new Error("Não foi possível preparar a imagem."))
+          return
+        }
+
+        resolve(new File([blob], "foto-perfil.webp", { type: "image/webp" }))
       },
       "image/webp",
       0.9
@@ -65,90 +61,254 @@ async function cropAvatar(file, centerX, centerY) {
   })
 }
 
-export function ProfilePhotoCropDialog({ file, open, onCancel, onConfirm }) {
+export function ProfilePhotoCropDialog({
+  open,
+  currentPhotoSrc,
+  fallback,
+  name,
+  saving = false,
+  onCancel,
+  onConfirm,
+  onRemove,
+}) {
+  const inputRef = React.useRef(null)
+  const [file, setFile] = React.useState(null)
   const [previewUrl, setPreviewUrl] = React.useState("")
-  const [centerX, setCenterX] = React.useState(50)
-  const [centerY, setCenterY] = React.useState(50)
+  const [positionX, setPositionX] = React.useState(50)
+  const [positionY, setPositionY] = React.useState(50)
   const [processing, setProcessing] = React.useState(false)
+  const busy = processing || saving
 
   React.useEffect(() => {
-    if (!file) return
+    if (!open) {
+      setFile(null)
+      setPreviewUrl("")
+      setPositionX(50)
+      setPositionY(50)
+    }
+  }, [open])
+
+  React.useEffect(() => {
+    if (!file) {
+      setPreviewUrl("")
+      return
+    }
 
     const url = URL.createObjectURL(file)
     setPreviewUrl(url)
-    setCenterX(50)
-    setCenterY(50)
+    setPositionX(50)
+    setPositionY(50)
 
     return () => URL.revokeObjectURL(url)
   }, [file])
 
+  function handleFileChange(event) {
+    const selectedFile = event.target.files?.[0]
+    event.target.value = ""
+
+    if (!selectedFile) {
+      return
+    }
+
+    if (!ACCEPTED_IMAGE_TYPES.includes(selectedFile.type)) {
+      toast.error("Use uma imagem PNG, JPG, JPEG ou WEBP.")
+      return
+    }
+
+    if (selectedFile.size > MAX_IMAGE_SIZE) {
+      toast.error("A imagem deve ter no máximo 15 MB.")
+      return
+    }
+
+    setFile(selectedFile)
+  }
+
   async function handleConfirm() {
-    if (!file) return
+    if (!file) {
+      return
+    }
 
     setProcessing(true)
 
     try {
-      const croppedFile = await cropAvatar(file, centerX, centerY)
-      onConfirm(croppedFile)
+      const croppedFile = await cropAvatar(file, positionX, positionY)
+      await onConfirm(croppedFile)
     } finally {
       setProcessing(false)
     }
   }
 
+  const displaySrc = previewUrl || currentPhotoSrc
+  const hasCurrentPhoto = Boolean(currentPhotoSrc)
+
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onCancel()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Ajustar foto de perfil</DialogTitle>
+      <DialogContent className="flex max-h-[calc(100svh-2rem)] w-[min(640px,calc(100vw-2rem))]! max-w-none! flex-col gap-0 overflow-hidden rounded-xl p-0 [&_[data-slot=dialog-close]]:right-3 [&_[data-slot=dialog-close]]:top-3">
+        <DialogHeader className="shrink-0 border-b px-5 py-4 pr-14">
+          <DialogTitle>Foto de perfil</DialogTitle>
+          <p className="text-xs font-medium text-muted-foreground">
+            PNG, JPG, JPEG ou WEBP. Tamanho máximo: 15 MB.
+          </p>
         </DialogHeader>
 
-        <div className="flex flex-col items-center gap-5">
-          <div className="size-64 overflow-hidden rounded-full border bg-muted">
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="Prévia da foto de perfil"
-                className="size-full object-cover"
-                style={{
-                  objectPosition: `${centerX}% ${centerY}%`,
-                }}
-              />
-            ) : null}
+        <div className="grid min-h-0 overflow-y-auto md:grid-cols-[220px_minmax(0,1fr)]">
+          <div className="flex flex-col items-center justify-center gap-3 border-b bg-muted/20 px-5 py-6 md:border-b-0 md:border-r">
+            <div className="relative">
+              <div className="relative size-36 overflow-hidden rounded-full border bg-muted sm:size-40">
+                {displaySrc ? (
+                  <img
+                    src={displaySrc}
+                    alt={name ? `Prévia da foto de ${name}` : "Prévia da foto de perfil"}
+                    className="size-full object-cover"
+                    style={previewUrl ? { objectPosition: `${positionX}% ${positionY}%` } : undefined}
+                  />
+                ) : (
+                  <Avatar className="size-full! text-4xl font-bold">
+                    <AvatarImage src={undefined} alt={name || "Foto do perfil"} />
+                    <AvatarFallback className="bg-[#5E17EB] text-4xl font-bold text-white">
+                      {fallback}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-full"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(to right, rgba(255,255,255,.55) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.55) 1px, transparent 1px)",
+                    backgroundSize: "33.333% 33.333%",
+                    boxShadow: "inset 0 0 0 1px rgba(0,0,0,.2)",
+                  }}
+                />
+                <div className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-[#5E17EB]/80" />
+                <div className="pointer-events-none absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-[#5E17EB]/80" />
+              </div>
+
+              <button
+                type="button"
+                className="absolute bottom-1 right-1 flex size-8 cursor-pointer items-center justify-center rounded-full border-2 border-background bg-[#5E17EB] text-white shadow-sm transition-colors hover:bg-[#4c11cc] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={busy}
+                onClick={() => inputRef.current?.click()}
+                aria-label="Carregar nova foto"
+              >
+                <CameraIcon className="size-4" />
+              </button>
+            </div>
+
+            <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+              {previewUrl ? "Prévia" : "Foto atual"}
+            </span>
           </div>
 
-          <div className="grid w-full gap-4">
-            <label className="grid gap-2 text-sm">
-              Centro horizontal
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={centerX}
-                onChange={(event) => setCenterX(Number(event.target.value))}
-              />
-            </label>
+          <div className="flex min-w-0 flex-col gap-3 p-5">
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/png,image/jpg,image/jpeg,image/webp"
+              className="hidden"
+              onChange={handleFileChange}
+            />
 
-            <label className="grid gap-2 text-sm">
-              Centro vertical
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={centerY}
-                onChange={(event) => setCenterY(Number(event.target.value))}
-              />
-            </label>
+            <button
+              type="button"
+              className={ACTION_BUTTON_CLASS}
+              disabled={busy}
+              onClick={() => inputRef.current?.click()}
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[#5E17EB]/10 text-[#5E17EB]">
+                <ImageUpIcon className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">Carregar nova foto</span>
+                <span className="block text-xs font-medium text-muted-foreground">PNG, JPG, JPEG ou WEBP</span>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={ACTION_BUTTON_CLASS}
+              disabled={busy || !previewUrl}
+              onClick={() => {
+                setPositionX(50)
+                setPositionY(50)
+              }}
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                <RotateCcwIcon className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">Centralizar imagem</span>
+                <span className="block text-xs font-medium text-muted-foreground">Restaurar posição padrão</span>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`${ACTION_BUTTON_CLASS} border-destructive/35 bg-destructive/5 hover:border-destructive/60 hover:bg-destructive/10`}
+              disabled={busy || !hasCurrentPhoto}
+              onClick={onRemove}
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-destructive/15 text-destructive">
+                <Trash2Icon className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-destructive">Remover foto</span>
+                <span className="block text-xs font-medium text-destructive/75">Voltar ao avatar padrão</span>
+              </span>
+            </button>
+
+            {previewUrl ? (
+              <div className="grid w-full gap-3 rounded-lg border bg-muted/20 p-3">
+                <label className="grid gap-2 text-sm">
+                  Centro horizontal
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={positionX}
+                    className="cursor-pointer"
+                    disabled={busy}
+                    onChange={(event) => setPositionX(Number(event.target.value))}
+                  />
+                </label>
+
+                <label className="grid gap-2 text-sm">
+                  Centro vertical
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={positionY}
+                    className="cursor-pointer"
+                    disabled={busy}
+                    onChange={(event) => setPositionY(Number(event.target.value))}
+                  />
+                </label>
+              </div>
+            ) : null}
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={processing}>
-            Cancelar
-          </Button>
-          <Button onClick={handleConfirm} disabled={processing}>
-            {processing ? "Preparando..." : "Usar esta foto"}
-          </Button>
-        </DialogFooter>
+        {previewUrl ? (
+          <DialogFooter className="m-0! shrink-0 rounded-none border-t bg-muted/50 p-3 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              className="min-h-9 w-full px-3! py-2! sm:w-auto"
+              onClick={onCancel}
+              disabled={busy}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="min-h-9 w-full px-3! py-2! sm:w-auto"
+              onClick={handleConfirm}
+              disabled={busy}
+            >
+              {busy ? "Salvando..." : "Salvar foto"}
+            </Button>
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   )

@@ -28,7 +28,6 @@ import {
   ActivityIcon,
   AlertTriangleIcon,
   CalendarIcon,
-  CameraIcon,
   ChevronRightIcon,
   CircleCheckIcon,
   ClipboardListIcon,
@@ -292,8 +291,7 @@ export default function PerfilPage() {
   const [senhaEtapa, setSenhaEtapa] = React.useState("solicitar")
   const [activeTab, setActiveTab] = React.useState("dados")
   const [atendimentoSelecionado, setAtendimentoSelecionado] = React.useState(null)
-  const inputFotoRef = React.useRef(null)
-  const [fotoParaAjustar, setFotoParaAjustar] = React.useState(null)
+  const [fotoModalAberto, setFotoModalAberto] = React.useState(false)
   const [senhas, setSenhas] = React.useState({
     atual: "",
     emailDestino: "",
@@ -553,7 +551,7 @@ export default function PerfilPage() {
       return
     }
 
-    setFotoParaAjustar(file)
+    setFotoModalAberto(true)
   }
 
   async function enviarFoto(file) {
@@ -582,7 +580,7 @@ export default function PerfilPage() {
       updateAuthSessionUser(nextPerfil)
       setStatus("success")
       setMensagem("")
-      setFotoParaAjustar(null)
+      setFotoModalAberto(false)
       toast.success("Foto atualizada com sucesso!")
     } catch (error) {
       if (getHttpErrorStatus(error) === 401) {
@@ -592,6 +590,52 @@ export default function PerfilPage() {
       }
 
       toast.error(getErrorMessage(error, "Não foi possível atualizar a foto."))
+    } finally {
+      setSalvandoFoto(false)
+    }
+  }
+
+  async function removerFoto() {
+    if (!perfil.fotoPerfil) {
+      return
+    }
+
+    const session = getAuthSession()
+
+    if (!session?.accessToken) {
+      toast.error("Faça login para remover a foto.")
+      return
+    }
+
+    setSalvandoFoto(true)
+
+    try {
+      const payload = await requestDashboardJson("/perfil/foto", session.accessToken, "a remoção da foto do perfil", {
+        method: "DELETE",
+      })
+
+      const nextPerfil = normalizePerfil({
+        ...perfil,
+        ...payload,
+        fotoPerfil: "",
+        caminhoFoto: "",
+      })
+
+      setPerfil(nextPerfil)
+      setForm(getFormFromPerfil(nextPerfil))
+      updateAuthSessionUser(nextPerfil)
+      setStatus("success")
+      setMensagem("")
+      setFotoModalAberto(false)
+      toast.success("Foto removida com sucesso!")
+    } catch (error) {
+      if (getHttpErrorStatus(error) === 401) {
+        clearAuthSession()
+        router.replace("/")
+        return
+      }
+
+      toast.error(getErrorMessage(error, "Não foi possível remover a foto."))
     } finally {
       setSalvandoFoto(false)
     }
@@ -756,7 +800,13 @@ export default function PerfilPage() {
         ) : null}
 
         <div className="flex flex-col sm:flex-row items-center sm:items-center gap-10 sm:gap-10 rounded-xl border bg-card p-5">
-          <div className="relative shrink-0 w-20 h-20 sm:w-24 sm:h-24 lg:w-30 lg:h-30">
+          <button
+            type="button"
+            onClick={() => setFotoModalAberto(true)}
+            disabled={loading || salvandoFoto}
+            className="group relative size-20 shrink-0 cursor-pointer overflow-hidden rounded-full disabled:cursor-not-allowed disabled:opacity-70 sm:size-24 lg:size-30"
+            aria-label={perfil.fotoPerfil ? "Editar foto de perfil" : "Adicionar foto de perfil"}
+          >
             <Avatar className="size-full! text-lg font-bold">
               <AvatarImage
                 src={perfil.fotoPerfil || undefined}
@@ -767,23 +817,10 @@ export default function PerfilPage() {
                 {getIniciais(form.nome)}
               </AvatarFallback>
             </Avatar>
-            <input
-              ref={inputFotoRef}
-              type="file"
-              accept="image/png,image/jpg,image/jpeg,image/webp"
-              className="hidden"
-              onChange={selecionarFoto}
-            />
-            <button
-              type="button"
-              onClick={() => inputFotoRef.current?.click()}
-              disabled={loading || salvandoFoto}
-              className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-[#5E17EB] text-white border-2 border-background hover:bg-[#4c11cc] transition-colors"
-              aria-label={salvandoFoto ? "Enviando foto" : "Alterar foto"}
-            >
-              <CameraIcon className="size-3" />
-            </button>
-          </div>
+            <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 text-xs font-medium text-white opacity-0 transition-all group-hover:bg-black/35 group-hover:opacity-100 group-focus-visible:bg-black/35 group-focus-visible:opacity-100">
+              {perfil.fotoPerfil ? "Editar foto" : "Adicionar foto"}
+            </span>
+          </button>
 
           <div className="flex flex-col gap-1 text-start sm:text-left">
             <p className="font-semibold m-0 text-xl sm:text-2xl lg:text-3xl leading-tight">
@@ -815,7 +852,7 @@ export default function PerfilPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="responsivo h-[35px]! w-full  max-w-full flex-wrap justify-start sm:w-fit">
+          <TabsList className="responsivo h-[40px]! w-full max-w-full flex-wrap justify-start sm:w-fit">
             <TabsTrigger value="dados" className="min-w-0 gap-1.5 ">
               <UserIcon className="size-3.5" /> Dados Pessoais
             </TabsTrigger>
@@ -1298,10 +1335,14 @@ export default function PerfilPage() {
         </Sheet>
       </div>
       <ProfilePhotoCropDialog
-        file={fotoParaAjustar}
-        open={Boolean(fotoParaAjustar)}
-        onCancel={() => setFotoParaAjustar(null)}
+        open={fotoModalAberto}
+        currentPhotoSrc={perfil.fotoPerfil || ""}
+        fallback={getIniciais(form.nome)}
+        name={form.nome}
+        saving={salvandoFoto}
+        onCancel={() => setFotoModalAberto(false)}
         onConfirm={enviarFoto}
+        onRemove={removerFoto}
       />
     </>
   )
