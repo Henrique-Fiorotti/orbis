@@ -9,7 +9,7 @@ import HeroDashboard from "@/components/hero-dashboard";
 import HeroMorphVisual from "@/components/landing/hero-morph-visual";
 import { getValidAuthSession, isAuthSessionRemembered } from "@/lib/auth-session";
 import { useLandingLanguage } from "@/components/landing/language-provider";
-import HorizontalFinalQuote from "@/components/landing/horizontal-final-quote";
+import AnimatedQuote from "@/components/landing/animated-quote";
 import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
 import Pricing from "@/components/pricing";
@@ -274,7 +274,24 @@ export default function HomePage() {
         </div>
       </section>
 
-      <HorizontalFinalQuote key={`final-quote-${locale}`} quote={home.quote} />
+      <section className={styles.quoteSection}>
+        <div className={styles.quoteContent}>
+          <AnimatedQuote
+            key={`${home.quote.before}-${home.quote.highlight}`}
+            quote={home.quote}
+            className={styles.quoteText}
+          />
+          <img
+            className={styles.quoteImage}
+            src="/banner_hero.svg"
+            alt=""
+            width="545"
+            height="367"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      </section>
 
       {/* SrOrbis */}
       <section id="sobre" className={styles.srOrbisSection}>
@@ -322,14 +339,7 @@ export default function HomePage() {
 
 
       {/* Mostando o Dashboard */}
-      <section
-        style={{
-          background: "var(--landing-alt-bg)",
-          transition: "background-color 0.25s ease",
-          borderTop: "#7b39ed57 1px solid",
-        }
-        }
-      >
+      <section className={`${styles.dashboardPreviewSection} ${styles.gridBackgroundSection}`}>
         <RevealOnScroll>
           <HeroDashboard />
         </RevealOnScroll>

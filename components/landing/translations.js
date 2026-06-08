@@ -79,7 +79,7 @@ export const LANDING_COPY = {
         secondHighlight: "amanhã",
         after: "\"",
         supportText: "Confie no processo.",
-        author: "Fiorotti, Henrique",
+        author: "Equipe Orbis",
         joinText: "Junte-se à Orbis",
       },
       benefits: {
@@ -484,7 +484,7 @@ export const LANDING_COPY = {
         secondHighlight: "tomorrow",
         after: "\"",
         supportText: "Trust the process.",
-        author: "Fiorotti, Henrique",
+        author: "Orbis Team",
         joinText: "Join Orbis",
       },
       benefits: {
@@ -887,7 +887,7 @@ export const LANDING_COPY = {
         secondHighlight: "mañana",
         after: "\"",
         supportText: "Confía en el proceso.",
-        author: "Fiorotti, Henrique",
+        author: "Equipe Orbis",
         joinText: "Únete a Orbis",
       },
       benefits: {

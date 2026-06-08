@@ -202,11 +202,11 @@ export function AlertaDetailsPanel({ alerta, tecnico, afterMessage = null, showT
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Ultima ocorrencia</Label>
+          <Label className="text-xs text-muted-foreground">Última ocorrência</Label>
           <span className="text-sm">{tempoRelativo(getUltimaOcorrencia(alerta))}</span>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Ocorrencias</Label>
+          <Label className="text-xs text-muted-foreground">Ocorrências</Label>
           <span className="text-sm font-semibold">{Math.max(Number(alerta.ocorrencias) || 1, 1)}</span>
         </div>
       </div>

@@ -52,9 +52,9 @@ const SPEECH_LANGUAGE_STORAGE_KEY = "orbis-orb-speech-language"
 const MAX_CHAT_HISTORY_ITEMS = 12
 const ORB_FULLSCREEN_SCROLL_LOCK = "orb-fullscreen"
 const SPEECH_LANGUAGE_OPTIONS = [
-  { value: "pt-BR", label: "PortuguÃªs", shortLabel: "PT" },
+  { value: "pt-BR", label: "Português", shortLabel: "PT" },
   { value: "en-US", label: "English", shortLabel: "EN" },
-  { value: "es-ES", label: "EspaÃ±ol", shortLabel: "ES" },
+  { value: "es-ES", label: "Español", shortLabel: "ES" },
 ]
 const SPEECH_LANGUAGE_VALUES = new Set(SPEECH_LANGUAGE_OPTIONS.map((option) => option.value))
 const ORB_COMPACT_GAP = 20
@@ -269,7 +269,7 @@ function normalizeStoredMessages(messages) {
 
   return messages.map((message) =>
     // CORRIGIDO: era `message.animated !== false` (undefined !== false = true, marcava msgs nunca animadas como animated:true)
-    // Agora sÃ³ preserva animated:true quando foi explicitamente salvo como true
+    // Agora só preserva animated:true quando foi explicitamente salvo como true
     message?.role === "assistant" && message.animated === true
       ? { ...message, animated: true }
       : message
@@ -333,7 +333,7 @@ function getErrorMessage(error) {
     return error.message
   }
 
-  return "NÃ£o foi possÃ­vel consultar a IA agora."
+  return "Não foi possível consultar a IA agora."
 }
 
 function getCurrentPageContext(pathname) {
@@ -356,7 +356,7 @@ function buildPromptPayload(question, contexts) {
   const lines = []
 
   if (contexts.length > 0) {
-    lines.push(`Contexto de pÃ¡gina: ${contexts.map((context) => context.text).join(" | ")}`)
+    lines.push(`Contexto de página: ${contexts.map((context) => context.text).join(" | ")}`)
   }
 
   lines.push(`Pergunta: ${question}`)
@@ -567,11 +567,11 @@ function FormattedMessageContent({ content, isTyping }) {
 
 function useTypewriter(text, speed = 18) {
   const [displayed, setDisplayed] = React.useState("")
-  // CORRIGIDO: era `useState(true)` â€” com isDone=true no primeiro render, isTyping=false e o cursor nÃ£o aparecia;
-  // agora inicializa false quando hÃ¡ texto, evitando o frame inicial sem animaÃ§Ã£o
+  // CORRIGIDO: era `useState(true)` - com isDone=true no primeiro render, isTyping=false e o cursor não aparecia;
+  // agora inicializa false quando há texto, evitando o frame inicial sem animação
   const [isDone, setIsDone] = React.useState(!text)
 
-  // CORRIGIDO: era `useEffect` â€” trocado por `useLayoutEffect` para o intervalo comeÃ§ar
+  // CORRIGIDO: era `useEffect` - trocado por `useLayoutEffect` para o intervalo começar
   // antes do paint, eliminando o race condition onde um re-render descartava o componente
   // antes do efeito disparar
   React.useLayoutEffect(() => {
@@ -1360,7 +1360,7 @@ export function DashboardAiAssistant() {
           ? "Permita o uso do microfone para transcrever."
           : event.error === "no-speech"
             ? "Nenhuma fala detectada."
-            : "NÃ£o foi possÃ­vel transcrever o Ã¡udio."
+            : "Não foi possível transcrever o áudio."
 
       setSpeechStatus(message)
       setSpeechListening(false)
@@ -1557,7 +1557,7 @@ export function DashboardAiAssistant() {
 
   function startSpeechRecognition({ autoSend = false } = {}) {
     if (!speechSupported || !speechRecognitionRef.current) {
-      setSpeechStatus("TranscriÃ§Ã£o por voz indisponÃ­vel neste navegador.")
+      setSpeechStatus("Transcrição por voz indisponível neste navegador.")
       return
     }
 
@@ -1580,7 +1580,7 @@ export function DashboardAiAssistant() {
     } catch {
       speechAutoSendRef.current = false
       speechAutoSendingRef.current = false
-      setSpeechStatus("NÃ£o foi possÃ­vel iniciar o microfone.")
+      setSpeechStatus("Não foi possível iniciar o microfone.")
       setSpeechListening(false)
       setActiveSpeechMode(null)
     }
@@ -1604,14 +1604,14 @@ export function DashboardAiAssistant() {
     }
 
     if (payloadQuestion.length > MAX_QUESTION_LENGTH) {
-      setInlineError("A pergunta com contexto deve ter no mÃ¡ximo 500 caracteres.")
+      setInlineError("A pergunta com contexto deve ter no máximo 500 caracteres.")
       return
     }
 
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      setInlineError("FaÃ§a login para consultar a IA.")
+      setInlineError("Faça login para consultar a IA.")
       return
     }
 
@@ -1864,7 +1864,7 @@ export function DashboardAiAssistant() {
 
     setPageContexts((current) => {
       if (current.some((item) => item.id === context.id)) {
-        setInlineError("O contexto desta pÃ¡gina jÃ¡ foi adicionado.")
+        setInlineError("O contexto desta página já foi adicionado.")
         return current
       }
 

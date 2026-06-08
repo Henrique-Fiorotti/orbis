@@ -316,6 +316,10 @@
   z-index: 1;
 }
 
+.dashboardPreviewSection {
+  border-top: 1px solid rgba(123, 57, 237, 0.34);
+}
+
 @media (max-width: 1100px) {
   .heroSection {
     min-height: calc(100svh - var(--landing-header-offset));
@@ -387,12 +391,43 @@
 }
 
 .quoteSection {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   height: 30dvh;
-  background: var(--landing-quote-bg);
+  background:
+    radial-gradient(circle at 74% 18%, rgba(196, 163, 255, 0.2), transparent 34%),
+    radial-gradient(circle at 16% 82%, rgba(124, 58, 237, 0.12), transparent 38%),
+    linear-gradient(135deg, #faf7ff 0%, #f3edff 48%, #ede4ff 100%);
   padding: 28px 8vw;
   margin-top: 0;
-  border-top: #7c3aed98 1px solid;
-  border-bottom: #7c3aed50 1px solid;
+  border-top: 1px solid rgba(124, 58, 237, 0.14);
+  border-bottom: 1px solid rgba(124, 58, 237, 0.12);
+}
+
+.quoteSection::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(124, 58, 237, 0.13) 1px, transparent 1px);
+  background-size: 53px 36px;
+  opacity: 0.34;
+}
+
+:global(.dark) .quoteSection {
+  background:
+    radial-gradient(circle at 74% 18%, rgba(196, 163, 255, 0.14), transparent 34%),
+    radial-gradient(circle at 16% 82%, rgba(91, 33, 182, 0.22), transparent 38%),
+    linear-gradient(135deg, #120d20 0%, #1c1234 52%, #2e145f 100%);
+  border-top-color: rgba(196, 163, 255, 0.18);
+  border-bottom-color: rgba(196, 163, 255, 0.14);
+}
+
+:global(.dark) .quoteSection::before {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+  opacity: 0.32;
 }
 
 .quoteContent {

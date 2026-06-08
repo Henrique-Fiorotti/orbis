@@ -63,7 +63,7 @@ const PERIOD_OPTIONS = [
 ]
 
 const SECTION_OPTIONS = [
-  { id: "resumo", label: "Visao geral" },
+  { id: "resumo", label: "Visão geral" },
   { id: "indicadores", label: "Indicadores" },
   { id: "maquinas", label: "Inventário" },
   { id: "chamados", label: "Chamados" },
@@ -86,18 +86,18 @@ const DEFAULT_REPORT_CONFIG = {
 const EMAIL_DRAFT_STORAGE_KEY = "orbis-report-email-draft"
 
 const EMAIL_FREQUENCY_OPTIONS = [
-  { value: "diario", label: "Diario", detail: "Todos os dias as 08:00" },
-  { value: "semanal", label: "Semanal", detail: "Segundas-feiras as 08:00" },
-  { value: "mensal", label: "Mensal", detail: "Todo dia 1 as 08:00" },
+  { value: "diario", label: "Diário", detail: "Todos os dias às 08:00" },
+  { value: "semanal", label: "Semanal", detail: "Segundas-feiras às 08:00" },
+  { value: "mensal", label: "Mensal", detail: "Todo dia 1 às 08:00" },
 ]
 
 const WEEKDAY_OPTIONS = [
   { value: "segunda", label: "Segunda-feira" },
-  { value: "terca", label: "Terca-feira" },
+  { value: "terca", label: "Terça-feira" },
   { value: "quarta", label: "Quarta-feira" },
   { value: "quinta", label: "Quinta-feira" },
   { value: "sexta", label: "Sexta-feira" },
-  { value: "sabado", label: "Sabado" },
+  { value: "sabado", label: "Sábado" },
   { value: "domingo", label: "Domingo" },
 ]
 
@@ -1536,7 +1536,7 @@ function RelatorioOperacional({
           title="Relatório Operacional"
           meta={[`Gerado em ${geradoEm}`, `Período: ${reportPeriodLabel}`, `Escopo: ${escopoLabel}`]}
           statusLabel={statusLabel}
-          statusSub={isLoading ? "Aguardando dados do backend" : `Integridade media: ${integridadeMedia}%`}
+          statusSub={isLoading ? "Aguardando dados do backend" : `Integridade média: ${integridadeMedia}%`}
         />
 
         {mensagem && status !== "loading" && (
@@ -1548,7 +1548,7 @@ function RelatorioOperacional({
         <div className="px-4 pb-6 sm:px-6 print:px-4">
           {secoes.resumo && (
             <div className="report-print-section mb-6 print:mb-4">
-              <SectionTitle>Visao Geral da Frota</SectionTitle>
+              <SectionTitle>Visão Geral da Frota</SectionTitle>
               {isLoading ? (
                 <div className="mt-3">
                   <Estado msg="Carregando resumo..." />
@@ -1557,7 +1557,7 @@ function RelatorioOperacional({
                 <div className="mt-3 grid grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
                   <EmailMetric label="Máquinas ativas" value={resumo.totalMaquinas} sub={`${resumo.maquinasFuncionando} OK - ${resumo.maquinasEmAlerta} Em alerta`} />
                   <EmailMetric label="Alta importância" value={resumo.maquinasAltaImportancia} sub="Máquinas críticas" />
-                  <EmailMetric label="Integridade media" value={`${integridadeMedia}%`} sub="Media de toda a frota" />
+                  <EmailMetric label="Integridade média" value={`${integridadeMedia}%`} sub="Média de toda a frota" />
                   <EmailMetric label="Chamados abertos" value={resumo.alertasAtivos} sub={`${resumo.alertasAtendidosHoje} atendidos hoje`} />
                 </div>
               )}

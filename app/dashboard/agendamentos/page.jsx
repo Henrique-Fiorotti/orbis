@@ -74,9 +74,9 @@ const PERIOD_OPTIONS = [
 ]
 
 const SECTION_OPTIONS = [
-  { id: "resumo", label: "Visao geral" },
+  { id: "resumo", label: "Visão geral" },
   { id: "desempenho", label: "Indicadores" },
-  { id: "sensores", label: "Inventario" },
+  { id: "sensores", label: "Inventário" },
   { id: "chamados", label: "Chamados" },
   { id: "historicoTendencia", label: "Histórico" },
 ]
@@ -92,11 +92,11 @@ const DEFAULT_SECTIONS = {
 const WEEKDAY_OPTIONS = [
   { value: "0", label: "Domingo" },
   { value: "1", label: "Segunda-feira" },
-  { value: "2", label: "Terca-feira" },
+  { value: "2", label: "Terça-feira" },
   { value: "3", label: "Quarta-feira" },
   { value: "4", label: "Quinta-feira" },
   { value: "5", label: "Sexta-feira" },
-  { value: "6", label: "Sabado" },
+  { value: "6", label: "Sábado" },
 ]
 
 const MONTH_DAY_OPTIONS = Array.from({ length: 31 }, (_, index) => {
@@ -105,7 +105,7 @@ const MONTH_DAY_OPTIONS = Array.from({ length: 31 }, (_, index) => {
 })
 
 const FREQUENCY_OPTIONS = [
-  { value: "DIARIO", label: "Diario" },
+  { value: "DIARIO", label: "Diário" },
   { value: "SEMANAL", label: "Semanal" },
   { value: "MENSAL", label: "Mensal" },
 ]
@@ -125,13 +125,13 @@ const STATUS_SORT_OPTIONS = [
 ]
 
 const FREQUENCY_SORT_OPTIONS = [
-  { value: "asc", label: "Diario primeiro", desc: false },
+  { value: "asc", label: "Diário primeiro", desc: false },
   { value: "desc", label: "Mensal primeiro", desc: true },
 ]
 
 const NEXT_RUN_SORT_OPTIONS = [
-  { value: "asc", label: "Mais proximos", desc: false },
-  { value: "desc", label: "Menos proximos", desc: true },
+  { value: "asc", label: "Mais próximos", desc: false },
+  { value: "desc", label: "Menos próximos", desc: true },
 ]
 
 const NEXT_RUN_SOON_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
@@ -725,7 +725,7 @@ function getMobileScheduleBadgeLabel(agendamento) {
     return agendamento.diaMes ? `Dia ${agendamento.diaMes}` : "Mensal"
   }
 
-  return "Diario"
+  return "Diário"
 }
 
 function AgendamentoMobileCard({ agendamento, onOpen }) {
