@@ -78,7 +78,7 @@ const SECTION_OPTIONS = [
   { id: "desempenho", label: "Indicadores" },
   { id: "sensores", label: "Inventario" },
   { id: "chamados", label: "Chamados" },
-  { id: "historicoTendencia", label: "Historico" },
+  { id: "historicoTendencia", label: "Histórico" },
 ]
 
 const DEFAULT_SECTIONS = {
@@ -372,7 +372,7 @@ function normalizeAgendamento(item) {
     ...item,
     id: item?.id,
     nome: item?.nome ?? `Agendamento ${item?.id ?? ""}`.trim(),
-    assunto: item?.assunto ?? "Relatorio Operacional Orbis",
+    assunto: item?.assunto ?? "Relatório Operacional Orbis",
     status: item?.status ?? "ATIVO",
     frequencia: item?.frequencia ?? "SEMANAL",
     hora: Number(item?.hora ?? 8),
@@ -444,13 +444,13 @@ function validateForm(form) {
   if (emails.length === 0) return "Informe pelo menos um destinatario."
   if (emails.length > 10) return "Informe no maximo 10 destinatarios."
   if (!emails.every((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) return "Revise os e-mails informados."
-  if (form.tipoRelatorio === "maquina" && !form.maquinaId) return "Selecione a maquina do relatorio."
+  if (form.tipoRelatorio === "maquina" && !form.maquinaId) return "Selecione a máquina do relatório."
   if (!Number.isInteger(hora) || !Number.isInteger(minuto) || hora < 0 || hora > 23 || minuto < 0 || minuto > 59) {
     return "Informe um horario valido."
   }
   if (form.frequencia === "SEMANAL" && form.diaSemana === "") return "Selecione o dia da semana."
-  if (form.frequencia === "MENSAL" && form.diaMes === "") return "Selecione o dia do mes."
-  if (getEnabledSections(form.secoes).length === 0) return "Selecione pelo menos uma secao do relatorio."
+  if (form.frequencia === "MENSAL" && form.diaMes === "") return "Selecione o dia do mês."
+  if (getEnabledSections(form.secoes).length === 0) return "Selecione pelo menos uma seção do relatório."
 
   return ""
 }
@@ -780,8 +780,8 @@ function DetailSection({ title, icon: Icon, children }) {
 
 function AgendamentoDetailsPanel({ agendamento, maquinas, firstNextRunValue }) {
   const maquina = maquinas.find((item) => String(item.id) === String(agendamento.maquinaId))
-  const tipoRelatorio = agendamento.tipoRelatorio === "maquina" ? "Maquina especifica" : "Geral da frota"
-  const maquinaNome = agendamento.tipoRelatorio === "maquina" ? maquina?.nome ?? "Maquina nao encontrada" : "Todas as maquinas"
+  const tipoRelatorio = agendamento.tipoRelatorio === "maquina" ? "Máquina específica" : "Geral da frota"
+  const maquinaNome = agendamento.tipoRelatorio === "maquina" ? maquina?.nome ?? "Máquina não encontrada" : "Todas as máquinas"
   const secoes = getEnabledSectionLabels(agendamento.secoes)
 
   return (
@@ -813,18 +813,18 @@ function AgendamentoDetailsPanel({ agendamento, maquinas, firstNextRunValue }) {
 
       <DetailSection title="Programacao" icon={CalendarClockIcon}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <DetailItem label="Recorrencia">
+          <DetailItem label="Recorrência">
             <ScheduleDescription agendamento={agendamento} />
           </DetailItem>
           <DetailItem label="Fuso horario" value={agendamento.timezone} />
         </div>
       </DetailSection>
 
-      <DetailSection title="Relatorio" icon={SlidersHorizontalIcon}>
+      <DetailSection title="Relatório" icon={SlidersHorizontalIcon}>
         <div className="grid gap-3 sm:grid-cols-2">
           <DetailItem label="Tipo" value={tipoRelatorio} />
-          <DetailItem label="Maquina" value={maquinaNome} />
-          <DetailItem label="Periodo" value={getPeriodLabel(agendamento.periodoDias)} />
+          <DetailItem label="Máquina" value={maquinaNome} />
+          <DetailItem label="Período" value={getPeriodLabel(agendamento.periodoDias)} />
           <DetailItem label="Secoes">
             <span className="flex flex-wrap gap-1.5">
               {secoes.length ? (
@@ -834,7 +834,7 @@ function AgendamentoDetailsPanel({ agendamento, maquinas, firstNextRunValue }) {
                   </Badge>
                 ))
               ) : (
-                <span className="text-muted-foreground">Nenhuma secao selecionada</span>
+                <span className="text-muted-foreground">Nenhuma seção selecionada</span>
               )}
             </span>
           </DetailItem>
@@ -975,11 +975,11 @@ function AgendamentoForm({ form, setForm, maquinas, salvando, modo, employeeEmai
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="flex flex-col gap-2 sm:col-span-2">
             <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" value={form.nome} onChange={(event) => updateField("nome", event.target.value)} placeholder="Relatorio semanal operacional" disabled={salvando} />
+            <Input id="nome" value={form.nome} onChange={(event) => updateField("nome", event.target.value)} placeholder="Relatório semanal operacional" disabled={salvando} />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
             <Label htmlFor="assunto">Assunto</Label>
-            <Input id="assunto" value={form.assunto} onChange={(event) => updateField("assunto", event.target.value)} placeholder="Relatorio Operacional Orbis" disabled={salvando} />
+            <Input id="assunto" value={form.assunto} onChange={(event) => updateField("assunto", event.target.value)} placeholder="Relatório Operacional Orbis" disabled={salvando} />
           </div>
           <div className="flex flex-col gap-2 sm:col-span-2">
             <Label htmlFor="emailsDestino">Destinatarios</Label>
@@ -998,7 +998,7 @@ function AgendamentoForm({ form, setForm, maquinas, salvando, modo, employeeEmai
       <section className="grid gap-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-[#3B2867] dark:text-white">
           <SlidersHorizontalIcon className="size-4" />
-          Configurar relatorio
+          Configurar relatório
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
@@ -1009,12 +1009,12 @@ function AgendamentoForm({ form, setForm, maquinas, salvando, modo, employeeEmai
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="geral">Geral da frota</SelectItem>
-                <SelectItem value="maquina">Maquina especifica</SelectItem>
+                <SelectItem value="maquina">Máquina específica</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="flex flex-col gap-2">
-            <Label>Maquina</Label>
+            <Label>Máquina</Label>
             <Select value={form.maquinaId} onValueChange={(value) => updateField("maquinaId", value)} disabled={salvando || form.tipoRelatorio !== "maquina" || maquinas.length === 0}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecione" />
@@ -1029,7 +1029,7 @@ function AgendamentoForm({ form, setForm, maquinas, salvando, modo, employeeEmai
             </Select>
           </div>
           <div className="flex flex-col gap-2">
-            <Label>Periodo</Label>
+            <Label>Período</Label>
             <Select value={form.periodoDias} onValueChange={(value) => updateField("periodoDias", value)} disabled={salvando}>
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -1057,7 +1057,7 @@ function AgendamentoForm({ form, setForm, maquinas, salvando, modo, employeeEmai
       <section className="grid gap-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-[#3B2867] dark:text-white">
           <CalendarClockIcon className="size-4" />
-          Recorrencia
+          Recorrência
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
@@ -1098,7 +1098,7 @@ function AgendamentoForm({ form, setForm, maquinas, salvando, modo, employeeEmai
           ) : null}
           {form.frequencia === "MENSAL" ? (
             <div className="flex flex-col gap-2 sm:col-span-2">
-              <Label>Dia do mes</Label>
+              <Label>Dia do mês</Label>
               <Select value={form.diaMes} onValueChange={(value) => updateField("diaMes", value)} disabled={salvando}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -1158,7 +1158,7 @@ export default function AgendamentosPage() {
 
     if (!session?.accessToken) {
       setStatus("error")
-      setMensagem("Sua sessao expirou. Faca login novamente.")
+      setMensagem("Sua sessão expirou. Faça login novamente.")
       return
     }
 
@@ -1171,7 +1171,7 @@ export default function AgendamentosPage() {
       setStatus("success")
     } catch (error) {
       setStatus("error")
-      setMensagem(getErrorMessage(error, "Nao foi possivel carregar os agendamentos."))
+      setMensagem(getErrorMessage(error, "Não foi possível carregar os agendamentos."))
     }
   }, [canViewAgendamentos])
 
@@ -1292,13 +1292,13 @@ export default function AgendamentosPage() {
     }
 
     if (isDuplicateAgendamento(form, agendamentos, editing ? agendamentoSelecionado.id : null)) {
-      toast.error("Ja existe um agendamento com estes mesmos dados.")
+      toast.error("Já existe um agendamento com estes mesmos dados.")
       return
     }
 
     const session = getAuthSession()
     if (!session?.accessToken) {
-      toast.error("Sua sessao expirou. Faca login novamente.")
+      toast.error("Sua sessão expirou. Faça login novamente.")
       return
     }
 
@@ -1322,7 +1322,7 @@ export default function AgendamentosPage() {
       setAgendamentoSelecionado(null)
       await carregarAgendamentos()
     } catch (error) {
-      toast.error(getErrorMessage(error, "Nao foi possivel salvar o agendamento."))
+      toast.error(getErrorMessage(error, "Não foi possível salvar o agendamento."))
     } finally {
       setSalvando(false)
     }
@@ -1335,7 +1335,7 @@ export default function AgendamentosPage() {
 
     const session = getAuthSession()
     if (!session?.accessToken) {
-      toast.error("Sua sessao expirou. Faca login novamente.")
+      toast.error("Sua sessão expirou. Faça login novamente.")
       return
     }
 
@@ -1353,7 +1353,7 @@ export default function AgendamentosPage() {
       ))
       await carregarAgendamentos()
     } catch (error) {
-      toast.error(getErrorMessage(error, "Nao foi possivel atualizar o status."))
+      toast.error(getErrorMessage(error, "Não foi possível atualizar o status."))
     } finally {
       acaoPendenteRef.current = false
       setAcaoPendenteId(null)
@@ -1367,7 +1367,7 @@ export default function AgendamentosPage() {
 
     const session = getAuthSession()
     if (!session?.accessToken) {
-      toast.error("Sua sessao expirou. Faca login novamente.")
+      toast.error("Sua sessão expirou. Faça login novamente.")
       return
     }
 
@@ -1381,7 +1381,7 @@ export default function AgendamentosPage() {
       toast.success("Execucao manual concluida.")
       await carregarAgendamentos()
     } catch (error) {
-      toast.error(getErrorMessage(error, "Nao foi possivel executar o agendamento."))
+      toast.error(getErrorMessage(error, "Não foi possível executar o agendamento."))
     } finally {
       acaoPendenteRef.current = false
       setAcaoPendenteId(null)
@@ -1399,7 +1399,7 @@ export default function AgendamentosPage() {
 
     const session = getAuthSession()
     if (!session?.accessToken) {
-      toast.error("Sua sessao expirou. Faca login novamente.")
+      toast.error("Sua sessão expirou. Faça login novamente.")
       return
     }
 
@@ -1421,7 +1421,7 @@ export default function AgendamentosPage() {
 
       await carregarAgendamentos()
     } catch (error) {
-      toast.error(getErrorMessage(error, "Nao foi possivel excluir o agendamento."))
+      toast.error(getErrorMessage(error, "Não foi possível excluir o agendamento."))
     } finally {
       acaoPendenteRef.current = false
       setAcaoPendenteId(null)
@@ -1698,7 +1698,7 @@ export default function AgendamentosPage() {
             valueTitle={proximoEnvioMetric.title}
             badge={loadingInicial ? "Atualizando" : "Agenda"}
             sub={loadingInicial ? "Calculando proxima execucao" : proximoEnvioMetric.time ? `Às ${proximoEnvioMetric.time} horas` : "Sem horário programado"}
-            detail={totais.proximo === "-" ? "Nenhum envio ativo encontrado" : "Baseado na recorrencia configurada"}
+            detail={totais.proximo === "-" ? "Nenhum envio ativo encontrado" : "Baseado na recorrência configurada"}
           />
         </div>
 
@@ -1847,7 +1847,7 @@ export default function AgendamentosPage() {
                 <SheetHeader className="shrink-0">
                   <SheetTitle>{modoSheet === "criar" ? "Novo agendamento" : "Editar agendamento"}</SheetTitle>
                   <SheetDescription>
-                    Configure o relatorio, os destinatarios e a recorrencia de envio.
+                    Configure o relatório, os destinatários e a recorrência de envio.
                   </SheetDescription>
                 </SheetHeader>
                 <AgendamentoForm form={form} setForm={setForm} maquinas={maquinas} salvando={salvando} modo={modoSheet} employeeEmailOptions={employeeEmailOptions} />
@@ -1869,7 +1869,7 @@ export default function AgendamentosPage() {
             <DialogHeader>
               <DialogTitle>Confirmar exclusao</DialogTitle>
               <DialogDescription>
-                Tem certeza que deseja excluir <strong>{agendamentoExcluir?.nome}</strong>? Esta acao nao pode ser desfeita.
+                Tem certeza que deseja excluir <strong>{agendamentoExcluir?.nome}</strong>? Esta ação não pode ser desfeita.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

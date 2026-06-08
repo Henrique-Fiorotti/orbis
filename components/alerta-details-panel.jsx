@@ -104,7 +104,7 @@ function TecnicoResponsavelCard({ tecnico }) {
   if (!tecnico) {
     return (
       <div className="rounded-xl border border-dashed bg-muted/20 p-3 text-sm text-muted-foreground">
-        Nenhum tecnico responsavel informado.
+        Nenhum técnico responsável informado.
       </div>
     )
   }
@@ -125,18 +125,18 @@ function TecnicoResponsavelCard({ tecnico }) {
               <p className="truncate text-xs text-muted-foreground">{tecnico.especialidade || "Sem especialidade informada"}</p>
             </div>
             <Badge variant="outline" className="border-green-200 bg-green-50 px-1.5 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
-              Responsavel
+              Responsável
             </Badge>
           </div>
 
           <div className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
             <div className="min-w-0 rounded-lg border bg-muted/25 px-2.5 py-2">
               <span className="text-muted-foreground">E-mail</span>
-              <p className="truncate font-medium text-foreground">{tecnico.email || "Nao informado"}</p>
+              <p className="truncate font-medium text-foreground">{tecnico.email || "Não informado"}</p>
             </div>
             <div className="min-w-0 rounded-lg border bg-muted/25 px-2.5 py-2">
               <span className="text-muted-foreground">Telefone</span>
-              <p className="truncate font-medium text-foreground">{tecnico.telefone || "Nao informado"}</p>
+              <p className="truncate font-medium text-foreground">{tecnico.telefone || "Não informado"}</p>
             </div>
           </div>
         </div>
@@ -175,7 +175,7 @@ export function AlertaDetailsPanel({ alerta, tecnico, afterMessage = null, showT
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Maquina</Label>
+          <Label className="text-xs text-muted-foreground">Máquina</Label>
           <span className="text-sm font-medium">{alerta.maquinaNome}</span>
         </div>
         <div className="flex flex-col gap-1">
@@ -189,7 +189,7 @@ export function AlertaDetailsPanel({ alerta, tecnico, afterMessage = null, showT
       <div className="flex flex-col gap-1">
         <Label className="text-xs text-muted-foreground">Mensagem</Label>
         <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm leading-relaxed text-foreground">
-          {alerta.mensagem || "Mensagem nao informada."}
+          {alerta.mensagem || "Mensagem não informada."}
         </p>
       </div>
 

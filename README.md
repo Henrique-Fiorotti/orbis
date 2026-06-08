@@ -13,7 +13,7 @@
   <a href="https://react.dev"><img alt="React" src="https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white" /></a>
   <a href="https://tailwindcss.com"><img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?logo=tailwindcss&logoColor=white" /></a>
   <a href="https://socket.io"><img alt="Socket.IO" src="https://img.shields.io/badge/Socket.IO-4-010101?logo=socketdotio" /></a>
-  <img alt="Status" src="https://img.shields.io/badge/status-em%20desenvolvimento-5E17EB" />
+  <img alt="Status" src="https://img.shields.io/badge/status-em%20finalizacao-5E17EB" />
 </p>
 
 ---

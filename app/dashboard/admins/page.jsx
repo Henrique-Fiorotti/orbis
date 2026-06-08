@@ -155,7 +155,7 @@ async function fetchAdminsFromUsuariosCollection(accessToken) {
     }
 
     if (!payload) {
-      throw lastError ?? new Error("Nao foi possivel carregar os administradores.")
+      throw lastError ?? new Error("Não foi possível carregar os administradores.")
     }
 
     admins.push(...normalizeAdminCollection(payload))
@@ -976,7 +976,7 @@ export default function AdminsPage() {
                     </Button>
                   ) : (
                     <Button variant="outline" className="text-muted-foreground sm:col-span-2" disabled>
-                      Telefone nao informado
+                      Telefone não informado
                     </Button>
                   )}
 

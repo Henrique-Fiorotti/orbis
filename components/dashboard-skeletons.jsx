@@ -164,7 +164,7 @@ export function DashboardChartSkeleton({
   centeredHeader = false,
 }) {
   return (
-    <LoadingRegion label="Carregando grafico do dashboard" className={className}>
+    <LoadingRegion label="Carregando gráfico do dashboard" className={className}>
       <Card className="h-full">
         <CardHeader className={cn(centeredHeader && "items-center")}>
           <div className={cn("space-y-2", centeredHeader && "flex flex-col items-center")}>

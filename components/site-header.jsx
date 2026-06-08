@@ -361,7 +361,7 @@ export function SiteHeader({ tourId }) {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      toast.error("Faca login para atualizar seu ponto.")
+      toast.error("Faça login para atualizar seu ponto.")
       return
     }
 
@@ -386,9 +386,9 @@ export function SiteHeader({ tourId }) {
         await recarregarTecnicos().catch(() => {})
       }
 
-      toast.success(nextAtivo ? "Voce ficou ativo." : "Voce ficou inativo.")
+      toast.success(nextAtivo ? "Você ficou ativo." : "Você ficou inativo.")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel atualizar seu ponto.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível atualizar seu ponto.")
     } finally {
       setSalvandoPonto(false)
     }
