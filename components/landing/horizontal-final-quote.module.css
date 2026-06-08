@@ -1,0 +1,128 @@
+.section {
+  position: relative;
+  min-height: 100svh;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  isolation: isolate;
+  padding: clamp(40px, 8svh, 88px) 6vw;
+  background:
+    radial-gradient(circle at 74% 18%, rgba(196, 163, 255, 0.24), transparent 30%),
+    radial-gradient(circle at 16% 82%, rgba(91, 33, 182, 0.38), transparent 34%),
+    linear-gradient(135deg, #150d2b 0%, #27124f 48%, #5e17eb 100%);
+  border-top: 1px solid rgba(196, 163, 255, 0.26);
+  border-bottom: 1px solid rgba(196, 163, 255, 0.22);
+}
+
+.section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+  background-size: 53px 36px;
+  opacity: 0.42;
+}
+
+.orb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: clamp(116px, 16vw, 220px);
+  height: auto;
+  pointer-events: none;
+  transform: translate3d(-50%, -50%, 0);
+  filter: invert(1) drop-shadow(0 22px 52px rgba(255, 255, 255, 0.2));
+  opacity: 1;
+  will-change: transform, opacity;
+}
+
+.track {
+  position: relative;
+  z-index: 2;
+  width: max-content;
+  max-width: none;
+  visibility: hidden;
+  will-change: transform;
+}
+
+.quote {
+  margin: 0;
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(2.85rem, 8vw, 7.2rem);
+  font-weight: 500;
+  line-height: 1.06;
+  letter-spacing: 0;
+  width: max-content;
+  padding-left: 100vw;
+  white-space: nowrap;
+  perspective: 1000px;
+}
+
+.highlight {
+  color: #8038fc;
+}
+
+.author {
+  display: inline-block;
+  margin-left: clamp(2rem, 4vw, 4rem);
+  color: rgba(255, 255, 255, 0.86);
+  font-family: "Open Sans", "Segoe UI", sans-serif;
+  font-size: 0.34em;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0;
+  vertical-align: baseline;
+}
+
+.quote :global(.horizontal-final-quote-word),
+.quote :global(.horizontal-final-quote-char) {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 40px 6vw;
+  }
+
+  .track {
+    width: max-content;
+  }
+
+  .quote {
+    font-size: clamp(2.35rem, 12vw, 3.8rem);
+    line-height: 1.08;
+  }
+}
+
+@supports (height: 100svh) {
+  .section {
+    min-height: 100svh;
+  }
+}
+
+@supports (height: 100dvh) {
+  .section {
+    height: 100dvh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb {
+    display: none;
+  }
+
+  .track,
+  .quote :global(.horizontal-final-quote-word),
+  .quote :global(.horizontal-final-quote-char) {
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+}

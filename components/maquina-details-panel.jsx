@@ -11,6 +11,7 @@ import {
   CircleMinusIcon,
   GaugeIcon,
   ImageIcon,
+  Loader2Icon,
   Maximize2Icon,
   ThermometerIcon,
 } from "lucide-react"
@@ -32,24 +33,17 @@ import {
 } from "@/lib/maquinas-table"
 import { getAuthSession } from "@/lib/auth-session"
 import { extractCollection, getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
+import {
+  formatCoveredHours,
+  formatPredictionReason,
+  getPredictionModelMetadata,
+  getPredictionOperationalStatus,
+} from "@/lib/prediction-contract.mjs"
 import { cn, tempoRelativo } from "@/lib/utils"
 
 const PREDICAO_LIMIAR_MANUTENCAO = 70
 const PREDICAO_LIMIAR_FALHA = 30
 const PREDICAO_ANTECEDENCIA_FIM_JANELA_DIAS = 2
-
-const PREDICAO_MOTIVOS_AUSENCIA = {
-  historico_insuficiente: "Histórico insuficiente para sustentar o cálculo.",
-  modelo_nao_pode_ser_calculado: "O modelo não pôde ser calculado com a base atual.",
-  tendencia_nao_confiavel: "A tendência atual não atingiu confiança mínima.",
-  sem_historico_de_alertas_do_tipo: "Não há histórico suficiente desse tipo de alerta.",
-  evento_ja_ocorrido: "O evento previsto já ocorreu.",
-  previsao_fora_da_janela: "A previsão ficou fora da janela monitorada.",
-  sem_alerta_previsivel: "Nenhum alerta previsível foi encontrado.",
-  leituras_insuficientes: "Leituras insuficientes nas janelas recentes.",
-  sem_leitura_recente: "Não há leitura recente para calcular o risco.",
-  historico_de_alertas_insuficiente: "Histórico de alertas insuficiente.",
-}
 
 const FATOR_RISCO_LABELS = {
   proporcao_acima_limite_24h: "leituras acima do limite em 24h",
@@ -286,14 +280,6 @@ function formatRecentPoints(value) {
   return `Ultimos ${count} pontos`
 }
 
-function formatPredictionReason(reason) {
-  if (!reason) {
-    return ""
-  }
-
-  return PREDICAO_MOTIVOS_AUSENCIA[reason] ?? reason.replace(/_/g, " ")
-}
-
 function formatRiskFactor(value) {
   if (!value) {
     return ""
@@ -384,7 +370,7 @@ async function fetchMachinePredictions(maquinaId, accessToken, signal) {
   const [alertasResult, riscoResult, historicoResult] = await Promise.allSettled([
     requestDashboardJson(`/maquinas/${maquinaId}/predicao-alertas`, accessToken, "a predição de alertas", { signal }),
     requestDashboardJson(`/maquinas/${maquinaId}/predicao-risco`, accessToken, "a predição de risco", { signal }),
-    requestDashboardJson(`/maquinas/${maquinaId}/historico-integridade?limite=30`, accessToken, "o historico de integridade", { signal }),
+    requestDashboardJson(`/maquinas/${maquinaId}/historico-integridade?limite=30`, accessToken, "o histórico de integridade", { signal }),
   ])
 
   const alertas =
@@ -526,35 +512,31 @@ function PredictionMetric({ label, value, sub }) {
 }
 
 function getPredictionModel(predicao) {
-  const modelo = predicao?.modeloIntegridade
+  const modelo = getPredictionModelMetadata(predicao?.modeloIntegridade)
 
-  if (!modelo || typeof modelo !== "object") {
+  if (!modelo) {
     return null
   }
 
-  const slope = getNumericValue(modelo.slope)
-  const intercept = getNumericValue(modelo.intercept)
-
-  if (slope === null || intercept === null) {
+  if (modelo.slope === null || modelo.intercept === null) {
     return null
   }
 
-  return {
-    ...modelo,
-    r2: getNumericValue(modelo.r2),
-    slope,
-    intercept,
-    pontosUsados: getNumericValue(modelo.pontosUsados),
-  }
+  return modelo
 }
 
 function getNextAlertSummary(predicao) {
   const prediction = predicao?.proximoAlerta
+  const operationalStatus = getPredictionOperationalStatus(predicao)
 
   if (!prediction) {
+    const reason =
+      formatPredictionReason(predicao?.ausenciaProximoAlerta?.motivo) ||
+      operationalStatus?.reasonLabel
+
     return {
-      value: "Sem previsao",
-      sub: formatPredictionReason(predicao?.ausenciaProximoAlerta?.motivo) || "Ainda sem evento previsivel.",
+      value: operationalStatus?.badge || "Sem previsao",
+      sub: reason || operationalStatus?.description || "Ainda sem evento previsivel.",
     }
   }
 
@@ -601,6 +583,7 @@ function getHighestRiskSummary(predicao) {
 function PredicaoResumoCard({ maquina, summary, predicaoAlertas, predicaoRisco, onOpenRegression }) {
   const nextAlert = getNextAlertSummary(predicaoAlertas)
   const highestRisk = getHighestRiskSummary(predicaoRisco)
+  const operationalStatus = getPredictionOperationalStatus(predicaoAlertas)
 
   return (
     <div className="rounded-lg border border-[#5E17EB]/25 bg-[#5E17EB]/5 p-3 dark:border-[#5E17EB]/45 dark:bg-[#5E17EB]/10">
@@ -615,7 +598,16 @@ function PredicaoResumoCard({ maquina, summary, predicaoAlertas, predicaoRisco, 
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <PredictionMetric label="Status" value={summary.badge} sub={summary.title} />
+        <PredictionMetric
+          label="Status IA"
+          value={operationalStatus?.badge ?? summary.badge}
+          sub={operationalStatus?.reasonLabel || operationalStatus?.title || summary.title}
+        />
+        <PredictionMetric
+          label="Decisao"
+          value={operationalStatus?.urgencyLabel ?? "N/A"}
+          sub={operationalStatus?.sourceLabel || "Aguardando backend"}
+        />
         <PredictionMetric
           label="Falha prevista"
           value={formatPredictionDate(maquina.previsaoManutencao)}
@@ -723,11 +715,7 @@ function PredictionRemoteNotice({ loading, errors }) {
   const messages = Object.values(errors || {}).filter(Boolean)
 
   if (loading) {
-    return (
-      <div className="rounded-lg border border-border/70 bg-background/80 p-3 text-xs text-muted-foreground">
-        Atualizando predicoes, risco e historico...
-      </div>
-    )
+    return null
   }
 
   if (messages.length === 0) {
@@ -743,7 +731,17 @@ function PredictionRemoteNotice({ loading, errors }) {
   )
 }
 
-function PredicaoAlertaItem({ title, prediction, absence }) {
+function PredictionLoadingState() {
+  return (
+    <div className="flex min-h-[260px] flex-col items-center justify-center rounded-lg border border-[#5E17EB]/25 bg-[#5E17EB]/5 px-4 py-10 text-center dark:border-[#5E17EB]/45 dark:bg-[#5E17EB]/10">
+      <Loader2Icon className="size-7 animate-spin text-[#7c3aed]" />
+      <p className="mt-3 text-sm font-medium text-foreground">Carregando predições</p>
+      <p className="mt-1 text-xs text-muted-foreground">Atualizando risco, histórico e resumo da máquina.</p>
+    </div>
+  )
+}
+
+function PredicaoAlertaItem({ title, prediction, absence, fallbackReason }) {
   if (!prediction) {
     return (
       <div className="rounded-md border border-border/70 bg-background/80 p-3">
@@ -754,7 +752,7 @@ function PredicaoAlertaItem({ title, prediction, absence }) {
           </Badge>
         </div>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          {formatPredictionReason(absence?.motivo) || "O backend não retornou uma previsão para esta janela."}
+          {formatPredictionReason(absence?.motivo) || formatPredictionReason(fallbackReason) || "O backend não retornou uma previsão para esta janela."}
         </p>
       </div>
     )
@@ -795,31 +793,47 @@ function PredicaoAlertasCard({ predicao }) {
     return null
   }
 
-  const modelo = predicao.modeloIntegridade
+  const modelo = getPredictionModel(predicao)
+  const operationalStatus = getPredictionOperationalStatus(predicao)
 
   return (
     <div className="rounded-lg border border-border/70 bg-background/60 p-3">
-      <div className="mb-3 flex items-center gap-2">
-        <AlertTriangleIcon className="size-4 text-[#5E17EB]" />
-        <Label>Alertas preditivos</Label>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <AlertTriangleIcon className="size-4 text-[#5E17EB]" />
+          <Label>Alertas preditivos</Label>
+        </div>
+        {operationalStatus ? (
+          <Badge variant="outline" className="shrink-0 border-[#5E17EB]/35 bg-background/80 px-2 text-xs text-[#7c3aed] dark:text-[#A780FF]">
+            {operationalStatus.badge}
+          </Badge>
+        ) : null}
       </div>
       <div className="grid gap-3">
         <PredicaoAlertaItem
           title="Próximo alerta"
           prediction={predicao.proximoAlerta}
           absence={predicao.ausenciaProximoAlerta}
+          fallbackReason={predicao.motivo}
         />
         <PredicaoAlertaItem
           title="Instabilidade"
           prediction={predicao.instabilidade}
           absence={predicao.ausenciaInstabilidade}
+          fallbackReason={predicao.motivo}
         />
       </div>
       {modelo ? (
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
           <PredictionMetric label="R²" value={formatDecimal(modelo.r2, 2)} sub="Ajuste do modelo" />
           <PredictionMetric label="Inclinação" value={formatDecimal(modelo.slope, 2)} sub="Tendência" />
           <PredictionMetric label="Pontos" value={formatCount(modelo.pontosUsados)} sub="Histórico usado" />
+          <PredictionMetric label="Janela" value={formatCoveredHours(modelo.janelaHorasCoberta)} sub="Cobertura temporal" />
+          <PredictionMetric
+            label="Último ponto"
+            value={modelo.ultimoPontoEm ? formatPredictionDate(modelo.ultimoPontoEm) : "N/A"}
+            sub="Base mais recente"
+          />
         </div>
       ) : null}
     </div>
@@ -1037,14 +1051,14 @@ function getRegressionNotice({ loading, errors, historico, modelo, predicaoAlert
     return {
       tone: "muted",
       title: "Atualizando regressao",
-      description: "Buscando historico de integridade e dados do modelo.",
+      description: "Buscando histórico de integridade e dados do modelo.",
     }
   }
 
   if (errors?.historico && historico.length === 0) {
     return {
       tone: "warning",
-      title: "Historico indisponivel",
+      title: "Histórico indisponível",
       description: errors.historico,
     }
   }
@@ -1052,12 +1066,13 @@ function getRegressionNotice({ loading, errors, historico, modelo, predicaoAlert
   if (historico.length === 0) {
     return {
       tone: "muted",
-      title: "Sem historico de integridade",
-      description: "A API ainda nao retornou pontos suficientes para desenhar a curva da maquina.",
+      title: "Sem histórico de integridade",
+      description: "A API ainda não retornou pontos suficientes para desenhar a curva da máquina.",
     }
   }
 
   const absenceReason =
+    predicaoAlertas?.motivo ||
     predicaoAlertas?.ausenciaProximoAlerta?.motivo ||
     predicaoAlertas?.ausenciaInstabilidade?.motivo
 
@@ -1065,7 +1080,7 @@ function getRegressionNotice({ loading, errors, historico, modelo, predicaoAlert
     return {
       tone: "warning",
       title: "Modelo indisponivel",
-      description: formatPredictionReason(absenceReason) || "O backend ainda nao retornou uma regressao para esta maquina.",
+      description: formatPredictionReason(absenceReason) || "O backend ainda não retornou uma regressão para esta máquina.",
     }
   }
 
@@ -1073,7 +1088,7 @@ function getRegressionNotice({ loading, errors, historico, modelo, predicaoAlert
     return {
       tone: "warning",
       title: "Tendencia sem queda",
-      description: "A reta calculada nao aponta degradacao suficiente para projetar falha.",
+      description: "A reta calculada não aponta degradação suficiente para projetar falha.",
     }
   }
 
@@ -1081,7 +1096,7 @@ function getRegressionNotice({ loading, errors, historico, modelo, predicaoAlert
     return {
       tone: "warning",
       title: "Ajuste ainda fraco",
-      description: "O historico existe, mas o ajuste do modelo ainda nao atingiu confianca minima.",
+      description: "O histórico existe, mas o ajuste do modelo ainda não atingiu confiança mínima.",
     }
   }
 
@@ -1109,13 +1124,13 @@ function RegressionChartMessage({ message, tone = "muted" }) {
 
 function PredictionRegressionChart({ data, loading, errors, hasRegression }) {
   if (loading && data.length === 0) {
-    return <RegressionChartMessage message="Carregando historico da maquina..." />
+    return <RegressionChartMessage message="Carregando histórico da máquina..." />
   }
 
   if (data.length === 0) {
     return (
       <RegressionChartMessage
-        message={errors?.historico || "Nao ha pontos de integridade suficientes para montar o grafico."}
+        message={errors?.historico || "Não há pontos de integridade suficientes para montar o gráfico."}
         tone={errors?.historico ? "warning" : "muted"}
       />
     )
@@ -1146,7 +1161,7 @@ function PredictionRegressionChart({ data, loading, errors, hasRegression }) {
           y={PREDICAO_LIMIAR_MANUTENCAO}
           stroke="#f59e0b"
           strokeDasharray="4 4"
-          label={{ value: "Manutencao 70%", position: "insideTopRight", fill: "#d97706", fontSize: 11 }}
+          label={{ value: "Manutenção 70%", position: "insideTopRight", fill: "#d97706", fontSize: 11 }}
         />
         <ReferenceLine
           y={PREDICAO_LIMIAR_FALHA}
@@ -1220,7 +1235,7 @@ function PredictionRegressionSheet({
       <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[680px]! sm:max-w-none!">
         <SheetHeader className="shrink-0 pr-12">
           <SheetTitle>Regressao de integridade</SheetTitle>
-          <SheetDescription>{maquina?.nome ? `${maquina.nome} - historico e tendencia linear` : "Historico e tendencia linear"}</SheetDescription>
+          <SheetDescription>{maquina?.nome ? `${maquina.nome} - histórico e tendência linear` : "Histórico e tendência linear"}</SheetDescription>
         </SheetHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
@@ -1252,12 +1267,22 @@ function PredictionRegressionSheet({
             <PredictionMetric
               label="Dados usados"
               value={formatRecentPoints(modelo?.pontosUsados ?? historico.length)}
-              sub="Pontos recentes da maquina."
+              sub="Pontos recentes da máquina."
+            />
+            <PredictionMetric
+              label="Cobertura temporal"
+              value={modelo ? formatCoveredHours(modelo.janelaHorasCoberta) : "N/A"}
+              sub="Janela dos pontos usados."
+            />
+            <PredictionMetric
+              label="Ultimo ponto"
+              value={modelo?.ultimoPontoEm ? formatPredictionDate(modelo.ultimoPontoEm) : "N/A"}
+              sub="Base mais recente do modelo."
             />
             <PredictionMetric
               label="Falha prevista"
               value={formatPredictionDate(maquina?.previsaoManutencao)}
-              sub={formatDaysUntil(maquina?.previsaoManutencao) || "Sem data confiavel"}
+              sub={formatDaysUntil(maquina?.previsaoManutencao) || "Sem data confiável"}
             />
             <div className="sm:col-span-2">
               <PredictionMetric
@@ -1457,32 +1482,41 @@ function IntegridadeBar({ value, inactive = false }) {
 
 export function MaquinaImagePreview({ maquina, className = "" }) {
   const [fullImageOpen, setFullImageOpen] = React.useState(false)
+  const [imageTooltipOpen, setImageTooltipOpen] = React.useState(false)
   const imageSrc = maquina?.imagem
   const imageAlt = maquina?.nome ? `Foto da máquina ${maquina.nome}` : "Foto da máquina"
 
   return (
     <>
       {imageSrc ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              data-sheet-drag-ignore
-              className={cn(
-                "group relative aspect-video w-full overflow-hidden rounded-lg border bg-muted text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                className
-              )}
-              onClick={() => setFullImageOpen(true)}
-            >
-              <img src={imageSrc} alt={imageAlt} className="size-full object-contain transition-transform duration-200 group-hover:scale-[1.015]" />
-              <span className="absolute left-2 top-2 flex size-8 items-center justify-center rounded-md bg-background/90 text-foreground shadow-sm backdrop-blur">
+        <div
+          className={cn(
+            "group relative aspect-video w-full overflow-hidden rounded-lg border bg-muted",
+            className
+          )}
+        >
+          <img src={imageSrc} alt={imageAlt} className="size-full object-contain transition-transform duration-200 group-hover:scale-[1.015]" />
+          <Tooltip open={imageTooltipOpen}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                data-sheet-drag-ignore
+                className="absolute left-2 top-2 flex size-8 items-center justify-center rounded-md bg-background/55 text-foreground/60 opacity-55 shadow-none backdrop-blur transition hover:bg-background/85 hover:text-foreground hover:opacity-90 focus-visible:bg-background/85 focus-visible:text-foreground focus-visible:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                onPointerEnter={() => setImageTooltipOpen(true)}
+                onPointerLeave={() => setImageTooltipOpen(false)}
+                onFocus={() => setImageTooltipOpen(false)}
+                onClick={() => {
+                  setImageTooltipOpen(false)
+                  setFullImageOpen(true)
+                }}
+              >
                 <Maximize2Icon className="size-4" />
                 <span className="sr-only">Ver foto inteira</span>
-              </span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Ver foto inteira</TooltipContent>
-        </Tooltip>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Ver foto inteira</TooltipContent>
+          </Tooltip>
+        </div>
       ) : (
         <div className={cn("relative aspect-video w-full overflow-hidden rounded-lg border bg-muted", className)}>
           <div className="flex size-full items-center justify-center text-muted-foreground">
@@ -1578,6 +1612,7 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
   )
   const [openSections, setOpenSections] = React.useState({
     predicao: false,
+    detalhesTecnicos: false,
     sensores: false,
   })
   const [regressionSheetOpen, setRegressionSheetOpen] = React.useState(false)
@@ -1596,6 +1631,7 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
   React.useEffect(() => {
     setOpenSections({
       predicao: false,
+      detalhesTecnicos: false,
       sensores: false,
     })
     setRegressionSheetOpen(false)
@@ -1762,19 +1798,39 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
             </Badge>
           }
         >
-          <div className="grid gap-3">
-            <PredictionRemoteNotice
-              loading={predictionInsights.status === "loading"}
-              errors={predictionInsights.errors}
-            />
-            <PredicaoResumoCard
-              maquina={maquina}
-              summary={predictionSummary}
-              predicaoAlertas={predictionInsights.alertas}
-              predicaoRisco={predictionInsights.risco}
-              onOpenRegression={() => setRegressionSheetOpen(true)}
-            />
-          </div>
+          {predictionInsights.status === "loading" ? (
+            <PredictionLoadingState />
+          ) : (
+            <div className="grid gap-3">
+              <PredictionRemoteNotice
+                loading={false}
+                errors={predictionInsights.errors}
+              />
+              <PredicaoResumoCard
+                maquina={maquina}
+                summary={predictionSummary}
+                predicaoAlertas={predictionInsights.alertas}
+                predicaoRisco={predictionInsights.risco}
+                onOpenRegression={() => setRegressionSheetOpen(true)}
+              />
+              <DetailsAccordionSection
+                title="Detalhes técnicos"
+                icon={CircleHelpIcon}
+                open={openSections.detalhesTecnicos}
+                onToggle={() => toggleSection("detalhesTecnicos")}
+                meta={
+                  <Badge variant="outline" className="border-border/70 bg-background/80 px-2 text-xs text-muted-foreground">
+                    Predição
+                  </Badge>
+                }
+              >
+                <div className="grid gap-3 border-t border-border/60 p-3">
+                  <PredicaoAlertasCard predicao={predictionInsights.alertas} />
+                  <PredicaoRiscoCard predicao={predictionInsights.risco} />
+                </div>
+              </DetailsAccordionSection>
+            </div>
+          )}
         </DetailsAccordionSection>
 
         <DetailsAccordionSection

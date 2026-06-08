@@ -63,8 +63,6 @@
   scroll-margin-top: calc(var(--landing-header-offset) + 16px);
 }
 
-.heroTitle,
-.heroSubtitle,
 .heroActions,
 .heroRegister,
 .heroScroll {
@@ -73,12 +71,44 @@
   animation: landingFadeUp 0.6s ease forwards;
 }
 
-.heroTitle {
-  animation-delay: 0.2s;
+.heroTitle,
+.heroSubtitle {
+  perspective: 900px;
 }
 
-.heroSubtitle {
-  animation-delay: 0.35s;
+.heroDynamicKeyword {
+  display: inline-grid;
+  color: #7c3aed;
+  white-space: nowrap;
+  perspective: 900px;
+  vertical-align: baseline;
+}
+
+.heroDynamicKeyword :global(.hero-dynamic-keyword-layer),
+.heroDynamicKeyword :global(.hero-dynamic-keyword-sizer) {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+}
+
+.heroDynamicKeyword :global(.hero-dynamic-keyword-layer) {
+  display: inline-block;
+  transform-origin: 50% 65%;
+  will-change: transform, opacity;
+}
+
+.heroDynamicKeyword :global(.hero-dynamic-keyword-sizer) {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.heroDynamicKeyword :global(.hero-dynamic-keyword-word) {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.heroDynamicKeyword :global(.hero-dynamic-keyword-char) {
+  display: inline-block;
+  will-change: transform, opacity;
 }
 
 .heroActions {
@@ -205,6 +235,29 @@
   animation: heroImageFloat 5.4s ease-in-out infinite;
 }
 
+.heroVisual :global(.hero-morph-shell) {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  color: #8c52ff;
+  filter: drop-shadow(0 26px 44px rgba(94, 23, 235, 0.2));
+  animation: heroImageFloat 5.4s ease-in-out infinite;
+}
+
+.heroVisual :global(.hero-morph-svg) {
+  width: clamp(190px, 70%, 320px);
+  height: auto;
+  overflow: visible;
+  will-change: transform;
+}
+
+.heroVisual :global(.hero-morph-path) {
+  fill: currentColor;
+}
+
 .heroScrollAnchor {
   position: absolute;
   bottom: 36px;
@@ -276,8 +329,7 @@
 }
 
 .primaryCta,
-.secondaryCta,
-.finalCta {
+.secondaryCta {
   display: inline-block;
   text-decoration: none;
 }
@@ -361,6 +413,53 @@
   width: 60%;
   height: auto;
   min-width: 0;
+}
+
+.heroTitle :global(.hero-title-word),
+.heroTitle :global(.hero-title-char),
+.heroSubtitle :global(.hero-subtitle-word) {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.quoteText :global(.quote-sentence) {
+  margin: 0 0 16px;
+  color: var(--landing-heading);
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 100;
+  line-height: 1.3;
+  letter-spacing: 0;
+  text-align: start;
+  perspective: 900px;
+}
+
+.quoteText :global(.quote-highlight) {
+  color: #7c3aed;
+}
+
+.quoteText :global(.quote-word) {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.quoteText :global(.quote-meta) {
+  margin: 0;
+  color: var(--landing-muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  text-align: start;
+}
+
+.quoteText :global(.quote-author) {
+  display: inline-block;
+  margin-top: 2px;
+  color: var(--landing-heading);
+  font-weight: 600;
+}
+
+.quoteText :global(.quote-meta strong) {
+  color: var(--landing-heading);
 }
 
 .quoteImage {
@@ -461,22 +560,6 @@
 
 .scrollButtonIcon {
   fill: var(--landing-button-fg);
-}
-
-.finalCta {
-  background: transparent;
-  color: #fff;
-  padding: 14px 32px;
-  border-radius: 10px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  font-weight: 500;
-  font-size: 0.9rem;
-  font-family: "Poppins", sans-serif;
-  transition: border-color 0.2s ease;
-}
-
-.finalCta:hover {
-  border-color: rgba(255, 255, 255, 0.9);
 }
 
 @keyframes landingFadeUp {
@@ -637,6 +720,15 @@
     animation: none;
   }
 
+  .heroVisual :global(.hero-morph-shell) {
+    filter: none;
+    animation: none;
+  }
+
+  .heroVisual :global(.hero-morph-svg) {
+    width: min(64vw, 190px);
+  }
+
   .heroScrollAnchor {
     bottom: 18px;
   }
@@ -765,7 +857,8 @@
 
   .heroVisual::before,
   .heroVisual::after,
-  .heroImage {
+  .heroImage,
+  .heroVisual :global(.hero-morph-shell) {
     animation: none;
   }
 }

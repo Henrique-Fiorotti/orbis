@@ -94,7 +94,7 @@ async function fetchOpenMaintenanceForAlert(accessToken, alertaId) {
   const manutencao = getOpenMaintenance(manutencoes)
 
   if (!manutencao?.id) {
-    throw new Error("Nao foi encontrada uma manutencao em andamento para este alerta.")
+    throw new Error("Não foi encontrada uma manutenção em andamento para este alerta.")
   }
 
   return manutencao
@@ -244,11 +244,11 @@ export function AlertasProvider({ children }) {
 
     if (novoStatus === "EM_ANDAMENTO") {
       return await executarMutacao((accessToken) =>
-        requestDashboardJson("/manutencoes", accessToken, "o inicio da manutencao", {
+        requestDashboardJson("/manutencoes", accessToken, "o início da manutenção", {
           method: "POST",
           body: {
             alertaId: id,
-            observacao: observacao || "Manutencao iniciada pelo dashboard.",
+            observacao: observacao || "Manutenção iniciada pelo dashboard.",
           },
         })
       )
@@ -257,13 +257,13 @@ export function AlertasProvider({ children }) {
     if (novoStatus === "RESOLVIDO") {
       return await executarMutacao(async (accessToken) => {
         const manutencao = await fetchOpenMaintenanceForAlert(accessToken, id)
-        const observacaoResolucao = observacao || getTrimmedObservation(manutencao.observacao) || "Manutencao concluida pelo dashboard."
+        const observacaoResolucao = observacao || getTrimmedObservation(manutencao.observacao) || "Manutenção concluída pelo dashboard."
 
         if (!manutencao?.id) {
           throw new Error("Não foi encontrada uma manutenção em andamento para este alerta.")
         }
 
-        return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "a conclusao da manutencao", {
+        return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "a conclusão da manutenção", {
           method: "PUT",
           body: {
             status: "RESOLVIDO",
@@ -286,7 +286,7 @@ export function AlertasProvider({ children }) {
     return await executarMutacao(async (accessToken) => {
       const manutencao = await fetchOpenMaintenanceForAlert(accessToken, id)
 
-      return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "o relato da manutencao", {
+      return await requestDashboardJson(`/manutencoes/${manutencao.id}`, accessToken, "o relato da manutenção", {
         method: "PUT",
         body: {
           observacao: relato,

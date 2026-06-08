@@ -927,7 +927,7 @@ export default function PerfilPage() {
                       <SelectContent>
                         <SelectGroup>
                           <SelectItem value="ADMIN">Admin</SelectItem>
-                          <SelectItem value="TECNICO">Tecnico</SelectItem>
+                          <SelectItem value="TECNICO">Técnico</SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>

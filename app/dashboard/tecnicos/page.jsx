@@ -236,7 +236,7 @@ function TecnicoAtividadeCard({ alertas, expanded, onToggle }) {
             <ActivityIcon className="size-4 text-[#5E17EB]" />
             <h3 className="text-sm font-semibold text-[#3B2867] dark:text-white">Atividade recente</h3>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Atendimentos vinculados a este tecnico.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Atendimentos vinculados a este técnico.</p>
         </div>
         <Badge variant="outline" className="shrink-0 px-1.5 text-muted-foreground">
           {total} total

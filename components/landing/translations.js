@@ -55,7 +55,7 @@ export const LANDING_COPY = {
       },
       login: "Entrar",
       languageLabel: "Idioma",
-      languageSelectLabel: "Selecionar idioma da landing page",
+      languageSelectLabel: "Selecionar idioma",
     },
     home: {
 
@@ -79,6 +79,7 @@ export const LANDING_COPY = {
         secondHighlight: "amanhã",
         after: "\"",
         supportText: "Confie no processo.",
+        author: "Fiorotti, Henrique",
         joinText: "Junte-se à Orbis",
       },
       benefits: {
@@ -132,7 +133,7 @@ export const LANDING_COPY = {
           delay: 240,
         },
         {
-          icon: "/accessibility.png", /* Falta por o icone de acessibilidade */
+          icon: "/accessibility.png",
           title: "Acessibilidade total",
           desc: "Interface adaptada para todos os perfis de usuário, com suporte a leitores de tela e navegação por teclado.",
           delay: 320,
@@ -271,7 +272,7 @@ export const LANDING_COPY = {
         },
       ],
       cards: {
-        whatsapp: "Whatsapp",
+        whatsapp: "WhatsApp",
         email: "E-mail",
       },
       formTitle: "Fale Conosco",
@@ -352,7 +353,7 @@ export const LANDING_COPY = {
       eyebrow: "Acesso a conta",
       title: "Redefinir senha",
       subtitle: "Informe o e-mail da conta e o e-mail que deve receber o código. Depois valide o código enviado para criar uma nova senha.",
-      cardTitle: "Recuperacao de acesso",
+      cardTitle: "Recuperação de acesso",
       cardDescription: "O código expira em 15 minutos.",
       successTitle: "Senha redefinida",
       successDescription: "A nova senha foi salva. Você já pode voltar ao login.",
@@ -460,7 +461,7 @@ export const LANDING_COPY = {
       },
       login: "Sign in",
       languageLabel: "Language",
-      languageSelectLabel: "Select landing page language",
+      languageSelectLabel: "Select language",
     },
     home: {
       hero: {
@@ -483,6 +484,7 @@ export const LANDING_COPY = {
         secondHighlight: "tomorrow",
         after: "\"",
         supportText: "Trust the process.",
+        author: "Fiorotti, Henrique",
         joinText: "Join Orbis",
       },
       benefits: {
@@ -862,7 +864,7 @@ export const LANDING_COPY = {
       },
       login: "Entrar",
       languageLabel: "Idioma",
-      languageSelectLabel: "Seleccionar idioma de la landing page",
+      languageSelectLabel: "Seleccionar idioma",
     },
     home: {
       hero: {
@@ -885,6 +887,7 @@ export const LANDING_COPY = {
         secondHighlight: "mañana",
         after: "\"",
         supportText: "Confía en el proceso.",
+        author: "Fiorotti, Henrique",
         joinText: "Únete a Orbis",
       },
       benefits: {

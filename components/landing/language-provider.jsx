@@ -10,6 +10,8 @@ import {
 } from "@/components/landing/translations";
 
 const STORAGE_KEY = "orbis:landing-language:v1";
+export const LANDING_LANGUAGE_CHANGE_START_EVENT =
+  "orbis:landing-language-change-start";
 const LandingLanguageContext = React.createContext(null);
 const fallbackContext = {
   copy: getLandingCopy(DEFAULT_LOCALE),
@@ -93,10 +95,19 @@ export function LandingLanguageProvider({ children }) {
   const setLocale = React.useCallback((nextLocale) => {
     const normalizedLocale = normalizeLocale(nextLocale) ?? DEFAULT_LOCALE;
 
+    if (normalizedLocale === locale) {
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent(LANDING_LANGUAGE_CHANGE_START_EVENT, {
+        detail: { from: locale, to: normalizedLocale },
+      }),
+    );
     setLocaleState(normalizedLocale);
     storeLocale(normalizedLocale);
     syncUrlLocale(normalizedLocale);
-  }, []);
+  }, [locale]);
 
   const value = React.useMemo(
     () => ({

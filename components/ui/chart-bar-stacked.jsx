@@ -28,7 +28,7 @@ import { getHistoricoStatusMaquinas } from "@/lib/orbis-dashboard"
 
 /** @typedef {import("@/lib/orbis-types").ChartConfig} ChartConfig */
 
-export const description = "Historico de maquinas por status"
+export const description = "Histórico de máquinas por status"
 
 /** @type {ChartConfig} */
 const chartConfig = {
@@ -94,28 +94,28 @@ export function ChartBarStacked() {
   return (
     <Card className="flex w-full xl:w-2/3">
       <CardHeader>
-        <CardTitle>Historico por Status</CardTitle>
+        <CardTitle>Histórico por Status</CardTitle>
         <CardDescription>
           {loading
-            ? "Carregando historico por status..."
+            ? "Carregando histórico por status..."
             : maquinas.length === 0
-              ? "Nenhuma maquina sincronizada no momento"
+              ? "Nenhuma máquina sincronizada no momento"
               : totalEmAlerta > 0
                 ? `${totalEmAlerta} ocorrencia(s) em alerta na semana atual`
                 : totalEmAndamento > 0
                   ? `${totalEmAndamento} ocorrencia(s) em atendimento na semana atual`
                   : totalSemSensor > 0
                     ? `${totalSemSensor} ativo(s) sem sensor hoje`
-                    : "Nenhum ativo em alerta no periodo"}
+                    : "Nenhum ativo em alerta no período"}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <EmptyState message="Sincronizando historico de status com a API..." />
+          <EmptyState message="Sincronizando histórico de status com a API..." />
         ) : errorMessage ? (
           <EmptyState message={errorMessage} tone="error" />
         ) : maquinas.length === 0 ? (
-          <EmptyState message="Nao ha maquinas disponiveis para compor o grafico." />
+          <EmptyState message="Não há máquinas disponíveis para compor o gráfico." />
         ) : (
           <ChartContainer config={chartConfig} className="h-[300px]">
             <BarChart accessibilityLayer data={chartData}>
@@ -176,7 +176,7 @@ export function ChartBarStacked() {
       </CardContent>
       <CardFooter className="justify-end border-t-0 bg-transparent pt-0">
         <ChartHelp>
-          Mostra o historico diario de status das maquinas. Cada barra soma o total de maquinas cadastradas.
+          Mostra o histórico diário de status das máquinas. Cada barra soma o total de máquinas cadastradas.
         </ChartHelp>
       </CardFooter>
     </Card>
