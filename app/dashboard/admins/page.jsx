@@ -155,7 +155,7 @@ async function fetchAdminsFromUsuariosCollection(accessToken) {
     }
 
     if (!payload) {
-      throw lastError ?? new Error("Nao foi possivel carregar os administradores.")
+      throw lastError ?? new Error("Não foi possível carregar os administradores.")
     }
 
     admins.push(...normalizeAdminCollection(payload))
@@ -551,12 +551,10 @@ export default function AdminsPage() {
         })
         toast.success("Administrador cadastrado com sucesso!")
       } else {
-        await executarMutacao(`/usuarios/${adminSelecionado.id}`, {
+        await executarMutacao("/usuarios/alterar-ativo", {
           method: "PUT",
-          contextLabel: "a atualização do administrador",
+          contextLabel: "o status do administrador",
           body: {
-            nome,
-            ...(telefone ? { telefone } : {}),
             ativo: form.status === "ATIVO",
           },
         })
@@ -978,7 +976,7 @@ export default function AdminsPage() {
                     </Button>
                   ) : (
                     <Button variant="outline" className="text-muted-foreground sm:col-span-2" disabled>
-                      Telefone nao informado
+                      Telefone não informado
                     </Button>
                   )}
 

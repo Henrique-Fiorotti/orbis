@@ -12,8 +12,8 @@ const LOGIN_MODAL_SCROLL_LOCK_SOURCE = "login-modal";
 
 export default function LoginModal() {
   const router = useRouter();
-  const [closing, setClosing] = useState(false);
   const artRef = useRef(null);
+  const [closing, setClosing] = useState(false);
 
   function handleClose() {
     if (closing) {
@@ -22,6 +22,39 @@ export default function LoginModal() {
 
     setClosing(true);
     setTimeout(() => router.back(), 620);
+  }
+
+  function handlePointerMove(event) {
+    const art = artRef.current;
+
+    if (!art) {
+      return;
+    }
+
+    const x = event.clientX / window.innerWidth - 0.5;
+    const y = event.clientY / window.innerHeight - 0.5;
+
+    art.style.setProperty("--login-art-shift-x", `${x * 28}px`);
+    art.style.setProperty("--login-art-shift-y", `${y * 22}px`);
+    art.style.setProperty("--login-art-tilt-x", `${y * -5}deg`);
+    art.style.setProperty("--login-art-tilt-y", `${x * 7}deg`);
+    art.style.setProperty("--login-art-glow-x", `${50 + x * 12}%`);
+    art.style.setProperty("--login-art-glow-y", `${50 + y * 12}%`);
+  }
+
+  function resetPointerMove() {
+    const art = artRef.current;
+
+    if (!art) {
+      return;
+    }
+
+    art.style.setProperty("--login-art-shift-x", "0px");
+    art.style.setProperty("--login-art-shift-y", "0px");
+    art.style.setProperty("--login-art-tilt-x", "0deg");
+    art.style.setProperty("--login-art-tilt-y", "0deg");
+    art.style.setProperty("--login-art-glow-x", "50%");
+    art.style.setProperty("--login-art-glow-y", "50%");
   }
 
   useEffect(() => {
@@ -95,39 +128,6 @@ export default function LoginModal() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [closing, router]);
-
-  function handlePointerMove(event) {
-    const art = artRef.current;
-
-    if (!art) {
-      return;
-    }
-
-    const x = event.clientX / window.innerWidth - 0.5;
-    const y = event.clientY / window.innerHeight - 0.5;
-
-    art.style.setProperty("--login-art-shift-x", `${x * 28}px`);
-    art.style.setProperty("--login-art-shift-y", `${y * 22}px`);
-    art.style.setProperty("--login-art-tilt-x", `${y * -5}deg`);
-    art.style.setProperty("--login-art-tilt-y", `${x * 7}deg`);
-    art.style.setProperty("--login-art-glow-x", `${50 + x * 12}%`);
-    art.style.setProperty("--login-art-glow-y", `${50 + y * 12}%`);
-  }
-
-  function resetPointerMove() {
-    const art = artRef.current;
-
-    if (!art) {
-      return;
-    }
-
-    art.style.setProperty("--login-art-shift-x", "0px");
-    art.style.setProperty("--login-art-shift-y", "0px");
-    art.style.setProperty("--login-art-tilt-x", "0deg");
-    art.style.setProperty("--login-art-tilt-y", "0deg");
-    art.style.setProperty("--login-art-glow-x", "50%");
-    art.style.setProperty("--login-art-glow-y", "50%");
-  }
 
   return (
     <>
@@ -220,20 +220,30 @@ export default function LoginModal() {
         .landing-login-art::before {
           content: "";
           position: absolute;
+          z-index: -1;
           width: min(520px, 66vw);
           height: min(520px, 66vw);
           border-radius: 999px;
-          background: radial-gradient(circle at var(--login-art-glow-x) var(--login-art-glow-y), rgba(124, 58, 237, 0.22), transparent 68%);
+          background: radial-gradient(
+            circle at var(--login-art-glow-x) var(--login-art-glow-y),
+            rgba(124, 58, 237, 0.22),
+            transparent 68%
+          );
           filter: blur(6px);
-          transform: translate3d(calc(var(--login-art-shift-x) * -0.35), calc(var(--login-art-shift-y) * -0.35), 0);
+          transform: translate3d(
+            calc(var(--login-art-shift-x) * -0.35),
+            calc(var(--login-art-shift-y) * -0.35),
+            0
+          );
           transition: transform 0.35s ease-out, background 0.35s ease-out;
-          z-index: -1;
         }
 
         .landing-login-image {
+          position: relative;
+          z-index: 2;
           width: min(100%, 520px);
           height: auto;
-          filter: drop-shadow(0 32px 52px rgba(94, 23, 235, 0.22));
+          filter: drop-shadow(0 34px 54px rgba(94, 23, 235, 0.32));
           transform:
             perspective(900px)
             translate3d(var(--login-art-shift-x), var(--login-art-shift-y), 0)
@@ -348,11 +358,7 @@ export default function LoginModal() {
         </button>
 
         <div className="landing-login-grid">
-          <div
-            ref={artRef}
-            className="landing-login-art"
-            aria-hidden="true"
-          >
+          <div ref={artRef} className="landing-login-art" aria-hidden="true">
             <Image
               src="/orbis-spline-heroo.svg"
               alt=""

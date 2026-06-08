@@ -659,7 +659,7 @@ function ManualPreviewField({ field }) {
       <span className="text-sm font-medium tabular-nums">{field.displayValue}</span>
       {field.hasValue ? (
         <Badge variant={field.canApply ? "secondary" : "outline"} className="mt-auto w-fit px-1.5 text-[10px]">
-          {field.canApply ? "Aplicado" : "Nao aplicado"}
+          {field.canApply ? "Aplicado" : "Não aplicado"}
         </Badge>
       ) : null}
     </div>
@@ -863,7 +863,7 @@ export default function SensoresPage() {
     const maquinaId = getSelectedMaquinaId(form.maquinaId)
 
     if (!maquinaId) {
-      toast.error("Selecione a maquina vinculada ao sensor.")
+      toast.error("Selecione a máquina vinculada ao sensor.")
       return
     }
 
@@ -877,7 +877,7 @@ export default function SensoresPage() {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      toast.error("Faca login para analisar o manual.")
+      toast.error("Faça login para analisar o manual.")
       return
     }
 
@@ -910,7 +910,7 @@ export default function SensoresPage() {
       }
     } catch (error) {
       setManualPreview(null)
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel analisar o manual.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível analisar o manual.")
     } finally {
       setManualPreviewLoading(false)
     }
@@ -1372,7 +1372,7 @@ export default function SensoresPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex min-w-0 flex-col gap-1">
                         <span className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">{sensorSelecionado.tipo}</span>
-                        <span className="line-clamp-2 text-sm text-muted-foreground">{sensorSelecionado.maquinaId ? sensorSelecionado.maquinaNome : "Sem maquina vinculada"}</span>
+                        <span className="line-clamp-2 text-sm text-muted-foreground">{sensorSelecionado.maquinaId ? sensorSelecionado.maquinaNome : "Sem máquina vinculada"}</span>
                       </div>
                       <StatusBadge value={sensorSelecionado.status} />
                     </div>

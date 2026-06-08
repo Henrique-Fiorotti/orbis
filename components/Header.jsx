@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Globe2Icon, MoonIcon, SunIcon, MenuIcon, XIcon } from 'lucide-react'
-import { useTheme } from 'next-themes'
+import { useTheme } from '@/components/theme-provider'
 import { useLandingLanguage } from '@/components/landing/language-provider'
 
 const LANDING_HEADER_SECTIONS = [
@@ -177,8 +177,11 @@ export default function Header() {
         </nav>
 
         <div className="ms-auto flex items-center gap-2 justify-end">
-          <div className="hidden h-9 w-[134px] items-center gap-1 rounded-[10px] border border-black/[0.08] px-2 text-black/70 transition-all duration-150 hover:border-[#5e17eb]/20 hover:text-[#5e17eb] dark:border-white/[0.08] dark:text-white/70 sm:flex">
-            <Globe2Icon size={15} aria-hidden="true" />
+          <div
+            className="relative hidden h-9 w-9 items-center justify-center overflow-hidden rounded-[10px] border border-black/[0.08] text-black/70 transition-all duration-150 hover:border-[#5e17eb]/20 hover:bg-[#5e17eb]/[0.08] hover:text-[#5e17eb] dark:border-white/[0.08] dark:text-white/70 sm:flex"
+            title={copy.header.languageSelectLabel}
+          >
+            <Globe2Icon size={16} aria-hidden="true" />
             <label htmlFor="landing-language-select" className="sr-only">
               {copy.header.languageSelectLabel}
             </label>
@@ -187,7 +190,7 @@ export default function Header() {
               value={locale}
               onChange={handleLanguageChange}
               aria-label={copy.header.languageSelectLabel}
-              className="h-8 min-w-0 flex-1 cursor-pointer rounded-[8px] bg-white text-[12.5px] font-medium text-black outline-none transition-colors dark:bg-[#09090b] dark:text-white"
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             >
               {languages.map((language) => (
                 <option

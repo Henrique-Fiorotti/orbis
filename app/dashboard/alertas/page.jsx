@@ -19,15 +19,14 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
+import { AlertaDetailsPanel } from "@/components/alerta-details-panel"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
 import { TablePagination } from "@/components/table-pagination"
 import {
   AlertTriangleIcon,
   ClockIcon,
-  CircleHelpIcon,
   EllipsisVerticalIcon,
   ArrowLeftIcon,
   EyeIcon,
@@ -62,20 +61,6 @@ const TIPOS_ALERTA_LABEL = {
   TENDENCIA_LONGA: "Tendência Longa",
   DEGRADACAO_ACELERADA: "Degradação Acelerada",
   INSTABILIDADE: "Instabilidade",
-}
-
-const TIPOS_ALERTA_HELP = {
-  LIMITE_ULTRAPASSADO: "Alguma leitura passou do limite seguro configurado.",
-  TENDENCIA_CURTA: "A leitura mudou rápido e pode exigir atenção em breve.",
-  TENDENCIA_LONGA: "A leitura vem piorando de forma gradual ao longo do tempo.",
-  DEGRADACAO_ACELERADA: "O equipamento está perdendo estabilidade mais rápido que o esperado.",
-  INSTABILIDADE: "As leituras estão oscilando fora do padrão ideal.",
-}
-
-const SEVERIDADE_HELP = {
-  ALTA: "A gravidade do problema é alta e pede prioridade.",
-  MEDIA: "A gravidade é moderada e deve ser acompanhada.",
-  BAIXA: "A gravidade é baixa, com menor risco imediato.",
 }
 
 const STATUS_ALERTA_LABEL = {
@@ -221,39 +206,6 @@ function TipoAlertaBadge({ value }) {
   )
 }
 
-function HelpTooltip({ label, content }) {
-  if (!content) {
-    return null
-  }
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span
-          role="img"
-          tabIndex={0}
-          aria-label={label}
-          className="inline-flex size-4 cursor-help items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-[#5E17EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/40"
-        >
-          <CircleHelpIcon className="size-3.5" />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="top" sideOffset={6} className="max-w-56 text-left leading-relaxed">
-        {content}
-      </TooltipContent>
-    </Tooltip>
-  )
-}
-
-function FieldLabelWithHelp({ children, help, helpLabel }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <Label className="text-xs text-muted-foreground">{children}</Label>
-      <HelpTooltip label={helpLabel} content={help} />
-    </div>
-  )
-}
-
 function isStatusAberto(status) {
   return status === "ATIVO" || status === "EM_ANDAMENTO"
 }
@@ -390,7 +342,7 @@ function formatAbsoluteDate(value) {
   const date = new Date(value)
 
   if (!Number.isFinite(date.getTime())) {
-    return "Data nao informada"
+    return "Data não informada"
   }
 
   return new Intl.DateTimeFormat("pt-BR", {
@@ -440,14 +392,14 @@ function getUsuarioResumo(source) {
   if (usuario && typeof usuario === "object") {
     return {
       id: usuario.id ?? source?.usuarioId ?? source?.tecnicoId ?? null,
-      nome: usuario.nome || usuario.name || "Tecnico nao informado",
+      nome: usuario.nome || usuario.name || "Técnico não informado",
       role: normalizeUppercase(usuario.role),
     }
   }
 
   return {
     id: source?.usuarioId ?? source?.tecnicoId ?? null,
-    nome: source?.usuarioNome || source?.tecnicoNome || source?.nomeTecnico || "Tecnico nao informado",
+    nome: source?.usuarioNome || source?.tecnicoNome || source?.nomeTecnico || "Técnico não informado",
     role: "",
   }
 }
@@ -466,7 +418,7 @@ function getEventoUsuario(source) {
   if (usuarioId) {
     return {
       id: usuarioId,
-      nome: source?.usuarioNome || source?.tecnicoNome || source?.manutencao?.usuarioNome || "Tecnico nao informado",
+      nome: source?.usuarioNome || source?.tecnicoNome || source?.manutencao?.usuarioNome || "Técnico não informado",
       role: "TECNICO",
     }
   }
@@ -648,7 +600,7 @@ function createTimelineItemFromEvento(evento) {
   if (evento.tipo === "ACEITO") {
     return createTimelineItem({
       tipo: "inicio",
-      titulo: "Manutencao iniciada",
+      titulo: "Manutenção iniciada",
       usuario: evento.usuario,
       criadoEm: evento.criadoEm || evento.manutencao?.criadoEm,
       descricao: getEventoDescricao(evento),
@@ -660,7 +612,7 @@ function createTimelineItemFromEvento(evento) {
   if (evento.tipo === "REABERTO") {
     return createTimelineItem({
       tipo: "sem_solucao",
-      titulo: "Manutencao encerrada sem solucao",
+      titulo: "Manutenção encerrada sem solução",
       usuario: evento.usuario,
       criadoEm: evento.criadoEm,
       descricao: getEventoDescricao(evento),
@@ -672,7 +624,7 @@ function createTimelineItemFromEvento(evento) {
   if (evento.tipo === "RESOLVIDO") {
     return createTimelineItem({
       tipo: "encerramento",
-      titulo: "Manutencao encerrada",
+      titulo: "Manutenção encerrada",
       usuario: evento.usuario,
       criadoEm: evento.criadoEm,
       descricao: getEventoDescricao(evento),
@@ -697,7 +649,7 @@ function createTimelineItemFromEvento(evento) {
 
   return createTimelineItem({
     tipo: isManutencao ? "atualizacao" : "alerta_atualizado",
-    titulo: isManutencao ? "Atualizacao da manutencao" : "Alerta atualizado",
+    titulo: isManutencao ? "Atualização da manutenção" : "Alerta atualizado",
     usuario: evento.usuario,
     criadoEm: evento.criadoEm,
     descricao: getEventoDescricao(evento),
@@ -759,8 +711,8 @@ function HistoricoManutencaoPanel({
       <div className="rounded-lg border bg-muted/20 px-3 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">{alerta?.maquinaNome || "Maquina nao informada"}</p>
-            <p className="truncate text-xs text-muted-foreground">{alerta?.sensorNome || "Sensor nao informado"}</p>
+            <p className="truncate text-sm font-medium text-foreground">{alerta?.maquinaNome || "Máquina não informada"}</p>
+            <p className="truncate text-xs text-muted-foreground">{alerta?.sensorNome || "Sensor não informado"}</p>
           </div>
           <Badge variant="outline" className="shrink-0 text-muted-foreground">
             Somente leitura
@@ -771,11 +723,11 @@ function HistoricoManutencaoPanel({
       {status === "loading" ? (
         <div className="flex items-center gap-2 rounded-md bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
           <Loader2Icon className="size-4 animate-spin" />
-          Carregando historico de manutencao...
+          Carregando histórico de manutenção...
         </div>
       ) : status === "error" ? (
         <div className="grid gap-3 rounded-md border border-destructive/25 bg-destructive/5 px-3 py-3 text-sm text-destructive">
-          <span>{mensagem || "Nao foi possivel carregar o historico de manutencao."}</span>
+          <span>{mensagem || "Não foi possível carregar o histórico de manutenção."}</span>
           <Button type="button" variant="outline" size="sm" className="w-fit" onClick={onRetry}>
             <RefreshCcwIcon className="mr-1 size-4" />
             Tentar novamente
@@ -812,7 +764,7 @@ function HistoricoManutencaoPanel({
                     {formatTimelineDateRange(item)}
                   </span>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span>{item.tipo === "alerta" || item.usuario === "Sistema" ? item.usuario : `Tecnico: ${item.usuario}`}</span>
+                    <span>{item.tipo === "alerta" || item.usuario === "Sistema" ? item.usuario : `Técnico: ${item.usuario}`}</span>
                     {item.status ? (
                       <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-muted-foreground">
                         {EVENTO_STATUS_LABEL[item.status] ?? item.status}
@@ -829,7 +781,7 @@ function HistoricoManutencaoPanel({
 
           {!hasEventosManutencao && hasOnlyAlertaAberto ? (
             <div className="rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground">
-              Nenhum evento de manutencao foi registrado para este alerta.
+              Nenhum evento de manutenção foi registrado para este alerta.
             </div>
           ) : null}
         </div>
@@ -861,7 +813,7 @@ function GrupoSensoresResumo({ sensores = [] }) {
   const restante = Math.max(sensores.length - visiveis.length, 0)
 
   if (visiveis.length === 0) {
-    return <span className="text-sm text-muted-foreground">Sensor nao informado</span>
+    return <span className="text-sm text-muted-foreground">Sensor não informado</span>
   }
 
   return (
@@ -892,7 +844,7 @@ function GrupoAlertasMobileCard({ grupo, onOpen }) {
       <span className="flex min-w-0 items-start justify-between gap-2">
         <span className="flex min-w-0 flex-col gap-1">
           <span className="line-clamp-2 text-lg font-medium leading-tight text-foreground">
-            {grupo.maquinaNome || "Maquina nao informada"}
+            {grupo.maquinaNome || "Máquina não informada"}
           </span>
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted-foreground">
             {sensoresVisiveis.length ? (
@@ -902,7 +854,7 @@ function GrupoAlertasMobileCard({ grupo, onOpen }) {
                 </span>
               ))
             ) : (
-              <span>Sensor nao informado</span>
+              <span>Sensor não informado</span>
             )}
             {sensoresRestantes > 0 ? <span>+{sensoresRestantes} sensor(es)</span> : null}
           </span>
@@ -1003,7 +955,7 @@ function GrupoAlertasSheet({ grupo, open, onOpenChange, onVerAlerta }) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" mobileSide="bottom" className="w-full max-w-none! gap-0 overflow-hidden sm:w-[520px]! sm:max-w-none!">
         <SheetHeader className="shrink-0">
-          <SheetTitle>{grupo?.maquinaNome || "Ocorrencias da maquina"}</SheetTitle>
+          <SheetTitle>{grupo?.maquinaNome || "Ocorrências da máquina"}</SheetTitle>
         </SheetHeader>
         <div data-lenis-prevent className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
           <div className="flex flex-col gap-3">
@@ -1336,7 +1288,7 @@ export default function AlertasPage() {
 
     if (!session?.accessToken) {
       setHistoricoStatus("error")
-      setHistoricoMensagem("Faca login para carregar o historico de manutencao.")
+      setHistoricoMensagem("Faça login para carregar o histórico de manutenção.")
       return
     }
 
@@ -1366,7 +1318,7 @@ export default function AlertasPage() {
       }
 
       setHistoricoStatus("error")
-      setHistoricoMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar o historico de manutencao.")
+      setHistoricoMensagem(error instanceof Error ? error.message : "Não foi possível carregar o histórico de manutenção.")
     }
   }
 
@@ -1625,96 +1577,7 @@ export default function AlertasPage() {
             </SheetHeader>
             <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
               {modoSheet === "ver" && alertaSelecionado ? (
-                <>
-                  <div className="rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <span className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">{alertaSelecionado.maquinaNome}</span>
-                        <span className="line-clamp-2 text-sm text-muted-foreground">{alertaSelecionado.sensorNome}</span>
-                      </div>
-                      <StatusAlertaBadge value={alertaSelecionado.status} />
-                    </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <TipoAlertaBadge value={alertaSelecionado.tipo} />
-                      <SeveridadeBadge value={alertaSelecionado.severidade} />
-                      <Badge variant="outline" className="px-3 text-muted-foreground">
-                        {Math.max(Number(alertaSelecionado.ocorrencias) || 1, 1)} ocorr.
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="hidden grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1">
-                      <FieldLabelWithHelp
-                        help={TIPOS_ALERTA_HELP[alertaDetalhado.tipo]}
-                        helpLabel={`Ajuda sobre tipo ${TIPOS_ALERTA_LABEL[alertaDetalhado.tipo] ?? alertaDetalhado.tipo}`}
-                      >
-                        Tipo
-                      </FieldLabelWithHelp>
-                      <TipoAlertaBadge value={alertaDetalhado.tipo} />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <FieldLabelWithHelp
-                        help={SEVERIDADE_HELP[alertaDetalhado.severidade]}
-                        helpLabel={`Ajuda sobre severidade ${alertaDetalhado.severidade}`}
-                      >
-                        Severidade
-                      </FieldLabelWithHelp>
-                      <SeveridadeBadge value={alertaDetalhado.severidade} />
-                    </div>
-                    <div className="col-span-2 flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Status</Label>
-                      <StatusAlertaBadge value={alertaDetalhado.status} />
-                    </div>
-                  </div>
-                  <Separator className="hidden" />
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Máquina</Label>
-                      <span className="text-sm font-medium">{alertaDetalhado.maquinaNome}</span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Sensor</Label>
-                      <span className="text-sm font-medium">{alertaDetalhado.sensorNome}</span>
-                    </div>
-                  </div>
-                  {alertaDetalhado.status === "EM_ANDAMENTO" || alertaDetalhado.status === "RESOLVIDO" || tecnicoAlertaDetalhado ? (
-                    <TecnicoResponsavelCard tecnico={tecnicoAlertaDetalhado} />
-                  ) : null}
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-xs text-muted-foreground">Mensagem</Label>
-                    <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm leading-relaxed text-foreground">{alertaDetalhado.mensagem}</p>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-xs text-muted-foreground">Criado em</Label>
-                    <span className="text-sm">{tempoRelativo(alertaDetalhado.criadoEm)}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Última ocorrência</Label>
-                      <span className="text-sm">{tempoRelativo(getUltimaOcorrencia(alertaDetalhado))}</span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <Label className="text-xs text-muted-foreground">Ocorrências</Label>
-                      <span className="text-sm font-semibold">{Math.max(Number(alertaDetalhado.ocorrencias) || 1, 1)}</span>
-                    </div>
-                  </div>
-                  <Separator />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="hidden h-auto w-full cursor-pointer justify-between gap-3 px-3 py-3 text-left"
-                    onClick={abrirHistoricoManutencao}
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <HistoryIcon className="size-4 shrink-0 text-[#3B2867] dark:text-white" />
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium">Historico de Manutencao</span>
-                        <span className="block truncate text-xs text-muted-foreground">Abrir cronofluxo de eventos</span>
-                      </span>
-                    </span>
-                    <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
-                  </Button>
-                </>
+                <AlertaDetailsPanel alerta={alertaDetalhado} tecnico={tecnicoAlertaDetalhado} />
               ) : (
                 <>
                   <div className="flex flex-col gap-2">
@@ -1769,7 +1632,7 @@ export default function AlertasPage() {
                   <span className="flex min-w-0 items-center gap-2">
                     <HistoryIcon className="size-4 shrink-0 text-[#3B2867] dark:text-white" />
                     <span className="min-w-0">
-                      <span className="block text-sm font-medium">Historico de Manutencao</span>
+                      <span className="block text-sm font-medium">Histórico de Manutenção</span>
                       <span className="block truncate text-xs text-muted-foreground">Abrir cronofluxo de eventos</span>
                     </span>
                   </span>
@@ -1808,7 +1671,7 @@ export default function AlertasPage() {
                   <ArrowLeftIcon className="size-4" />
                 </Button>
                 <div className="min-w-0">
-                  <SheetTitle>Historico de Manutencao</SheetTitle>
+                  <SheetTitle>Histórico de Manutenção</SheetTitle>
                   <SheetDescription>Eventos registrados para este alerta.</SheetDescription>
                 </div>
               </div>

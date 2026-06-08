@@ -4,35 +4,31 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import AnimatedHeroKeyword from "@/components/landing/animated-hero-keyword";
 import HeroDashboard from "@/components/hero-dashboard";
+import HeroMorphVisual from "@/components/landing/hero-morph-visual";
 import { getValidAuthSession, isAuthSessionRemembered } from "@/lib/auth-session";
 import { useLandingLanguage } from "@/components/landing/language-provider";
+import HorizontalFinalQuote from "@/components/landing/horizontal-final-quote";
 import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
 import Pricing from "@/components/pricing";
-import { Separator } from "@/components/ui/separator";
 import SobreInformativo from "@/components/sobre-informativo";
 import SAQ from "@/components/saq";
 import SlideOpacity from "@/components/carousel-10";
 import CreativeTeamSection from "@/components/creative-team-section";
 
 import styles from "./page.module.css";
-import Image from "next/image";
 
-const DEFERRED_SECTION_STYLE = {
-  contentVisibility: "auto",
-  containIntrinsicSize: "720px",
-};
-
-const HERO_DASHBOARD_STYLE = {
-  contentVisibility: "auto",
-  containIntrinsicSize: "760px",
+const HERO_KEYWORD_VARIANTS = {
+  pt: ["seguras", "automáticas", "precisas", "rápidas", "inteligentes"],
+  en: ["safe", "automated", "precise", "fast", "intelligent"],
+  es: ["seguras", "automáticas", "precisas", "rápidas", "inteligentes"],
 };
 
 function Step({ n, title, desc, delay }) {
   return (
- 
- <RevealOnScroll delay={delay} offsetX={-32}>
+    <RevealOnScroll delay={delay} offsetX={-32}>
       <div
         style={{
           display: "flex",
@@ -85,10 +81,14 @@ function Step({ n, title, desc, delay }) {
 }
 
 export default function HomePage() {
-  const { copy } = useLandingLanguage();
+  const { copy, locale } = useLandingLanguage();
   const { home } = copy;
   const router = useRouter();
   const heroSectionRef = React.useRef(null);
+  const heroKeywordVariants = HERO_KEYWORD_VARIANTS[locale] ?? HERO_KEYWORD_VARIANTS.pt;
+  const [heroKeywordIndex, setHeroKeywordIndex] = React.useState(0);
+  const heroDynamicKeyword =
+    heroKeywordVariants[heroKeywordIndex] ?? home.hero.titleLines[1]?.highlight ?? "";
 
   React.useEffect(() => {
     if (isAuthSessionRemembered() && getValidAuthSession()) {
@@ -106,6 +106,10 @@ export default function HomePage() {
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
     router.push("/login", { scroll: false });
   }, [router]);
+
+  React.useEffect(() => {
+    setHeroKeywordIndex(0);
+  }, [locale]);
 
   function handleHeroPointerMove(event) {
     const section = heroSectionRef.current;
@@ -153,20 +157,12 @@ export default function HomePage() {
             backgroundImage:
               "radial-gradient(circle, var(--landing-grid-dot) 1px, transparent 1px)",
             backgroundSize: "53px 36px",
-            zIndex: 0,
             opacity: "var(--landing-grid-opacity)",
           }}
         />
 
         <div className={styles.heroVisual}>
-          <Image
-            src="/orbis-spline-heroo.svg"
-            alt={home.hero.splineTitle}
-            className={styles.heroImage}
-            width={450}
-            height={450}
-            priority
-          />
+          <HeroMorphVisual ariaLabel={home.hero.splineTitle} onShapeChange={setHeroKeywordIndex} />
         </div>
 
         <div className={styles.heroContent}>
@@ -185,8 +181,16 @@ export default function HomePage() {
             {home.hero.titleLines.map((line, index) => (
               <span key={`${line.highlight}-${index}`}>
                 {line.before}
-                <span style={{ color: "#7c3aed" }}>{line.highlight}</span>
-                {line.after}
+                {index === 1 ? (
+                  <AnimatedHeroKeyword
+                    word={heroDynamicKeyword}
+                    className={styles.heroDynamicKeyword}
+                    reserveWords={heroKeywordVariants}
+                  />
+                ) : (
+                  <span style={{ color: "#7c3aed" }}>{line.highlight}</span>
+                )}
+                {index === 1 ? "" : line.after}
                 {index < home.hero.titleLines.length - 1 ? <br /> : null}
               </span>
             ))}
@@ -270,54 +274,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section
-        className={styles.quoteSection}
-        style={DEFERRED_SECTION_STYLE}
-      >
-        <RevealOnScroll className={styles.quoteContent}>
-          <div className={styles.quoteText}>
-            <p
-              style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: "clamp(1.4rem, 3vw, 2rem)",
-                fontWeight: 100,
-                lineHeight: 1.3,
-                letterSpacing: "-0.5px",
-                textAlign: "start",
-                color: "var(--landing-heading)",
-                marginBottom: "16px",
-              }}
-            >
-              {home.quote.before}
-              <span style={{ color: "#7c3aed" }}>{home.quote.highlight}</span>
-              {home.quote.middle}
-              <span style={{ color: "#7c3aed" }}>{home.quote.secondHighlight}</span>
-              {home.quote.after}
-            </p>
-            <p
-              style={{
-                fontSize: "0.82rem",
-                color: "var(--landing-muted)",
-                lineHeight: 1.6,
-                textAlign: "start",
-              }}
-            >
-              {home.quote.supportText}
-              <br />
-              <strong style={{ color: "var(--landing-heading)" }}>{home.quote.joinText}</strong>
-            </p>
-          </div>
-          <img
-            className={styles.quoteImage}
-            src="/banner_hero.svg"
-            alt=""
-            width="545"
-            height="367"
-            loading="lazy"
-            decoding="async"
-          />
-        </RevealOnScroll>
-      </section>
+      <HorizontalFinalQuote key={`final-quote-${locale}`} quote={home.quote} />
 
       {/* SrOrbis */}
       <section id="sobre" className={styles.srOrbisSection}>
@@ -328,10 +285,7 @@ export default function HomePage() {
 
       {/* Carrossel  */}
 
-      <section
-        className={styles.benefitsSection}
-        style={DEFERRED_SECTION_STYLE}
-      >
+      <section className={styles.benefitsSection}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <p
             style={{
@@ -364,28 +318,26 @@ export default function HomePage() {
             <SlideOpacity items={home.features} />
           </RevealOnScroll>
         </div>
-      </section >
+      </section>
 
 
       {/* Mostando o Dashboard */}
-      < section
+      <section
         style={{
           background: "var(--landing-alt-bg)",
           transition: "background-color 0.25s ease",
           borderTop: "#7b39ed57 1px solid",
-          ...HERO_DASHBOARD_STYLE,
         }
         }
       >
         <RevealOnScroll>
           <HeroDashboard />
         </RevealOnScroll>
-      </section >
+      </section>
 
       {/* Como Funciona */}
-      < section
+      <section
         className={`${styles.processSection} ${styles.gridBackgroundSection}`}
-        style={DEFERRED_SECTION_STYLE}
       >
         <div className={styles.processInner}>
           <div className={styles.processIntro}>
@@ -433,59 +385,14 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section >
+      </section>
 
       {/* Planos */}
-      <div id="planos" className={styles.gridBackgroundSection} style={DEFERRED_SECTION_STYLE}>
+      <div id="planos" className={styles.gridBackgroundSection}>
         <RevealOnScroll>
           <Pricing />
         </RevealOnScroll>
       </div>
-
-      {/* Linha roxa de transição */}
-      <section
-        style={{
-          background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
-          padding: "40px 8vw",
-          textAlign: "center",
-          ...DEFERRED_SECTION_STYLE,
-        }}
-      >
-        <h2
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
-            fontWeight: 200,
-            color: "#fff",
-            letterSpacing: "-1px",
-            marginBottom: "16px",
-          }}
-        >
-          {home.final.title}
-        </h2>
-        <p
-          style={{
-            color: "rgba(255,255,255,0.75)",
-            fontSize: "0.95rem",
-            marginBottom: "36px",
-            lineHeight: 1.6,
-          }}
-        >
-          {home.final.description}
-        </p>
-        <div
-          style={{
-            display: "flex",
-            gap: "14px",
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <Link href="/#contact" prefetch={false} className={styles.finalCta}>
-            {home.final.cta}
-          </Link>
-        </div>
-      </section>
 
       {/* SAQ */}
       <section id="contact" className={styles.gridBackgroundSection}>
@@ -498,7 +405,7 @@ export default function HomePage() {
         </RevealOnScroll>
       </section>
 
-    </div >
+    </div>
 
   );
 }

@@ -7,7 +7,7 @@ import Link from "next/link";
 
 import styles from "../app/(public)/page.module.css";
 
-const SR_ORBIS_MEDIA_QUERY = "(min-width: 1030px)";
+const SR_ORBIS_MEDIA_QUERY = "(min-width: 1180px)";
 
 function useShowSrOrbis() {
     const [showSrOrbis, setShowSrOrbis] = useState(false);
@@ -43,52 +43,54 @@ export default function SobreInformativo() {
     const showSrOrbis = useShowSrOrbis();
 
     return (
-        <section
-            className={`${styles.srOrbisInner} flex flex-col min-[1030px]:flex-row min-[1030px]:items-stretch min-h-max md:ms-2 lg:ms-16 xl:ms-24 2xl:ms-90 max-[1029px]:ms-0 max-[1029px]:items-center max-[1029px]:justify-center max-[1029px]:text-center`}
+        <div
+            className={`${styles.srOrbisInner} w-full px-[8vw] pt-8 max-[640px]:px-[6vw] md:pt-12`}
         >
-            {/* Lado esquerdo - conteúdo */}
-            <div className="w-full max-w-[460px] min-[1030px]:w-[500px] min-[1030px]:max-w-none min-[1030px]:flex-shrink-0 flex flex-col sm:items-left min-[1030px]:items-start px-8 sm:px-12 md:px-10 lg:px-8 py-8 md:py-20 gap-6 md:gap-10 max-[1029px]:mx-auto max-[1029px]:items-center max-[1029px]:text-center">
-                <div className="flex items-left gap-1 max-[1029px]:justify-center">
-                    <ThemeAwareImage
-                        lightSrc="/Orbis_extended.svg"
-                        darkSrc="/LogoBrancaGrandeV3.png"
-                        alt={about.logoAlt}
-                        width={280}
-                        height={70}
-                        className="w-[200px] sm:w-[240px] md:w-[280px] h-auto"
-                    />
+            <div className="mx-auto flex w-full max-w-[1100px] flex-col items-center min-[1180px]:flex-row min-[1180px]:items-stretch min-[1180px]:justify-between">
+                {/* Lado esquerdo - conteúdo */}
+                <div className="flex w-full max-w-[460px] flex-col items-center gap-6 py-8 text-center md:gap-10 md:py-20 min-[1180px]:w-[430px] min-[1180px]:max-w-none min-[1180px]:flex-shrink-0 min-[1180px]:items-start min-[1180px]:text-left">
+                    <div className="flex gap-1 min-[1180px]:justify-start">
+                        <ThemeAwareImage
+                            lightSrc="/Orbis_extended.svg"
+                            darkSrc="/LogoBrancaGrandeV3.png"
+                            alt={about.logoAlt}
+                            width={280}
+                            height={70}
+                            className="w-[200px] sm:w-[240px] md:w-[280px] h-auto"
+                        />
+                    </div>
+
+                    <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-center text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm min-[1180px]:text-left">
+                        <RichText parts={about.paragraphs[0]} />
+                    </p>
+
+                    <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-center text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm min-[1180px]:text-left">
+                        <RichText parts={about.paragraphs[1]} />
+                    </p>
+
+                    <Link
+                        href="/login"
+                        style={{ width: "170px" }}
+                        prefetch={false}
+                        scroll={false}
+                        className={`${styles.primaryCta} self-center min-[1180px]:self-start`}
+                    >
+                        {about.cta}
+                    </Link>
                 </div>
 
-                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-left text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center max-[1029px]:text-center">
-                    <RichText parts={about.paragraphs[0]} />
-                </p>
-
-                <p style={{ fontFamily: "'Poppins', sans-serif" }} className="text-left text-gray-700 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-sm text-center max-[1029px]:text-center">
-                    <RichText parts={about.paragraphs[1]} />
-                </p>
-
-                <Link
-                    href="/login"
-                    style={{ width: "170px" }}
-                    prefetch={false}
-                    scroll={false}
-                    className={`${styles.primaryCta} max-[1029px]:self-center`}
-                >
-                    {about.cta}
-                </Link>
+                {showSrOrbis && (
+                    <div className="hidden min-[1180px]:flex min-[1180px]:flex-1 min-[1180px]:items-end min-[1180px]:justify-end">
+                        <Image
+                            src="/SrOrbis2.png"
+                            alt={about.imageAlt}
+                            width={900}
+                            height={900}
+                            className="w-full max-w-[520px] object-contain object-bottom"
+                        />
+                    </div>
+                )}
             </div>
-
-            {showSrOrbis && (
-                <div className="hidden min-[1030px]:flex min-[1030px]:flex-1 min-[1030px]:items-end h-auto min-[1030px]:justify-center min-h-[auto] lg:min-h-[auto] px-4 lg:px-0 lg:me-10 xl:me-20">
-                    <Image
-                        src="/SrOrbis2.png"
-                        alt={about.imageAlt}
-                        width={900}
-                        height={900}
-                        className="object-contain object-bottom w-full max-w-[300px] lg:max-w-[420px] xl:max-w-[540px]"
-                    />
-                </div>
-            )}
-        </section>
+        </div>
     );
 }
