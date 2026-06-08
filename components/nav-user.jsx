@@ -1,7 +1,6 @@
 "use client"
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import {
   Avatar,
   AvatarFallback,
@@ -29,7 +28,6 @@ import { EllipsisVerticalIcon, CircleUserRoundIcon, LogOutIcon } from "lucide-re
 
 export function NavUser({user, pathname}){
   const { isMobile, setOpenMobile } = useSidebar()
-  const router = useRouter()
   const [logoutPending, setLogoutPending] = useState(false)
   const profileActive = pathname === "/dashboard/perfil"
 
@@ -38,24 +36,24 @@ export function NavUser({user, pathname}){
       setOpenMobile(false)
     }
   }
-  //alterei para não precisar clicar duas vezes para sair, uma para fechar o menu e outra para deslogar
-async function handleLogout() {
-  if (logoutPending) {
-    return
+  async function handleLogout() {
+    if (logoutPending) {
+      return
+    }
+
+    setLogoutPending(true)
+    closeMobileSidebar()
+    const session = getAuthSession()
+
+    try {
+      if (session?.accessToken) {
+        await updateUserActiveStatus(session.accessToken, session.usuario, false).catch(() => {})
+      }
+    } finally {
+      clearAuthSession()
+      window.location.replace("/")
+    }
   }
-
-  setLogoutPending(true)
-  closeMobileSidebar()
-  const session = getAuthSession()
-
-  if (session?.accessToken) {
-    await updateUserActiveStatus(session.accessToken, session.usuario, false).catch(() => {})
-  }
-
-  clearAuthSession()
-  router.replace("/")
-  router.refresh()
-}
 
   return (
     <SidebarMenu>

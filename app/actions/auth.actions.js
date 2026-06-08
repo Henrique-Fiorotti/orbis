@@ -19,7 +19,7 @@ export async function loginAction(formData) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      return { error: errorData.mensagem || errorData.message || `Erro ${response.status}: falha na autenticacao.` }
+      return { error: errorData.mensagem || errorData.message || `Erro ${response.status}: falha na autenticação.` }
     }
     const data = await response.json()
 

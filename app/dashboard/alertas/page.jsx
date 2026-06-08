@@ -997,7 +997,7 @@ function GrupoAlertasSheet({ grupo, open, onOpenChange, onVerAlerta }) {
 
           {alertas.length === 0 ? (
             <div className="rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground">
-              Nenhuma ocorrencia encontrada para esta maquina.
+              Nenhuma ocorrência encontrada para esta máquina.
             </div>
           ) : null}
         </div>
@@ -1033,7 +1033,7 @@ function AlertasTable({ data, onVerGrupo }) {
     {
       id: "recencia",
       accessorKey: "ultimaOcorrenciaEm",
-      header: "Ultima ocorrencia",
+      header: "Última ocorrência",
       cell: ({ row }) => (
         <div className="flex min-w-[120px] flex-col gap-1">
           <span className="text-sm text-muted-foreground">{tempoRelativo(row.original.ultimaOcorrenciaEm)}</span>
@@ -1045,7 +1045,7 @@ function AlertasTable({ data, onVerGrupo }) {
     },
     {
       accessorKey: "totalOcorrencias",
-      header: "Ocorrencias",
+      header: "Ocorrências",
       cell: ({ row }) => (
         <Badge variant="outline" className={`px-1.5 ${row.original.temRepetidos ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
           {Math.max(Number(row.original.totalOcorrencias) || 1, 1)}
@@ -1071,7 +1071,7 @@ function AlertasTable({ data, onVerGrupo }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" sideOffset={8} collisionPadding={{ top: 96, right: 16, bottom: 16, left: 16 }} className="z-[80] w-48">
               <DropdownMenuItem className="cursor-pointer" onSelect={() => runAfterCurrentOverlayCloses(() => onVerGrupo(grupo))}>
-                <EyeIcon className="mr-1 size-4" /> Ver ocorrencias
+                <EyeIcon className="mr-1 size-4" /> Ver ocorrências
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1098,7 +1098,7 @@ function AlertasTable({ data, onVerGrupo }) {
           ))
         ) : (
           <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
-            Nenhuma maquina com alertas encontrada.
+            Nenhuma máquina com alertas encontrada.
           </div>
         )}
       </div>
@@ -1128,7 +1128,7 @@ function AlertasTable({ data, onVerGrupo }) {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  Nenhuma maquina com alertas encontrada.
+                  Nenhuma máquina com alertas encontrada.
                 </TableCell>
               </TableRow>
             )}

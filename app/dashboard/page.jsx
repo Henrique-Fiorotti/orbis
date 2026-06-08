@@ -1087,7 +1087,7 @@ function TechnicianDashboard() {
             <>
               <SheetHeader className="shrink-0">
                 <SheetTitle>Detalhes do alerta</SheetTitle>
-                <SheetDescription>Informacoes completas do alerta.</SheetDescription>
+                <SheetDescription>Informações completas do alerta.</SheetDescription>
               </SheetHeader>
 
               <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
@@ -1110,7 +1110,7 @@ function TechnicianDashboard() {
                         rows={5}
                         onChange={(event) => setRelatoManutencao(event.target.value)}
                         disabled={atendimentoActionPending || salvando}
-                        placeholder="Descreva o diagnostico, ajustes realizados e proximos cuidados."
+                        placeholder="Descreva o diagnóstico, ajustes realizados e próximos cuidados."
                         className="mt-3 min-h-[132px] w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30 dark:disabled:bg-input/80"
                       />
                       <div className="mt-3 flex justify-end">
