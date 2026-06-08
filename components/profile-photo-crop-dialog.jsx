@@ -154,13 +154,32 @@ export function ProfilePhotoCropDialog({
         <div className="grid min-h-0 overflow-y-auto md:grid-cols-[220px_minmax(0,1fr)]">
           <div className="flex flex-col items-center justify-center gap-3 border-b bg-muted/20 px-5 py-6 md:border-b-0 md:border-r">
             <div className="relative">
-              <div className="relative size-36 overflow-hidden rounded-full border bg-muted sm:size-40">
+              <div
+                className="relative size-36 overflow-hidden rounded-full border bg-muted select-none sm:size-40"
+                onContextMenu={(event) => event.preventDefault()}
+                onPointerDown={(event) => event.preventDefault()}
+                style={{
+                  WebkitTouchCallout: "none",
+                  WebkitUserSelect: "none",
+                  userSelect: "none",
+                }}
+              >
                 {displaySrc ? (
                   <img
                     src={displaySrc}
                     alt={name ? `Prévia da foto de ${name}` : "Prévia da foto de perfil"}
-                    className="size-full object-cover"
-                    style={previewUrl ? { objectPosition: `${positionX}% ${positionY}%` } : undefined}
+                    draggable={false}
+                    className="pointer-events-none size-full select-none object-cover"
+                    onContextMenu={(event) => event.preventDefault()}
+                    onDragStart={(event) => event.preventDefault()}
+                    onPointerDown={(event) => event.preventDefault()}
+                    style={{
+                      objectPosition: previewUrl ? `${positionX}% ${positionY}%` : undefined,
+                      WebkitTouchCallout: "none",
+                      WebkitUserDrag: "none",
+                      WebkitUserSelect: "none",
+                      userSelect: "none",
+                    }}
                   />
                 ) : (
                   <Avatar className="size-full! text-4xl font-bold">
