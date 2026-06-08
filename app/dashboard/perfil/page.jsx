@@ -778,7 +778,7 @@ export default function PerfilPage() {
     <>
       <SiteHeader />
 
-      <div className="flex flex-col gap-6 p-4 sm:p-6 w-full">
+      <div className="profile-scrollbar-hidden flex flex-col gap-6 p-4 sm:p-6 w-full">
         <div>
           <h1 className="text-xl font-semibold">Meu Perfil</h1>
           <p className="text-sm text-muted-foreground">
