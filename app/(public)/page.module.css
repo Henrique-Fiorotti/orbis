@@ -163,7 +163,7 @@
   bottom: var(--hero-light-bottom);
   left: 50%;
   z-index: 0;
-  width: var(--hero-light-width);
+  width: calc(var(--hero-light-width) - 45px);
   height: var(--hero-light-height);
   pointer-events: none;
   transform: translateX(-50%);

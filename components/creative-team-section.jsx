@@ -85,10 +85,10 @@ const TEAM_MEMBERS = [
     initials: "MA",
     cardClass: "bg-[#7C3AED] dark:bg-[#7C3AED]",
     links: {
-      linkedin: "",
-      github: "",
-      instagram: "",
-      email: "",
+      linkedin: "https://www.linkedin.com/in/henrique-berdoldi-fiorotti?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
+      github: "https://github.com/Henrique-Fiorotti",
+      instagram: "https://instagram.com/whytezx",
+      email: "hberdoldifiorotti@gmail.com",
     },
     avatarClass: "from-[#5E17EB] to-violet-500",
   },
@@ -159,8 +159,16 @@ function TeamMemberCard({ member }) {
 
 export default function CreativeTeamSection() {
   return (
-    <section className="bg-transparent px-[8vw] py-20 text-[var(--landing-heading)] transition-colors max-[640px]:px-[6vw]">
-      <div className="mx-auto max-w-[1100px]">
+    <section className="relative isolate overflow-hidden bg-transparent px-[8vw] py-20 text-[var(--landing-heading)] transition-colors max-[640px]:px-[6vw]">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-[-52px] left-1/2 z-0 h-52 w-[min(980px,94vw)] -translate-x-1/2 rounded-full blur-3xl"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(124, 58, 237, 0.58) 0%, rgba(124, 58, 237, 0.3) 40%, transparent 78%)",
+        }}
+      />
+      <div className="relative z-10 mx-auto max-w-[1100px]">
         <div className="mx-auto max-w-4xl text-center">
           <span className="inline-flex rounded-full border border-[var(--landing-secondary-border)] bg-[var(--landing-feature-bg)] px-3 py-1 text-sm text-[var(--landing-heading)] shadow-sm">
             Equipe
