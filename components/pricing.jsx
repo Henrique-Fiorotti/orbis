@@ -11,7 +11,7 @@ const Pricing = () => {
   const { pricing } = copy;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-transparent px-[8vw] py-12 text-zinc-950 transition-colors max-[640px]:px-[6vw] dark:text-zinc-50">
+    <div className="flex flex-col items-center bg-transparent px-[8vw] pb-20 pt-12 text-zinc-950 transition-colors max-[640px]:px-[6vw] dark:text-zinc-50">
       <h2 className="text-center text-3xl! font-semibold tracking-[-0.03em] sm:text-4xl!">
         {pricing.titleBefore} <span style={{ color: "var(--landing-accent-strong, #5E17EB)" }}>{pricing.titleHighlight}</span>
       </h2>
