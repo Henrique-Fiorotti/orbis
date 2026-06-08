@@ -13,7 +13,6 @@ import HorizontalFinalQuote from "@/components/landing/horizontal-final-quote";
 import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
 import Pricing from "@/components/pricing";
-import { Separator } from "@/components/ui/separator";
 import SobreInformativo from "@/components/sobre-informativo";
 import SAQ from "@/components/saq";
 import SlideOpacity from "@/components/carousel-10";
@@ -158,7 +157,6 @@ export default function HomePage() {
             backgroundImage:
               "radial-gradient(circle, var(--landing-grid-dot) 1px, transparent 1px)",
             backgroundSize: "53px 36px",
-            zIndex: 0,
             opacity: "var(--landing-grid-opacity)",
           }}
         />
@@ -320,11 +318,11 @@ export default function HomePage() {
             <SlideOpacity items={home.features} />
           </RevealOnScroll>
         </div>
-      </section >
+      </section>
 
 
       {/* Mostando o Dashboard */}
-      < section
+      <section
         style={{
           background: "var(--landing-alt-bg)",
           transition: "background-color 0.25s ease",
@@ -335,10 +333,10 @@ export default function HomePage() {
         <RevealOnScroll>
           <HeroDashboard />
         </RevealOnScroll>
-      </section >
+      </section>
 
       {/* Como Funciona */}
-      < section
+      <section
         className={`${styles.processSection} ${styles.gridBackgroundSection}`}
       >
         <div className={styles.processInner}>
@@ -387,7 +385,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section >
+      </section>
 
       {/* Planos */}
       <div id="planos" className={styles.gridBackgroundSection}>
@@ -407,7 +405,7 @@ export default function HomePage() {
         </RevealOnScroll>
       </section>
 
-    </div >
+    </div>
 
   );
 }

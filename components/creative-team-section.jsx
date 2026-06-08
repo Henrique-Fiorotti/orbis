@@ -15,7 +15,7 @@ const TEAM_MEMBERS = [
     initials: "CF",
     cardClass: "bg-[#5E17EB] dark:bg-[#5E17EB]",
     links: {
-      linkedin: "https://linkedin.com/in/usuario",
+      linkedin: "",
       github: "https://github.com/Kcaio28",
       instagram: "https://instagram.com/kcaioferrer",
       email: "carioferrer4@gmail.com",
@@ -59,7 +59,7 @@ const TEAM_MEMBERS = [
     links: {
       linkedin: "https://www.linkedin.com/in/gustavopereiracagega",
       github: "https://github.com/gpc186",
-      instagram: "https://instagram.com/usuario",
+      instagram: "",
       email: "gustavopereira010806@gmail.com",
     },
     avatarClass: "from-[#5E17EB] to-violet-500",
@@ -85,10 +85,10 @@ const TEAM_MEMBERS = [
     initials: "MA",
     cardClass: "bg-[#7C3AED] dark:bg-[#7C3AED]",
     links: {
-      linkedin: "https://linkedin.com/in/usuario",
-      github: "https://github.com/usuario",
-      instagram: "https://instagram.com/usuario",
-      email: "mailto:email@exemplo.com",
+      linkedin: "",
+      github: "",
+      instagram: "",
+      email: "",
     },
     avatarClass: "from-[#5E17EB] to-violet-500",
   },
@@ -102,6 +102,10 @@ const SOCIAL_LINKS = [
 ]
 
 function TeamMemberCard({ member }) {
+  const visibleLinks = SOCIAL_LINKS
+    .map((link) => ({ ...link, href: member.links?.[link.key] }))
+    .filter((link) => Boolean(link.href))
+
   return (
     <article
       className={`group relative flex min-h-[224px] select-none flex-col items-center justify-end rounded-[30px] px-4 pb-6 pt-20 text-center shadow-[0_18px_40px_rgba(94,23,235,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_54px_rgba(94,23,235,0.26)] ${member.cardClass}`}
@@ -129,24 +133,26 @@ function TeamMemberCard({ member }) {
       <h3 className="select-none text-base font-semibold text-white">{member.name}</h3>
       <p className="select-none mt-2 text-sm text-zinc-200">{member.role}</p>
 
-      <div className="mt-7 flex items-center justify-center gap-3">
-        {SOCIAL_LINKS.map(({ key, icon: Icon, label }) => (
-          <a
-            key={key}
-            href={
-              key === "email"
-                ? `mailto:${member.links?.[key]}`
-                : member.links?.[key] || "#contact"
-            }
-            target={key === "email" ? undefined : "_blank"}
-            rel={key === "email" ? undefined : "noreferrer"}
-            aria-label={`${label} de ${member.name}`}
-            className="inline-flex size-7 items-center justify-center rounded-full text-white transition duration-300 hover:-translate-y-1 hover:scale-110 hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-purple-400/35"
-          >
-            <Icon className="size-4" />
-          </a>
-        ))}
-      </div>
+      {visibleLinks.length > 0 && (
+        <div className="mt-7 flex items-center justify-center gap-3">
+          {visibleLinks.map(({ key, icon: Icon, label, href }) => {
+            const linkHref = key === "email" && !href.startsWith("mailto:") ? `mailto:${href}` : href
+
+            return (
+              <a
+                key={key}
+                href={linkHref}
+                target={key === "email" ? undefined : "_blank"}
+                rel={key === "email" ? undefined : "noreferrer"}
+                aria-label={`${label} de ${member.name}`}
+                className="inline-flex size-7 items-center justify-center rounded-full text-white transition duration-300 hover:-translate-y-1 hover:scale-110 hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-purple-400/35"
+              >
+                <Icon className="size-4" />
+              </a>
+            )
+          })}
+        </div>
+      )}
     </article>
   )
 }

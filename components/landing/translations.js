@@ -133,7 +133,7 @@ export const LANDING_COPY = {
           delay: 240,
         },
         {
-          icon: "/accessibility.png", /* Falta por o icone de acessibilidade */
+          icon: "/accessibility.png",
           title: "Acessibilidade total",
           desc: "Interface adaptada para todos os perfis de usuário, com suporte a leitores de tela e navegação por teclado.",
           delay: 320,

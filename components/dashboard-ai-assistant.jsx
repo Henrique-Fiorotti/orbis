@@ -2285,7 +2285,7 @@ export function DashboardAiAssistant() {
                 size="icon-sm"
                 className="cursor-pointer p-0!"
                 onClick={() => setHistorySidebarOpen(false)}
-                aria-label="Fechar historico"
+                aria-label="Fechar histórico"
               >
                 <XIcon className="size-4" />
               </Button>
@@ -2385,7 +2385,7 @@ export function DashboardAiAssistant() {
                 size="icon-sm"
                 className="cursor-pointer p-0! hover:bg-muted"
                 onClick={() => setHistorySidebarOpen((current) => !current)}
-                aria-label={historySidebarOpen ? "Ocultar historico" : "Mostrar historico"}
+                aria-label={historySidebarOpen ? "Ocultar histórico" : "Mostrar histórico"}
                 aria-expanded={historySidebarOpen}
               >
                 <PanelLeftIcon className="size-4" />

@@ -57,7 +57,7 @@ const ADMIN_TOUR_STEPS = [
     target: "#tour-charts-secondary",
     title: "Setores e status",
     description:
-      "O radar mostra a integridade por setor. As barras mostram o historico de status das maquinas.",
+      "O radar mostra a integridade por setor. As barras mostram o histórico de status das máquinas.",
     side: "top",
     align: "center",
   },

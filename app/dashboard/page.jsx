@@ -748,7 +748,7 @@ function TechnicianDashboard() {
 
     if (!session?.accessToken) {
       setHistoricoStatus("error")
-      setHistoricoMensagem("Faca login para carregar o historico de manutencao.")
+      setHistoricoMensagem("Faça login para carregar o histórico de manutenção.")
       return
     }
 
@@ -777,7 +777,7 @@ function TechnicianDashboard() {
       }
 
       setHistoricoStatus("error")
-      setHistoricoMensagem(error instanceof Error ? error.message : "Nao foi possivel carregar o historico de manutencao.")
+      setHistoricoMensagem(error instanceof Error ? error.message : "Não foi possível carregar o histórico de manutenção.")
     }
   }
 
@@ -819,9 +819,9 @@ function TechnicianDashboard() {
             }
           : current
       )
-      toast.success("Manutencao iniciada.")
+      toast.success("Manutenção iniciada.")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel iniciar a manutencao.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível iniciar a manutenção.")
     } finally {
       setStartingAlertId(null)
     }
@@ -829,7 +829,7 @@ function TechnicianDashboard() {
 
   async function salvarRelatoAtendimento(alerta) {
     if (!podeConcluirAtendimento(alerta)) {
-      toast.error("Esta manutencao nao esta vinculada ao seu usuario.")
+      toast.error("Esta manutenção não está vinculada ao seu usuário.")
       return
     }
 
@@ -843,7 +843,7 @@ function TechnicianDashboard() {
       await registrarRelatoAtendimento(alerta.id, relatoManutencaoTexto)
       toast.success("Relato registrado.")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel registrar o relato.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível registrar o relato.")
     } finally {
       setSavingReportId(null)
     }
@@ -851,7 +851,7 @@ function TechnicianDashboard() {
 
   async function concluirAtendimento(alerta) {
     if (!podeConcluirAtendimento(alerta)) {
-      toast.error("Esta manutencao nao esta vinculada ao seu usuario.")
+      toast.error("Esta manutenção não está vinculada ao seu usuário.")
       return
     }
 
@@ -865,9 +865,9 @@ function TechnicianDashboard() {
       await atualizarStatus(alerta.id, "RESOLVIDO", { observacao: relatoManutencaoTexto })
       setAtendimentosIniciados((current) => new Set(current).add(alerta.id))
       setAlertaSelecionado(null)
-      toast.success("Manutencao concluida.")
+      toast.success("Manutenção concluída.")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel concluir a manutencao.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível concluir a manutenção.")
     } finally {
       setCompletingAlertId(null)
     }
@@ -1099,7 +1099,7 @@ function TechnicianDashboard() {
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <label htmlFor="relato-manutencao" className="inline-flex items-center gap-2 text-sm font-semibold text-[#3B2867] dark:text-white">
                           <FileTextIcon className="size-4 text-[#5E17EB]" />
-                          Relato da manutencao do alerta
+                          Relato da manutenção do alerta
                         </label>
                         <span className="text-xs tabular-nums text-muted-foreground">{relatoManutencao.length}/500</span>
                       </div>
@@ -1139,7 +1139,7 @@ function TechnicianDashboard() {
                     disabled={atendimentoActionPending || salvando}
                   >
                     {startingAlertId === alertaSelecionado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
-                    Iniciar manutencao
+                    Iniciar manutenção
                   </Button>
                 ) : podeConcluirAtendimento(alertaSelecionado) ? (
                   <Button
@@ -1148,11 +1148,11 @@ function TechnicianDashboard() {
                     disabled={atendimentoActionPending || salvando}
                   >
                     {completingAlertId === alertaSelecionado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <CheckCircle2Icon className="mr-1 size-4" />}
-                    Concluir manutencao
+                    Concluir manutenção
                   </Button>
                 ) : (
                   <Button className="w-full" disabled>
-                    {alertaSelecionado.status === "RESOLVIDO" ? "Manutencao concluida" : "Manutencao em andamento"}
+                    {alertaSelecionado.status === "RESOLVIDO" ? "Manutenção concluída" : "Manutenção em andamento"}
                   </Button>
                 )}
                 <Button
@@ -1165,7 +1165,7 @@ function TechnicianDashboard() {
                   <span className="flex min-w-0 items-center gap-2">
                     <HistoryIcon className="size-4 shrink-0 text-[#3B2867] dark:text-white" />
                     <span className="min-w-0">
-                      <span className="block text-sm font-medium">Historico de Manutencao</span>
+                      <span className="block text-sm font-medium">Histórico de Manutenção</span>
                       <span className="block truncate text-xs text-muted-foreground">Abrir cronofluxo de eventos</span>
                     </span>
                   </span>
@@ -1201,7 +1201,7 @@ function TechnicianDashboard() {
                   <ArrowLeftIcon className="size-4" />
                 </Button>
                 <div className="min-w-0">
-                  <SheetTitle>Historico de Manutencao</SheetTitle>
+                  <SheetTitle>Histórico de Manutenção</SheetTitle>
                   <SheetDescription>Eventos registrados para este alerta.</SheetDescription>
                 </div>
               </div>

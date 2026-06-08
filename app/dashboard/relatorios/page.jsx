@@ -65,7 +65,7 @@ const PERIOD_OPTIONS = [
 const SECTION_OPTIONS = [
   { id: "resumo", label: "Visao geral" },
   { id: "indicadores", label: "Indicadores" },
-  { id: "maquinas", label: "Inventario" },
+  { id: "maquinas", label: "Inventário" },
   { id: "chamados", label: "Chamados" },
 ]
 
@@ -142,10 +142,10 @@ function getEmailDataWindow(frequencia) {
   }
 
   if (frequencia === "mensal") {
-    return { tipo: "mensal", label: "Mes atual", periodo: "30d", periodoDias: 30 }
+    return { tipo: "mensal", label: "Mês atual", periodo: "30d", periodoDias: 30 }
   }
 
-  return { tipo: "semanal", label: "Ultimos 7 dias", periodo: "7d", periodoDias: 7 }
+  return { tipo: "semanal", label: "Últimos 7 dias", periodo: "7d", periodoDias: 7 }
 }
 
 function getWeekdayLabel(value) {
@@ -505,8 +505,8 @@ function buildReportPayload({ tipoRelatorio, maquinaId, periodo, secoes }) {
   const periodoLabel = getPeriodLabel(periodo)
 
   return {
-    nome: isMaquina ? "Relatorio de Maquina" : "Relatorio Operacional",
-    assunto: `Relatorio dos ultimos ${periodoDias} dias`,
+    nome: isMaquina ? "Relatório de Máquina" : "Relatório Operacional",
+    assunto: `Relatório dos últimos ${periodoDias} dias`,
     periodo: {
       tipo: "RELATIVE_DAYS",
       valor: periodoDias,
@@ -867,7 +867,7 @@ function EmailMetric({ label, value, sub }) {
   )
 }
 
-function SummaryTable({ rows, emptyMessage = "Sem dados disponiveis" }) {
+function SummaryTable({ rows, emptyMessage = "Sem dados disponíveis" }) {
   if (rows.length === 0) {
     return <Estado msg={emptyMessage} />
   }
@@ -1094,7 +1094,7 @@ function EmailAutomationPanelLegacy({
         {frequencia === "mensal" && (
           <Select value={diaMes} onValueChange={onDiaMesChange}>
             <SelectTrigger className="h-9 w-full">
-              <SelectValue placeholder="Dia do mes" />
+              <SelectValue placeholder="Dia do mês" />
             </SelectTrigger>
             <SelectContent>
               {MONTH_DAY_OPTIONS.map((option) => (
@@ -1131,7 +1131,7 @@ function EmailAutomationPanelLegacy({
       <div className="mt-3 rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
         Proximo envio: {frequencyLabel}
         {frequencia === "semanal" ? `, ${getWeekdayLabel(diaSemana)}` : ""}
-        {frequencia === "mensal" ? `, dia ${diaMes}` : ""} as {horario || "08:00"}. Periodo do relatorio: {reportPeriodLabel}. O relatorio usara os filtros configurados acima.
+        {frequencia === "mensal" ? `, dia ${diaMes}` : ""} às {horario || "08:00"}. Período do relatório: {reportPeriodLabel}. O relatório usará os filtros configurados acima.
       </div>
     </div>
   )
@@ -1163,7 +1163,7 @@ function EmailAutomationPanel({
   const [open, setOpen] = React.useState(false)
   const [scheduleOpen, setScheduleOpen] = React.useState(false)
   const hasDestinatarios = destinatarios.trim().length > 0
-  const frequencyLabel = selectedFrequency?.label ?? "Recorrencia"
+  const frequencyLabel = selectedFrequency?.label ?? "Recorrência"
 
   return (
     <div className="print:hidden rounded-xl border bg-card shadow-sm">
@@ -1222,7 +1222,7 @@ function EmailAutomationPanel({
                 <Input
                   value={nome}
                   onChange={(event) => onNomeChange(event.target.value)}
-                  placeholder="Nome do relatorio"
+                  placeholder="Nome do relatório"
                   className="h-9"
                 />
 
@@ -1236,7 +1236,7 @@ function EmailAutomationPanel({
                 <div className="grid grid-cols-2 gap-2">
                   <Select value={frequencia} onValueChange={onFrequenciaChange}>
                     <SelectTrigger className="h-9 w-full">
-                      <SelectValue placeholder="Periodo" />
+                      <SelectValue placeholder="Período" />
                     </SelectTrigger>
                     <SelectContent>
                       {EMAIL_FREQUENCY_OPTIONS.map((option) => (
@@ -1273,7 +1273,7 @@ function EmailAutomationPanel({
                 {frequencia === "mensal" && (
                   <Select value={diaMes} onValueChange={onDiaMesChange}>
                     <SelectTrigger className="h-9 w-full">
-                      <SelectValue placeholder="Dia do mes" />
+                      <SelectValue placeholder="Dia do mês" />
                     </SelectTrigger>
                     <SelectContent>
                       {MONTH_DAY_OPTIONS.map((option) => (
@@ -1288,7 +1288,7 @@ function EmailAutomationPanel({
                 <div className="rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
                   Proximo envio: {frequencyLabel}
                   {frequencia === "semanal" ? `, ${getWeekdayLabel(diaSemana)}` : ""}
-                  {frequencia === "mensal" ? `, dia ${diaMes}` : ""} as {horario || "08:00"}. Dados do relatorio: {reportPeriodLabel}.
+                  {frequencia === "mensal" ? `, dia ${diaMes}` : ""} às {horario || "08:00"}. Dados do relatório: {reportPeriodLabel}.
                 </div>
 
                 <Button
@@ -1415,14 +1415,14 @@ function ChamadosTable({ chamados }) {
 
 function ChamadosReportTable({ chamados }) {
   if (chamados.length === 0) {
-    return <Estado msg="Nenhum chamado no periodo" />
+    return <Estado msg="Nenhum chamado no período" />
   }
 
   return (
     <table className="w-full min-w-[760px] text-xs print:min-w-0">
       <thead>
         <tr className="border-b border-stone-200 bg-stone-50 text-left print:bg-stone-100">
-          <th className="px-3 py-2.5 font-semibold text-stone-600">Maquina</th>
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Máquina</th>
           <th className="px-3 py-2.5 font-semibold text-stone-600">Tipo</th>
           <th className="px-3 py-2.5 font-semibold text-stone-600">Severidade</th>
           <th className="px-3 py-2.5 font-semibold text-stone-600">Status</th>
@@ -1460,7 +1460,7 @@ function MaquinasEmailTable({ maquinas }) {
     <table className="w-full min-w-[720px] text-xs print:min-w-0">
       <thead>
         <tr className="border-b border-stone-200 bg-stone-50 text-left print:bg-stone-100">
-          <th className="px-3 py-2.5 font-semibold text-stone-600">Maquina</th>
+          <th className="px-3 py-2.5 font-semibold text-stone-600">Máquina</th>
           <th className="px-3 py-2.5 font-semibold text-stone-600">Setor</th>
           <th className="px-3 py-2.5 font-semibold text-stone-600">Tipo</th>
           <th className="px-3 py-2.5 font-semibold text-stone-600">Importancia</th>
@@ -1509,7 +1509,7 @@ function RelatorioOperacional({
   const alertas = relatorio?.alertas ?? relatorio?.chamados ?? []
   const reportPeriodLabel = relatorio?.periodoLabel ?? periodoLabel
   const isMaquina = tipoRelatorio === "maquina"
-  const escopoLabel = isMaquina ? selectedMaquina?.nome ?? "Maquina especifica" : "Completo"
+  const escopoLabel = isMaquina ? selectedMaquina?.nome ?? "Máquina específica" : "Completo"
   const integridadeMedia = Math.round(resumo.integridadeMedia)
   const statusLabel = isLoading
     ? "Carregando"
@@ -1533,8 +1533,8 @@ function RelatorioOperacional({
     <ReportPreviewPage>
       <div className="mx-auto max-w-[680px] border border-stone-200 bg-white print:max-w-none print:border-stone-300">
         <ReportHeader
-          title="Relatorio Operacional"
-          meta={[`Gerado em ${geradoEm}`, `Periodo: ${reportPeriodLabel}`, `Escopo: ${escopoLabel}`]}
+          title="Relatório Operacional"
+          meta={[`Gerado em ${geradoEm}`, `Período: ${reportPeriodLabel}`, `Escopo: ${escopoLabel}`]}
           statusLabel={statusLabel}
           statusSub={isLoading ? "Aguardando dados do backend" : `Integridade media: ${integridadeMedia}%`}
         />
@@ -1555,8 +1555,8 @@ function RelatorioOperacional({
                 </div>
               ) : (
                 <div className="mt-3 grid grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
-                  <EmailMetric label="Maquinas ativas" value={resumo.totalMaquinas} sub={`${resumo.maquinasFuncionando} OK - ${resumo.maquinasEmAlerta} Em alerta`} />
-                  <EmailMetric label="Alta importancia" value={resumo.maquinasAltaImportancia} sub="Maquinas criticas" />
+                  <EmailMetric label="Máquinas ativas" value={resumo.totalMaquinas} sub={`${resumo.maquinasFuncionando} OK - ${resumo.maquinasEmAlerta} Em alerta`} />
+                  <EmailMetric label="Alta importância" value={resumo.maquinasAltaImportancia} sub="Máquinas críticas" />
                   <EmailMetric label="Integridade media" value={`${integridadeMedia}%`} sub="Media de toda a frota" />
                   <EmailMetric label="Chamados abertos" value={resumo.alertasAtivos} sub={`${resumo.alertasAtendidosHoje} atendidos hoje`} />
                 </div>
@@ -1588,7 +1588,7 @@ function RelatorioOperacional({
                   <EmailMetric label="Alertas hoje" value={resumo.alertasHoje} sub="Novos chamados hoje" />
                   <EmailMetric label="Sem atendimento" value={resumo.alertaSemAtendimento} sub="Chamados sem resposta" />
                   <EmailMetric label="Sensores online" value={resumo.sensoresOnline} sub="Sensores ativos" />
-                  <EmailMetric label="Tecnicos ativos" value={resumo.tecnicosAtivos} sub="Disponiveis agora" />
+                  <EmailMetric label="Técnicos ativos" value={resumo.tecnicosAtivos} sub="Disponíveis agora" />
                 </div>
               )}
             </div>
@@ -1596,18 +1596,18 @@ function RelatorioOperacional({
 
           {secoes.maquinas && (
             <div className="report-print-table-section mb-6 print:mb-4">
-              <SectionTitle>Inventario de Maquinas</SectionTitle>
+              <SectionTitle>Inventário de Máquinas</SectionTitle>
               <div className="report-print-table-shell mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
                 {isLoading ? (
-                  <Estado msg="Carregando maquinas..." />
+                  <Estado msg="Carregando máquinas..." />
                 ) : maquinasVisiveis.length === 0 ? (
-                  <Estado msg="Nenhuma maquina no relatorio" />
+                  <Estado msg="Nenhuma máquina no relatório" />
                 ) : (
                   <>
                     <MaquinasEmailTable maquinas={maquinasVisiveis} />
                     {maquinas.length > maquinasVisiveis.length && (
                       <p className="mb-0 border-t border-stone-200 bg-stone-50 px-3 py-2 text-center text-xs text-stone-500">
-                        + {maquinas.length - maquinasVisiveis.length} maquinas nao exibidas. Acesse o dashboard para ver a lista completa.
+                        + {maquinas.length - maquinasVisiveis.length} máquinas não exibidas. Acesse o dashboard para ver a lista completa.
                       </p>
                     )}
                   </>
@@ -1618,18 +1618,18 @@ function RelatorioOperacional({
 
           {secoes.chamados && (
             <div className="report-print-table-section mb-6 print:mb-4">
-              <SectionTitle>Chamados Tecnicos</SectionTitle>
+              <SectionTitle>Chamados Técnicos</SectionTitle>
               <div className="report-print-table-shell mt-3 overflow-x-auto border border-stone-200 print:overflow-visible print:border-stone-300">
                 {isLoading ? (
                   <Estado msg="Carregando chamados..." />
                 ) : alertasVisiveis.length === 0 ? (
-                  <Estado msg="Nenhum chamado no periodo selecionado." />
+                  <Estado msg="Nenhum chamado no período selecionado." />
                 ) : (
                   <>
                     <ChamadosReportTable chamados={alertasVisiveis} />
                     {alertas.length > alertasVisiveis.length && (
                       <p className="mb-0 border-t border-stone-200 bg-stone-50 px-3 py-2 text-center text-xs text-stone-500">
-                        + {alertas.length - alertasVisiveis.length} chamados nao exibidos. Acesse o dashboard para ver todos.
+                        + {alertas.length - alertasVisiveis.length} chamados não exibidos. Acesse o dashboard para ver todos.
                       </p>
                     )}
                   </>
@@ -1639,7 +1639,7 @@ function RelatorioOperacional({
           )}
 
           <div className="report-print-section border-t border-stone-200 bg-stone-50 px-4 py-3 text-xs text-stone-500 print:border-stone-300">
-            Este relatorio foi gerado automaticamente pelo sistema Orbis.
+            Este relatório foi gerado automaticamente pelo sistema Orbis.
           </div>
         </div>
       </div>
@@ -1685,8 +1685,8 @@ export default function RelatoriosPage() {
   const [periodo, setPeriodo] = React.useState("30d")
   const [secoes, setSecoes] = React.useState(DEFAULT_SECTIONS)
   const [refreshError, setRefreshError] = React.useState(null)
-  const [emailNome, setEmailNome] = React.useState("Relatorio Operacional")
-  const [emailAssunto, setEmailAssunto] = React.useState("Relatorio Operacional Orbis")
+  const [emailNome, setEmailNome] = React.useState("Relatório Operacional")
+  const [emailAssunto, setEmailAssunto] = React.useState("Relatório Operacional Orbis")
   const [emailDestinatarios, setEmailDestinatarios] = React.useState("")
   const [emailFrequencia, setEmailFrequencia] = React.useState("semanal")
   const [emailHorario, setEmailHorario] = React.useState("08:00")
@@ -1717,7 +1717,7 @@ export default function RelatoriosPage() {
       : loadingMaquinas || loadingSensores || loadingAlertas || loadingTecnicos
         ? "loading"
         : "success"
-  const relatorioMensagem = tipoRelatorio === "maquina" && !selectedMaquina ? "Selecione uma maquina para gerar o relatorio." : ""
+  const relatorioMensagem = tipoRelatorio === "maquina" && !selectedMaquina ? "Selecione uma máquina para gerar o relatório." : ""
   const relatorio = React.useMemo(
     () =>
       buildRealtimeReport({
@@ -1838,15 +1838,15 @@ export default function RelatoriosPage() {
     if (payload.emailsDestino.length === 0) return "Informe pelo menos um destinatario."
     if (payload.emailsDestino.length > 10) return "Informe no maximo 10 destinatarios."
     if (!payload.emailsDestino.every((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) return "Revise os e-mails informados."
-    if (tipoRelatorio === "maquina" && payload.filtros.maquinasIds.length === 0) return "Selecione a maquina do relatorio por e-mail."
+    if (tipoRelatorio === "maquina" && payload.filtros.maquinasIds.length === 0) return "Selecione a máquina do relatório por e-mail."
     if (!Number.isInteger(hora) || !Number.isInteger(minuto) || hora < 0 || hora > 23 || minuto < 0 || minuto > 59) return "Informe um horario valido."
 
     return ""
   }
 
   function limparFormularioEmail() {
-    setEmailNome("Relatorio Operacional")
-    setEmailAssunto("Relatorio Operacional Orbis")
+    setEmailNome("Relatório Operacional")
+    setEmailAssunto("Relatório Operacional Orbis")
     setEmailDestinatarios("")
     setEmailFrequencia("semanal")
     setEmailHorario("08:00")
@@ -1876,7 +1876,7 @@ export default function RelatoriosPage() {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      toast.error("Sua sessao expirou. Faca login novamente.")
+      toast.error("Sua sessão expirou. Faça login novamente.")
       return
     }
 
@@ -1916,11 +1916,11 @@ export default function RelatoriosPage() {
       const duplicate = await hasDuplicateSchedule(schedulePayload, session.accessToken)
 
       if (duplicate) {
-        toast.error("Ja existe um agendamento com estes mesmos dados.")
+      toast.error("Já existe um agendamento com estes mesmos dados.")
         return
       }
 
-      await requestDashboardJson("/relatorios/agendamentos", session.accessToken, "o agendamento do relatorio", {
+      await requestDashboardJson("/relatorios/agendamentos", session.accessToken, "o agendamento do relatório", {
         method: "POST",
         body: schedulePayload,
       })
@@ -1928,7 +1928,7 @@ export default function RelatoriosPage() {
       toast.success("Agendamento de e-mail criado.")
       limparFormularioEmail()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel salvar o agendamento.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível salvar o agendamento.")
     } finally {
       setSalvandoAgendamentoEmail(false)
     }
@@ -1950,7 +1950,7 @@ export default function RelatoriosPage() {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      toast.error("Sua sessao expirou. Faca login novamente.")
+      toast.error("Sua sessão expirou. Faça login novamente.")
       return
     }
 
@@ -1958,7 +1958,7 @@ export default function RelatoriosPage() {
     setEnviandoRelatorioEmail(true)
 
     try {
-      await requestDashboardJson("/relatorios/enviar-agora", session.accessToken, "o envio do relatorio", {
+      await requestDashboardJson("/relatorios/enviar-agora", session.accessToken, "o envio do relatório", {
         method: "POST",
         body: {
           emailsDestino: payload.emailsDestino,
@@ -1969,10 +1969,10 @@ export default function RelatoriosPage() {
         },
       })
 
-      toast.success(`Relatorio enviado para ${payload.emailsDestino.length} destinatario(s).`)
+      toast.success(`Relatório enviado para ${payload.emailsDestino.length} destinatário(s).`)
       limparFormularioEmail()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel enviar o relatorio.")
+      toast.error(error instanceof Error ? error.message : "Não foi possível enviar o relatório.")
     } finally {
       envioRelatorioEmailEmAndamentoRef.current = false
       setEnviandoRelatorioEmail(false)
