@@ -20,6 +20,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { clearAuthSession, getAuthSession, updateAuthSessionUser } from "@/lib/auth-session"
+import { ProfilePhotoCropDialog } from "@/components/profile-photo-crop-dialog"
 import { getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
 import { isValidBackendPassword, isValidEmail } from "@/lib/form-formatters"
 import { buildPerfilForm, buildPerfilUpdateBody } from "@/lib/profile-form.mjs"
@@ -292,6 +293,7 @@ export default function PerfilPage() {
   const [activeTab, setActiveTab] = React.useState("dados")
   const [atendimentoSelecionado, setAtendimentoSelecionado] = React.useState(null)
   const inputFotoRef = React.useRef(null)
+  const [fotoParaAjustar, setFotoParaAjustar] = React.useState(null)
   const [senhas, setSenhas] = React.useState({
     atual: "",
     emailDestino: "",
@@ -533,7 +535,7 @@ export default function PerfilPage() {
     }
   }
 
-  async function salvarFoto(event) {
+  function selecionarFoto(event) {
     const file = event.target.files?.[0]
     event.target.value = ""
 
@@ -551,6 +553,10 @@ export default function PerfilPage() {
       return
     }
 
+    setFotoParaAjustar(file)
+  }
+
+  async function enviarFoto(file) {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
@@ -568,6 +574,7 @@ export default function PerfilPage() {
         method: "PUT",
         body: formData,
       })
+
       const nextPerfil = normalizePerfil({ ...perfil, ...payload })
 
       setPerfil(nextPerfil)
@@ -575,6 +582,7 @@ export default function PerfilPage() {
       updateAuthSessionUser(nextPerfil)
       setStatus("success")
       setMensagem("")
+      setFotoParaAjustar(null)
       toast.success("Foto atualizada com sucesso!")
     } catch (error) {
       if (getHttpErrorStatus(error) === 401) {
@@ -764,7 +772,7 @@ export default function PerfilPage() {
               type="file"
               accept="image/png,image/jpg,image/jpeg,image/webp"
               className="hidden"
-              onChange={salvarFoto}
+              onChange={selecionarFoto}
             />
             <button
               type="button"
@@ -905,7 +913,7 @@ export default function PerfilPage() {
                     disabled={loading || salvandoDados}
                     onChange={(e) => setForm((p) => ({ ...p, telefone: e.target.value }))}
                   />
-                   <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {podeEditarIdentidade ? "Você pode alterar este dado." : "Alterado apenas pelo administrador."}
                   </p>
                 </div>
@@ -1289,6 +1297,12 @@ export default function PerfilPage() {
           </SheetContent>
         </Sheet>
       </div>
+      <ProfilePhotoCropDialog
+        file={fotoParaAjustar}
+        open={Boolean(fotoParaAjustar)}
+        onCancel={() => setFotoParaAjustar(null)}
+        onConfirm={enviarFoto}
+      />
     </>
   )
 }
