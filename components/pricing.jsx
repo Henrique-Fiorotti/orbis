@@ -21,13 +21,13 @@ const Pricing = () => {
       <div className="mx-auto mt-8! grid h-auto! w-full max-w-[1100px] grid-cols-1 gap-6 sm:mt-16 lg:grid-cols-2 lg:gap-8">
         {pricing.plans.map((plan) => (
           <div
-            className={`flex flex-col justify-between rounded-lg border bg-white p-6 transition-colors sm:p-8 lg:p-12 dark:bg-gray-900/70! dark:bg-[#111114] dark:border-white/10 ${plan.isPopular ? "border-1! border-[#5E17EB]! shadow-[0px_0px_38px_0px_rgba(94,23,235,0.3)]" : ""}`}
+            className={`flex flex-col justify-between rounded-[10px] border bg-white p-6 transition-colors sm:p-8 lg:p-12 dark:bg-gray-900/70! dark:bg-[#111114] dark:border-white/10 ${plan.isPopular ? "border-1! border-[#5E17EB]! shadow-[0px_0px_38px_0px_rgba(94,23,235,0.3)]" : ""}`}
             variant={plan.isPopular ? "default" : "outline"}
             key={plan.name}
           >
             <h3 className="text-lg font-medium">{plan.name}</h3>
             <h4
-              className={`${plan.isPopular ? "h-7 w-26 rounded-[15px] pt-1 text-center text-[11pt]! text-2xl font-bold!" : ""}`}
+              className={`${plan.isPopular ? "h-7 w-26 rounded-[8px] pt-1 text-center text-[11pt]! text-2xl font-bold!" : ""}`}
               style={
                 plan.isPopular
                   ? {

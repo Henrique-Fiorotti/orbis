@@ -1,24 +1,48 @@
 "use client";
 
 import * as React from "react";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+
+import { getMarqueeInertiaFrame, normalizeMarqueeOffset } from "@/lib/marquee-inertia.mjs";
+
+import styles from "./carousel-10.module.css";
 
 const MIN_LOOP_ITEMS = 12;
+const MARQUEE_GROUPS = [-1, 0, 1];
+
+function FeatureCard({ item }) {
+  return (
+    <div className={styles.card}>
+      <img
+        alt=""
+        className={styles.icon}
+        src={item.icon}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+      />
+      <p className={styles.title}>{item.title}</p>
+      <p className={styles.description}>{item.desc}</p>
+    </div>
+  );
+}
 
 export default function SlideOpacity({ items = [] }) {
-  const [api, setApi] = React.useState(null);
-  const [scrollProgress, setScrollProgress] = React.useState(0);
-  const [snapList, setSnapList] = React.useState([]);
-  const itemsSignature = React.useMemo(
-    () => items.map((item) => `${item.icon}-${item.title}-${item.desc}`).join("|"),
-    [items]
-  );
+  const shellRef = React.useRef(null);
+  const trackRef = React.useRef(null);
+  const dragStateRef = React.useRef({
+    lastTime: 0,
+    lastX: 0,
+    offset: 0,
+    pointerId: null,
+    startOffset: 0,
+    startX: 0,
+    velocity: 0,
+  });
+  const inertiaFrameRef = React.useRef(null);
+  const inertiaTimestampRef = React.useRef(0);
+  const loopWidthRef = React.useRef(0);
+  const centerScaleFrameRef = React.useRef(null);
+  const [isDragging, setIsDragging] = React.useState(false);
   const carouselItems = React.useMemo(() => {
     if (!items.length) return [];
 
@@ -31,94 +55,228 @@ export default function SlideOpacity({ items = [] }) {
     ).flat();
   }, [items]);
 
+  const setDragOffset = React.useCallback((offset) => {
+    const normalizedOffset = normalizeMarqueeOffset(offset, loopWidthRef.current);
+
+    dragStateRef.current.offset = normalizedOffset;
+    shellRef.current?.style.setProperty("--marquee-drag-offset", `${normalizedOffset}px`);
+  }, []);
+
+  const cancelInertia = React.useCallback(() => {
+    if (inertiaFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(inertiaFrameRef.current);
+    inertiaFrameRef.current = null;
+  }, []);
+
+  const runInertiaFrame = React.useCallback(
+    (timestamp) => {
+      const elapsedMs = inertiaTimestampRef.current ? timestamp - inertiaTimestampRef.current : 16;
+      inertiaTimestampRef.current = timestamp;
+
+      const nextFrame = getMarqueeInertiaFrame({
+        elapsedMs,
+        offset: dragStateRef.current.offset,
+        velocity: dragStateRef.current.velocity,
+      });
+
+      setDragOffset(nextFrame.offset);
+      dragStateRef.current.velocity = nextFrame.velocity;
+
+      if (nextFrame.done) {
+        inertiaFrameRef.current = null;
+        return;
+      }
+
+      inertiaFrameRef.current = window.requestAnimationFrame(runInertiaFrame);
+    },
+    [setDragOffset]
+  );
+
+  const startInertia = React.useCallback(() => {
+    cancelInertia();
+
+    if (Math.abs(dragStateRef.current.velocity) <= 0.025) {
+      return;
+    }
+
+    inertiaTimestampRef.current = 0;
+    inertiaFrameRef.current = window.requestAnimationFrame(runInertiaFrame);
+  }, [cancelInertia, runInertiaFrame]);
+
+  const measureLoopWidth = React.useCallback(() => {
+    const track = trackRef.current;
+
+    if (!track) {
+      return;
+    }
+
+    loopWidthRef.current = track.scrollWidth / MARQUEE_GROUPS.length;
+    setDragOffset(dragStateRef.current.offset);
+  }, [setDragOffset]);
+
+  const updateCenterScale = React.useCallback(() => {
+    const shell = shellRef.current;
+
+    if (!shell) {
+      return;
+    }
+
+    const shellRect = shell.getBoundingClientRect();
+    const shellCenter = shellRect.left + shellRect.width / 2;
+    const maxDistance = Math.max(shellRect.width / 2, 1);
+    const marqueeItems = shell.querySelectorAll(`.${styles.marqueeItem}`);
+
+    marqueeItems.forEach((item) => {
+      const itemRect = item.getBoundingClientRect();
+      const itemCenter = itemRect.left + itemRect.width / 2;
+      const distanceRatio = Math.min(Math.abs(shellCenter - itemCenter) / maxDistance, 1);
+      const prominence = 1 - distanceRatio;
+      const scale = 1 + prominence * 0.12;
+
+      item.style.setProperty("--center-card-scale", scale.toFixed(3));
+      item.style.setProperty("--center-card-depth", String(Math.round(prominence * 100)));
+    });
+
+    centerScaleFrameRef.current = window.requestAnimationFrame(updateCenterScale);
+  }, []);
+
+  const handlePointerDown = React.useCallback((event) => {
+    if (event.button !== undefined && event.button !== 0) {
+      return;
+    }
+
+    const shell = shellRef.current;
+
+    if (!shell) {
+      return;
+    }
+
+    event.preventDefault();
+    cancelInertia();
+    shell.setPointerCapture?.(event.pointerId);
+    dragStateRef.current.pointerId = event.pointerId;
+    dragStateRef.current.startX = event.clientX;
+    dragStateRef.current.startOffset = dragStateRef.current.offset;
+    dragStateRef.current.lastX = event.clientX;
+    dragStateRef.current.lastTime = event.timeStamp || performance.now();
+    dragStateRef.current.velocity = 0;
+    setIsDragging(true);
+  }, [cancelInertia]);
+
+  const handlePointerMove = React.useCallback(
+    (event) => {
+      const dragState = dragStateRef.current;
+
+      if (dragState.pointerId !== event.pointerId) {
+        return;
+      }
+
+      event.preventDefault();
+      const currentTime = event.timeStamp || performance.now();
+      const elapsedMs = Math.max(1, currentTime - dragState.lastTime);
+      const deltaX = event.clientX - dragState.lastX;
+
+      dragState.velocity = deltaX / elapsedMs;
+      dragState.lastX = event.clientX;
+      dragState.lastTime = currentTime;
+      setDragOffset(dragState.startOffset + event.clientX - dragState.startX);
+    },
+    [setDragOffset]
+  );
+
+  const finishPointerDrag = React.useCallback((event) => {
+    const dragState = dragStateRef.current;
+
+    if (dragState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const shell = shellRef.current;
+
+    if (shell?.hasPointerCapture?.(event.pointerId)) {
+      shell.releasePointerCapture(event.pointerId);
+    }
+
+    dragState.pointerId = null;
+    setIsDragging(false);
+    startInertia();
+  }, [startInertia]);
+
+  React.useEffect(() => cancelInertia, [cancelInertia]);
+
   React.useEffect(() => {
-    if (!api) return;
+    measureLoopWidth();
 
-    const onUpdate = () => {
-      setScrollProgress(api.scrollProgress());
-    };
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", measureLoopWidth);
 
-    setSnapList(api.scrollSnapList());
-    api.on("select", onUpdate);
-    api.on("scroll", onUpdate);
-    onUpdate();
+      return () => {
+        window.removeEventListener("resize", measureLoopWidth);
+      };
+    }
+
+    const observer = new ResizeObserver(measureLoopWidth);
+
+    if (trackRef.current) {
+      observer.observe(trackRef.current);
+    }
 
     return () => {
-      api.off("select", onUpdate);
-      api.off("scroll", onUpdate);
+      observer.disconnect();
     };
-  }, [api]);
+  }, [measureLoopWidth, carouselItems.length]);
 
   React.useEffect(() => {
-    if (!api) return;
+    centerScaleFrameRef.current = window.requestAnimationFrame(updateCenterScale);
 
-    api.reInit();
-    setSnapList(api.scrollSnapList());
-    setScrollProgress(api.scrollProgress());
-  }, [api, itemsSignature]);
+    return () => {
+      if (centerScaleFrameRef.current !== null) {
+        window.cancelAnimationFrame(centerScaleFrameRef.current);
+      }
+    };
+  }, [updateCenterScale, carouselItems.length]);
 
-  const getOpacity = (index) => {
-    if (!snapList.length) return 1;
-    const total = snapList.length;
+  if (!carouselItems.length) {
+    return null;
+  }
 
-    let dist = Math.abs(scrollProgress - snapList[index]) * total;
-    dist = Math.min(dist, total - dist);
-
-    if (dist <= 1) return 1;
-    const t = Math.min((dist - 1) / 1, 1);
-    return 1 - t * 0.65;
-  };
-
-  /* Para adicionar cards vá para translations.js */
+  /* Para adicionar cards va para translations.js */
 
   return (
-    <Carousel
-      className="relative w-full"
-      // Velocidade/comportamento do arraste: altere "dragFree" (true = livre, false = card a card) e "duration" (padrão ~25, quanto maior mais lento)
-      opts={{ align: "center", loop: true, dragFree: true, duration: 60 }}
-      setApi={setApi}
+    <div
+      ref={shellRef}
+      className={[styles.marqueeShell, isDragging ? styles.isDragging : ""].filter(Boolean).join(" ")}
+      role="region"
+      aria-label="Recursos Orbis"
+      aria-roledescription="carousel"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={finishPointerDrag}
+      onPointerCancel={finishPointerDrag}
     >
-      <div className="overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)]">
-        <CarouselContent className="-ml-4 cursor-grab active:cursor-grabbing">
-          {carouselItems.map((item, index) => (
-            <CarouselItem
-              className="basis-[82%] pl-4 sm:basis-1/2 lg:basis-1/4"
-              style={{
-                opacity: getOpacity(index),
-                transition: "opacity 0.12s ease",
-              }}
-              key={item.carouselKey}
-            >
+      <div className={styles.marqueeTrack} ref={trackRef}>
+        {MARQUEE_GROUPS.map((groupIndex) => (
+          <div
+            className={styles.marqueeGroup}
+            aria-hidden={groupIndex === 0 ? undefined : "true"}
+            key={groupIndex}
+          >
+            {carouselItems.map((item) => (
               <div
-                className="select-none h-[190px] rounded-3xl border border-[var(--landing-feature-border)] bg-[var(--landing-feature-bg)] p-5 shadow-sm transition hover:border-[#7c3aed]"
-                style={{ boxShadow: "var(--landing-feature-shadow)" }}
+                className={styles.marqueeItem}
+                role={groupIndex === 0 ? "group" : undefined}
+                aria-roledescription={groupIndex === 0 ? "slide" : undefined}
+                key={`${groupIndex}-${item.carouselKey}`}
               >
-                <img
-                  alt=""
-                  className="mb-3 h-7 w-7"
-                  src={item.icon}
-                  loading="lazy"
-                  decoding="async"
-                />
-                <p
-                  className="mb-1 text-[0.95rem] font-bold"
-                  style={{ color: "var(--landing-heading)" }}
-                >
-                  {item.title}
-                </p>
-                <p
-                  className="m-0 text-[0.82rem] leading-[1.65]"
-                  style={{ color: "var(--landing-muted)" }}
-                >
-                  {item.desc}
-                </p>
+                <FeatureCard item={item} />
               </div>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
+            ))}
+          </div>
+        ))}
       </div>
-      {/* <CarouselPrevious className="-left-4 border-[var(--landing-feature-border)] bg-[var(--landing-feature-bg)] text-[var(--landing-heading)] hover:bg-[var(--landing-alt-bg)] sm:-left-12" /> */}
-      {/* <CarouselNext className="-right-4 border-[var(--landing-feature-border)] bg-[var(--landing-feature-bg)] text-[var(--landing-heading)] hover:bg-[var(--landing-alt-bg)] sm:-right-12" /> */}
-    </Carousel>
+    </div>
   );
 }

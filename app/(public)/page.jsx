@@ -10,6 +10,7 @@ import HeroMorphVisual from "@/components/landing/hero-morph-visual";
 import { getValidAuthSession, isAuthSessionRemembered } from "@/lib/auth-session";
 import { useLandingLanguage } from "@/components/landing/language-provider";
 import AnimatedQuote from "@/components/landing/animated-quote";
+import LandingParallaxDoodles from "@/components/landing/parallax-doodles";
 import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
 import Pricing from "@/components/pricing";
@@ -339,7 +340,10 @@ export default function HomePage() {
 
 
       {/* Mostando o Dashboard */}
-      <section className={`${styles.dashboardPreviewSection} ${styles.gridBackgroundSection}`}>
+      <section
+        className={`${styles.dashboardPreviewSection} ${styles.gridBackgroundSection} ${styles.parallaxDoodleSection}`}
+      >
+        <LandingParallaxDoodles variant="dashboard" />
         <RevealOnScroll>
           <HeroDashboard />
         </RevealOnScroll>
@@ -347,8 +351,9 @@ export default function HomePage() {
 
       {/* Como Funciona */}
       <section
-        className={`${styles.processSection} ${styles.gridBackgroundSection}`}
+        className={`${styles.processSection} ${styles.gridBackgroundSection} ${styles.parallaxDoodleSection}`}
       >
+        <LandingParallaxDoodles variant="process" />
         <div className={styles.processInner}>
           <div className={styles.processIntro}>
             <p
@@ -398,7 +403,8 @@ export default function HomePage() {
       </section>
 
       {/* Planos */}
-      <div id="planos" className={styles.gridBackgroundSection}>
+      <div id="planos" className={`${styles.gridBackgroundSection} ${styles.parallaxDoodleSection}`}>
+        <LandingParallaxDoodles variant="pricing" />
         <RevealOnScroll>
           <Pricing />
         </RevealOnScroll>
