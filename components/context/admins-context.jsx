@@ -33,7 +33,7 @@ export function AdminsProvider({ children }) {
 
     const permissions = getDashboardPermissions(session.usuario)
 
-    if (!permissions.isAdmin) {
+    if (!permissions.canViewAdmins) {
       setAdmins([])
       setTotalPaginas(0)
       setPaginaAtual(1)

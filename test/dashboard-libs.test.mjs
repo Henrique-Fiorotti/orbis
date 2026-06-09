@@ -21,7 +21,7 @@ function createRow(value) {
   }
 }
 
-test("getDashboardPermissions separa permissoes de admin, tecnico e usuario desconhecido", () => {
+test("getDashboardPermissions separa permissoes de admin, tecnico, visitante e usuario desconhecido", () => {
   assert.equal(normalizeDashboardRole(" admin "), "ADMIN")
 
   const admin = getDashboardPermissions({ role: "ADMIN" })
@@ -34,6 +34,21 @@ test("getDashboardPermissions separa permissoes de admin, tecnico e usuario desc
   assert.equal(tecnico.canUpdateAlertStatus, true)
   assert.equal(tecnico.canManageMaquinas, false)
   assert.equal(tecnico.canViewAgendamentos, false)
+
+  const visitante = getDashboardPermissions({ role: "VISITANTE" })
+  assert.equal(visitante.isVisitante, true)
+  assert.equal(visitante.canViewDashboard, true)
+  assert.equal(visitante.canViewTecnicos, true)
+  assert.equal(visitante.canViewAdmins, true)
+  assert.equal(visitante.canViewAgendamentos, true)
+  assert.equal(visitante.canManageMaquinas, false)
+  assert.equal(visitante.canManageSensores, false)
+  assert.equal(visitante.canManageTecnicos, false)
+  assert.equal(visitante.canManageAdmins, false)
+  assert.equal(visitante.canManageAgendamentos, false)
+  assert.equal(visitante.canUpdateAlertStatus, false)
+  assert.equal(visitante.canEditOwnProfile, false)
+  assert.equal(visitante.canSendReportsNow, true)
 
   const desconhecido = getDashboardPermissions(null)
   assert.equal(desconhecido.canViewDashboard, true)

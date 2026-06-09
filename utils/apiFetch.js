@@ -31,7 +31,7 @@ function getApiErrorMessage(statusCode, payload, contextLabel) {
   }
 
   if (statusCode === 403) {
-    return `Seu usuário não tem permissão para visualizar ${contextLabel}.`
+    return payload?.mensagem || payload?.message || `Seu usuário não tem permissão para acessar ${contextLabel}.`
   }
 
   return payload?.mensagem || payload?.message || `Erro ${statusCode} ao carregar ${contextLabel}.`

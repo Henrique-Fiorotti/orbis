@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { clearAuthSession, getAuthSession, updateAuthSessionUser } from "@/lib/auth-session"
 import { ProfilePhotoCropDialog } from "@/components/profile-photo-crop-dialog"
 import { getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
+import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import { isValidBackendPassword, isValidEmail } from "@/lib/form-formatters"
 import { buildPerfilForm, buildPerfilUpdateBody } from "@/lib/profile-form.mjs"
 import {
@@ -116,11 +117,13 @@ function getIniciais(nome) {
 function getRoleLabel(role) {
   if (role === "ADMIN") return "Admin"
   if (role === "TECNICO") return "Técnico"
+  if (role === "VISITANTE") return "Visitante"
   return role || "Perfil não informado"
 }
 
 function getEspecialidadeLabel(perfil) {
   if (perfil.role === "ADMIN") return "Administrador"
+  if (perfil.role === "VISITANTE") return "Visitante"
   return perfil.especialidade || "Sem especialidade"
 }
 
@@ -301,7 +304,10 @@ export default function PerfilPage() {
   })
 
   const loading = status === "loading"
-  const podeEditarIdentidade = status === "success" && perfil.role === "ADMIN"
+  const permissions = React.useMemo(() => getDashboardPermissions(perfil), [perfil])
+  const isReadOnlyProfile = status === "success" && !permissions.canEditOwnProfile
+  const podeEditarIdentidade = status === "success" && permissions.canEditOwnProfile && perfil.role === "ADMIN"
+  const podeEditarPerfil = status === "success" && permissions.canEditOwnProfile
   const podeVerMinhaAtividade = status === "success" && perfil.role === "TECNICO"
   const meusAtendimentos = React.useMemo(
     () => alertas
@@ -406,6 +412,11 @@ export default function PerfilPage() {
   }, [podeVerMinhaAtividade, searchParams])
 
   async function salvarDados() {
+    if (!podeEditarPerfil) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     const session = getAuthSession()
 
     if (!session?.accessToken) {
@@ -534,6 +545,11 @@ export default function PerfilPage() {
   }
 
   function selecionarFoto(event) {
+    if (!podeEditarPerfil) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     const file = event.target.files?.[0]
     event.target.value = ""
 
@@ -555,6 +571,11 @@ export default function PerfilPage() {
   }
 
   async function enviarFoto(file) {
+    if (!podeEditarPerfil) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     const session = getAuthSession()
 
     if (!session?.accessToken) {
@@ -596,6 +617,11 @@ export default function PerfilPage() {
   }
 
   async function removerFoto() {
+    if (!podeEditarPerfil) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     if (!perfil.fotoPerfil) {
       return
     }
@@ -653,6 +679,11 @@ export default function PerfilPage() {
   }
 
   async function solicitarCodigoSenha() {
+    if (!podeEditarPerfil) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     if (!senhas.atual || !senhas.emailDestino) {
       toast.error("Informe a senha atual e o e-mail de destino.")
       return
@@ -704,6 +735,11 @@ export default function PerfilPage() {
   }
 
   async function confirmarAlteracaoSenha() {
+    if (!podeEditarPerfil) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     if (senhas.codigo.length !== CODE_LENGTH || !senhas.nova || !senhas.confirmar) {
       toast.error("Informe os 6 números do código e a nova senha.")
       return
@@ -782,7 +818,9 @@ export default function PerfilPage() {
         <div>
           <h1 className="text-xl font-semibold">Meu Perfil</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie suas informações pessoais e preferências de conta.
+            {isReadOnlyProfile
+              ? "Perfil somente leitura para demonstração."
+              : "Gerencie suas informações pessoais e preferências de conta."}
           </p>
         </div>
 
@@ -803,7 +841,7 @@ export default function PerfilPage() {
           <button
             type="button"
             onClick={() => setFotoModalAberto(true)}
-            disabled={loading || salvandoFoto}
+            disabled={loading || salvandoFoto || !podeEditarPerfil}
             className="group relative size-20 shrink-0 cursor-pointer overflow-hidden rounded-full disabled:cursor-not-allowed disabled:opacity-70 sm:size-24 lg:size-30"
             aria-label={perfil.fotoPerfil ? "Editar foto de perfil" : "Adicionar foto de perfil"}
           >
@@ -818,7 +856,7 @@ export default function PerfilPage() {
               </AvatarFallback>
             </Avatar>
             <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 text-xs font-medium text-white opacity-0 transition-all group-hover:bg-black/35 group-hover:opacity-100 group-focus-visible:bg-black/35 group-focus-visible:opacity-100">
-              {perfil.fotoPerfil ? "Editar foto" : "Adicionar foto"}
+              {podeEditarPerfil ? (perfil.fotoPerfil ? "Editar foto" : "Adicionar foto") : "Somente leitura"}
             </span>
           </button>
 
@@ -947,7 +985,8 @@ export default function PerfilPage() {
                   <Input
                     id="telefone"
                     value={form.telefone}
-                    disabled={loading || salvandoDados}
+                    disabled={loading || salvandoDados || !podeEditarPerfil}
+                    readOnly={!podeEditarPerfil}
                     onChange={(e) => setForm((p) => ({ ...p, telefone: e.target.value }))}
                   />
                   <p className="text-xs text-muted-foreground">
@@ -962,7 +1001,8 @@ export default function PerfilPage() {
                   <Input
                     id="especialidade"
                     value={form.especialidade}
-                    disabled={loading || salvandoDados}
+                    disabled={loading || salvandoDados || !podeEditarPerfil}
+                    readOnly={!podeEditarPerfil}
                     onChange={(e) => setForm((p) => ({ ...p, especialidade: e.target.value }))}
                   />
                 </div>
@@ -972,12 +1012,12 @@ export default function PerfilPage() {
                 <Button
                   variant="outline"
                   className="cursor-pointer w-full sm:w-auto"
-                  disabled={loading || salvandoDados}
+                  disabled={loading || salvandoDados || !podeEditarPerfil}
                   onClick={() => setForm(getFormFromPerfil(perfil))}
                 >
                   Cancelar
                 </Button>
-                <Button className="cursor-pointer w-full sm:w-auto" disabled={loading || salvandoDados} onClick={salvarDados}>
+                <Button className="cursor-pointer w-full sm:w-auto" disabled={loading || salvandoDados || !podeEditarPerfil} onClick={salvarDados}>
                   {salvandoDados ? "Salvando..." : "Salvar alterações"}
                 </Button>
               </div>
@@ -1026,6 +1066,12 @@ export default function PerfilPage() {
                 Alterar senha
               </div>
 
+              {isReadOnlyProfile ? (
+                <div className="rounded-lg border border-dashed bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                  Este perfil é somente leitura para demonstração.
+                </div>
+              ) : null}
+
               {senhaEtapa === "solicitar" ? (
                 <div className="flex flex-col gap-3">
                   <p className="text-sm text-muted-foreground">
@@ -1042,7 +1088,7 @@ export default function PerfilPage() {
                       placeholder="********"
                       autoComplete="current-password"
                       value={senhas.atual}
-                      disabled={salvandoSenha}
+                      disabled={salvandoSenha || !podeEditarPerfil}
                       onChange={(e) => setSenhas((p) => ({ ...p, atual: e.target.value }))}
                     />
                   </div>
@@ -1058,7 +1104,7 @@ export default function PerfilPage() {
                       autoComplete="email"
                       placeholder="destino@empresa.com"
                       value={senhas.emailDestino}
-                      disabled={salvandoSenha}
+                      disabled={salvandoSenha || !podeEditarPerfil}
                       onChange={(e) => setSenhas((p) => ({ ...p, emailDestino: e.target.value.trim() }))}
                     />
                   </div>
@@ -1076,7 +1122,7 @@ export default function PerfilPage() {
                     <OtpCodeInput
                       idPrefix="senha-codigo"
                       value={senhas.codigo}
-                      disabled={salvandoSenha}
+                      disabled={salvandoSenha || !podeEditarPerfil}
                       onChange={(value) => setSenhas((p) => ({ ...p, codigo: value }))}
                       aria-label="Código recebido"
                     />
@@ -1093,7 +1139,7 @@ export default function PerfilPage() {
                       autoComplete="new-password"
                       placeholder="7+ caracteres, letras e número"
                       value={senhas.nova}
-                      disabled={salvandoSenha}
+                      disabled={salvandoSenha || !podeEditarPerfil}
                       onChange={(e) => setSenhas((p) => ({ ...p, nova: e.target.value }))}
                     />
                   </div>
@@ -1108,7 +1154,7 @@ export default function PerfilPage() {
                       autoComplete="new-password"
                       placeholder="Repita a nova senha"
                       value={senhas.confirmar}
-                      disabled={salvandoSenha}
+                      disabled={salvandoSenha || !podeEditarPerfil}
                       onChange={(e) => setSenhas((p) => ({ ...p, confirmar: e.target.value }))}
                     />
                   </div>
@@ -1119,12 +1165,12 @@ export default function PerfilPage() {
                 <Button
                   variant="outline"
                   className="cursor-pointer w-full sm:w-auto"
-                  disabled={salvandoSenha}
+                  disabled={salvandoSenha || !podeEditarPerfil}
                   onClick={resetarFormularioSenha}
                 >
                   Cancelar
                 </Button>
-                <Button className="w-full sm:w-auto" disabled={salvandoSenha} onClick={salvarSenha}>
+                <Button className="w-full sm:w-auto" disabled={salvandoSenha || !podeEditarPerfil} onClick={salvarSenha}>
                   {senhaEtapa === "confirmar"
                     ? salvandoSenha ? "Confirmando..." : "Confirmar senha"
                     : salvandoSenha ? "Enviando..." : "Enviar código"}

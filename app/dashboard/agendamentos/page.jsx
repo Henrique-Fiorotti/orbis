@@ -1147,6 +1147,7 @@ export default function AgendamentosPage() {
   const [acaoPendenteId, setAcaoPendenteId] = React.useState(null)
   const acaoPendenteRef = React.useRef(false)
   const canViewAgendamentos = permissions.canViewAgendamentos
+  const canManageAgendamentos = permissions.canManageAgendamentos
   const employeeEmailOptions = React.useMemo(() => buildEmployeeEmailOptions(tecnicos, admins), [admins, tecnicos])
 
   const carregarAgendamentos = React.useCallback(async () => {
@@ -1241,6 +1242,11 @@ export default function AgendamentosPage() {
   }, [agendamentos])
 
   function abrirCriar() {
+    if (!canManageAgendamentos) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     setModoSheet("criar")
     setAgendamentoSelecionado(null)
     setForm({
@@ -1259,6 +1265,11 @@ export default function AgendamentosPage() {
   }
 
   function abrirEditar(agendamento) {
+    if (!canManageAgendamentos) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     setModoSheet("editar")
     setAgendamentoSelecionado(agendamento)
     setForm(buildFormFromAgendamento(agendamento))
@@ -1266,6 +1277,11 @@ export default function AgendamentosPage() {
   }
 
   function confirmarExcluir(agendamento) {
+    if (!canManageAgendamentos) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     setAgendamentoExcluir(agendamento)
     setDialogExcluir(true)
   }
@@ -1283,6 +1299,11 @@ export default function AgendamentosPage() {
   }
 
   async function salvarAgendamento() {
+    if (!canManageAgendamentos) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     const validationMessage = validateForm(form)
     const editing = modoSheet === "editar" && agendamentoSelecionado?.id
 
@@ -1329,6 +1350,11 @@ export default function AgendamentosPage() {
   }
 
   async function atualizarStatusAgendamento(agendamento, novoStatus) {
+    if (!canManageAgendamentos) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     if (acaoPendenteRef.current) {
       return
     }
@@ -1361,6 +1387,11 @@ export default function AgendamentosPage() {
   }
 
   async function executarAgora(agendamento) {
+    if (!canManageAgendamentos) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     if (acaoPendenteRef.current) {
       return
     }
@@ -1389,6 +1420,11 @@ export default function AgendamentosPage() {
   }
 
   async function excluirAgendamento() {
+    if (!canManageAgendamentos) {
+      toast.error("Este perfil é somente leitura para demonstração.")
+      return
+    }
+
     if (acaoPendenteRef.current) {
       return
     }
@@ -1549,26 +1585,30 @@ export default function AgendamentosPage() {
                 <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => abrirVer(agendamento)}>
                   <EyeIcon className="mr-1 size-4" /> Ver detalhes
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => abrirEditar(agendamento)}>
-                  <PencilIcon className="mr-1 size-4" /> Editar
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => executarAgora(agendamento)}>
-                  <SendIcon className="mr-1 size-4" /> {pending ? "Enviando..." : "Enviar agora"}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {agendamento.status === "ATIVO" ? (
-                  <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => atualizarStatusAgendamento(agendamento, "PAUSADO")}>
-                    <PauseCircleIcon className="mr-1 size-4" /> Cancelar envios
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => atualizarStatusAgendamento(agendamento, "ATIVO")}>
-                    <PlayCircleIcon className="mr-1 size-4" /> Reativar
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" variant="destructive" disabled={actionBusy} onSelect={() => confirmarExcluir(agendamento)}>
-                  <Trash2Icon className="mr-1 size-4" /> Excluir
-                </DropdownMenuItem>
+                {canManageAgendamentos ? (
+                  <>
+                    <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => abrirEditar(agendamento)}>
+                      <PencilIcon className="mr-1 size-4" /> Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => executarAgora(agendamento)}>
+                      <SendIcon className="mr-1 size-4" /> {pending ? "Enviando..." : "Enviar agora"}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {agendamento.status === "ATIVO" ? (
+                      <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => atualizarStatusAgendamento(agendamento, "PAUSADO")}>
+                        <PauseCircleIcon className="mr-1 size-4" /> Cancelar envios
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem className="cursor-pointer" disabled={actionBusy} onSelect={() => atualizarStatusAgendamento(agendamento, "ATIVO")}>
+                        <PlayCircleIcon className="mr-1 size-4" /> Reativar
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-pointer" variant="destructive" disabled={actionBusy} onSelect={() => confirmarExcluir(agendamento)}>
+                      <Trash2Icon className="mr-1 size-4" /> Excluir
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -1645,10 +1685,12 @@ export default function AgendamentosPage() {
               disabled={loadingInicial || refreshing}
               successMessage="Atualização dos agendamentos concluída."
             />
-            <Button size="sm" className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={abrirCriar}>
-              <PlusIcon className="mr-1 size-4" />
-              Novo agendamento
-            </Button>
+            {canManageAgendamentos ? (
+              <Button size="sm" className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90" onClick={abrirCriar}>
+                <PlusIcon className="mr-1 size-4" />
+                Novo agendamento
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -1790,6 +1832,7 @@ export default function AgendamentosPage() {
                   </SheetDescription>
                 </SheetHeader>
                 <AgendamentoDetailsPanel agendamento={agendamentoSelecionado} maquinas={maquinas} firstNextRunValue={firstNextRunValue} />
+                {canManageAgendamentos ? (
                 <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
                   <div className="grid w-full gap-2 sm:grid-cols-2">
                     <Button
@@ -1841,6 +1884,7 @@ export default function AgendamentosPage() {
                     </Button>
                   </div>
                 </SheetFooter>
+                ) : null}
               </div>
             ) : (
               <div key={modoSheet} className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-right-4 duration-200">

@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useOptionalDashboardPreferences } from "@/components/context/dashboard-preferences-context"
+import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { askDashboardAi, getHttpErrorStatus } from "@/lib/dashboard-api"
 import { setSmoothScrollLock } from "@/lib/scroll-lock"
@@ -391,6 +392,12 @@ function getAssistantMessageExtras(payload, extras = {}) {
         confirmation: payload.confirmation,
       }
       : {}),
+    ...(payload.readOnly
+      ? {
+        readOnly: true,
+        requiresConfirmation: false,
+      }
+      : {}),
     ...(payload.confirmationResolved
       ? {
         confirmationResolved: true,
@@ -604,12 +611,15 @@ function ChatMessage({
   onConfirmationDecision,
   onDisambiguationSelect,
   confirmationLoading = false,
+  readOnlyMode = false,
 }) {
   const isUser = message.role === "user"
   const isError = message.role === "error"
   const hasPendingConfirmation =
     !isUser &&
     !isError &&
+    !readOnlyMode &&
+    !message.readOnly &&
     message.requiresConfirmation &&
     message.confirmation?.id &&
     !message.confirmationResolved
@@ -945,6 +955,7 @@ function getClosestOrbButtonPosition(rect) {
 
 export function DashboardAiAssistant() {
   const pathname = usePathname()
+  const permissions = useDashboardPermissions()
   const dashboardPreferences = useOptionalDashboardPreferences()
   const smoothScrollEnabled = dashboardPreferences?.preferences.smoothScrollEnabled ?? true
   const orbButtonVisible = dashboardPreferences?.preferences.orbButtonVisible ?? true
@@ -1673,6 +1684,11 @@ export function DashboardAiAssistant() {
 
   async function sendConfirmationDecision(message, decision) {
     if (loading || !message?.confirmation?.id) {
+      return
+    }
+
+    if (permissions.isVisitante || message.readOnly) {
+      setInlineError("Este perfil é somente leitura para demonstração.")
       return
     }
 
@@ -2479,6 +2495,7 @@ export function DashboardAiAssistant() {
                         onConfirmationDecision={sendConfirmationDecision}
                         onDisambiguationSelect={sendDisambiguationChoice}
                         confirmationLoading={loading}
+                        readOnlyMode={permissions.isVisitante}
                       />
                     ))
                   )}

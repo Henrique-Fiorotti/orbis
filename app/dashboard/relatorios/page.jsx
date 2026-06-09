@@ -1158,6 +1158,7 @@ function EmailAutomationPanel({
   savingSchedule = false,
   sendingNow = false,
   employeeEmailOptions = [],
+  canManageSchedule = true,
 }) {
   const selectedFrequency = EMAIL_FREQUENCY_OPTIONS.find((option) => option.value === frequencia)
   const [open, setOpen] = React.useState(false)
@@ -1206,6 +1207,7 @@ function EmailAutomationPanel({
             </Button>
           </div>
 
+          {canManageSchedule ? (
           <div className="rounded-lg border bg-muted/10">
             <button
               type="button"
@@ -1303,6 +1305,7 @@ function EmailAutomationPanel({
               </div>
             ) : null}
           </div>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -1697,6 +1700,7 @@ export default function RelatoriosPage() {
   const envioRelatorioEmailEmAndamentoRef = React.useRef(false)
   const [geradoEm, setGeradoEm] = React.useState(formatDate())
   const canManageAgendamentos = permissions.canManageAgendamentos
+  const canSendReportsNow = permissions.canSendReportsNow
   const employeeEmailOptions = React.useMemo(() => buildEmployeeEmailOptions(tecnicos, admins), [admins, tecnicos])
 
   React.useEffect(() => {
@@ -2051,7 +2055,7 @@ export default function RelatoriosPage() {
               onToggleSecao={onToggleSecao}
             />
 
-            {canManageAgendamentos ? (
+            {canManageAgendamentos || canSendReportsNow ? (
               <EmailAutomationPanel
                 nome={emailNome}
                 onNomeChange={setEmailNome}
@@ -2073,6 +2077,7 @@ export default function RelatoriosPage() {
                 savingSchedule={salvandoAgendamentoEmail}
                 sendingNow={enviandoRelatorioEmail}
                 employeeEmailOptions={employeeEmailOptions}
+                canManageSchedule={canManageAgendamentos}
               />
             ) : null}
 
