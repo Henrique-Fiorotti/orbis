@@ -3,6 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { SearchIcon } from "lucide-react";
+import { gsap } from "gsap";
 
 import AnimatedHeroKeyword from "@/components/landing/animated-hero-keyword";
 import HeroDashboard from "@/components/hero-dashboard";
@@ -26,6 +28,76 @@ const HERO_KEYWORD_VARIANTS = {
   en: ["safe", "automated", "precise", "fast", "intelligent"],
   es: ["seguras", "automáticas", "precisas", "rápidas", "inteligentes"],
 };
+
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? React.useLayoutEffect : React.useEffect;
+
+function HeroSecondaryCta({ href, className, children }) {
+  const linkRef = React.useRef(null);
+  const textRef = React.useRef(null);
+  const iconLayerRef = React.useRef(null);
+  const iconRef = React.useRef(null);
+  const timelineRef = React.useRef(null);
+
+  useIsomorphicLayoutEffect(() => {
+    const link = linkRef.current;
+    const text = textRef.current;
+    const iconLayer = iconLayerRef.current;
+    const icon = iconRef.current;
+
+    if (!link || !text || !iconLayer || !icon) {
+      return undefined;
+    }
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reducedMotion) {
+      return undefined;
+    }
+
+    const context = gsap.context(() => {
+      gsap.set(text, { y: 0, autoAlpha: 1 });
+      gsap.set(iconLayer, { yPercent: 115, autoAlpha: 1 });
+      gsap.set(icon, { scale: 0.9, rotation: -10, autoAlpha: 0 });
+
+      timelineRef.current = gsap.timeline({
+        paused: true,
+        defaults: { duration: 0.34, ease: "power3.inOut", overwrite: "auto" },
+      })
+        .to(text, { y: -48 }, 0)
+        .to(iconLayer, { yPercent: 0 }, 0.02)
+        .to(icon, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.22, ease: "power2.out" }, 0.14);
+    }, link);
+
+    return () => {
+      timelineRef.current?.kill();
+      timelineRef.current = null;
+      context.revert();
+    };
+  }, [children]);
+
+  const playSplit = () => timelineRef.current?.play();
+  const reverseSplit = () => timelineRef.current?.reverse();
+
+  return (
+    <Link
+      ref={linkRef}
+      href={href}
+      className={className}
+      onMouseEnter={playSplit}
+      onMouseLeave={reverseSplit}
+      onFocus={playSplit}
+      onBlur={reverseSplit}
+    >
+      <span ref={textRef} className={styles.heroSplitText}>
+        {children}
+      </span>
+      <span ref={iconLayerRef} className={styles.heroSplitIconLayer} aria-hidden="true">
+        <SearchIcon ref={iconRef} size={18} strokeWidth={2.25} className={styles.heroSplitIcon} />
+      </span>
+    </Link>
+  );
+}
 
 function Step({ n, title, desc, delay }) {
   return (
@@ -223,9 +295,9 @@ export default function HomePage() {
             <Link href="/login" prefetch={false} scroll={false} className={styles.primaryCta}>
               {home.hero.primaryCta}
             </Link>
-            <Link href="#sobre" className={styles.secondaryCta}>
+            <HeroSecondaryCta href="#sobre" className={styles.secondaryCta}>
               {home.hero.secondaryCta}
-            </Link>
+            </HeroSecondaryCta>
           </div>
 
           <div className={styles.heroRegister}>

@@ -14,6 +14,7 @@ export interface DashboardPermissions {
   role: string;
   isAdmin: boolean;
   isTecnico: boolean;
+  isVisitante: boolean;
   canViewDashboard: boolean;
   canViewTecnicos: boolean;
   canViewAdmins: boolean;
@@ -27,6 +28,7 @@ export interface DashboardPermissions {
   canDeleteAlertas: boolean;
   canUpdateAlertStatus: boolean;
   canEditOwnProfile: boolean;
+  canSendReportsNow: boolean;
 }
 
 export type Criticidade = "ALTA" | "MEDIA" | "BAIXA";
@@ -279,6 +281,7 @@ export interface DashboardAiResponse {
   confirmationDecision?: "confirm" | "cancel" | string | null;
   confirmationId?: string | null;
   actionResult?: Record<string, unknown> | null;
+  readOnly?: boolean;
   requiresDisambiguation?: boolean;
   disambiguation?: {
     type?: string;

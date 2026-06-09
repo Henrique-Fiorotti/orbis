@@ -57,32 +57,34 @@ export function NavDocuments({
                   <span>{item.name}</span>
                 </Link>
               </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction showOnHover className="rounded-sm data-[state=open]:bg-accent">
-                  <MoreHorizontalIcon />
-                  <span className="sr-only">Mais</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-24 rounded-lg"
-                side={isMobile ? "bottom" : "right"}
-                align={isMobile ? "end" : "start"}>
-                <DropdownMenuItem>
-                  <FolderIcon />
-                  <span>Abrir</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <ShareIcon />
-                  <span>Compartilhar</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive">
-                  <Trash2Icon />
-                  <span>Deletar</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {permissions.canManageAgendamentos ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuAction showOnHover className="rounded-sm data-[state=open]:bg-accent">
+                    <MoreHorizontalIcon />
+                    <span className="sr-only">Mais</span>
+                  </SidebarMenuAction>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-24 rounded-lg"
+                  side={isMobile ? "bottom" : "right"}
+                  align={isMobile ? "end" : "start"}>
+                  <DropdownMenuItem>
+                    <FolderIcon />
+                    <span>Abrir</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <ShareIcon />
+                    <span>Compartilhar</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem variant="destructive">
+                    <Trash2Icon />
+                    <span>Deletar</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
             </SidebarMenuItem>
           )
         })}
