@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { SlaBadges, SlaStatusBadge } from "@/components/alerta-sla-badges"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { tempoRelativo } from "@/lib/utils"
@@ -100,6 +101,96 @@ function OcorrenciasBadge({ value }) {
   )
 }
 
+function formatAbsoluteDate(value) {
+  const date = new Date(value)
+
+  if (!Number.isFinite(date.getTime())) {
+    return "Não informado"
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date)
+}
+
+function formatMinutes(value) {
+  const minutes = Number(value)
+
+  if (!Number.isFinite(minutes)) {
+    return "Não informado"
+  }
+
+  if (minutes < 60) {
+    return `${minutes} min`
+  }
+
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+
+  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`
+}
+
+function formatPercent(value) {
+  const percent = Number(value)
+  return Number.isFinite(percent) ? `${Math.round(percent)}%` : "Não informado"
+}
+
+function SlaMetric({ label, children }) {
+  return (
+    <div className="min-w-0 rounded-lg border bg-muted/25 px-2.5 py-2">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <p className="mt-0.5 truncate text-sm font-medium text-foreground">{children}</p>
+    </div>
+  )
+}
+
+function SlaDetailBlock({ title, data }) {
+  if (!data || typeof data !== "object") {
+    return null
+  }
+
+  return (
+    <div className="rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-sm font-semibold text-foreground">{title}</span>
+        <SlaStatusBadge status={data.status} />
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <SlaMetric label="Prazo limite">{formatMinutes(data.limiteMinutos)}</SlaMetric>
+        <SlaMetric label="Tempo decorrido">{formatMinutes(data.minutosDecorridos)}</SlaMetric>
+        <SlaMetric label="Percentual consumido">{formatPercent(data.percentualConsumido)}</SlaMetric>
+          <SlaMetric label="Data limite">{formatAbsoluteDate(data.limiteEm)}</SlaMetric>
+        {data.concluidoEm ? (
+          <SlaMetric label="Conclusão">{formatAbsoluteDate(data.concluidoEm)}</SlaMetric>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function SlaDetailsSection({ sla }) {
+  if (!sla || typeof sla !== "object") {
+    return null
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <Label className="text-xs text-muted-foreground">SLA</Label>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className="px-1.5 text-xs text-muted-foreground">
+            Criticidade: {sla.criticidade || "Não informada"}
+          </Badge>
+          <SlaBadges sla={sla} />
+        </div>
+      </div>
+      <SlaDetailBlock title="Atendimento" data={sla.atendimento} />
+      <SlaDetailBlock title="Resolução" data={sla.resolucao} />
+    </div>
+  )
+}
+
 function TecnicoResponsavelCard({ tecnico }) {
   if (!tecnico) {
     return (
@@ -170,6 +261,7 @@ export function AlertaDetailsPanel({ alerta, tecnico, afterMessage = null, showT
           <TipoAlertaBadge value={alerta.tipo} />
           <SeveridadeBadge value={alerta.severidade} />
           <OcorrenciasBadge value={alerta.ocorrencias} />
+          <SlaBadges sla={alerta.sla} />
         </div>
       </div>
 
@@ -194,6 +286,8 @@ export function AlertaDetailsPanel({ alerta, tecnico, afterMessage = null, showT
       </div>
 
       {afterMessage}
+
+      <SlaDetailsSection sla={alerta.sla} />
 
       <div className="flex flex-col gap-1">
         <Label className="text-xs text-muted-foreground">Criado em</Label>

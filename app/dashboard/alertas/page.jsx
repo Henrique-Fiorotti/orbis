@@ -21,6 +21,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MetricValue, useDashboardMetricsLoading } from "@/components/animated-metric"
 import { AlertaDetailsPanel } from "@/components/alerta-details-panel"
+import { SlaBadges, SlaWorstBadge } from "@/components/alerta-sla-badges"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
 import { TablePagination } from "@/components/table-pagination"
@@ -870,6 +871,7 @@ function GrupoAlertasMobileCard({ grupo, onOpen }) {
         <span className="flex flex-wrap items-center justify-between gap-1">
           <span className="flex flex-wrap items-center gap-1">
             <StatusAlertaBadge value={grupo.principalStatus} />
+            <SlaWorstBadge sla={grupo.alertaMaisRecente?.sla} />
             <Badge variant="outline" className={`px-1.5 text-xs ${grupo.temRepetidos ? "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300" : "text-muted-foreground"}`}>
               {ocorrencias} ocorr.
             </Badge>
@@ -891,6 +893,7 @@ function GrupoAlertaCard({ alerta, onVerAlerta, muted = false }) {
         <TipoAlertaBadge value={alerta.tipo} />
         <StatusAlertaBadge value={alerta.status} />
         <SeveridadeBadge value={alerta.severidade} />
+        <SlaBadges sla={alerta.sla} />
       </div>
       <div className="mt-3 flex flex-col gap-1">
         <span className="text-sm font-medium text-foreground">{alerta.sensorNome}</span>
@@ -1027,7 +1030,12 @@ function AlertasTable({ data, onVerGrupo }) {
     {
       accessorKey: "principalStatus",
       header: "Status",
-      cell: ({ row }) => <StatusAlertaBadge value={row.original.principalStatus} />,
+      cell: ({ row }) => (
+        <div className="flex min-w-[140px] flex-wrap items-center gap-1.5">
+          <StatusAlertaBadge value={row.original.principalStatus} />
+          <SlaWorstBadge sla={row.original.alertaMaisRecente?.sla} />
+        </div>
+      ),
     },
     { id: "sensores", header: "Sensores", cell: ({ row }) => <GrupoSensoresResumo sensores={row.original.sensores} /> },
     {
