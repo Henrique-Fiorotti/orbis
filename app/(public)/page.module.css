@@ -316,6 +316,10 @@
   z-index: 1;
 }
 
+.parallaxDoodleSection {
+  overflow: visible;
+}
+
 .dashboardPreviewSection {
   border-top: 1px solid rgba(123, 57, 237, 0.34);
 }
@@ -522,7 +526,7 @@
 .featureCard {
   background: var(--landing-feature-bg);
   border: 1.5px solid var(--landing-feature-border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 28px 24px;
   box-shadow: var(--landing-feature-shadow);
   transition:

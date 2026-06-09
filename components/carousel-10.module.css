@@ -1,0 +1,114 @@
+.marqueeShell {
+  --feature-card-gap: 1.35rem;
+  --feature-card-width: min(82vw, 264px);
+  --feature-marquee-duration: 56s;
+  --marquee-drag-offset: 0px;
+  width: 100%;
+  overflow: hidden;
+  cursor: grab;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  touch-action: pan-y;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.marqueeTrack {
+  display: flex;
+  width: max-content;
+  padding-block: 0.9rem;
+  animation: featureMarquee var(--feature-marquee-duration, 56s) linear infinite;
+  will-change: transform;
+}
+
+.marqueeShell:hover .marqueeTrack,
+.marqueeShell:focus-within .marqueeTrack {
+  animation-play-state: paused;
+}
+
+.isDragging {
+  cursor: grabbing;
+}
+
+.isDragging .marqueeTrack {
+  animation-play-state: paused;
+}
+
+.marqueeGroup {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 50px;
+  padding-left: var(--feature-card-gap);
+}
+
+.marqueeItem {
+  position: relative;
+  z-index: var(--center-card-depth, 0);
+  flex: 0 0 var(--feature-card-width);
+  width: var(--feature-card-width);
+  min-width: 0;
+}
+
+.card {
+  height: 190px;
+  user-select: none;
+  border: 1px solid var(--landing-feature-border);
+  border-radius: 10px;
+  background: var(--landing-feature-bg);
+  padding: 1.25rem;
+  box-shadow: var(--landing-feature-shadow);
+  transform: scale(var(--center-card-scale, 1));
+  transform-origin: center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.18s ease;
+}
+
+.card:hover {
+  border-color: #7c3aed;
+  box-shadow: var(--landing-feature-shadow-hover, var(--landing-feature-shadow));
+}
+
+.icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.title {
+  margin: 0 0 0.25rem;
+  color: var(--landing-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.description {
+  margin: 0;
+  color: var(--landing-muted);
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+@media (min-width: 640px) {
+  .marqueeShell {
+    --feature-card-width: min(46vw, 276px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .marqueeShell {
+    --feature-card-width: clamp(250px, 20vw, 270px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marqueeTrack {
+    animation: none;
+  }
+}
+
+@keyframes featureMarquee {
+  from {
+    transform: translate3d(calc(var(--marquee-drag-offset, 0px) - 33.333333%), 0, 0);
+  }
+
+  to {
+    transform: translate3d(calc(var(--marquee-drag-offset, 0px) - 66.666667%), 0, 0);
+  }
+}

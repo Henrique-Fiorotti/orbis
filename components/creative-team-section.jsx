@@ -108,7 +108,7 @@ function TeamMemberCard({ member }) {
 
   return (
     <article
-      className={`group relative flex min-h-[224px] select-none flex-col items-center justify-end rounded-[30px] px-4 pb-6 pt-20 text-center shadow-[0_18px_40px_rgba(94,23,235,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_54px_rgba(94,23,235,0.26)] ${member.cardClass}`}
+      className={`group relative flex min-h-[224px] select-none flex-col items-center justify-end rounded-[10px] px-4 pb-6 pt-20 text-center shadow-[0_18px_40px_rgba(94,23,235,0.18)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_54px_rgba(94,23,235,0.26)] ${member.cardClass}`}
     >
       <div className="pointer-events-none absolute -top-16 z-10 size-32 rounded-full border border-white/15" />
       <div className="pointer-events-none absolute -top-11 z-10 size-24 rounded-full border border-white/20" />

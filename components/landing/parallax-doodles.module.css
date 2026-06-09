@@ -1,0 +1,46 @@
+.doodles {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.doodles.doodles {
+  position: absolute;
+  z-index: 30;
+}
+
+.doodle {
+  position: absolute;
+  z-index: 30;
+  opacity: 80%;
+  height: auto;
+  object-fit: contain;
+  user-select: none;
+  will-change: transform;
+}
+
+.dashboardCustom {
+  top: clamp(-72px, -5vw, -42px);
+  right: max(24px, 6vw);
+  width: clamp(116px, 8vw, 164px);
+}
+
+.processFootprint {
+  top: 18%;
+  left: max(20px, 5vw);
+  width: clamp(172px, 8.5vw, 250px);
+}
+
+.pricingCreditCard {
+  top: 4%;
+  right: max(18px, 8vw);
+  width: clamp(108px, 7vw, 154px);
+}
+
+@media (max-width: 900px) {
+  .doodles {
+    display: none;
+  }
+}

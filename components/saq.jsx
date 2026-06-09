@@ -182,7 +182,7 @@ function ContactCard({ href, icon, label, value, delay = 0 }) {
                 border: hovered
                     ? "2px solid #7c3aed"
                     : "2px solid var(--contact-card-border)",
-                borderRadius: "16px",
+                borderRadius: "10px",
                 width: "100%",
                 padding: "12px 14px",
                 textDecoration: "none",
@@ -465,7 +465,7 @@ export default function ContatoPage() {
                 <div
                     style={{
                         border: "2px solid var(--contact-panel-border)",
-                        borderRadius: "20px",
+                        borderRadius: "10px",
                         overflowY: "auto",
                         minHeight: "clamp(480px, 48vh, 720px)",
                         background: "var(--contact-panel-bg)",
@@ -639,7 +639,7 @@ export default function ContatoPage() {
                                     gap: "8px",
                                     marginTop: "4px",
                                     padding: "13px 24px",
-                                    borderRadius: "12px",
+                                    borderRadius: "10px",
                                     border: "none",
                                     background: "#7c3aed",
                                     color: "#fff",
