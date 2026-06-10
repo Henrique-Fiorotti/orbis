@@ -24,6 +24,7 @@ import {
 
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { AlertaDetailsPanel } from "@/components/alerta-details-panel"
+import { SlaWorstBadge } from "@/components/alerta-sla-badges"
 import {
   extractEventosFromAlertaPayload,
   HistoricoManutencaoPanel,
@@ -390,6 +391,7 @@ function AlertListItem({ alerta, onOpen }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={alerta.status} />
+          <SlaWorstBadge sla={alerta.sla} />
           <OcorrenciasBadge value={alerta.ocorrencias} />
         </div>
         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -432,6 +434,7 @@ function PriorityAlertCard({ alerta, imageSrc, onOpen }) {
           <div className="flex flex-wrap items-center gap-2">
             <TipoAlertaBadge value={alerta.tipo} />
             <StatusBadge status={alerta.status} />
+            <SlaWorstBadge sla={alerta.sla} />
             <OcorrenciasBadge value={alerta.ocorrencias} />
           </div>
           <Button
