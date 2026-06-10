@@ -16,6 +16,10 @@ import {
   getIntegrityTrendDataFromHistories,
   normalizeHistoricoIntegridadeCollection,
 } from "../lib/orbis-dashboard.js"
+import {
+  buildPreventiveMaintenancePayload,
+  normalizeManutencaoCollection,
+} from "../lib/maintenance-contract.mjs"
 
 function createRow(value) {
   return {
@@ -185,4 +189,92 @@ test("historico de integridade aceita payload envelopado e aliases do backend", 
   assert.equal(serie.at(-1).timestamp, Date.parse("2026-06-09T13:00:00.000Z"))
   assert.equal(serie.at(-1).integridade, 81)
   assert.equal(serie.at(-1).maquinas, 2)
+})
+
+test("normalizeManutencaoCollection preserva preventiva agendada criada por predicao", () => {
+  const [manutencao] = normalizeManutencaoCollection({
+    dados: [
+      {
+        id: 12,
+        alertaId: null,
+        maquinaId: 9,
+        usuarioId: null,
+        tipo: "PREVENTIVA",
+        titulo: "Preventiva preditiva - Esteira 01",
+        prioridade: "ALTA",
+        origem: "PREDICAO",
+        observacao: "Manutencao preventiva criada automaticamente pela predicao.",
+        status: "AGENDADA",
+        dataAgendada: "2026-06-20T14:00:00.000Z",
+        janelaAgendadaInicio: "2026-06-20T14:00:00.000Z",
+        janelaAgendadaFim: "2026-06-21T14:00:00.000Z",
+        concluidaEm: null,
+        cumprimentoAgendamento: "NAO_APLICAVEL",
+        diasDesvioAgendamento: null,
+        metadataPredicao: {
+          estadoPredicao: "PREVISAO_VALIDA",
+          fonteDecisao: "REGRESSAO_LINEAR",
+          urgencia: "ALTA",
+          motivo: "previsao_linear_valida",
+          previsaoManutencao: "2026-06-30T10:00:00.000Z",
+        },
+        maquina: { id: 9, nome: "Esteira 01" },
+        usuario: null,
+        alerta: null,
+      },
+    ],
+  })
+
+  assert.equal(manutencao.status, "AGENDADA")
+  assert.equal(manutencao.titulo, "Preventiva preditiva - Esteira 01")
+  assert.equal(manutencao.prioridade, "ALTA")
+  assert.equal(manutencao.origem, "PREDICAO")
+  assert.equal(manutencao.usuario, null)
+  assert.equal(manutencao.alerta, null)
+  assert.equal(manutencao.dataAgendada, "2026-06-20T14:00:00.000Z")
+  assert.equal(manutencao.janelaAgendadaInicio, "2026-06-20T14:00:00.000Z")
+  assert.equal(manutencao.janelaAgendadaFim, "2026-06-21T14:00:00.000Z")
+  assert.equal(manutencao.concluidaEm, null)
+  assert.equal(manutencao.cumprimentoAgendamento, "NAO_APLICAVEL")
+  assert.equal(manutencao.diasDesvioAgendamento, null)
+  assert.deepEqual(manutencao.metadataPredicao, {
+    estadoPredicao: "PREVISAO_VALIDA",
+    fonteDecisao: "REGRESSAO_LINEAR",
+    urgencia: "ALTA",
+    motivo: "previsao_linear_valida",
+    previsaoManutencao: "2026-06-30T10:00:00.000Z",
+  })
+})
+
+test("buildPreventiveMaintenancePayload monta preventiva manual imediata ou agendada", () => {
+  assert.deepEqual(buildPreventiveMaintenancePayload({
+    maquinaId: "9",
+    titulo: "Inspecao dos rolamentos",
+    prioridade: "URGENTE",
+    observacao: "Verificar vibracao e temperatura.",
+  }), {
+    tipo: "PREVENTIVA",
+    maquinaId: 9,
+    titulo: "Inspecao dos rolamentos",
+    prioridade: "URGENTE",
+    observacao: "Verificar vibracao e temperatura.",
+  })
+
+  assert.deepEqual(buildPreventiveMaintenancePayload({
+    maquinaId: 9,
+    titulo: "",
+    prioridade: "INVALIDA",
+    dataAgendada: "2026-06-20T14:00:00.000Z",
+    observacao: "Planejar troca preventiva.",
+  }), {
+    tipo: "PREVENTIVA",
+    maquinaId: 9,
+    dataAgendada: "2026-06-20T14:00:00.000Z",
+    observacao: "Planejar troca preventiva.",
+  })
+
+  assert.throws(
+    () => buildPreventiveMaintenancePayload({ maquinaId: 9, observacao: "" }),
+    /Informe uma observacao/
+  )
 })

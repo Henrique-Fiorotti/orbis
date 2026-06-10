@@ -102,6 +102,26 @@ const REGRESSION_CHART_CONFIG = {
   },
 }
 
+const MAINTENANCE_PRIORITY_LABEL = {
+  BAIXA: "Baixa",
+  MEDIA: "Media",
+  ALTA: "Alta",
+  URGENTE: "Urgente",
+}
+
+const MAINTENANCE_ORIGIN_LABEL = {
+  MANUAL: "Manual",
+  ALERTA: "Alerta",
+  PREDICAO: "Predicao",
+}
+
+const MAINTENANCE_COMPLIANCE_LABEL = {
+  ANTECIPADA: "Antecipada",
+  NO_PRAZO: "No prazo",
+  ATRASADA: "Atrasada",
+  NAO_APLICAVEL: "Nao aplicavel",
+}
+
 function getMachineSensors(maquina, sensores) {
   return sensores.filter((sensor) => sensor.maquinaId === maquina.id || sensor.maquinaNome === maquina.nome)
 }
@@ -204,6 +224,42 @@ function formatMaintenanceDate(value) {
     dateStyle: "short",
     timeStyle: "short",
   }).format(date)
+}
+
+function formatMaintenanceWindow(start, end) {
+  const startDate = parseDateValue(start)
+  const endDate = parseDateValue(end)
+
+  if (!startDate && !endDate) {
+    return ""
+  }
+
+  if (startDate && endDate) {
+    return `${formatMaintenanceDate(start)} - ${formatMaintenanceDate(end)}`
+  }
+
+  return startDate ? `A partir de ${formatMaintenanceDate(start)}` : `Ate ${formatMaintenanceDate(end)}`
+}
+
+function formatScheduleDeviation(value) {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return ""
+  }
+
+  const abs = Math.abs(parsed)
+  const unit = abs === 1 ? "dia" : "dias"
+
+  if (parsed < 0) {
+    return `${abs} ${unit} antes`
+  }
+
+  if (parsed > 0) {
+    return `${abs} ${unit} depois`
+  }
+
+  return "Sem desvio"
 }
 
 function formatPercentProbability(value) {
@@ -1627,6 +1683,14 @@ function MaintenanceTypeBadge({ tipo }) {
 }
 
 function MaintenanceStatusBadge({ status }) {
+  if (status === "AGENDADA") {
+    return (
+      <Badge variant="outline" className="border-blue-200 bg-blue-50 px-1.5 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-300">
+        Agendada
+      </Badge>
+    )
+  }
+
   if (status === "RESOLVIDO") {
     return (
       <Badge variant="outline" className="border-green-200 bg-green-50 px-1.5 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
@@ -1635,8 +1699,12 @@ function MaintenanceStatusBadge({ status }) {
     )
   }
 
-  if (status === "CANCELADO") {
+  if (status === "CANCELADA" || status === "CANCELADO") {
     return <Badge variant="outline" className="px-1.5 text-muted-foreground">Cancelada</Badge>
+  }
+
+  if (status === "ENCERRADO_SEM_SOLUCAO") {
+    return <Badge variant="outline" className="px-1.5 text-muted-foreground">Encerrada</Badge>
   }
 
   return (
@@ -1646,9 +1714,55 @@ function MaintenanceStatusBadge({ status }) {
   )
 }
 
-function PreventiveMaintenanceCard({ manutencao, canManage, pending, onComplete }) {
-  const tecnicoNome = manutencao.usuario?.nome || "Técnico não informado"
+function MaintenancePriorityBadge({ prioridade }) {
+  if (!prioridade) {
+    return null
+  }
+
+  const critical = prioridade === "URGENTE" || prioridade === "ALTA"
+
+  return (
+    <Badge
+      variant="outline"
+      className={
+        critical
+          ? "border-red-200 bg-red-50 px-1.5 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+          : "border-border/70 bg-background/80 px-1.5 text-muted-foreground"
+      }
+    >
+      {MAINTENANCE_PRIORITY_LABEL[prioridade] ?? prioridade}
+    </Badge>
+  )
+}
+
+function MaintenanceOriginBadge({ origem }) {
+  const predictive = origem === "PREDICAO"
+
+  return (
+    <Badge
+      variant="outline"
+      className={
+        predictive
+          ? "border-[#5E17EB]/25 bg-[#5E17EB]/10 px-1.5 text-[#5E17EB] dark:border-[#5E17EB]/50 dark:bg-[#5E17EB]/15 dark:text-purple-200"
+          : "border-border/70 bg-background/80 px-1.5 text-muted-foreground"
+      }
+    >
+      {MAINTENANCE_ORIGIN_LABEL[origem] ?? origem ?? "Manual"}
+    </Badge>
+  )
+}
+
+function PreventiveMaintenanceCard({ manutencao, canManage, pending, onStart, onComplete }) {
+  const tecnicoNome = manutencao.usuario?.nome || "Sem tecnico responsavel"
+  const canStart = canManage && manutencao.status === "AGENDADA"
   const canComplete = canManage && manutencao.status === "EM_ANDAMENTO"
+  const scheduledLabel = manutencao.dataAgendada ? formatMaintenanceDate(manutencao.dataAgendada) : ""
+  const windowLabel = formatMaintenanceWindow(manutencao.janelaAgendadaInicio, manutencao.janelaAgendadaFim)
+  const predictionFailure = manutencao.metadataPredicao?.previsaoManutencao
+    ? formatMaintenanceDate(manutencao.metadataPredicao.previsaoManutencao)
+    : ""
+  const complianceLabel = MAINTENANCE_COMPLIANCE_LABEL[manutencao.cumprimentoAgendamento] ?? manutencao.cumprimentoAgendamento
+  const deviationLabel = formatScheduleDeviation(manutencao.diasDesvioAgendamento)
 
   return (
     <div className="rounded-lg border border-border/70 bg-background/80 p-3">
@@ -1657,11 +1771,28 @@ function PreventiveMaintenanceCard({ manutencao, canManage, pending, onComplete 
           <div className="flex flex-wrap items-center gap-2">
             <MaintenanceTypeBadge tipo={manutencao.tipo} />
             <MaintenanceStatusBadge status={manutencao.status} />
+            <MaintenanceOriginBadge origem={manutencao.origem} />
+            <MaintenancePriorityBadge prioridade={manutencao.prioridade} />
           </div>
-          <p className="mt-2 text-sm font-medium text-foreground">{tecnicoNome}</p>
-          <p className="text-xs text-muted-foreground">{formatMaintenanceDate(manutencao.criadoEm)}</p>
+          <p className="mt-2 text-sm font-semibold text-foreground">{manutencao.titulo || "Manutencao preventiva"}</p>
+          <p className="text-xs text-muted-foreground">{tecnicoNome}</p>
+          <p className="text-xs text-muted-foreground">
+            {scheduledLabel ? `Agendada para ${scheduledLabel}` : `Criada em ${formatMaintenanceDate(manutencao.criadoEm)}`}
+          </p>
         </div>
-        {canComplete ? (
+        {canStart ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="cursor-pointer"
+            onClick={() => onStart?.(manutencao)}
+            disabled={pending}
+          >
+            {pending ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
+            Iniciar
+          </Button>
+        ) : canComplete ? (
           <Button
             type="button"
             size="sm"
@@ -1675,8 +1806,20 @@ function PreventiveMaintenanceCard({ manutencao, canManage, pending, onComplete 
           </Button>
         ) : null}
       </div>
+      {windowLabel || predictionFailure ? (
+        <div className="mt-3 grid gap-2 rounded-md border border-border/70 bg-muted/20 p-2 text-xs text-muted-foreground">
+          {windowLabel ? <span>Janela sugerida: {windowLabel}</span> : null}
+          {predictionFailure ? <span>Falha prevista: {predictionFailure}</span> : null}
+        </div>
+      ) : null}
       {manutencao.observacao ? (
         <p className="mt-3 text-sm leading-relaxed text-foreground">{manutencao.observacao}</p>
+      ) : null}
+      {manutencao.status === "RESOLVIDO" ? (
+        <div className="mt-3 grid gap-1 rounded-md border border-green-200 bg-green-50 p-2 text-xs text-green-700 dark:border-green-900/60 dark:bg-green-950/25 dark:text-green-300">
+          <span>Concluida em {formatMaintenanceDate(manutencao.concluidaEm)}</span>
+          <span>{complianceLabel}{deviationLabel ? ` - ${deviationLabel}` : ""}</span>
+        </div>
       ) : null}
     </div>
   )
@@ -1690,18 +1833,23 @@ function PreventiveMaintenanceSection({
   saving,
   actionId,
   onCreate,
+  onStart,
   onComplete,
   open,
   onToggle,
 }) {
+  const [titulo, setTitulo] = React.useState("")
+  const [prioridade, setPrioridade] = React.useState("")
+  const [dataAgendada, setDataAgendada] = React.useState("")
   const [observacao, setObservacao] = React.useState("")
   const observacaoTexto = observacao.trim()
   const preventivas = React.useMemo(
     () => manutencoes
       .filter((item) => item.tipo === "PREVENTIVA")
-      .sort((a, b) => (Date.parse(b.criadoEm) || 0) - (Date.parse(a.criadoEm) || 0)),
+      .sort((a, b) => (Date.parse(a.dataAgendada || a.criadoEm) || 0) - (Date.parse(b.dataAgendada || b.criadoEm) || 0)),
     [manutencoes]
   )
+  const agendadas = preventivas.filter((item) => item.status === "AGENDADA").length
   const emAndamento = preventivas.filter((item) => item.status === "EM_ANDAMENTO").length
 
   async function handleSubmit(event) {
@@ -1711,9 +1859,17 @@ function PreventiveMaintenanceSection({
       return
     }
 
-    const created = await onCreate(observacaoTexto)
+    const created = await onCreate({
+      titulo,
+      prioridade,
+      dataAgendada: dataAgendada ? new Date(dataAgendada).toISOString() : "",
+      observacao: observacaoTexto,
+    })
 
     if (created !== false) {
+      setTitulo("")
+      setPrioridade("")
+      setDataAgendada("")
       setObservacao("")
     }
   }
@@ -1726,14 +1882,46 @@ function PreventiveMaintenanceSection({
       onToggle={onToggle}
       meta={
         <Badge variant="outline" className="border-border/70 bg-background/80 px-2 text-xs text-muted-foreground">
-          {emAndamento > 0 ? `${emAndamento} em andamento` : `${preventivas.length} registro(s)`}
+          {agendadas > 0 ? `${agendadas} agendada(s)` : emAndamento > 0 ? `${emAndamento} em andamento` : `${preventivas.length} registro(s)`}
         </Badge>
       }
     >
       <div className="grid gap-3 border-t border-border/60 p-3">
         {canManage ? (
           <form onSubmit={handleSubmit} className="rounded-lg border border-border/70 bg-background/80 p-3">
-            <Label htmlFor="preventiva-observacao" className="text-xs text-muted-foreground">Nova preventiva</Label>
+            <Label htmlFor="preventiva-titulo" className="text-xs text-muted-foreground">Nova preventiva</Label>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <input
+                id="preventiva-titulo"
+                value={titulo}
+                maxLength={80}
+                onChange={(event) => setTitulo(event.target.value)}
+                disabled={saving}
+                placeholder="Titulo opcional"
+                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30"
+              />
+              <select
+                value={prioridade}
+                onChange={(event) => setPrioridade(event.target.value)}
+                disabled={saving}
+                aria-label="Prioridade da preventiva"
+                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30"
+              >
+                <option value="">Prioridade padrao</option>
+                <option value="BAIXA">Baixa</option>
+                <option value="MEDIA">Media</option>
+                <option value="ALTA">Alta</option>
+                <option value="URGENTE">Urgente</option>
+              </select>
+              <input
+                type="datetime-local"
+                value={dataAgendada}
+                onChange={(event) => setDataAgendada(event.target.value)}
+                disabled={saving}
+                aria-label="Data agendada"
+                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30 sm:col-span-2"
+              />
+            </div>
             <textarea
               id="preventiva-observacao"
               value={observacao}
@@ -1747,7 +1935,7 @@ function PreventiveMaintenanceSection({
             <div className="mt-3 flex justify-end">
               <Button type="submit" size="sm" className="cursor-pointer" disabled={saving || observacaoTexto.length < 3}>
                 {saving && actionId === "create" ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <CalendarCheckIcon className="mr-1 size-4" />}
-                Iniciar preventiva
+                {dataAgendada ? "Agendar preventiva" : "Iniciar preventiva"}
               </Button>
             </div>
           </form>
@@ -1769,6 +1957,7 @@ function PreventiveMaintenanceSection({
               manutencao={manutencao}
               canManage={canManage}
               pending={saving && actionId === manutencao.id}
+              onStart={onStart}
               onComplete={onComplete}
             />
           ))
@@ -1793,6 +1982,7 @@ export function MaquinaDetailsPanel({
   preventiveActionId = null,
   preventiveSaving = false,
   onCreatePreventiveMaintenance,
+  onStartPreventiveMaintenance,
   onCompletePreventiveMaintenance,
   className = "",
 }) {
@@ -1997,6 +2187,7 @@ export function MaquinaDetailsPanel({
         saving={preventiveSaving}
         actionId={preventiveActionId}
         onCreate={onCreatePreventiveMaintenance}
+        onStart={onStartPreventiveMaintenance}
         onComplete={onCompletePreventiveMaintenance}
         open={openSections.preventivas}
         onToggle={() => toggleSection("preventivas")}

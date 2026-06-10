@@ -55,7 +55,10 @@ export interface Maquina {
 }
 
 export type TipoManutencao = "CORRETIVA" | "PREVENTIVA";
-export type StatusManutencao = "EM_ANDAMENTO" | "RESOLVIDO" | "CANCELADO" | "ENCERRADO_SEM_SOLUCAO";
+export type StatusManutencao = "AGENDADA" | "EM_ANDAMENTO" | "RESOLVIDO" | "CANCELADA" | "ENCERRADO_SEM_SOLUCAO";
+export type PrioridadeManutencao = "BAIXA" | "MEDIA" | "ALTA" | "URGENTE";
+export type OrigemManutencao = "MANUAL" | "ALERTA" | "PREDICAO";
+export type CumprimentoAgendamento = "ANTECIPADA" | "NO_PRAZO" | "ATRASADA" | "NAO_APLICAVEL";
 
 export interface ManutencaoUsuario {
   id: number | null;
@@ -69,11 +72,21 @@ export interface ManutencaoUsuario {
 export interface Manutencao {
   id: number;
   tipo: TipoManutencao;
+  titulo: string;
+  prioridade: PrioridadeManutencao | null;
+  origem: OrigemManutencao;
   alertaId: number | null;
   maquinaId: number | null;
   usuarioId: number | null;
   observacao: string;
   status: StatusManutencao;
+  dataAgendada: string | null;
+  janelaAgendadaInicio: string | null;
+  janelaAgendadaFim: string | null;
+  concluidaEm: string | null;
+  cumprimentoAgendamento: CumprimentoAgendamento;
+  diasDesvioAgendamento: number | null;
+  metadataPredicao: Record<string, unknown> | null;
   criadoEm: string;
   atualizadoEm: string | null;
   alerta: Alerta | null;
@@ -255,7 +268,8 @@ export interface ManutencoesContextValue {
   mensagem: string;
   carregando: boolean;
   salvando: boolean;
-  criarPreventiva: (dados: { maquinaId: number; observacao: string }) => Promise<unknown>;
+  criarPreventiva: (dados: { maquinaId: number; titulo?: string; prioridade?: PrioridadeManutencao | string; dataAgendada?: string; observacao: string }) => Promise<unknown>;
+  iniciarManutencao: (id: number) => Promise<unknown>;
   concluirManutencao: (id: number, observacao?: string) => Promise<unknown>;
   recarregarManutencoes: () => Promise<void>;
   resetarDados: () => Promise<void>;

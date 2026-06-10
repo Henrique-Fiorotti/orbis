@@ -351,6 +351,7 @@ export default function MaquinasPage() {
     mensagem: manutencoesMensagem,
     salvando: salvandoManutencao,
     criarPreventiva,
+    iniciarManutencao,
     concluirManutencao,
     recarregarManutencoes,
   } = useManutencoes()
@@ -597,20 +598,37 @@ export default function MaquinasPage() {
     }
   }
 
-  async function iniciarPreventivaMaquina(observacao) {
+  async function iniciarPreventivaMaquina(dados) {
     if (!maquinaDetalhada?.id) {
       return false
     }
 
     try {
       setPreventiveActionId("create")
-      await criarPreventiva({ maquinaId: maquinaDetalhada.id, observacao })
+      await criarPreventiva({ maquinaId: maquinaDetalhada.id, ...dados })
       await Promise.allSettled([recarregarManutencoes(), recarregarMaquinas()])
-      toast.success("Manutenção preventiva iniciada.")
+      toast.success(dados?.dataAgendada ? "Manutenção preventiva agendada." : "Manutenção preventiva iniciada.")
       return true
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar a manutenção preventiva.")
       return false
+    } finally {
+      setPreventiveActionId(null)
+    }
+  }
+
+  async function iniciarManutencaoAgendada(manutencao) {
+    if (!manutencao?.id) {
+      return
+    }
+
+    try {
+      setPreventiveActionId(manutencao.id)
+      await iniciarManutencao(manutencao.id)
+      await Promise.allSettled([recarregarManutencoes(), recarregarMaquinas(), recarregarSensores()])
+      toast.success("Manutenção agendada iniciada.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível iniciar a manutenção agendada.")
     } finally {
       setPreventiveActionId(null)
     }
@@ -975,6 +993,7 @@ export default function MaquinasPage() {
                     preventiveActionId={preventiveActionId}
                     preventiveSaving={salvandoManutencao}
                     onCreatePreventiveMaintenance={iniciarPreventivaMaquina}
+                    onStartPreventiveMaintenance={iniciarManutencaoAgendada}
                     onCompletePreventiveMaintenance={concluirPreventivaMaquina}
                   />
                 </div>
