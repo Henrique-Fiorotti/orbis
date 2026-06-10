@@ -14,16 +14,16 @@ const SLA_STATUS_LABEL = {
 }
 
 const SLA_STATUS_CLASS = {
-  NO_PRAZO: "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
+  NO_PRAZO: "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300",
   EM_RISCO: "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300",
   ATRASADO: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
-  CONCLUIDO_NO_PRAZO: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300",
-  CONCLUIDO_ATRASADO: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300",
+  CONCLUIDO_NO_PRAZO: "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300",
+  CONCLUIDO_ATRASADO: "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300",
   NAO_APLICAVEL: "border-gray-200 bg-gray-50 text-gray-600 dark:border-border dark:bg-muted/30 dark:text-muted-foreground",
 }
 
 const SLA_STATUS_ICON = {
-  NO_PRAZO: CheckCircle2Icon,
+  NO_PRAZO: ClockIcon,
   EM_RISCO: AlertTriangleIcon,
   ATRASADO: AlertTriangleIcon,
   CONCLUIDO_NO_PRAZO: CheckCircle2Icon,
