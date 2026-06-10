@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import * as React from "react"
 
@@ -10,6 +10,7 @@ import {
   normalizeManutencaoCollection,
   requestDashboardJson,
 } from "@/lib/dashboard-api"
+import { buildPreventiveMaintenancePayload } from "@/lib/maintenance-contract.mjs"
 
 /** @typedef {import("@/lib/orbis-types").WithChildrenProps} WithChildrenProps */
 /** @typedef {import("@/lib/orbis-types").ManutencoesContextValue} ManutencoesContextValue */
@@ -27,7 +28,7 @@ function getTrimmedObservation(value) {
 export function ManutencoesProvider({ children }) {
   const [manutencoes, setManutencoes] = React.useState([])
   const [status, setStatus] = React.useState("loading")
-  const [mensagem, setMensagem] = React.useState("Carregando manutenções...")
+  const [mensagem, setMensagem] = React.useState("Carregando manutenÃ§Ãµes...")
   const [salvando, setSalvando] = React.useState(false)
 
   const carregarManutencoes = React.useCallback(async ({ silent = false } = {}) => {
@@ -36,17 +37,17 @@ export function ManutencoesProvider({ children }) {
     if (!session?.accessToken) {
       setManutencoes([])
       setStatus("error")
-      setMensagem("Faça login para carregar as manutenções.")
+      setMensagem("FaÃ§a login para carregar as manutenÃ§Ãµes.")
       return
     }
 
     if (!silent) {
       setStatus("loading")
-      setMensagem("Carregando manutenções...")
+      setMensagem("Carregando manutenÃ§Ãµes...")
     }
 
     try {
-      const payload = await fetchDashboardJson("/manutencoes", session.accessToken, "as manutenções")
+      const payload = await fetchDashboardJson("/manutencoes", session.accessToken, "as manutenÃ§Ãµes")
       setManutencoes(normalizeManutencaoCollection(payload))
       setStatus("success")
       setMensagem("")
@@ -56,7 +57,7 @@ export function ManutencoesProvider({ children }) {
       }
 
       setStatus("error")
-      setMensagem(error instanceof Error ? error.message : "Não foi possível carregar as manutenções.")
+      setMensagem(error instanceof Error ? error.message : "NÃ£o foi possÃ­vel carregar as manutenÃ§Ãµes.")
       setManutencoes((current) => (silent ? current : []))
       throw error
     }
@@ -70,7 +71,7 @@ export function ManutencoesProvider({ children }) {
     const session = getAuthSession()
 
     if (!session?.accessToken) {
-      const error = new Error("Faça login para gerenciar as manutenções.")
+      const error = new Error("FaÃ§a login para gerenciar as manutenÃ§Ãµes.")
       setStatus("error")
       setMensagem(error.message)
       throw error
@@ -79,7 +80,7 @@ export function ManutencoesProvider({ children }) {
     const permissions = getDashboardPermissions(session.usuario)
 
     if (!permissions.canManagePreventiveMaintenances) {
-      const error = new Error("Apenas técnicos podem criar ou atualizar manutenções preventivas.")
+      const error = new Error("Apenas tÃ©cnicos podem criar ou atualizar manutenÃ§Ãµes preventivas.")
       setStatus("error")
       setMensagem(error.message)
       throw error
@@ -96,7 +97,7 @@ export function ManutencoesProvider({ children }) {
         clearAuthSession()
       }
 
-      const message = error instanceof Error ? error.message : "Não foi possível atualizar a manutenção."
+      const message = error instanceof Error ? error.message : "NÃ£o foi possÃ­vel atualizar a manutenÃ§Ã£o."
       setStatus((current) => (current === "loading" ? "error" : current))
       setMensagem(message)
       throw error instanceof Error ? error : new Error(message)
@@ -105,25 +106,29 @@ export function ManutencoesProvider({ children }) {
     }
   }, [carregarManutencoes])
 
-  async function criarPreventiva({ maquinaId, observacao }) {
-    const maquinaIdNumber = Number(maquinaId)
-    const texto = getTrimmedObservation(observacao)
+  async function criarPreventiva(dados) {
+    const payload = buildPreventiveMaintenancePayload(dados)
 
-    if (!Number.isFinite(maquinaIdNumber)) {
-      throw new Error("Selecione uma máquina válida para a preventiva.")
-    }
+    return await executarMutacao((accessToken) =>
+      requestDashboardJson("/manutencoes", accessToken, "a manutencao preventiva", {
+        method: "POST",
+        body: payload,
+      })
+    )
+  }
 
-    if (!texto) {
-      throw new Error("Informe uma observação para a manutenção preventiva.")
+  async function iniciarManutencao(id) {
+    const manutencaoId = Number(id)
+
+    if (!Number.isFinite(manutencaoId)) {
+      throw new Error("Manutencao invalida.")
     }
 
     return await executarMutacao((accessToken) =>
-      requestDashboardJson("/manutencoes", accessToken, "a manutenção preventiva", {
-        method: "POST",
+      requestDashboardJson(`/manutencoes/${manutencaoId}`, accessToken, "o inicio da manutencao", {
+        method: "PUT",
         body: {
-          tipo: "PREVENTIVA",
-          maquinaId: maquinaIdNumber,
-          observacao: texto,
+          status: "EM_ANDAMENTO",
         },
       })
     )
@@ -134,11 +139,11 @@ export function ManutencoesProvider({ children }) {
     const texto = getTrimmedObservation(observacao) || "Preventiva finalizada."
 
     if (!Number.isFinite(manutencaoId)) {
-      throw new Error("Manutenção inválida.")
+      throw new Error("ManutenÃ§Ã£o invÃ¡lida.")
     }
 
     return await executarMutacao((accessToken) =>
-      requestDashboardJson(`/manutencoes/${manutencaoId}`, accessToken, "a conclusão da manutenção", {
+      requestDashboardJson(`/manutencoes/${manutencaoId}`, accessToken, "a conclusÃ£o da manutenÃ§Ã£o", {
         method: "PUT",
         body: {
           status: "RESOLVIDO",
@@ -163,6 +168,7 @@ export function ManutencoesProvider({ children }) {
     carregando: status === "loading",
     salvando,
     criarPreventiva,
+    iniciarManutencao,
     concluirManutencao,
     recarregarManutencoes,
     resetarDados,
