@@ -27,6 +27,14 @@ const EVENTO_STATUS_LABEL = {
 
 const EVENTOS_COM_MANUTENCAO = new Set(["ACEITO", "ATUALIZADO", "REABERTO", "RESOLVIDO", "CANCELADO"])
 
+const COMENTARIO_MAX_LENGTH = 1000
+
+const ROLE_LABEL = {
+  ADMIN: "Admin",
+  TECNICO: "Técnico",
+  VISITANTE: "Visitante",
+}
+
 function normalizeUppercase(value) {
   return String(value ?? "")
     .normalize("NFD")
@@ -210,6 +218,7 @@ function getManutencaoStatusTone(status) {
 
 function getTimelineIcon(tipo) {
   if (tipo === "alerta") return ShieldAlertIcon
+  if (tipo === "comentario") return MessageSquareTextIcon
   if (tipo === "inicio") return WrenchIcon
   if (tipo === "encerramento") return CircleCheckIcon
   if (tipo === "cancelamento") return CircleXIcon
@@ -218,12 +227,15 @@ function getTimelineIcon(tipo) {
 }
 
 function createTimelineItem({ tipo, titulo, usuario, criadoEm, descricao, status, mensagem, manutencaoId = null }) {
+  const usuarioRole = normalizeUppercase(usuario?.role)
+
   return {
     key: `${tipo}-${criadoEm || "sem-data"}-${titulo}-${descricao || ""}`,
     tipo,
     titulo,
     manutencaoId,
     usuario: usuario?.nome || "Sistema",
+    usuarioRole,
     criadoEm,
     descricao,
     mensagem,
@@ -253,6 +265,11 @@ function compactRepeatedTimelineItems(items) {
   const groupedIndexes = new Map()
 
   for (const item of items) {
+    if (item.tipo === "comentario") {
+      groupedItems.push(item)
+      continue
+    }
+
     const groupKey = getTimelineGroupKey(item)
     const existingIndex = groupedIndexes.get(groupKey)
 
@@ -289,6 +306,19 @@ function isEventoDeManutencao(evento) {
 }
 
 function createTimelineItemFromEvento(evento) {
+  if (evento.tipo === "COMENTARIO") {
+    const usuarioNome = evento.usuario?.nome || "usuário"
+
+    return createTimelineItem({
+      tipo: "comentario",
+      titulo: `Nota de ${usuarioNome}`,
+      usuario: evento.usuario,
+      criadoEm: evento.criadoEm,
+      descricao: evento.mensagem || evento.descricao,
+      status: "",
+    })
+  }
+
   if (evento.tipo === "CRIADO") {
     return createTimelineItem({
       tipo: "alerta",
@@ -387,13 +417,33 @@ export function HistoricoManutencaoPanel({
   status,
   mensagem,
   onRetry,
+  canComment = false,
+  onCreateComment,
+  creatingComment = false,
 }) {
+  const [comentario, setComentario] = React.useState("")
   const timeline = React.useMemo(
     () => buildHistoricoTimeline(alerta, eventos),
     [alerta, eventos]
   )
   const hasEventosManutencao = eventos.some(isEventoDeManutencao)
   const hasOnlyAlertaAberto = timeline.every((item) => item.tipo === "alerta")
+  const comentarioTexto = comentario.trim()
+  const comentarioInvalido = comentarioTexto.length === 0 || comentarioTexto.length > COMENTARIO_MAX_LENGTH
+
+  async function handleSubmitComentario(event) {
+    event.preventDefault()
+
+    if (!onCreateComment || comentarioInvalido) {
+      return
+    }
+
+    const created = await onCreateComment(comentarioTexto)
+
+    if (created !== false) {
+      setComentario("")
+    }
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
@@ -404,10 +454,40 @@ export function HistoricoManutencaoPanel({
             <p className="truncate text-xs text-muted-foreground">{alerta?.sensorNome || "Sensor não informado"}</p>
           </div>
           <Badge variant="outline" className="shrink-0 text-muted-foreground">
-            Somente leitura
+            {canComment ? "Comentários" : "Somente leitura"}
           </Badge>
         </div>
       </div>
+
+      {canComment ? (
+        <form onSubmit={handleSubmitComentario} className="rounded-lg border bg-card p-3 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label htmlFor="comentario-alerta" className="inline-flex items-center gap-2 text-sm font-semibold text-[#3B2867] dark:text-white">
+              <MessageSquareTextIcon className="size-4 text-[#5E17EB]" />
+              Nota operacional
+            </label>
+            <span className={`text-xs tabular-nums ${comentario.length > COMENTARIO_MAX_LENGTH ? "text-destructive" : "text-muted-foreground"}`}>
+              {comentario.length}/{COMENTARIO_MAX_LENGTH}
+            </span>
+          </div>
+          <textarea
+            id="comentario-alerta"
+            value={comentario}
+            maxLength={COMENTARIO_MAX_LENGTH + 1}
+            rows={4}
+            onChange={(event) => setComentario(event.target.value)}
+            disabled={creatingComment}
+            placeholder="Adicione uma observação para a timeline deste alerta."
+            className="mt-3 min-h-[104px] w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30 dark:disabled:bg-input/80"
+          />
+          <div className="mt-3 flex justify-end">
+            <Button type="submit" size="sm" className="cursor-pointer" disabled={creatingComment || comentarioInvalido}>
+              {creatingComment ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <MessageSquareTextIcon className="mr-1 size-4" />}
+              Comentar
+            </Button>
+          </div>
+        </form>
+      ) : null}
 
       {status === "loading" ? (
         <div className="flex items-center gap-2 rounded-md bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
@@ -427,6 +507,7 @@ export function HistoricoManutencaoPanel({
           {timeline.map((item, index) => {
             const Icon = getTimelineIcon(item.tipo)
             const tone = getManutencaoStatusTone(item.status)
+            const isComentario = item.tipo === "comentario"
 
             return (
               <div key={`${item.key}-${index}`} className="relative grid grid-cols-[28px_1fr] gap-3">
@@ -435,7 +516,9 @@ export function HistoricoManutencaoPanel({
                 ) : null}
                 <span
                   className={`relative z-10 flex size-7 items-center justify-center rounded-full border bg-background ${
-                    tone === "success"
+                    isComentario
+                      ? "text-[#5E17EB] dark:text-purple-200"
+                      : tone === "success"
                       ? "text-green-700 dark:text-green-300"
                       : tone === "warning"
                         ? "text-orange-700 dark:text-orange-300"
@@ -444,7 +527,7 @@ export function HistoricoManutencaoPanel({
                 >
                   <Icon className="size-3.5" />
                 </span>
-                <div className="min-w-0 rounded-md border bg-muted/20 px-3 py-2">
+                <div className={`min-w-0 rounded-md border px-3 py-2 ${isComentario ? "border-[#5E17EB]/20 bg-[#5E17EB]/5 dark:border-[#5E17EB]/40 dark:bg-[#5E17EB]/10" : "bg-muted/20"}`}>
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <span className="text-sm font-medium text-foreground">{item.titulo}</span>
                   </div>
@@ -453,7 +536,12 @@ export function HistoricoManutencaoPanel({
                     {formatTimelineDateRange(item)}
                   </span>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span>{item.tipo === "alerta" || item.usuario === "Sistema" ? item.usuario : `Técnico: ${item.usuario}`}</span>
+                    <span>{item.tipo === "alerta" || item.usuario === "Sistema" ? item.usuario : item.usuario}</span>
+                    {item.usuarioRole ? (
+                      <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-muted-foreground">
+                        {ROLE_LABEL[item.usuarioRole] ?? item.usuarioRole}
+                      </Badge>
+                    ) : null}
                     {item.status ? (
                       <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-muted-foreground">
                         {EVENTO_STATUS_LABEL[item.status] ?? item.status}

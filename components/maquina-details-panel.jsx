@@ -5,6 +5,7 @@ import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "rec
 import {
   ActivityIcon,
   AlertTriangleIcon,
+  CalendarCheckIcon,
   ChevronDownIcon,
   CircleCheckIcon,
   CircleHelpIcon,
@@ -14,6 +15,7 @@ import {
   Loader2Icon,
   Maximize2Icon,
   ThermometerIcon,
+  WrenchIcon,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -189,6 +191,19 @@ function formatDaysUntil(value) {
   }
 
   return `Em ${days} dias`
+}
+
+function formatMaintenanceDate(value) {
+  const date = parseDateValue(value)
+
+  if (!date) {
+    return "Data não informada"
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date)
 }
 
 function formatPercentProbability(value) {
@@ -1594,7 +1609,193 @@ function MaquinaSummaryCard({ maquina, statusExibicao, integridadeExibicao, tota
   )
 }
 
-export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", className = "" }) {
+function MaintenanceTypeBadge({ tipo }) {
+  const isPreventiva = tipo === "PREVENTIVA"
+
+  return (
+    <Badge
+      variant="outline"
+      className={
+        isPreventiva
+          ? "border-[#5E17EB]/25 bg-[#5E17EB]/10 px-1.5 text-[#5E17EB] dark:border-[#5E17EB]/50 dark:bg-[#5E17EB]/15 dark:text-purple-200"
+          : "border-orange-200 bg-orange-50 px-1.5 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300"
+      }
+    >
+      {isPreventiva ? "Preventiva" : "Corretiva"}
+    </Badge>
+  )
+}
+
+function MaintenanceStatusBadge({ status }) {
+  if (status === "RESOLVIDO") {
+    return (
+      <Badge variant="outline" className="border-green-200 bg-green-50 px-1.5 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300">
+        Resolvida
+      </Badge>
+    )
+  }
+
+  if (status === "CANCELADO") {
+    return <Badge variant="outline" className="px-1.5 text-muted-foreground">Cancelada</Badge>
+  }
+
+  return (
+    <Badge variant="outline" className="border-yellow-200 bg-yellow-50 px-1.5 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/30 dark:text-yellow-300">
+      Em andamento
+    </Badge>
+  )
+}
+
+function PreventiveMaintenanceCard({ manutencao, canManage, pending, onComplete }) {
+  const tecnicoNome = manutencao.usuario?.nome || "Técnico não informado"
+  const canComplete = canManage && manutencao.status === "EM_ANDAMENTO"
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/80 p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <MaintenanceTypeBadge tipo={manutencao.tipo} />
+            <MaintenanceStatusBadge status={manutencao.status} />
+          </div>
+          <p className="mt-2 text-sm font-medium text-foreground">{tecnicoNome}</p>
+          <p className="text-xs text-muted-foreground">{formatMaintenanceDate(manutencao.criadoEm)}</p>
+        </div>
+        {canComplete ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="cursor-pointer"
+            onClick={() => onComplete?.(manutencao)}
+            disabled={pending}
+          >
+            {pending ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <CircleCheckIcon className="mr-1 size-4" />}
+            Concluir
+          </Button>
+        ) : null}
+      </div>
+      {manutencao.observacao ? (
+        <p className="mt-3 text-sm leading-relaxed text-foreground">{manutencao.observacao}</p>
+      ) : null}
+    </div>
+  )
+}
+
+function PreventiveMaintenanceSection({
+  manutencoes,
+  status,
+  mensagem,
+  canManage,
+  saving,
+  actionId,
+  onCreate,
+  onComplete,
+  open,
+  onToggle,
+}) {
+  const [observacao, setObservacao] = React.useState("")
+  const observacaoTexto = observacao.trim()
+  const preventivas = React.useMemo(
+    () => manutencoes
+      .filter((item) => item.tipo === "PREVENTIVA")
+      .sort((a, b) => (Date.parse(b.criadoEm) || 0) - (Date.parse(a.criadoEm) || 0)),
+    [manutencoes]
+  )
+  const emAndamento = preventivas.filter((item) => item.status === "EM_ANDAMENTO").length
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+
+    if (!onCreate || observacaoTexto.length < 3) {
+      return
+    }
+
+    const created = await onCreate(observacaoTexto)
+
+    if (created !== false) {
+      setObservacao("")
+    }
+  }
+
+  return (
+    <DetailsAccordionSection
+      title="Manutenções preventivas"
+      icon={WrenchIcon}
+      open={open}
+      onToggle={onToggle}
+      meta={
+        <Badge variant="outline" className="border-border/70 bg-background/80 px-2 text-xs text-muted-foreground">
+          {emAndamento > 0 ? `${emAndamento} em andamento` : `${preventivas.length} registro(s)`}
+        </Badge>
+      }
+    >
+      <div className="grid gap-3 border-t border-border/60 p-3">
+        {canManage ? (
+          <form onSubmit={handleSubmit} className="rounded-lg border border-border/70 bg-background/80 p-3">
+            <Label htmlFor="preventiva-observacao" className="text-xs text-muted-foreground">Nova preventiva</Label>
+            <textarea
+              id="preventiva-observacao"
+              value={observacao}
+              rows={4}
+              maxLength={500}
+              onChange={(event) => setObservacao(event.target.value)}
+              disabled={saving}
+              placeholder="Descreva a inspeção preventiva, periodicidade ou motivo técnico."
+              className="mt-2 min-h-[104px] w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30 dark:disabled:bg-input/80"
+            />
+            <div className="mt-3 flex justify-end">
+              <Button type="submit" size="sm" className="cursor-pointer" disabled={saving || observacaoTexto.length < 3}>
+                {saving && actionId === "create" ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <CalendarCheckIcon className="mr-1 size-4" />}
+                Iniciar preventiva
+              </Button>
+            </div>
+          </form>
+        ) : null}
+
+        {status === "loading" ? (
+          <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-background/80 px-3 py-3 text-sm text-muted-foreground">
+            <Loader2Icon className="size-4 animate-spin" />
+            Carregando manutenções...
+          </div>
+        ) : status === "error" ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-300">
+            {mensagem || "Não foi possível carregar as manutenções preventivas."}
+          </div>
+        ) : preventivas.length > 0 ? (
+          preventivas.slice(0, 5).map((manutencao) => (
+            <PreventiveMaintenanceCard
+              key={manutencao.id}
+              manutencao={manutencao}
+              canManage={canManage}
+              pending={saving && actionId === manutencao.id}
+              onComplete={onComplete}
+            />
+          ))
+        ) : (
+          <p className="rounded-lg border border-dashed border-border/70 bg-background/80 p-3 text-xs text-muted-foreground">
+            Nenhuma manutenção preventiva registrada para esta máquina.
+          </p>
+        )}
+      </div>
+    </DetailsAccordionSection>
+  )
+}
+
+export function MaquinaDetailsPanel({
+  maquina,
+  sensores = [],
+  sensorError = "",
+  manutencoes = [],
+  manutencoesStatus = "success",
+  manutencoesMensagem = "",
+  canManagePreventiveMaintenances = false,
+  preventiveActionId = null,
+  preventiveSaving = false,
+  onCreatePreventiveMaintenance,
+  onCompletePreventiveMaintenance,
+  className = "",
+}) {
   const sensoresDaMaquina = React.useMemo(
     () => getMachineSensors(maquina, sensores),
     [maquina, sensores]
@@ -1611,6 +1812,7 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
     [maquina, statusExibicao, integridadeExibicao]
   )
   const [openSections, setOpenSections] = React.useState({
+    preventivas: true,
     predicao: false,
     detalhesTecnicos: false,
     sensores: false,
@@ -1630,6 +1832,7 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
 
   React.useEffect(() => {
     setOpenSections({
+      preventivas: true,
       predicao: false,
       detalhesTecnicos: false,
       sensores: false,
@@ -1785,6 +1988,19 @@ export function MaquinaDetailsPanel({ maquina, sensores = [], sensorError = "", 
           </MachineDetailItem>
         </div>
       </MachineDetailSection>
+
+      <PreventiveMaintenanceSection
+        manutencoes={manutencoes}
+        status={manutencoesStatus}
+        mensagem={manutencoesMensagem}
+        canManage={canManagePreventiveMaintenances}
+        saving={preventiveSaving}
+        actionId={preventiveActionId}
+        onCreate={onCreatePreventiveMaintenance}
+        onComplete={onCompletePreventiveMaintenance}
+        open={openSections.preventivas}
+        onToggle={() => toggleSection("preventivas")}
+      />
 
       <div className="flex flex-col gap-2">
         <DetailsAccordionSection

@@ -535,14 +535,17 @@ function TechnicianDashboard() {
     salvando,
     atualizarStatus,
     registrarRelatoAtendimento,
+    registrarComentarioAlerta,
     recarregarAlertas,
   } = useAlertas()
   const { maquinas, status: maquinasStatus, recarregarMaquinas } = useMaquinas()
   const { sensores, status: sensoresStatus, recarregarSensores } = useSensores()
   const { tecnicos } = useTecnicos()
+  const permissions = useDashboardPermissions()
   const [startingAlertId, setStartingAlertId] = React.useState(null)
   const [completingAlertId, setCompletingAlertId] = React.useState(null)
   const [savingReportId, setSavingReportId] = React.useState(null)
+  const [creatingCommentId, setCreatingCommentId] = React.useState(null)
   const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
   const [relatoManutencao, setRelatoManutencao] = React.useState("")
   const [historicoAberto, setHistoricoAberto] = React.useState(false)
@@ -557,7 +560,7 @@ function TechnicianDashboard() {
   const historicoRequestIdRef = React.useRef(0)
 
   const loading = alertasStatus === "loading" || maquinasStatus === "loading" || sensoresStatus === "loading"
-  const atendimentoActionPending = Boolean(startingAlertId || completingAlertId || savingReportId)
+  const atendimentoActionPending = Boolean(startingAlertId || completingAlertId || savingReportId || creatingCommentId)
   const relatoManutencaoTexto = relatoManutencao.trim()
   const alertasAtivos = React.useMemo(() => alertas.filter((alerta) => alerta.status === "ATIVO"), [alertas])
   const alertasEmAndamento = React.useMemo(() => alertas.filter((alerta) => alerta.status === "EM_ANDAMENTO"), [alertas])
@@ -862,6 +865,25 @@ function TechnicianDashboard() {
       toast.error(error instanceof Error ? error.message : "Não foi possível registrar o relato.")
     } finally {
       setSavingReportId(null)
+    }
+  }
+
+  async function registrarComentarioHistorico(mensagemComentario) {
+    if (!alertaSelecionado?.id) {
+      return false
+    }
+
+    try {
+      setCreatingCommentId(alertaSelecionado.id)
+      await registrarComentarioAlerta(alertaSelecionado.id, mensagemComentario)
+      await carregarHistoricoManutencao(alertaSelecionado.id)
+      toast.success("Comentário adicionado.")
+      return true
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível adicionar o comentário.")
+      return false
+    } finally {
+      setCreatingCommentId(null)
     }
   }
 
@@ -1259,6 +1281,9 @@ function TechnicianDashboard() {
               status={historicoStatus}
               mensagem={historicoMensagem}
               onRetry={() => alertaSelecionado?.id ? carregarHistoricoManutencao(alertaSelecionado.id) : null}
+              canComment={permissions.canCommentAlertas}
+              onCreateComment={registrarComentarioHistorico}
+              creatingComment={creatingCommentId === alertaSelecionado?.id}
             />
           </SheetContent>
         </Sheet>

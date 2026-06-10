@@ -27,6 +27,8 @@ export interface DashboardPermissions {
   canCreateAlertas: boolean;
   canDeleteAlertas: boolean;
   canUpdateAlertStatus: boolean;
+  canCommentAlertas: boolean;
+  canManagePreventiveMaintenances: boolean;
   canEditOwnProfile: boolean;
   canSendReportsNow: boolean;
 }
@@ -50,6 +52,34 @@ export interface Maquina {
   janelaManuFim: string | null;
   imagem: string | null;
   caminhoImagem: string | null;
+}
+
+export type TipoManutencao = "CORRETIVA" | "PREVENTIVA";
+export type StatusManutencao = "EM_ANDAMENTO" | "RESOLVIDO" | "CANCELADO" | "ENCERRADO_SEM_SOLUCAO";
+
+export interface ManutencaoUsuario {
+  id: number | null;
+  nome: string;
+  email: string;
+  role: string;
+  telefone: string;
+  especialidade: string;
+}
+
+export interface Manutencao {
+  id: number;
+  tipo: TipoManutencao;
+  alertaId: number | null;
+  maquinaId: number | null;
+  usuarioId: number | null;
+  observacao: string;
+  status: StatusManutencao;
+  criadoEm: string;
+  atualizadoEm: string | null;
+  alerta: Alerta | null;
+  maquina: Maquina | null;
+  maquinaNome: string;
+  usuario: ManutencaoUsuario | null;
 }
 
 export interface NovaMaquinaInput {
@@ -219,6 +249,18 @@ export interface SensoresContextValue {
   resetarDados: () => Promise<void>;
 }
 
+export interface ManutencoesContextValue {
+  manutencoes: Manutencao[];
+  status: "loading" | "success" | "error";
+  mensagem: string;
+  carregando: boolean;
+  salvando: boolean;
+  criarPreventiva: (dados: { maquinaId: number; observacao: string }) => Promise<unknown>;
+  concluirManutencao: (id: number, observacao?: string) => Promise<unknown>;
+  recarregarManutencoes: () => Promise<void>;
+  resetarDados: () => Promise<void>;
+}
+
 export interface TecnicosContextValue {
   tecnicos: Tecnico[];
   status: "loading" | "success" | "error";
@@ -254,6 +296,7 @@ export interface AlertasContextValue {
   adicionarAlerta: (dados: NovoAlertaInput) => Promise<void>;
   atualizarStatus: (id: number, novoStatus: StatusAlerta, opcoes?: { observacao?: string }) => Promise<void>;
   registrarRelatoAtendimento: (id: number, observacao: string) => Promise<void>;
+  registrarComentarioAlerta: (id: number, mensagem: string) => Promise<unknown>;
   cancelarAlerta: (id: number) => Promise<void>;
   recarregarAlertas: () => Promise<void>;
   resetarDados: () => Promise<void>;

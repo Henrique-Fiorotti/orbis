@@ -28,10 +28,14 @@ test("getDashboardPermissions separa permissoes de admin, tecnico, visitante e u
   assert.equal(admin.isAdmin, true)
   assert.equal(admin.canManageMaquinas, true)
   assert.equal(admin.canViewAgendamentos, true)
+  assert.equal(admin.canCommentAlertas, true)
+  assert.equal(admin.canManagePreventiveMaintenances, false)
 
   const tecnico = getDashboardPermissions("tecnico")
   assert.equal(tecnico.isTecnico, true)
   assert.equal(tecnico.canUpdateAlertStatus, true)
+  assert.equal(tecnico.canCommentAlertas, true)
+  assert.equal(tecnico.canManagePreventiveMaintenances, true)
   assert.equal(tecnico.canManageMaquinas, false)
   assert.equal(tecnico.canViewAgendamentos, false)
 
@@ -47,6 +51,8 @@ test("getDashboardPermissions separa permissoes de admin, tecnico, visitante e u
   assert.equal(visitante.canManageAdmins, false)
   assert.equal(visitante.canManageAgendamentos, false)
   assert.equal(visitante.canUpdateAlertStatus, false)
+  assert.equal(visitante.canCommentAlertas, false)
+  assert.equal(visitante.canManagePreventiveMaintenances, false)
   assert.equal(visitante.canEditOwnProfile, false)
   assert.equal(visitante.canSendReportsNow, true)
 
