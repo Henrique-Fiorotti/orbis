@@ -25,6 +25,7 @@ import { SlaBadges, SlaWorstBadge } from "@/components/alerta-sla-badges"
 import { RefreshTooltipButton } from "@/components/refresh-tooltip-button"
 import { SiteHeader } from "@/components/site-header"
 import { TablePagination } from "@/components/table-pagination"
+import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import {
   AlertTriangleIcon,
   ClockIcon,
@@ -50,7 +51,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 import { runAfterCurrentOverlayCloses } from "@/lib/deferred-ui"
-import { getAuthSession } from "@/lib/auth-session"
+import { getAuthSession, getAuthSessionUser } from "@/lib/auth-session"
 import { groupAlertasByMaquina } from "@/lib/alertas-grouping"
 import { extractCollection, requestDashboardJson } from "@/lib/dashboard-api"
 import { tempoRelativo } from "@/lib/utils"
@@ -1158,14 +1159,18 @@ export default function AlertasPage() {
     carregando = false,
     salvando,
     adicionarAlerta,
+    atualizarStatus,
     recarregarAlertas,
   } = useAlertas()
   const { tecnicos } = useTecnicos()
+  const permissions = useDashboardPermissions()
+  const usuario = getAuthSessionUser()
 
   const [busca, setBusca] = React.useState("")
   const [sheetAberto, setSheetAberto] = React.useState(false)
   const [modoSheet, setModoSheet] = React.useState("criar")
   const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
+  const [startingAlertId, setStartingAlertId] = React.useState(null)
   const [grupoAlertasAberto, setGrupoAlertasAberto] = React.useState(false)
   const [grupoAlertasSelecionado, setGrupoAlertasSelecionado] = React.useState(null)
   const [grupoRetornoDetalhes, setGrupoRetornoDetalhes] = React.useState(null)
@@ -1179,6 +1184,7 @@ export default function AlertasPage() {
   const alertaAbertoPelaUrlRef = React.useRef(null)
   const loadingInicial = useDashboardMetricsLoading(carregando && alertas.length === 0)
   const errorSemDados = status === "error" && alertas.length === 0
+  const atendimentoActionPending = Boolean(startingAlertId)
 
   const alertasOrdenados = React.useMemo(() => [...alertas].sort(compareAlertaRecente), [alertas])
   const gruposAtualizados = React.useMemo(() => groupAlertasByMaquina(alertasOrdenados), [alertasOrdenados])
@@ -1379,6 +1385,32 @@ export default function AlertasPage() {
       setSheetAberto(false)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível registrar o alerta.")
+    }
+  }
+
+  async function iniciarManutencao(alerta) {
+    if (!alerta?.id) {
+      return
+    }
+
+    try {
+      setStartingAlertId(alerta.id)
+      await atualizarStatus(alerta.id, "EM_ANDAMENTO")
+      setAlertaSelecionado((current) =>
+        current?.id === alerta.id
+          ? {
+              ...current,
+              status: "EM_ANDAMENTO",
+              tecnicoId: current.tecnicoId ?? usuario?.id ?? null,
+              tecnicoNome: current.tecnicoNome || usuario?.nome || null,
+            }
+          : current
+      )
+      toast.success("Manutenção iniciada.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível iniciar a manutenção.")
+    } finally {
+      setStartingAlertId(null)
     }
   }
 
@@ -1631,11 +1663,22 @@ export default function AlertasPage() {
             </div>
             {modoSheet === "ver" && alertaSelecionado ? (
               <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
+                {permissions.canUpdateAlertStatus && alertaDetalhado?.status === "ATIVO" ? (
+                  <Button
+                    className="w-full cursor-pointer"
+                    onClick={() => iniciarManutencao(alertaDetalhado)}
+                    disabled={atendimentoActionPending || salvando}
+                  >
+                    {startingAlertId === alertaDetalhado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
+                    Iniciar manutenção
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   variant="outline"
                   className="h-auto w-full cursor-pointer justify-between gap-3 px-3 py-3 text-left"
                   onClick={abrirHistoricoManutencao}
+                  disabled={atendimentoActionPending || salvando}
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     <HistoryIcon className="size-4 shrink-0 text-[#3B2867] dark:text-white" />

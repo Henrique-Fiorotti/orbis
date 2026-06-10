@@ -97,6 +97,7 @@ const MACHINE_ALERT_STATUS_LABEL = {
   EM_ANDAMENTO: "Em andamento",
 }
 
+const PRIORIDADES_PAGE_SIZE = 3
 const ATENDIMENTOS_CONCLUIDOS_PAGE_SIZE = 3
 
 const technicianCardClass =
@@ -550,6 +551,7 @@ function TechnicianDashboard() {
   const [historicoEventos, setHistoricoEventos] = React.useState([])
   const [atendimentosIniciados, setAtendimentosIniciados] = React.useState(() => new Set())
   const [highlightedSection, setHighlightedSection] = React.useState("")
+  const [paginaPrioridades, setPaginaPrioridades] = React.useState(0)
   const [paginaConcluidos, setPaginaConcluidos] = React.useState(0)
   const highlightTimerRef = React.useRef(null)
   const historicoRequestIdRef = React.useRef(0)
@@ -572,9 +574,16 @@ function TechnicianDashboard() {
     [alertasEmAndamento, atendimentosIniciados, usuario]
   )
   const alertasPrioritarios = React.useMemo(
-    () => [...alertasAtivos].sort(sortByPriority).slice(0, 5),
+    () => [...alertasAtivos].sort(sortByPriority),
     [alertasAtivos]
   )
+  const totalPaginasPrioridades = Math.max(Math.ceil(alertasPrioritarios.length / PRIORIDADES_PAGE_SIZE), 1)
+  const paginaPrioridadesAtual = Math.min(paginaPrioridades, totalPaginasPrioridades - 1)
+  const alertasPrioritariosPaginados = React.useMemo(() => {
+    const start = paginaPrioridadesAtual * PRIORIDADES_PAGE_SIZE
+
+    return alertasPrioritarios.slice(start, start + PRIORIDADES_PAGE_SIZE)
+  }, [alertasPrioritarios, paginaPrioridadesAtual])
   const atendimentosConcluidos = React.useMemo(
     () => alertas
       .filter((alerta) => alerta.status === "RESOLVIDO" && (isAlertAssignedToUser(alerta, usuario) || atendimentosIniciados.has(alerta.id)))
@@ -659,6 +668,10 @@ function TechnicianDashboard() {
     () => getTecnicoResponsavel(alertaSelecionado, tecnicos, usuario),
     [alertaSelecionado, tecnicos, usuario]
   )
+
+  React.useEffect(() => {
+    setPaginaPrioridades((current) => Math.min(current, totalPaginasPrioridades - 1))
+  }, [totalPaginasPrioridades])
 
   React.useEffect(() => {
     setPaginaConcluidos((current) => Math.min(current, totalPaginasConcluidos - 1))
@@ -918,7 +931,7 @@ function TechnicianDashboard() {
             <Separator className="my-4" />
             <div className="flex flex-col gap-3">
               {alertasPrioritarios.length > 0 ? (
-                alertasPrioritarios.map((alerta) => (
+                alertasPrioritariosPaginados.map((alerta) => (
                   <PriorityAlertCard
                     key={alerta.id}
                     alerta={alerta}
@@ -930,6 +943,37 @@ function TechnicianDashboard() {
                 <EmptyPanel title="Sem alertas pendentes" description="Quando novos alertas forem gerados, eles aparecem aqui para atendimento." />
               )}
             </div>
+            {alertasPrioritarios.length > PRIORIDADES_PAGE_SIZE ? (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+                <span className="text-sm text-muted-foreground">
+                  Pag. {paginaPrioridadesAtual + 1} de {totalPaginasPrioridades} - {alertasPrioritarios.length} alertas em aberto
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-8 cursor-pointer"
+                    onClick={() => setPaginaPrioridades((current) => Math.max(current - 1, 0))}
+                    disabled={paginaPrioridadesAtual === 0}
+                    aria-label="Prioridades anteriores"
+                  >
+                    <ChevronLeftIcon className="size-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-8 cursor-pointer"
+                    onClick={() => setPaginaPrioridades((current) => Math.min(current + 1, totalPaginasPrioridades - 1))}
+                    disabled={paginaPrioridadesAtual >= totalPaginasPrioridades - 1}
+                    aria-label="Próximas prioridades"
+                  >
+                    <ChevronRightIcon className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </section>
 
           <div className="flex flex-col gap-4">
