@@ -1498,7 +1498,7 @@ export default function SensoresPage() {
                         : ""}
                     </span>
                   </div>
-                  {modoSheet === "criar" ? (
+                  {modoSheet !== "ver" ? (
                     <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 flex-col gap-1">

@@ -106,7 +106,7 @@ export function DashboardChartsProvider({ children }) {
         ? await Promise.allSettled(
             maquinas.map((maquina) =>
               requestDashboardJson(
-                `/maquinas/${maquina.id}/historico-integridade?limite=90`,
+                `/maquinas/${maquina.id}/historico-integridade?limite=720`,
                 session.accessToken,
                 `o histórico de integridade da máquina ${maquina.nome}`
               )

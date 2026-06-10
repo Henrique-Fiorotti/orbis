@@ -12,6 +12,10 @@ import {
   maquinaTemSensores,
   withMaquinaAlertasStatus,
 } from "../lib/maquinas-table.js"
+import {
+  getIntegrityTrendDataFromHistories,
+  normalizeHistoricoIntegridadeCollection,
+} from "../lib/orbis-dashboard.js"
 
 function createRow(value) {
   return {
@@ -135,4 +139,50 @@ test("groupAlertasByMaquina agrega alertas por maquina e preserva prioridade ope
   const semMaquina = grupos.find((grupo) => grupo.groupId === "sem-maquina")
   assert.equal(semMaquina.maquinaNome, "Máquina não informada")
   assert.equal(semMaquina.totalOcorrencias, 1)
+})
+
+test("historico de integridade aceita payload envelopado e aliases do backend", () => {
+  const maquina = { id: 10, nome: "Motor A", integridade: 81 }
+  const segundaMaquina = { id: 11, nome: "Motor B", integridade: 90 }
+  const historico = normalizeHistoricoIntegridadeCollection({
+    historico: [
+      {
+        id: 1,
+        maquina_id: 10,
+        integridade_media: 72.4,
+        registrado_em: "2026-06-08T12:00:00.000Z",
+      },
+      {
+        id: 2,
+        maquinaId: 10,
+        health_score: 76,
+        leituraEm: "2026-06-09T12:00:00.000Z",
+      },
+    ],
+  }, maquina)
+
+  assert.equal(historico.length, 2)
+  assert.equal(historico[0].date, "2026-06-08")
+  assert.equal(historico[0].integridade, 72)
+  assert.equal(historico[1].date, "2026-06-09")
+  assert.equal(historico[1].integridade, 76)
+
+  const segundoHistorico = normalizeHistoricoIntegridadeCollection({
+    historico_integridade: [
+      {
+        maquinaId: 11,
+        integridadeAtual: 86,
+        dataHora: "2026-06-09T13:00:00.000Z",
+      },
+    ],
+  }, segundaMaquina)
+  const serie = getIntegrityTrendDataFromHistories([
+    { maquina, historico },
+    { maquina: segundaMaquina, historico: segundoHistorico },
+  ], [maquina, segundaMaquina], "2026-06-09")
+
+  assert.equal(serie.at(-1).date, "2026-06-09")
+  assert.equal(serie.at(-1).timestamp, Date.parse("2026-06-09T13:00:00.000Z"))
+  assert.equal(serie.at(-1).integridade, 81)
+  assert.equal(serie.at(-1).maquinas, 2)
 })

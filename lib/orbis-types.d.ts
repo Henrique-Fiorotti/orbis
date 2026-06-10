@@ -423,6 +423,7 @@ export interface AlertTrendChartDatum {
 
 export interface IntegridadeTrendChartDatum {
   date: string;
+  timestamp?: number;
   integridade: number | null;
   maquinas: number;
   estimado?: boolean;
