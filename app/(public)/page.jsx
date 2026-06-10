@@ -484,7 +484,9 @@ export default function HomePage() {
 
       {/* SAQ */}
       <section id="contact" className={styles.gridBackgroundSection}>
-        <SAQ />
+        <RevealOnScroll>
+          <SAQ />
+        </RevealOnScroll>
       </section>
 
       <section className={styles.gridBackgroundSection}>

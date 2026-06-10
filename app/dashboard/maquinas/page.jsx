@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { useMaquinas } from "@/components/context/maquinas-context"
+import { useManutencoes } from "@/components/context/manutencoes-context"
 import { useAlertas } from "@/components/context/alertas-context"
 import { useSensores } from "@/components/context/sensores-context"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
@@ -344,11 +345,21 @@ export default function MaquinasPage() {
     atualizarImagemMaquina,
     recarregarMaquinas,
   } = useMaquinas()
+  const {
+    manutencoes,
+    status: manutencoesStatus,
+    mensagem: manutencoesMensagem,
+    salvando: salvandoManutencao,
+    criarPreventiva,
+    concluirManutencao,
+    recarregarManutencoes,
+  } = useManutencoes()
   const { alertas } = useAlertas()
   const {
     sensores,
     status: sensoresStatus,
     mensagem: sensoresMensagem,
+    recarregarSensores,
   } = useSensores()
 
   const [busca, setBusca] = React.useState("")
@@ -366,6 +377,7 @@ export default function MaquinasPage() {
   const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 })
   const [openActionMenuId, setOpenActionMenuId] = React.useState(null)
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false)
+  const [preventiveActionId, setPreventiveActionId] = React.useState(null)
   const maquinaAbertaPelaUrlRef = React.useRef(null)
 
   const loadingInicial = useDashboardMetricsLoading(carregando && maquinas.length === 0)
@@ -387,6 +399,13 @@ export default function MaquinasPage() {
     return maquinasComStatus.find((maquina) => String(maquina.id) === String(maquinaSelecionada.id)) ?? maquinaSelecionada
   }, [maquinaSelecionada, maquinasComStatus])
   const maquinaDetalhada = modoSheet === "ver" ? maquinaSelecionadaAtual : maquinaSelecionada
+  const manutencoesMaquinaDetalhada = React.useMemo(() => {
+    if (!maquinaDetalhada?.id) {
+      return []
+    }
+
+    return manutencoes.filter((manutencao) => String(manutencao.maquinaId) === String(maquinaDetalhada.id))
+  }, [maquinaDetalhada?.id, manutencoes])
   const totalOk = React.useMemo(() => maquinasComStatus.filter((maquina) => getMaquinaStatusExibicao(maquina) === "OK").length, [maquinasComStatus])
   const totalAlerta = React.useMemo(() => maquinasComStatus.filter((maquina) => ["COM_ALERTA", "EM_ANDAMENTO"].includes(getMaquinaStatusExibicao(maquina))).length, [maquinasComStatus])
   const criticasAlta = React.useMemo(() => maquinasComStatus.filter((maquina) => maquina.criticidade === "ALTA").length, [maquinasComStatus])
@@ -575,6 +594,42 @@ export default function MaquinasPage() {
       setConfirmacaoExclusao("")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível remover a máquina.")
+    }
+  }
+
+  async function iniciarPreventivaMaquina(observacao) {
+    if (!maquinaDetalhada?.id) {
+      return false
+    }
+
+    try {
+      setPreventiveActionId("create")
+      await criarPreventiva({ maquinaId: maquinaDetalhada.id, observacao })
+      await Promise.allSettled([recarregarManutencoes(), recarregarMaquinas()])
+      toast.success("Manutenção preventiva iniciada.")
+      return true
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível iniciar a manutenção preventiva.")
+      return false
+    } finally {
+      setPreventiveActionId(null)
+    }
+  }
+
+  async function concluirPreventivaMaquina(manutencao) {
+    if (!manutencao?.id) {
+      return
+    }
+
+    try {
+      setPreventiveActionId(manutencao.id)
+      await concluirManutencao(manutencao.id, manutencao.observacao || "Preventiva finalizada.")
+      await Promise.allSettled([recarregarManutencoes(), recarregarMaquinas(), recarregarSensores()])
+      toast.success("Manutenção preventiva concluída.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível concluir a manutenção preventiva.")
+    } finally {
+      setPreventiveActionId(null)
     }
   }
 
@@ -909,7 +964,19 @@ export default function MaquinasPage() {
                   <SheetDescription>Veja o resumo operacional e execute ações rápidas.</SheetDescription>
                 </SheetHeader>
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2">
-                  <MaquinaDetailsPanel maquina={maquinaDetalhada} sensores={sensores} sensorError={sensorError} />
+                  <MaquinaDetailsPanel
+                    maquina={maquinaDetalhada}
+                    sensores={sensores}
+                    sensorError={sensorError}
+                    manutencoes={manutencoesMaquinaDetalhada}
+                    manutencoesStatus={manutencoesStatus}
+                    manutencoesMensagem={manutencoesMensagem}
+                    canManagePreventiveMaintenances={permissions.canManagePreventiveMaintenances}
+                    preventiveActionId={preventiveActionId}
+                    preventiveSaving={salvandoManutencao}
+                    onCreatePreventiveMaintenance={iniciarPreventivaMaquina}
+                    onCompletePreventiveMaintenance={concluirPreventivaMaquina}
+                  />
                 </div>
                 <SheetFooter className="shrink-0 border-t border-border/70 bg-popover/95 p-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
                   <div className="grid w-full gap-2 sm:grid-cols-2">

@@ -89,6 +89,10 @@ function getTrimmedObservation(value) {
   return typeof value === "string" ? value.trim() : ""
 }
 
+function getTrimmedComment(value) {
+  return typeof value === "string" ? value.trim() : ""
+}
+
 async function fetchOpenMaintenanceForAlert(accessToken, alertaId) {
   const manutencoes = await fetchDashboardJson(`/manutencoes/alerta/${alertaId}`, accessToken, "as manutencoes do alerta")
   const manutencao = getOpenMaintenance(manutencoes)
@@ -295,6 +299,27 @@ export function AlertasProvider({ children }) {
     })
   }
 
+  async function registrarComentarioAlerta(id, mensagem) {
+    const comentario = getTrimmedComment(mensagem)
+
+    if (!comentario) {
+      throw new Error("Informe uma mensagem para comentar no alerta.")
+    }
+
+    if (comentario.length > 1000) {
+      throw new Error("O comentário deve ter no máximo 1000 caracteres.")
+    }
+
+    return await executarMutacao((accessToken) =>
+      requestDashboardJson(`/alertas/${id}/comentarios`, accessToken, "o comentário do alerta", {
+        method: "POST",
+        body: {
+          mensagem: comentario,
+        },
+      })
+    )
+  }
+
   /**
    * @param {number} _id
    */
@@ -319,6 +344,7 @@ export function AlertasProvider({ children }) {
     adicionarAlerta,
     atualizarStatus,
     registrarRelatoAtendimento,
+    registrarComentarioAlerta,
     cancelarAlerta,
     recarregarAlertas,
     resetarDados,
