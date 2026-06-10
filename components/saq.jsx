@@ -176,7 +176,7 @@ function ContactCard({ href, icon, label, value, delay = 0 }) {
             style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
+                gap: "10px",
                 flex: "1 1 0",
                 minWidth: 0,
                 border: hovered
@@ -462,6 +462,7 @@ export default function ContatoPage() {
                 style={{ alignItems: "center" }}
             >
                 {/* ESQUERDA — FAQ */}
+                
                 <div
                     style={{
                         border: "2px solid var(--contact-panel-border)",
@@ -517,8 +518,8 @@ export default function ContatoPage() {
                             ))}
                         </div>
 
-                        <div className="flex flex-col sm:flex-row justify-center items-stretch gap-4 pt-8 sm:gap-6 lg:gap-8">
-                            <ContactCard
+                        <div className="flex  flex-col sm:flex-row justify-center items-stretch pt-5 sm:gap-6 lg:gap-8">
+                            <ContactCard 
                                 href="https://wa.me/5511900000000"
                                 icon={<WhatsAppIcon isDark={isDark} />}
                                 label={contact.cards.whatsapp}
