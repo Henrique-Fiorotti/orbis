@@ -366,25 +366,25 @@ export function GlobalSearch({ open, onOpenChange }) {
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           showCloseButton={false}
-          className="top-6 w-[min(900px,calc(100vw-2rem))]! max-h-[min(820px,calc(100vh-2rem))] max-w-none! translate-y-0 gap-0 overflow-hidden rounded-[28px]! border bg-background/95 p-0 shadow-2xl backdrop-blur-xl transition-all duration-300 ease-out data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-top-8 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-top-6 data-closed:zoom-out-95"
+          className="top-2 w-[calc(100vw-0.75rem)]! max-w-[calc(100vw-0.75rem)]! max-h-[calc(100dvh-1rem)] translate-y-0 gap-0 overflow-hidden rounded-[22px]! border bg-background/95 p-0 shadow-2xl backdrop-blur-xl transition-all duration-300 ease-out data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-top-8 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-top-6 data-closed:zoom-out-95 sm:top-6 sm:w-[min(900px,calc(100vw-2rem))]! sm:max-h-[min(820px,calc(100vh-2rem))] sm:max-w-none! sm:rounded-[28px]!"
         >
           <DialogTitle className="sr-only">Pesquisar</DialogTitle>
           <DialogDescription className="sr-only">
             Pesquise máquinas, técnicos, administradores, sensores e alertas cadastrados no dashboard.
           </DialogDescription>
-          <div className="flex min-h-14 items-center gap-3 px-5 py-1.5">
-            <SearchIcon className="size-5 shrink-0 text-muted-foreground" />
+          <div className="flex min-h-14 items-center gap-2 px-4 py-1.5 sm:gap-3 sm:px-5">
+            <SearchIcon className="size-4 shrink-0 text-muted-foreground sm:size-5" />
 
             <input
               ref={inputRef}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={handleSearchKeyDown}
-              placeholder="Pesquisar máquinas, técnicos, administradores, sensores e alertas..."
-              className="h-10 min-w-0 flex-1 bg-transparent px-0 text-[17px] leading-6 outline-none placeholder:text-muted-foreground"
+              placeholder="Pesquisar..."
+              className="h-10 min-w-0 flex-1 bg-transparent px-0 text-[16px] leading-6 outline-none placeholder:text-muted-foreground sm:text-[17px]"
             />
 
-            <Button variant="ghost" size="icon-sm" className="shrink-0 cursor-pointer" onClick={() => onOpenChange(false)}>
+            <Button variant="ghost" size="icon-sm" className="-mr-1 size-9 shrink-0 cursor-pointer p-0!" onClick={() => onOpenChange(false)}>
               <XIcon className="size-4" />
               <span className="sr-only">Fechar</span>
             </Button>
@@ -398,7 +398,7 @@ export function GlobalSearch({ open, onOpenChange }) {
             )}
             style={{ height: resultsPanelHeight }}
           >
-            <div ref={resultsContentRef} className="px-2 py-1">
+            <div ref={resultsContentRef} className="px-1 py-1 sm:px-2">
               {loading ? (
                 <div className="grid gap-2 p-2">
                   {Array.from({ length: 5 }).map((_, index) => (

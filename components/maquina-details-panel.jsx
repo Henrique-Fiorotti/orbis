@@ -36,8 +36,11 @@ import {
 import { getAuthSession } from "@/lib/auth-session"
 import { extractCollection, getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
 import {
+  PREDICTIVE_MAINTENANCE_REQUIRED_CONFIRMATIONS,
   formatCoveredHours,
+  formatPredictiveMaintenanceCriteria,
   formatPredictionReason,
+  getPredictiveMaintenanceStatus,
   getPredictionModelMetadata,
   getPredictionOperationalStatus,
 } from "@/lib/prediction-contract.mjs"
@@ -778,6 +781,119 @@ function PredicaoManutencaoCard({
           sub={limiarSub}
         />
       </div>
+    </div>
+  )
+}
+
+function getPredictiveMaintenanceFromSources(maquina, manutencoes) {
+  if (maquina?.manutencaoPreditiva) {
+    return maquina.manutencaoPreditiva
+  }
+
+  const predictiveMaintenances = Array.isArray(manutencoes)
+    ? manutencoes.filter((item) => item?.tipo === "PREVENTIVA" && item?.origem === "PREDICAO")
+    : []
+
+  return (
+    predictiveMaintenances.find((item) => item.status === "EM_ANDAMENTO") ??
+    predictiveMaintenances.find((item) => item.status === "AGENDADA") ??
+    predictiveMaintenances[0] ??
+    null
+  )
+}
+
+function formatPredictiveConfidence(value) {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return "N/A"
+  }
+
+  const normalized = parsed <= 1 ? parsed * 100 : parsed
+  return `${Math.round(Math.max(0, Math.min(100, normalized)))}%`
+}
+
+function PredicaoAgendamentoSeguroCard({ maquina, manutencaoPreditiva }) {
+  const estado = maquina?.estadoPredicaoManutencao
+  const status = getPredictiveMaintenanceStatus({ estado, manutencaoPreditiva })
+  const validas = estado?.validasConsecutivas ?? 0
+  const invalidas = estado?.invalidasConsecutivas ?? 0
+  const progress = Math.max(0, Math.min(PREDICTIVE_MAINTENANCE_REQUIRED_CONFIRMATIONS, validas))
+  const dataCandidata =
+    manutencaoPreditiva?.dataAgendada ??
+    estado?.ultimaDataAgendada ??
+    estado?.ultimaPrevisaoManutencao ??
+    null
+  const reprovados = estado?.criteriosReprovados ?? []
+  const modelo = estado?.modeloIntegridade
+  const toneClasses = {
+    stable: "border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/25",
+    attention: "border-[#5E17EB]/30 bg-[#5E17EB]/5 dark:border-[#5E17EB]/50 dark:bg-[#5E17EB]/10",
+    warning: "border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/25",
+    muted: "border-border bg-muted/30",
+  }
+  const badgeClasses = {
+    stable: "border-emerald-200 bg-white text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
+    attention: "border-[#5E17EB]/30 bg-white text-[#5E17EB] dark:border-[#5E17EB]/50 dark:bg-[#5E17EB]/10 dark:text-[#A780FF]",
+    warning: "border-amber-200 bg-white text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300",
+    muted: "border-border bg-background text-muted-foreground",
+  }
+  const description =
+    status.type === "agendada" && dataCandidata
+      ? `Preventiva preditiva agendada para ${formatMaintenanceDate(dataCandidata)}.`
+      : status.description
+
+  return (
+    <div className={cn("rounded-lg border p-3", toneClasses[status.tone] ?? toneClasses.muted)}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <CalendarCheckIcon className="size-4 text-[#5E17EB]" />
+            <Label>Agendamento preditivo seguro</Label>
+          </div>
+          <p className="mt-2 text-sm font-semibold leading-snug">{status.title}</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
+        </div>
+        <Badge variant="outline" className={cn("shrink-0 px-2 text-xs", badgeClasses[status.tone] ?? badgeClasses.muted)}>
+          {status.badge}
+        </Badge>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <PredictionMetric
+          label="Confirmacoes"
+          value={`${progress}/${PREDICTIVE_MAINTENANCE_REQUIRED_CONFIRMATIONS}`}
+          sub={invalidas > 0 ? `${invalidas} invalida(s) consecutiva(s)` : "Leituras validas consecutivas"}
+        />
+        <PredictionMetric
+          label="Score"
+          value={formatPredictiveConfidence(estado?.scoreConfianca)}
+          sub={estado?.ultimoMotivo ? formatPredictionReason(estado.ultimoMotivo) : "Confianca da candidatura"}
+        />
+        <PredictionMetric
+          label="Data candidata"
+          value={dataCandidata ? formatMaintenanceDate(dataCandidata) : "Sem data"}
+          sub={dataCandidata ? formatDaysUntil(dataCandidata) : "Aguardando calculo"}
+        />
+        <PredictionMetric
+          label="Modelo"
+          value={modelo?.r2 !== null && modelo?.r2 !== undefined ? `R2 ${formatDecimal(modelo.r2, 2)}` : "N/A"}
+          sub={modelo?.pontosUsados ? `${formatCount(modelo.pontosUsados)} pontos usados` : "Integridade estatistica"}
+        />
+      </div>
+
+      {reprovados.length > 0 ? (
+        <div className="mt-3 rounded-md border border-border/70 bg-background/70 p-2">
+          <span className="text-[11px] font-medium uppercase text-muted-foreground">Criterios pendentes</span>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {reprovados.map((criteria) => (
+              <Badge key={criteria} variant="outline" className="border-border/70 bg-background/80 px-2 text-[11px] text-muted-foreground">
+                {formatPredictiveMaintenanceCriteria(criteria)}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -2001,6 +2117,10 @@ export function MaquinaDetailsPanel({
     () => getPredictionSummary({ maquina, statusExibicao, integridadeExibicao }),
     [maquina, statusExibicao, integridadeExibicao]
   )
+  const manutencaoPreditiva = React.useMemo(
+    () => getPredictiveMaintenanceFromSources(maquina, manutencoes),
+    [maquina, manutencoes]
+  )
   const [openSections, setOpenSections] = React.useState({
     preventivas: true,
     predicao: false,
@@ -2212,6 +2332,10 @@ export function MaquinaDetailsPanel({
               <PredictionRemoteNotice
                 loading={false}
                 errors={predictionInsights.errors}
+              />
+              <PredicaoAgendamentoSeguroCard
+                maquina={maquina}
+                manutencaoPreditiva={manutencaoPreditiva}
               />
               <PredicaoResumoCard
                 maquina={maquina}
