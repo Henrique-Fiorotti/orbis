@@ -20,6 +20,10 @@ import {
   buildPreventiveMaintenancePayload,
   normalizeManutencaoCollection,
 } from "../lib/maintenance-contract.mjs"
+import {
+  getPredictiveMaintenanceStatus,
+  normalizePredictiveMaintenanceState,
+} from "../lib/prediction-contract.mjs"
 
 function createRow(value) {
   return {
@@ -244,6 +248,64 @@ test("normalizeManutencaoCollection preserva preventiva agendada criada por pred
     motivo: "previsao_linear_valida",
     previsaoManutencao: "2026-06-30T10:00:00.000Z",
   })
+})
+
+test("normalizePredictiveMaintenanceState preserva estado de agendamento preditivo seguro", () => {
+  const estado = normalizePredictiveMaintenanceState({
+    validasConsecutivas: 2,
+    invalidasConsecutivas: 0,
+    ultimaPredicaoEm: "2026-06-11T19:00:00.000Z",
+    ultimaDataAgendada: "2026-06-25T10:00:00.000Z",
+    ultimaPrevisaoManutencao: "2026-06-30T10:00:00.000Z",
+    ultimoEstadoPredicao: "PREVISAO_VALIDA",
+    ultimoMotivo: "previsao_linear_valida",
+    scoreConfianca: 93,
+    criteriosAprovados: ["estadoValido", "r2Minimo"],
+    criteriosReprovados: ["preventivaManualProxima"],
+    bloqueadaPorPreventivaManual: true,
+    preventivaManualProximaId: 77,
+    modeloIntegridade: {
+      r2: 0.86,
+      slope: -1.25,
+      pontosUsados: 6,
+      janelaHorasCoberta: 6,
+    },
+  })
+
+  assert.equal(estado.validasConsecutivas, 2)
+  assert.equal(estado.ultimoEstadoPredicao, "PREVISAO_VALIDA")
+  assert.equal(estado.bloqueadaPorPreventivaManual, true)
+  assert.deepEqual(estado.criteriosReprovados, ["preventivaManualProxima"])
+  assert.equal(estado.modeloIntegridade.r2, 0.86)
+})
+
+test("getPredictiveMaintenanceStatus diferencia confirmacao, bloqueio e preventiva existente", () => {
+  assert.deepEqual(getPredictiveMaintenanceStatus({
+    estado: {
+      validasConsecutivas: 2,
+      ultimoEstadoPredicao: "PREVISAO_VALIDA",
+      bloqueadaPorPreventivaManual: false,
+    },
+  }), {
+    type: "confirmacao",
+    tone: "attention",
+    badge: "2/3",
+    title: "Predicao em confirmacao",
+    description: "Predicao em confirmacao: 2/3 leituras validas.",
+  })
+
+  assert.equal(getPredictiveMaintenanceStatus({
+    estado: {
+      validasConsecutivas: 3,
+      ultimoEstadoPredicao: "PREVISAO_VALIDA",
+      bloqueadaPorPreventivaManual: true,
+    },
+  }).type, "bloqueada")
+
+  assert.equal(getPredictiveMaintenanceStatus({
+    estado: null,
+    manutencaoPreditiva: { status: "AGENDADA" },
+  }).description, "Preventiva preditiva agendada.")
 })
 
 test("buildPreventiveMaintenancePayload monta preventiva manual imediata ou agendada", () => {

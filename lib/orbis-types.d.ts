@@ -52,6 +52,24 @@ export interface Maquina {
   janelaManuFim: string | null;
   imagem: string | null;
   caminhoImagem: string | null;
+  estadoPredicaoManutencao: EstadoPredicaoManutencao | null;
+  manutencaoPreditiva: Manutencao | null;
+}
+
+export interface EstadoPredicaoManutencao {
+  validasConsecutivas: number;
+  invalidasConsecutivas: number;
+  ultimaPredicaoEm: string | null;
+  ultimaDataAgendada: string | null;
+  ultimaPrevisaoManutencao: string | null;
+  ultimoEstadoPredicao: string;
+  ultimoMotivo: string;
+  scoreConfianca: number | null;
+  criteriosAprovados: string[];
+  criteriosReprovados: string[];
+  bloqueadaPorPreventivaManual: boolean;
+  preventivaManualProximaId: number | null;
+  modeloIntegridade: Record<string, unknown> | null;
 }
 
 export type TipoManutencao = "CORRETIVA" | "PREVENTIVA";
