@@ -1,6 +1,6 @@
 import { clearAuthSession, getAuthSession, saveAuthSession } from "@/lib/auth-session"
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://orbis-5hnm.onrender.com"
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "").replace(/\/+$/, "")
 
 function isFormDataBody(value) {
   return typeof FormData !== "undefined" && value instanceof FormData
@@ -9,6 +9,10 @@ function isFormDataBody(value) {
 function buildUrl(endpoint) {
   if (/^https?:\/\//i.test(endpoint)) {
     return endpoint
+  }
+
+  if (!API_URL) {
+    throw new Error("API_URL nao configurada. Defina API_URL e NEXT_PUBLIC_API_URL no .env.")
   }
 
   return `${API_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`

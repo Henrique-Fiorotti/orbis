@@ -1,6 +1,6 @@
 "use server"
 
-const API_URL = process.env.API_URL || "https://orbis-5hnm.onrender.com"
+const API_URL = (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "")
 
 export async function loginAction(formData) {
   const email = formData.get("email")
@@ -11,6 +11,10 @@ export async function loginAction(formData) {
   }
 
   try {
+    if (!API_URL) {
+      return { error: "API_URL nao configurada. Defina API_URL no .env." }
+    }
+
     const response = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

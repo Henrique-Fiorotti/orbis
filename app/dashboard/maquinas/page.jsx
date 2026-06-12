@@ -817,7 +817,7 @@ export default function MaquinasPage() {
             <div>
               <div className="flex items-center gap-2">
                 <WashingMachineIcon size={22} className="text-[#3B2867] dark:text-white" />
-                <h1 className="text-[18pt]! mb-0! font-medium text-[#3B2867] dark:text-white">Máquinas</h1>
+                <h1 className="text-lg mb-0! font-medium text-[#3B2867] dark:text-white">Máquinas</h1>
               </div>
 
             </div>

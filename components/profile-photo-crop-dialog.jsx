@@ -27,6 +27,27 @@ function getCoverCropRect(imageWidth, imageHeight, positionX, positionY) {
   }
 }
 
+function getCoverOverflow(imageWidth, imageHeight, frameSize) {
+  if (!imageWidth || !imageHeight || !frameSize) {
+    return { overflowX: 0, overflowY: 0 }
+  }
+
+  const scale = Math.max(frameSize / imageWidth, frameSize / imageHeight)
+
+  return {
+    overflowX: Math.max(0, imageWidth * scale - frameSize),
+    overflowY: Math.max(0, imageHeight * scale - frameSize),
+  }
+}
+
+function getDraggedPosition(startPosition, delta, overflow) {
+  if (overflow <= 0.5) {
+    return 50
+  }
+
+  return clamp(startPosition - (delta / overflow) * 100, 0, 100)
+}
+
 async function cropAvatar(file, positionX, positionY) {
   const imageUrl = URL.createObjectURL(file)
   const image = new Image()
@@ -72,10 +93,14 @@ export function ProfilePhotoCropDialog({
   onRemove,
 }) {
   const inputRef = React.useRef(null)
+  const cropFrameRef = React.useRef(null)
+  const dragRef = React.useRef(null)
   const [file, setFile] = React.useState(null)
   const [previewUrl, setPreviewUrl] = React.useState("")
   const [positionX, setPositionX] = React.useState(50)
   const [positionY, setPositionY] = React.useState(50)
+  const [imageSize, setImageSize] = React.useState(null)
+  const [isDragging, setIsDragging] = React.useState(false)
   const [processing, setProcessing] = React.useState(false)
   const busy = processing || saving
 
@@ -85,12 +110,16 @@ export function ProfilePhotoCropDialog({
       setPreviewUrl("")
       setPositionX(50)
       setPositionY(50)
+      setImageSize(null)
+      setIsDragging(false)
+      dragRef.current = null
     }
   }, [open])
 
   React.useEffect(() => {
     if (!file) {
       setPreviewUrl("")
+      setImageSize(null)
       return
     }
 
@@ -98,6 +127,9 @@ export function ProfilePhotoCropDialog({
     setPreviewUrl(url)
     setPositionX(50)
     setPositionY(50)
+    setImageSize(null)
+    setIsDragging(false)
+    dragRef.current = null
 
     return () => URL.revokeObjectURL(url)
   }, [file])
@@ -121,6 +153,65 @@ export function ProfilePhotoCropDialog({
     }
 
     setFile(selectedFile)
+  }
+
+  function handlePreviewImageLoad(event) {
+    setImageSize({
+      width: event.currentTarget.naturalWidth,
+      height: event.currentTarget.naturalHeight,
+    })
+  }
+
+  function handleCropPointerDown(event) {
+    if (!previewUrl || busy || event.button !== 0) {
+      return
+    }
+
+    const frame = cropFrameRef.current
+
+    if (!frame) {
+      return
+    }
+
+    event.preventDefault()
+    frame.setPointerCapture?.(event.pointerId)
+
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startPositionX: positionX,
+      startPositionY: positionY,
+      frameSize: frame.getBoundingClientRect().width,
+    }
+    setIsDragging(true)
+  }
+
+  function handleCropPointerMove(event) {
+    const drag = dragRef.current
+
+    if (!drag || drag.pointerId !== event.pointerId || !imageSize) {
+      return
+    }
+
+    event.preventDefault()
+
+    const { overflowX, overflowY } = getCoverOverflow(imageSize.width, imageSize.height, drag.frameSize)
+
+    setPositionX(getDraggedPosition(drag.startPositionX, event.clientX - drag.startClientX, overflowX))
+    setPositionY(getDraggedPosition(drag.startPositionY, event.clientY - drag.startClientY, overflowY))
+  }
+
+  function finishCropDrag(event) {
+    const drag = dragRef.current
+
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return
+    }
+
+    cropFrameRef.current?.releasePointerCapture?.(event.pointerId)
+    dragRef.current = null
+    setIsDragging(false)
   }
 
   async function handleConfirm() {
@@ -155,12 +246,18 @@ export function ProfilePhotoCropDialog({
           <div className="flex flex-col items-center justify-center gap-3 border-b bg-muted/20 px-5 py-6 md:border-b-0 md:border-r">
             <div className="relative">
               <div
-                className="relative size-36 overflow-hidden rounded-full border bg-muted select-none sm:size-40"
+                ref={cropFrameRef}
+                data-profile-photo-crop-frame
+                className={`relative size-36 overflow-hidden rounded-full border bg-muted select-none sm:size-40 ${previewUrl && !busy ? isDragging ? "cursor-grabbing" : "cursor-grab" : ""}`}
                 onContextMenu={(event) => event.preventDefault()}
-                onPointerDown={(event) => event.preventDefault()}
+                onPointerDown={handleCropPointerDown}
+                onPointerMove={handleCropPointerMove}
+                onPointerUp={finishCropDrag}
+                onPointerCancel={finishCropDrag}
                 style={{
                   WebkitTouchCallout: "none",
                   WebkitUserSelect: "none",
+                  touchAction: previewUrl ? "none" : undefined,
                   userSelect: "none",
                 }}
               >
@@ -170,9 +267,9 @@ export function ProfilePhotoCropDialog({
                     alt={name ? `Prévia da foto de ${name}` : "Prévia da foto de perfil"}
                     draggable={false}
                     className="pointer-events-none size-full select-none object-cover"
+                    onLoad={handlePreviewImageLoad}
                     onContextMenu={(event) => event.preventDefault()}
                     onDragStart={(event) => event.preventDefault()}
-                    onPointerDown={(event) => event.preventDefault()}
                     style={{
                       objectPosition: previewUrl ? `${positionX}% ${positionY}%` : undefined,
                       WebkitTouchCallout: "none",
@@ -190,18 +287,23 @@ export function ProfilePhotoCropDialog({
                   </Avatar>
                 )}
 
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 rounded-full"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(to right, rgba(255,255,255,.55) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.55) 1px, transparent 1px)",
-                    backgroundSize: "33.333% 33.333%",
-                    boxShadow: "inset 0 0 0 1px rgba(0,0,0,.2)",
-                  }}
-                />
-                <div className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-[#5E17EB]/80" />
-                <div className="pointer-events-none absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-[#5E17EB]/80" />
+                {isDragging ? (
+                  <>
+                    <div
+                      aria-hidden="true"
+                      data-profile-photo-crop-grid
+                      className="pointer-events-none absolute inset-0 rounded-full transition-opacity"
+                      style={{
+                        backgroundImage:
+                          "linear-gradient(to right, rgba(255,255,255,.55) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.55) 1px, transparent 1px)",
+                        backgroundSize: "33.333% 33.333%",
+                        boxShadow: "inset 0 0 0 1px rgba(0,0,0,.2)",
+                      }}
+                    />
+                    <div className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-[#5E17EB]/80" />
+                    <div className="pointer-events-none absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-[#5E17EB]/80" />
+                  </>
+                ) : null}
               </div>
 
               <button
