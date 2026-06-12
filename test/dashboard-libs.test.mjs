@@ -2,7 +2,9 @@ import test from "node:test"
 import assert from "node:assert/strict"
 
 import { groupAlertasByMaquina } from "../lib/alertas-grouping.js"
+import { parseAlertApiRecord } from "../lib/alert-contract.mjs"
 import { getDashboardPermissions, normalizeDashboardRole } from "../lib/dashboard-permissions.js"
+import { parseMachineApiRecord } from "../lib/machine-contract.mjs"
 import {
   getMaquinaAlertasStatus,
   getMaquinaIntegridadeExibicao,
@@ -24,6 +26,10 @@ import {
   getPredictiveMaintenanceStatus,
   normalizePredictiveMaintenanceState,
 } from "../lib/prediction-contract.mjs"
+import {
+  parseSensorApiRecord,
+  parseSensorReadingApiRecord,
+} from "../lib/sensor-contract.mjs"
 
 function createRow(value) {
   return {
@@ -91,6 +97,83 @@ test("helpers de maquina calculam status de exibicao sem mutar dados", () => {
 
   const [comStatus] = withMaquinaAlertasStatus([maquina], alertas)
   assert.deepEqual(comStatus, { ...maquina, statusAlertas: "EM_ANDAMENTO" })
+})
+
+test("parseMachineApiRecord preserva aliases de maquina e limpa blocos preditivos invalidos", () => {
+  const parsed = parseMachineApiRecord({
+    maquinaId: "9",
+    nomeMaquina: "Esteira 01",
+    healthScore: "82",
+    sensores: [{ id: 1 }, { id: 2 }],
+    estado_predicao_manutencao: {
+      validasConsecutivas: "2",
+      ultimoEstadoPredicao: "PREVISAO_VALIDA",
+    },
+    predictedMaintenance: "manutencao invalida",
+  })
+
+  assert.equal(parsed.maquinaId, "9")
+  assert.equal(parsed.nomeMaquina, "Esteira 01")
+  assert.equal(parsed.healthScore, "82")
+  assert.deepEqual(parsed.sensores, [{ id: 1 }, { id: 2 }])
+  assert.deepEqual(parsed.estado_predicao_manutencao, {
+    validasConsecutivas: "2",
+    ultimoEstadoPredicao: "PREVISAO_VALIDA",
+  })
+  assert.equal(parsed.predictedMaintenance, null)
+  assert.equal(parseMachineApiRecord(null), null)
+  assert.equal(parseMachineApiRecord([]), null)
+})
+
+test("parseSensorApiRecord preserva aliases de sensor e rejeita payload invalido", () => {
+  const parsed = parseSensorApiRecord({
+    sensorId: "15",
+    nomeSensor: "Temperatura A",
+    idMaquina: "9",
+    nomeMaquina: "Esteira 01",
+    temperatura: { valorAtual: "42" },
+    vibracao: { valorAtual: "1.2" },
+  })
+
+  assert.equal(parsed.sensorId, "15")
+  assert.equal(parsed.nomeSensor, "Temperatura A")
+  assert.equal(parsed.idMaquina, "9")
+  assert.deepEqual(parsed.temperatura, { valorAtual: "42" })
+  assert.equal(parseSensorApiRecord(null), null)
+  assert.equal(parseSensorApiRecord([]), null)
+})
+
+test("parseSensorReadingApiRecord preserva aliases de leitura de sensor", () => {
+  const parsed = parseSensorReadingApiRecord({
+    sensor_id: "15",
+    temperature: "41.5",
+    vibration: "1.2",
+    timestamp: "2026-06-12T10:00:00.000Z",
+  })
+
+  assert.equal(parsed.sensor_id, "15")
+  assert.equal(parsed.temperature, "41.5")
+  assert.equal(parsed.vibration, "1.2")
+  assert.equal(parsed.timestamp, "2026-06-12T10:00:00.000Z")
+  assert.equal(parseSensorReadingApiRecord("invalid"), null)
+})
+
+test("parseAlertApiRecord preserva aliases de alerta e rejeita payload invalido", () => {
+  const parsed = parseAlertApiRecord({
+    alertaId: "44",
+    tipoAlerta: "instabilidade",
+    maquina: { id: 9, nome: "Esteira 01" },
+    sensor: { id: 15, nome: "Temperatura A" },
+    descricao: "Variacao detectada",
+    eventos: [{ tipo: "CRIADO" }],
+  })
+
+  assert.equal(parsed.alertaId, "44")
+  assert.equal(parsed.tipoAlerta, "instabilidade")
+  assert.deepEqual(parsed.maquina, { id: 9, nome: "Esteira 01" })
+  assert.deepEqual(parsed.eventos, [{ tipo: "CRIADO" }])
+  assert.equal(parseAlertApiRecord(undefined), null)
+  assert.equal(parseAlertApiRecord([]), null)
 })
 
 test("integridadeMaquinaFilterFn classifica faixas de integridade", () => {
@@ -250,36 +333,105 @@ test("normalizeManutencaoCollection preserva preventiva agendada criada por pred
   })
 })
 
+test("normalizeManutencaoCollection padroniza metadataPredicao com Zod", () => {
+  const [manutencao] = normalizeManutencaoCollection({
+    manutencoes: [
+      {
+        id: "21",
+        maquinaId: "9",
+        tipo: "preventiva",
+        origem: "predicao",
+        status: "programada",
+        predictionMetadata: {
+          estadoPredicao: "previsao valida",
+          fonteDecisao: "regressao linear",
+          urgencia: "alta",
+          motivo: " previsao_linear_valida ",
+          previsaoManutencao: Date.parse("2026-06-30T10:00:00.000Z"),
+          contextoExtra: { janelaHoras: 24 },
+        },
+      },
+    ],
+  })
+
+  assert.equal(manutencao.id, 21)
+  assert.equal(manutencao.status, "AGENDADA")
+  assert.equal(manutencao.origem, "PREDICAO")
+  assert.deepEqual(manutencao.metadataPredicao, {
+    estadoPredicao: "PREVISAO_VALIDA",
+    fonteDecisao: "REGRESSAO_LINEAR",
+    urgencia: "ALTA",
+    motivo: "previsao_linear_valida",
+    previsaoManutencao: "2026-06-30T10:00:00.000Z",
+    contextoExtra: { janelaHoras: 24 },
+  })
+})
+
+test("normalizeManutencaoCollection ignora registros invalidos sem quebrar a lista", () => {
+  const manutencoes = normalizeManutencaoCollection({
+    dados: [
+      null,
+      [],
+      {
+        id: 31,
+        maquinaId: 9,
+        tipo: "PREVENTIVA",
+        status: "AGENDADA",
+        metadataPredicao: "metadata invalida",
+      },
+    ],
+  })
+
+  assert.equal(manutencoes.length, 1)
+  assert.equal(manutencoes[0].id, 31)
+  assert.equal(manutencoes[0].metadataPredicao, null)
+})
+
 test("normalizePredictiveMaintenanceState preserva estado de agendamento preditivo seguro", () => {
   const estado = normalizePredictiveMaintenanceState({
-    validasConsecutivas: 2,
+    validasConsecutivas: "2",
     invalidasConsecutivas: 0,
-    ultimaPredicaoEm: "2026-06-11T19:00:00.000Z",
+    ultimaPredicaoEm: Date.parse("2026-06-11T19:00:00.000Z"),
     ultimaDataAgendada: "2026-06-25T10:00:00.000Z",
     ultimaPrevisaoManutencao: "2026-06-30T10:00:00.000Z",
-    ultimoEstadoPredicao: "PREVISAO_VALIDA",
+    estadoPredicao: "previsao valida",
     ultimoMotivo: "previsao_linear_valida",
-    scoreConfianca: 93,
-    criteriosAprovados: ["estadoValido", "r2Minimo"],
-    criteriosReprovados: ["preventivaManualProxima"],
-    bloqueadaPorPreventivaManual: true,
-    preventivaManualProximaId: 77,
+    scoreConfianca: "93",
+    criteriosAprovados: null,
+    criteriosReprovados: ["preventivaManualProxima", ""],
+    bloqueadaPorPreventivaManual: "sim",
+    preventivaManualProximaId: "77",
     modeloIntegridade: {
-      r2: 0.86,
-      slope: -1.25,
-      pontosUsados: 6,
+      r2: "0.86",
+      slope: "-1.25",
+      pontosUsados: "6",
       janelaHorasCoberta: 6,
     },
   })
 
   assert.equal(estado.validasConsecutivas, 2)
+  assert.equal(estado.ultimaPredicaoEm, "2026-06-11T19:00:00.000Z")
   assert.equal(estado.ultimoEstadoPredicao, "PREVISAO_VALIDA")
+  assert.equal(estado.scoreConfianca, 93)
+  assert.deepEqual(estado.criteriosAprovados, [])
   assert.equal(estado.bloqueadaPorPreventivaManual, true)
   assert.deepEqual(estado.criteriosReprovados, ["preventivaManualProxima"])
   assert.equal(estado.modeloIntegridade.r2, 0.86)
+  assert.equal(estado.modeloIntegridade.pontosUsados, 6)
 })
 
 test("getPredictiveMaintenanceStatus diferencia confirmacao, bloqueio e preventiva existente", () => {
+  assert.deepEqual(getPredictiveMaintenanceStatus({
+    estado: null,
+    manutencaoPreditiva: null,
+  }), {
+    type: "sem_dados",
+    tone: "muted",
+    badge: "Sem dados",
+    title: "Sem predicao suficiente",
+    description: "Ainda nao ha dados suficientes para agendamento preditivo.",
+  })
+
   assert.deepEqual(getPredictiveMaintenanceStatus({
     estado: {
       validasConsecutivas: 2,
