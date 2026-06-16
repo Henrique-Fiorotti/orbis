@@ -1,6 +1,6 @@
 "use server"
 
-const API_URL = process.env.API_URL || "https://server.orbis-3td.com.br"
+const API_URL = process.env.API_URL
 
 export async function loginAction(formData) {
   const email = formData.get("email")
