@@ -29,6 +29,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   getMaquinaIntegridadeExibicao,
   getMaquinaStatusExibicao,
@@ -49,6 +50,12 @@ import { cn, tempoRelativo } from "@/lib/utils"
 const PREDICAO_LIMIAR_MANUTENCAO = 70
 const PREDICAO_LIMIAR_FALHA = 30
 const PREDICAO_ANTECEDENCIA_FIM_JANELA_DIAS = 2
+const DEFAULT_REGRESSION_PERIOD = "1d"
+const REGRESSION_HISTORY_LIMIT = 10080
+const REGRESSION_PERIOD_OPTIONS = [
+  { value: "1d", label: "1 dia", hours: 24 },
+  { value: "7d", label: "7 dias", hours: 168 },
+]
 
 const FATOR_RISCO_LABELS = {
   proporcao_acima_limite_24h: "leituras acima do limite em 24h",
@@ -343,15 +350,35 @@ function formatCount(value) {
   return new Intl.NumberFormat("pt-BR").format(parsed)
 }
 
-function formatRecentPoints(value) {
+function formatRegressionPointCount(value) {
   const parsed = Number(value)
-  const count = Number.isFinite(parsed) ? Math.max(0, Math.min(30, Math.round(parsed))) : 0
+  const count = Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : 0
 
   if (count === 0) {
     return "Sem pontos"
   }
 
-  return `Ultimos ${count} pontos`
+  if (count === 1) {
+    return "1 ponto"
+  }
+
+  return `${new Intl.NumberFormat("pt-BR").format(count)} pontos`
+}
+
+function getRegressionChartCoverageHours(data) {
+  const realPoints = Array.isArray(data)
+    ? data.filter((point) => !point.projected && Number.isFinite(point.timestamp))
+    : []
+
+  if (realPoints.length < 2) {
+    return null
+  }
+
+  const firstTimestamp = realPoints[0].timestamp
+  const lastTimestamp = realPoints[realPoints.length - 1].timestamp
+  const hours = (lastTimestamp - firstTimestamp) / (1000 * 60 * 60)
+
+  return Number.isFinite(hours) ? Math.max(0, hours) : null
 }
 
 function formatRiskFactor(value) {
@@ -441,10 +468,16 @@ function normalizeHistoricoIntegridadeCollection(payload) {
 }
 
 async function fetchMachinePredictions(maquinaId, accessToken, signal) {
+  const historicoParams = new URLSearchParams({
+    limite: String(REGRESSION_HISTORY_LIMIT),
+    periodo: "7d",
+    periodoDias: "7",
+    janelaHoras: "168",
+  })
   const [alertasResult, riscoResult, historicoResult] = await Promise.allSettled([
     requestDashboardJson(`/maquinas/${maquinaId}/predicao-alertas`, accessToken, "a predição de alertas", { signal }),
     requestDashboardJson(`/maquinas/${maquinaId}/predicao-risco`, accessToken, "a predição de risco", { signal }),
-    requestDashboardJson(`/maquinas/${maquinaId}/historico-integridade?limite=30`, accessToken, "o histórico de integridade", { signal }),
+    requestDashboardJson(`/maquinas/${maquinaId}/historico-integridade?${historicoParams.toString()}`, accessToken, "o histórico de integridade", { signal }),
   ])
 
   const alertas =
@@ -1181,34 +1214,94 @@ function formatChartTickDate(value) {
   }).format(date)
 }
 
-function buildRegressionChartData(historico, modelo, previsaoManutencao) {
+function formatRegressionChartTickDate(value, period) {
+  const date = getChartDate(value)
+
+  if (!date) {
+    return ""
+  }
+
+  if (period === "1d") {
+    return new Intl.DateTimeFormat("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date)
+  }
+
+  return formatChartTickDate(value)
+}
+
+function getRegressionPeriodOption(period) {
+  return REGRESSION_PERIOD_OPTIONS.find((option) => option.value === period) ?? REGRESSION_PERIOD_OPTIONS[0]
+}
+
+function getRegressionModelBaseTime(modelo, fallbackBaseTime) {
+  const lastModelPoint = parseDateValue(modelo?.ultimoPontoEm)
+  const coveredHours = Number(modelo?.janelaHorasCoberta)
+
+  if (lastModelPoint && Number.isFinite(coveredHours) && coveredHours > 0) {
+    return lastModelPoint.getTime() - (coveredHours * 60 * 60 * 1000)
+  }
+
+  return fallbackBaseTime
+}
+
+function filterHistoricoByRegressionPeriod(historico, period) {
   const points = Array.isArray(historico) ? historico : []
-
-  if (points.length === 0) {
-    return []
-  }
-
-  const baseTime = Date.parse(points[0].criadoEm)
-
-  if (!Number.isFinite(baseTime)) {
-    return []
-  }
-
-  const data = points
+  const periodOption = getRegressionPeriodOption(period)
+  const parsedPoints = points
     .map((point, index) => {
-      const timestamp = Date.parse(point.criadoEm)
-      const integridade = getNumericValue(point.integridade)
+      const timestamp = Date.parse(point?.criadoEm)
+      const integridade = getNumericValue(point?.integridade)
 
       if (!Number.isFinite(timestamp) || integridade === null) {
         return null
       }
 
-      const hours = (timestamp - baseTime) / (1000 * 60 * 60)
+      return { ...point, id: point.id ?? index, timestamp, integridade }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.timestamp - b.timestamp)
+
+  const latestTimestamp = parsedPoints.at(-1)?.timestamp
+
+  if (!Number.isFinite(latestTimestamp)) {
+    return []
+  }
+
+  const cutoff = latestTimestamp - (periodOption.hours * 60 * 60 * 1000)
+  return parsedPoints.filter((point) => point.timestamp >= cutoff)
+}
+
+function buildRegressionChartData(historico, modelo, previsaoManutencao, period = DEFAULT_REGRESSION_PERIOD) {
+  const points = Array.isArray(historico) ? historico : []
+  const periodOption = getRegressionPeriodOption(period)
+
+  if (points.length === 0) {
+    return []
+  }
+
+  const periodPoints = filterHistoricoByRegressionPeriod(points, period)
+
+  if (periodPoints.length === 0) {
+    return []
+  }
+
+  const baseTime = periodPoints[0].timestamp
+  const modelBaseTime = getRegressionModelBaseTime(modelo, baseTime)
+
+  if (!Number.isFinite(baseTime) || !Number.isFinite(modelBaseTime)) {
+    return []
+  }
+
+  const data = periodPoints
+    .map((point, index) => {
+      const hours = (point.timestamp - modelBaseTime) / (1000 * 60 * 60)
 
       return {
         id: point.id ?? index,
-        timestamp,
-        integridade,
+        timestamp: point.timestamp,
+        integridade: point.integridade,
         regressao: getRegressionValue(modelo, hours),
         projected: false,
       }
@@ -1217,9 +1310,19 @@ function buildRegressionChartData(historico, modelo, previsaoManutencao) {
 
   const forecastDate = parseDateValue(previsaoManutencao)
   const lastTimestamp = data[data.length - 1]?.timestamp
+  const forecastLimit = Number.isFinite(lastTimestamp)
+    ? lastTimestamp + (periodOption.hours * 60 * 60 * 1000)
+    : null
 
-  if (modelo && forecastDate && Number.isFinite(lastTimestamp) && forecastDate.getTime() > lastTimestamp) {
-    const hours = (forecastDate.getTime() - baseTime) / (1000 * 60 * 60)
+  if (
+    modelo &&
+    forecastDate &&
+    Number.isFinite(lastTimestamp) &&
+    Number.isFinite(forecastLimit) &&
+    forecastDate.getTime() > lastTimestamp &&
+    forecastDate.getTime() <= forecastLimit
+  ) {
+    const hours = (forecastDate.getTime() - modelBaseTime) / (1000 * 60 * 60)
 
     data.push({
       id: "previsao-falha",
@@ -1309,7 +1412,9 @@ function RegressionChartMessage({ message, tone = "muted" }) {
   )
 }
 
-function PredictionRegressionChart({ data, loading, errors, hasRegression }) {
+function PredictionRegressionChart({ data, loading, errors, hasRegression, period }) {
+  const showPointDots = data.length <= 160
+
   if (loading && data.length === 0) {
     return <RegressionChartMessage message="Carregando histórico da máquina..." />
   }
@@ -1335,7 +1440,7 @@ function PredictionRegressionChart({ data, loading, errors, hasRegression }) {
           axisLine={false}
           tickMargin={8}
           minTickGap={28}
-          tickFormatter={formatChartTickDate}
+          tickFormatter={(value) => formatRegressionChartTickDate(value, period)}
         />
         <YAxis
           width={36}
@@ -1370,7 +1475,7 @@ function PredictionRegressionChart({ data, loading, errors, hasRegression }) {
           type="monotone"
           stroke="var(--color-integridade)"
           strokeWidth={2}
-          dot={{ r: 3 }}
+          dot={showPointDots ? { r: 3 } : false}
           activeDot={{ r: 5 }}
           connectNulls={false}
         />
@@ -1399,10 +1504,19 @@ function PredictionRegressionSheet({
   loading,
   errors,
 }) {
+  const [regressionPeriod, setRegressionPeriod] = React.useState(DEFAULT_REGRESSION_PERIOD)
   const modelo = React.useMemo(() => getPredictionModel(predicaoAlertas), [predicaoAlertas])
   const chartData = React.useMemo(
-    () => buildRegressionChartData(historico, modelo, maquina?.previsaoManutencao),
-    [historico, maquina?.previsaoManutencao, modelo]
+    () => buildRegressionChartData(historico, modelo, maquina?.previsaoManutencao, regressionPeriod),
+    [historico, maquina?.previsaoManutencao, modelo, regressionPeriod]
+  )
+  const chartPointCount = React.useMemo(
+    () => chartData.filter((point) => !point.projected).length,
+    [chartData]
+  )
+  const chartCoverageHours = React.useMemo(
+    () => getRegressionChartCoverageHours(chartData),
+    [chartData]
   )
   const notice = getRegressionNotice({
     loading,
@@ -1416,6 +1530,10 @@ function PredictionRegressionSheet({
     warning: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-300",
     muted: "border-border bg-muted/30 text-muted-foreground",
   }
+
+  React.useEffect(() => {
+    setRegressionPeriod(DEFAULT_REGRESSION_PERIOD)
+  }, [maquina?.id])
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -1432,11 +1550,33 @@ function PredictionRegressionSheet({
           </div>
 
           <div className="mt-4 rounded-lg border border-border/70 bg-background/70 p-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs font-medium uppercase text-muted-foreground">Periodo do grafico</span>
+              <ToggleGroup
+                type="single"
+                value={regressionPeriod}
+                onValueChange={(value) => {
+                  if (value) {
+                    setRegressionPeriod(value)
+                  }
+                }}
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+              >
+                {REGRESSION_PERIOD_OPTIONS.map((option) => (
+                  <ToggleGroupItem key={option.value} value={option.value} className="px-3">
+                    {option.label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
             <PredictionRegressionChart
               data={chartData}
               loading={loading}
               errors={errors}
               hasRegression={Boolean(modelo)}
+              period={regressionPeriod}
             />
           </div>
 
@@ -1452,14 +1592,14 @@ function PredictionRegressionSheet({
               sub={modelo ? getSlopeAngleDescription(modelo.slope) : "Sem tendencia calculada."}
             />
             <PredictionMetric
-              label="Dados usados"
-              value={formatRecentPoints(modelo?.pontosUsados ?? historico.length)}
-              sub="Pontos recentes da máquina."
+              label="Dados exibidos"
+              value={formatRegressionPointCount(chartPointCount)}
+              sub={`Periodo selecionado: ${getRegressionPeriodOption(regressionPeriod).label}.`}
             />
             <PredictionMetric
               label="Cobertura temporal"
-              value={modelo ? formatCoveredHours(modelo.janelaHorasCoberta) : "N/A"}
-              sub="Janela dos pontos usados."
+              value={formatCoveredHours(chartCoverageHours)}
+              sub="Janela dos pontos exibidos."
             />
             <PredictionMetric
               label="Ultimo ponto"
