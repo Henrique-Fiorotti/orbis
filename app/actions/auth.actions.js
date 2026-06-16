@@ -1,6 +1,14 @@
 "use server"
 
-const API_URL = process.env.API_URL
+const DEFAULT_API_URL = "https://server.orbis-3td.com.br"
+
+function normalizeApiUrl(value) {
+  return typeof value === "string" && value.trim()
+    ? value.trim().replace(/\/+$/, "")
+    : ""
+}
+
+const API_URL = normalizeApiUrl(process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_URL)
 
 export async function loginAction(formData) {
   const email = formData.get("email")

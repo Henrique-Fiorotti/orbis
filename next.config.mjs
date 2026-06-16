@@ -6,6 +6,15 @@ const nextConfig = {
     API_URL,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || API_URL,
   },
+  experimental: {
+    serverActions: {
+      allowedOrigins: [
+        "orbis-3td.com.br",
+        "www.orbis-3td.com.br",
+        "server.orbis-3td.com.br",
+      ],
+    },
+  },
 };
 
 export default nextConfig;
