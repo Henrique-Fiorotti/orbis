@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 
+import { useDashboardBootstrap, useIsDashboardHome } from "@/components/context/dashboard-bootstrap-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import { collectPaginatedItems } from "@/lib/pagination.mjs"
@@ -301,12 +303,16 @@ async function fetchAllTecnicoItems(accessToken, limit) {
  * @param {WithChildrenProps} props
  */
 export function TecnicosProvider({ children }) {
+  const pathname = usePathname()
+  const isDashboardHome = useIsDashboardHome(pathname)
+  const dashboardBootstrap = useDashboardBootstrap()
   const [tecnicos, setTecnicos] = React.useState([])
   const [status, setStatus] = React.useState("loading")
   const [mensagem, setMensagem] = React.useState("Carregando técnicos...")
   const [salvando, setSalvando] = React.useState(false)
   const [totalPaginas, setTotalPaginas] = React.useState(0)
   const [paginaAtual, setPaginaAtual] = React.useState(1)
+  const [dataSource, setDataSource] = React.useState("idle")
 
   const carregarTecnicos = React.useCallback(async ({ silent = false, page = 1, limit = 10 } = {}) => {
     const session = getAuthSession()
@@ -357,6 +363,7 @@ export function TecnicosProvider({ children }) {
       
       setStatus("success")
       setMensagem("")
+      setDataSource("full")
     } catch (error) {
       const statusCode = getHttpErrorStatus(error)
 
@@ -381,8 +388,29 @@ export function TecnicosProvider({ children }) {
   }, [])
 
   React.useEffect(() => {
+    if (isDashboardHome && dashboardBootstrap.status === "loading") {
+      setStatus("loading")
+      setMensagem("Carregando técnicos...")
+      return
+    }
+
+    if (isDashboardHome && dashboardBootstrap.status === "success") {
+      const bootstrapTecnicos = dashboardBootstrap.snapshot.tecnicos
+      setTecnicos(bootstrapTecnicos)
+      setTotalPaginas(bootstrapTecnicos.length > 0 ? 1 : 0)
+      setPaginaAtual(1)
+      setStatus("success")
+      setMensagem("")
+      setDataSource("bootstrap")
+      return
+    }
+
+    if (!isDashboardHome && dataSource === "full") {
+      return
+    }
+
     carregarTecnicos().catch(() => {})
-  }, [carregarTecnicos])
+  }, [carregarTecnicos, dashboardBootstrap.status, dashboardBootstrap.snapshot.tecnicos, dataSource, isDashboardHome])
 
   /**
    * @param {string} endpoint

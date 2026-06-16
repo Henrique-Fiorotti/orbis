@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 
+import { useDashboardBootstrap, useIsDashboardHome } from "@/components/context/dashboard-bootstrap-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import {
@@ -13,11 +15,15 @@ import {
 const AdminsContext = React.createContext(null)
 
 export function AdminsProvider({ children }) {
+  const pathname = usePathname()
+  const isDashboardHome = useIsDashboardHome(pathname)
+  const dashboardBootstrap = useDashboardBootstrap()
   const [admins, setAdmins] = React.useState([])
   const [status, setStatus] = React.useState("loading")
   const [mensagem, setMensagem] = React.useState("Carregando administradores...")
   const [totalPaginas, setTotalPaginas] = React.useState(0)
   const [paginaAtual, setPaginaAtual] = React.useState(1)
+  const [dataSource, setDataSource] = React.useState("idle")
 
   const carregarAdmins = React.useCallback(async ({ silent = false, page = 1, limit = 100 } = {}) => {
     const session = getAuthSession()
@@ -61,6 +67,7 @@ export function AdminsProvider({ children }) {
       setPaginaAtual(page)
       setStatus("success")
       setMensagem("")
+      setDataSource("full")
     } catch (error) {
       const statusCode = getHttpErrorStatus(error)
 
@@ -76,8 +83,28 @@ export function AdminsProvider({ children }) {
   }, [])
 
   React.useEffect(() => {
+    if (isDashboardHome && dashboardBootstrap.status === "loading") {
+      setStatus("loading")
+      setMensagem("Carregando administradores...")
+      return
+    }
+
+    if (isDashboardHome && dashboardBootstrap.status === "success") {
+      setAdmins([])
+      setTotalPaginas(0)
+      setPaginaAtual(1)
+      setStatus("success")
+      setMensagem("")
+      setDataSource("bootstrap")
+      return
+    }
+
+    if (!isDashboardHome && dataSource === "full") {
+      return
+    }
+
     carregarAdmins().catch(() => {})
-  }, [carregarAdmins])
+  }, [carregarAdmins, dashboardBootstrap.status, dataSource, isDashboardHome])
 
   const recarregarAdmins = React.useCallback(async (page = 1, limit = 100) => {
     await carregarAdmins({ page, limit })

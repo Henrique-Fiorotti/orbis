@@ -2,6 +2,7 @@
 
 import * as React from "react"
 
+import { useDashboardBootstrap } from "@/components/context/dashboard-bootstrap-context"
 import { useSensores } from "@/components/context/sensores-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import {
@@ -47,9 +48,44 @@ const DashboardChartsContext = React.createContext(null)
  */
 export function DashboardChartsProvider({ children }) {
   const [state, setState] = React.useState(INITIAL_STATE)
+  const dashboardBootstrap = useDashboardBootstrap()
   const sensoresContext = useSensores()
 
   React.useEffect(() => {
+    if (dashboardBootstrap.status === "loading") {
+      setState(INITIAL_STATE)
+      return
+    }
+
+    if (dashboardBootstrap.status === "success") {
+      const maquinas = dashboardBootstrap.snapshot.maquinas
+      const sensores = dashboardBootstrap.snapshot.sensores
+      const referenceDate = dashboardBootstrap.snapshot.generatedAt || new Date()
+      const integrityTrendData = getIntegrityTrendDataFromSnapshot(maquinas, referenceDate)
+      const integrityReferenceDate = integrityTrendData[integrityTrendData.length - 1]?.date ?? referenceDate
+      const machineIntegrityOptions = getMachineIntegrityTrendOptions([], maquinas, integrityReferenceDate)
+
+      setState({
+        status: "success",
+        mensagem: "",
+        maquinas,
+        sensores,
+        integrityTrendData,
+        machineIntegrityOptions,
+        errors: {
+          maquinas: "",
+          sensores: "",
+          integrityTrend: "",
+        },
+        notices: {
+          integrityTrend: maquinas.length > 0
+            ? "Histórico de integridade ainda indisponível. Exibindo integridade média atual da frota."
+            : "",
+        },
+      })
+      return
+    }
+
     const session = getAuthSession()
 
     if (!session?.accessToken) {
@@ -219,7 +255,7 @@ export function DashboardChartsProvider({ children }) {
     return () => {
       isActive = false
     }
-  }, [])
+  }, [dashboardBootstrap.status, dashboardBootstrap.snapshot])
 
   const value = React.useMemo(() => {
     const sensoresErro =

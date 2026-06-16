@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { AdminsProvider } from "@/components/context/admins-context"
 import { AlertasProvider } from "@/components/context/alertas-context"
 import { DashboardAiAssistant } from "@/components/dashboard-ai-assistant"
+import { DashboardBootstrapProvider } from "@/components/context/dashboard-bootstrap-context"
 import { DashboardIntroductionModal } from "@/components/dashboard-introduction-modal"
 import { DashboardAuthSkeleton } from "@/components/dashboard-skeletons"
 import { DashboardPreferencesProvider } from "@/components/context/dashboard-preferences-context"
@@ -68,35 +69,37 @@ export default function DashboardLayout({ children }) {
 
   return (
     <DashboardRealtimeProvider>
-      <MaquinasProvider>
-        <SensoresProvider>
-          <ManutencoesProvider>
-            <AlertasProvider>
-              <AdminsProvider>
-                <TecnicosProvider>
-                  <DashboardPreferencesProvider>
-                    <TooltipProvider>
-                      <SidebarProvider
-                        className="dashboard-scrollbar-hidden"
-                        style={{ "--sidebar-width": "calc(var(--spacing) * 72)", "--header-height": "calc(var(--spacing) * 12)",  }}>
-                        <AppSidebar variant="inset" />
-                        <SidebarInset>
-                          <SmoothScroll>
-                            {children}
-                          </SmoothScroll>
-                        <Toaster position="top-left" />
-                      </SidebarInset>
-                      <DashboardAiAssistant />
-                      <DashboardIntroductionModal />
-                    </SidebarProvider>
-                    </TooltipProvider>
-                  </DashboardPreferencesProvider>
-                </TecnicosProvider>
-              </AdminsProvider>
-            </AlertasProvider>
-          </ManutencoesProvider>
-        </SensoresProvider>
-      </MaquinasProvider>
+      <DashboardBootstrapProvider>
+        <MaquinasProvider>
+          <SensoresProvider>
+            <ManutencoesProvider>
+              <AlertasProvider>
+                <AdminsProvider>
+                  <TecnicosProvider>
+                    <DashboardPreferencesProvider>
+                      <TooltipProvider>
+                        <SidebarProvider
+                          className="dashboard-scrollbar-hidden"
+                          style={{ "--sidebar-width": "calc(var(--spacing) * 72)", "--header-height": "calc(var(--spacing) * 12)",  }}>
+                          <AppSidebar variant="inset" />
+                          <SidebarInset>
+                            <SmoothScroll>
+                              {children}
+                            </SmoothScroll>
+                          <Toaster position="top-left" />
+                        </SidebarInset>
+                        <DashboardAiAssistant />
+                        <DashboardIntroductionModal />
+                      </SidebarProvider>
+                      </TooltipProvider>
+                    </DashboardPreferencesProvider>
+                  </TecnicosProvider>
+                </AdminsProvider>
+              </AlertasProvider>
+            </ManutencoesProvider>
+          </SensoresProvider>
+        </MaquinasProvider>
+      </DashboardBootstrapProvider>
     </DashboardRealtimeProvider>
   )
 }

@@ -1,7 +1,9 @@
 ﻿"use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 
+import { useDashboardBootstrap, useIsDashboardHome } from "@/components/context/dashboard-bootstrap-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import {
@@ -26,10 +28,14 @@ function getTrimmedObservation(value) {
  * @param {WithChildrenProps} props
  */
 export function ManutencoesProvider({ children }) {
+  const pathname = usePathname()
+  const isDashboardHome = useIsDashboardHome(pathname)
+  const dashboardBootstrap = useDashboardBootstrap()
   const [manutencoes, setManutencoes] = React.useState([])
   const [status, setStatus] = React.useState("loading")
   const [mensagem, setMensagem] = React.useState("Carregando manutenÃ§Ãµes...")
   const [salvando, setSalvando] = React.useState(false)
+  const [dataSource, setDataSource] = React.useState("idle")
 
   const carregarManutencoes = React.useCallback(async ({ silent = false } = {}) => {
     const session = getAuthSession()
@@ -51,6 +57,7 @@ export function ManutencoesProvider({ children }) {
       setManutencoes(normalizeManutencaoCollection(payload))
       setStatus("success")
       setMensagem("")
+      setDataSource("full")
     } catch (error) {
       if (getHttpErrorStatus(error) === 401) {
         clearAuthSession()
@@ -64,8 +71,26 @@ export function ManutencoesProvider({ children }) {
   }, [])
 
   React.useEffect(() => {
+    if (isDashboardHome && dashboardBootstrap.status === "loading") {
+      setStatus("loading")
+      setMensagem("Carregando manutenÃ§Ãµes...")
+      return
+    }
+
+    if (isDashboardHome && dashboardBootstrap.status === "success") {
+      setManutencoes(dashboardBootstrap.snapshot.manutencoes)
+      setStatus("success")
+      setMensagem("")
+      setDataSource("bootstrap")
+      return
+    }
+
+    if (!isDashboardHome && dataSource === "full") {
+      return
+    }
+
     carregarManutencoes().catch(() => {})
-  }, [carregarManutencoes])
+  }, [carregarManutencoes, dashboardBootstrap.status, dashboardBootstrap.snapshot.manutencoes, dataSource, isDashboardHome])
 
   const executarMutacao = React.useCallback(async (callback) => {
     const session = getAuthSession()
