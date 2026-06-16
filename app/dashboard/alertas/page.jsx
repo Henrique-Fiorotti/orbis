@@ -343,6 +343,64 @@ function getTecnicoResponsavel(alerta, tecnicos) {
   return null
 }
 
+function getMaintenanceItems(payload) {
+  const collection = extractCollection(payload)
+
+  if (collection.length > 0) {
+    return collection
+  }
+
+  if (Array.isArray(payload)) {
+    return payload
+  }
+
+  if (payload && typeof payload === "object") {
+    return [payload]
+  }
+
+  return []
+}
+
+function getOpenMaintenanceFromPayload(payload) {
+  return getMaintenanceItems(payload).find((item) =>
+    normalizeStatus(item?.status ?? item?.estado ?? item?.situacao) === "EM_ANDAMENTO"
+  ) ?? null
+}
+
+function getMaintenanceUserId(manutencao) {
+  const id = Number(
+    manutencao?.usuarioId ??
+      manutencao?.tecnicoId ??
+      manutencao?.usuario?.id ??
+      manutencao?.tecnico?.id
+  )
+
+  return Number.isFinite(id) ? id : null
+}
+
+function isMaintenanceAssignedToUser(manutencao, usuario) {
+  const maintenanceUserId = getMaintenanceUserId(manutencao)
+
+  if (maintenanceUserId !== null && usuario?.id !== null && usuario?.id !== undefined) {
+    return String(maintenanceUserId) === String(usuario.id)
+  }
+
+  const maintenanceUserName = normalizeText(manutencao?.usuario?.nome ?? manutencao?.tecnico?.nome ?? manutencao?.usuarioNome ?? manutencao?.tecnicoNome)
+  return Boolean(maintenanceUserName && usuario?.nome && maintenanceUserName === normalizeText(usuario.nome))
+}
+
+function isAlertAssignedToUser(alerta, usuario) {
+  if (!alerta || !usuario) {
+    return false
+  }
+
+  if (alerta.tecnicoId !== null && alerta.tecnicoId !== undefined && usuario.id !== null && usuario.id !== undefined) {
+    return String(alerta.tecnicoId) === String(usuario.id)
+  }
+
+  return Boolean(alerta.tecnicoNome && usuario.nome && normalizeText(alerta.tecnicoNome) === normalizeText(usuario.nome))
+}
+
 function normalizeDateValue(value) {
   const date = new Date(value)
   return Number.isFinite(date.getTime()) ? date.toISOString() : ""
@@ -1260,7 +1318,11 @@ export default function AlertasPage() {
   const [modoSheet, setModoSheet] = React.useState("criar")
   const [alertaSelecionado, setAlertaSelecionado] = React.useState(null)
   const [startingAlertId, setStartingAlertId] = React.useState(null)
+  const [completingAlertId, setCompletingAlertId] = React.useState(null)
   const [creatingCommentId, setCreatingCommentId] = React.useState(null)
+  const [relatoManutencao, setRelatoManutencao] = React.useState("")
+  const [manutencaoSelecionada, setManutencaoSelecionada] = React.useState(null)
+  const [manutencaoSelecionadaStatus, setManutencaoSelecionadaStatus] = React.useState("idle")
   const [grupoAlertasAberto, setGrupoAlertasAberto] = React.useState(false)
   const [grupoAlertasSelecionado, setGrupoAlertasSelecionado] = React.useState(null)
   const [grupoRetornoDetalhes, setGrupoRetornoDetalhes] = React.useState(null)
@@ -1274,7 +1336,8 @@ export default function AlertasPage() {
   const alertaAbertoPelaUrlRef = React.useRef(null)
   const loadingInicial = useDashboardMetricsLoading(carregando && alertas.length === 0)
   const errorSemDados = status === "error" && alertas.length === 0
-  const atendimentoActionPending = Boolean(startingAlertId || creatingCommentId)
+  const atendimentoActionPending = Boolean(startingAlertId || completingAlertId || creatingCommentId)
+  const relatoManutencaoTexto = relatoManutencao.trim()
 
   const alertasOrdenados = React.useMemo(() => [...alertas].sort(compareAlertaRecente), [alertas])
   const gruposAtualizados = React.useMemo(() => groupAlertasByMaquina(alertasOrdenados), [alertasOrdenados])
@@ -1347,6 +1410,74 @@ export default function AlertasPage() {
       abrirVer(alerta)
     }
   }, [alertas, searchParams])
+
+  React.useEffect(() => {
+    setRelatoManutencao("")
+    setManutencaoSelecionada(null)
+    setManutencaoSelecionadaStatus("idle")
+  }, [alertaSelecionado?.id])
+
+  React.useEffect(() => {
+    const alertaId = alertaDetalhado?.id
+
+    if (modoSheet !== "ver" || !alertaId || alertaDetalhado?.status !== "EM_ANDAMENTO") {
+      setManutencaoSelecionada(null)
+      setManutencaoSelecionadaStatus("idle")
+      return
+    }
+
+    const session = getAuthSession()
+    let isActive = true
+
+    if (!session?.accessToken) {
+      setManutencaoSelecionada(null)
+      setManutencaoSelecionadaStatus("error")
+      return
+    }
+
+    async function carregarManutencaoSelecionada() {
+      setManutencaoSelecionadaStatus("loading")
+
+      try {
+        const payload = await requestDashboardJson(
+          `/manutencoes/alerta/${alertaId}`,
+          session.accessToken,
+          "a manutenção do alerta"
+        )
+
+        if (!isActive) {
+          return
+        }
+
+        setManutencaoSelecionada(getOpenMaintenanceFromPayload(payload))
+        setManutencaoSelecionadaStatus("success")
+      } catch {
+        if (!isActive) {
+          return
+        }
+
+        setManutencaoSelecionada(null)
+        setManutencaoSelecionadaStatus("error")
+      }
+    }
+
+    carregarManutencaoSelecionada()
+
+    return () => {
+      isActive = false
+    }
+  }, [alertaDetalhado?.id, alertaDetalhado?.status, modoSheet])
+
+  function podeConcluirManutencao(alerta) {
+    return (
+      permissions.canUpdateAlertStatus &&
+      alerta?.status === "EM_ANDAMENTO" &&
+      (
+        isAlertAssignedToUser(alerta, usuario) ||
+        isMaintenanceAssignedToUser(manutencaoSelecionada, usuario)
+      )
+    )
+  }
 
   function abrirCriar() {
     resetarHistoricoManutencao()
@@ -1501,6 +1632,43 @@ export default function AlertasPage() {
       toast.error(error instanceof Error ? error.message : "Não foi possível iniciar a manutenção.")
     } finally {
       setStartingAlertId(null)
+    }
+  }
+
+  async function concluirManutencao(alerta) {
+    if (!alerta?.id) {
+      return
+    }
+
+    if (!podeConcluirManutencao(alerta)) {
+      toast.error("Esta manutenção não está vinculada ao seu usuário.")
+      return
+    }
+
+    if (relatoManutencaoTexto && relatoManutencaoTexto.length < 3) {
+      toast.error("Informe um relato com pelo menos 3 caracteres.")
+      return
+    }
+
+    try {
+      setCompletingAlertId(alerta.id)
+      await atualizarStatus(alerta.id, "RESOLVIDO", { observacao: relatoManutencaoTexto })
+      setAlertaSelecionado((current) =>
+        current?.id === alerta.id
+          ? {
+              ...current,
+              status: "RESOLVIDO",
+              atualizadoEm: new Date().toISOString(),
+            }
+          : current
+      )
+      setManutencaoSelecionada(null)
+      setRelatoManutencao("")
+      toast.success("Manutenção concluída.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível concluir a manutenção.")
+    } finally {
+      setCompletingAlertId(null)
     }
   }
 
@@ -1726,7 +1894,31 @@ export default function AlertasPage() {
             </SheetHeader>
             <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 py-4">
               {modoSheet === "ver" && alertaSelecionado ? (
-                <AlertaDetailsPanel alerta={alertaDetalhado} tecnico={tecnicoAlertaDetalhado} />
+                <AlertaDetailsPanel
+                  alerta={alertaDetalhado}
+                  tecnico={tecnicoAlertaDetalhado}
+                  afterMessage={podeConcluirManutencao(alertaDetalhado) ? (
+                    <div className="rounded-xl border bg-card p-4 shadow-sm ring-1 ring-foreground/5 dark:border-gray-700! dark:bg-[#0F172A]">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label htmlFor="relato-conclusao-alerta" className="inline-flex items-center gap-2 text-sm font-semibold text-[#3B2867] dark:text-white">
+                          <MessageSquareTextIcon className="size-4 text-[#5E17EB]" />
+                          Relato da conclusão
+                        </label>
+                        <span className="text-xs tabular-nums text-muted-foreground">{relatoManutencao.length}/500</span>
+                      </div>
+                      <textarea
+                        id="relato-conclusao-alerta"
+                        value={relatoManutencao}
+                        maxLength={500}
+                        rows={5}
+                        onChange={(event) => setRelatoManutencao(event.target.value)}
+                        disabled={atendimentoActionPending || salvando}
+                        placeholder="Descreva o que foi ajustado antes de concluir."
+                        className="mt-3 min-h-[132px] w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 dark:bg-input/30 dark:disabled:bg-input/80"
+                      />
+                    </div>
+                  ) : null}
+                />
               ) : (
                 <>
                   <div className="flex flex-col gap-2">
@@ -1780,6 +1972,16 @@ export default function AlertasPage() {
                   >
                     {startingAlertId === alertaDetalhado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <WrenchIcon className="mr-1 size-4" />}
                     Iniciar manutenção
+                  </Button>
+                ) : null}
+                {podeConcluirManutencao(alertaDetalhado) ? (
+                  <Button
+                    className="w-full cursor-pointer bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+                    onClick={() => concluirManutencao(alertaDetalhado)}
+                    disabled={atendimentoActionPending || salvando || manutencaoSelecionadaStatus === "loading"}
+                  >
+                    {completingAlertId === alertaDetalhado.id ? <Loader2Icon className="mr-1 size-4 animate-spin" /> : <CircleCheckIcon className="mr-1 size-4" />}
+                    Concluir manutenção
                   </Button>
                 ) : null}
                 <Button
