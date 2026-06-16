@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 
 import { useDashboardBootstrap, useIsDashboardHome } from "@/components/context/dashboard-bootstrap-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
+import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import {
   extractCollection,
   fetchDashboardJson,
@@ -270,6 +271,12 @@ export function AlertasProvider({ children }) {
    */
   async function atualizarStatus(id, novoStatus, opcoes = {}) {
     const observacao = getTrimmedObservation(opcoes?.observacao)
+    const session = getAuthSession()
+    const permissions = getDashboardPermissions(session?.usuario)
+
+    if (!permissions.canUpdateAlertStatus) {
+      throw new Error("Apenas técnicos podem iniciar ou concluir manutenções.")
+    }
 
     if (novoStatus === "EM_ANDAMENTO") {
       return await executarMutacao((accessToken) =>

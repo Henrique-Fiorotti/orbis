@@ -49,7 +49,7 @@ import { ChartBarStacked } from "@/components/ui/chart-bar-stacked"
 import { ChartRadarDots } from "@/components/ui/chart-radar-dots"
 import { useDashboardPermissions } from "@/hooks/use-dashboard-permissions"
 import { getAuthSession, getAuthSessionUser } from "@/lib/auth-session"
-import { requestDashboardJson } from "@/lib/dashboard-api"
+import { extractCollection, requestDashboardJson } from "@/lib/dashboard-api"
 import { tempoRelativo } from "@/lib/utils"
 import { DashboardTour } from "./dashboard-tour"
 
@@ -133,6 +133,61 @@ function getAlertDate(alerta) {
 function getAlertTimestamp(alerta) {
   const timestamp = Date.parse(getAlertDate(alerta))
   return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+function getMaintenanceItems(payload) {
+  const collection = extractCollection(payload)
+
+  if (collection.length > 0) {
+    return collection
+  }
+
+  if (Array.isArray(payload)) {
+    return payload
+  }
+
+  if (payload && typeof payload === "object") {
+    return [payload]
+  }
+
+  return []
+}
+
+function normalizeMaintenanceStatus(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_")
+}
+
+function getOpenMaintenanceFromPayload(payload) {
+  return getMaintenanceItems(payload).find((item) =>
+    normalizeMaintenanceStatus(item?.status ?? item?.estado ?? item?.situacao) === "EM_ANDAMENTO"
+  ) ?? null
+}
+
+function getMaintenanceUserId(manutencao) {
+  const id = Number(
+    manutencao?.usuarioId ??
+      manutencao?.tecnicoId ??
+      manutencao?.usuario?.id ??
+      manutencao?.tecnico?.id
+  )
+
+  return Number.isFinite(id) ? id : null
+}
+
+function isMaintenanceAssignedToUser(manutencao, usuario) {
+  const maintenanceUserId = getMaintenanceUserId(manutencao)
+
+  if (maintenanceUserId !== null && usuario?.id !== null && usuario?.id !== undefined) {
+    return String(maintenanceUserId) === String(usuario.id)
+  }
+
+  const maintenanceUserName = normalizeText(manutencao?.usuario?.nome ?? manutencao?.tecnico?.nome ?? manutencao?.usuarioNome ?? manutencao?.tecnicoNome)
+  return Boolean(maintenanceUserName && usuario?.nome && maintenanceUserName === normalizeText(usuario.nome))
 }
 
 function sortByPriority(a, b) {
@@ -552,6 +607,8 @@ function TechnicianDashboard() {
   const [historicoStatus, setHistoricoStatus] = React.useState("idle")
   const [historicoMensagem, setHistoricoMensagem] = React.useState("")
   const [historicoEventos, setHistoricoEventos] = React.useState([])
+  const [manutencaoSelecionada, setManutencaoSelecionada] = React.useState(null)
+  const [manutencaoSelecionadaStatus, setManutencaoSelecionadaStatus] = React.useState("idle")
   const [atendimentosIniciados, setAtendimentosIniciados] = React.useState(() => new Set())
   const [highlightedSection, setHighlightedSection] = React.useState("")
   const [paginaPrioridades, setPaginaPrioridades] = React.useState(0)
@@ -682,8 +739,61 @@ function TechnicianDashboard() {
 
   React.useEffect(() => {
     setRelatoManutencao((current) => current ? "" : current)
+    setManutencaoSelecionada(null)
+    setManutencaoSelecionadaStatus("idle")
     resetarHistoricoManutencao()
   }, [alertaSelecionado?.id])
+
+  React.useEffect(() => {
+    const alertaId = alertaSelecionado?.id
+
+    if (!alertaId || alertaSelecionado?.status !== "EM_ANDAMENTO") {
+      setManutencaoSelecionada(null)
+      setManutencaoSelecionadaStatus("idle")
+      return
+    }
+
+    const session = getAuthSession()
+    let isActive = true
+
+    if (!session?.accessToken) {
+      setManutencaoSelecionada(null)
+      setManutencaoSelecionadaStatus("error")
+      return
+    }
+
+    async function carregarManutencaoSelecionada() {
+      setManutencaoSelecionadaStatus("loading")
+
+      try {
+        const payload = await requestDashboardJson(
+          `/manutencoes/alerta/${alertaId}`,
+          session.accessToken,
+          "a manutenção do alerta"
+        )
+
+        if (!isActive) {
+          return
+        }
+
+        setManutencaoSelecionada(getOpenMaintenanceFromPayload(payload))
+        setManutencaoSelecionadaStatus("success")
+      } catch {
+        if (!isActive) {
+          return
+        }
+
+        setManutencaoSelecionada(null)
+        setManutencaoSelecionadaStatus("error")
+      }
+    }
+
+    carregarManutencaoSelecionada()
+
+    return () => {
+      isActive = false
+    }
+  }, [alertaSelecionado?.id, alertaSelecionado?.status])
 
   React.useEffect(() => {
     return () => {
@@ -819,7 +929,11 @@ function TechnicianDashboard() {
   function podeConcluirAtendimento(alerta) {
     return (
       alerta?.status === "EM_ANDAMENTO" &&
-      (isAlertAssignedToUser(alerta, usuario) || atendimentosIniciados.has(alerta.id))
+      (
+        isAlertAssignedToUser(alerta, usuario) ||
+        atendimentosIniciados.has(alerta.id) ||
+        isMaintenanceAssignedToUser(manutencaoSelecionada, usuario)
+      )
     )
   }
 
@@ -902,6 +1016,7 @@ function TechnicianDashboard() {
       setCompletingAlertId(alerta.id)
       await atualizarStatus(alerta.id, "RESOLVIDO", { observacao: relatoManutencaoTexto })
       setAtendimentosIniciados((current) => new Set(current).add(alerta.id))
+      setManutencaoSelecionada(null)
       setAlertaSelecionado(null)
       toast.success("Manutenção concluída.")
     } catch (error) {
