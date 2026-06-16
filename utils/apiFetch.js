@@ -1,6 +1,6 @@
 import { clearAuthSession, getAuthSession, saveAuthSession } from "@/lib/auth-session"
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://orbis-5hnm.onrender.com"
+export const API_URL = process.env.API_URL || "https://server.orbis-3td.com.br"
 
 function isFormDataBody(value) {
   return typeof FormData !== "undefined" && value instanceof FormData
