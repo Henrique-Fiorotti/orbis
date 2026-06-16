@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 
+import { useDashboardBootstrap, useIsDashboardHome } from "@/components/context/dashboard-bootstrap-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import {
@@ -28,10 +30,14 @@ const SensoresContext = React.createContext(null)
  * @param {WithChildrenProps} props
  */
 export function SensoresProvider({ children }) {
+  const pathname = usePathname()
+  const isDashboardHome = useIsDashboardHome(pathname)
+  const dashboardBootstrap = useDashboardBootstrap()
   const [sensores, setSensores] = React.useState([])
   const [status, setStatus] = React.useState("loading")
   const [mensagem, setMensagem] = React.useState("Carregando sensores...")
   const [salvando, setSalvando] = React.useState(false)
+  const [dataSource, setDataSource] = React.useState("idle")
 
   const carregarSensores = React.useCallback(async ({ silent = false } = {}) => {
     const session = getAuthSession()
@@ -60,6 +66,7 @@ export function SensoresProvider({ children }) {
       setSensores(refreshSensorStatuses(sensoresNormalizados))
       setStatus("success")
       setMensagem("")
+      setDataSource("full")
     } catch (error) {
       if (getHttpErrorStatus(error) === 401) {
         clearAuthSession()
@@ -73,8 +80,26 @@ export function SensoresProvider({ children }) {
   }, [])
 
   React.useEffect(() => {
+    if (isDashboardHome && dashboardBootstrap.status === "loading") {
+      setStatus("loading")
+      setMensagem("Carregando sensores...")
+      return
+    }
+
+    if (isDashboardHome && dashboardBootstrap.status === "success") {
+      setSensores(refreshSensorStatuses(dashboardBootstrap.snapshot.sensores))
+      setStatus("success")
+      setMensagem("")
+      setDataSource("bootstrap")
+      return
+    }
+
+    if (!isDashboardHome && dataSource === "full") {
+      return
+    }
+
     carregarSensores().catch(() => {})
-  }, [carregarSensores])
+  }, [carregarSensores, dashboardBootstrap.status, dashboardBootstrap.snapshot.sensores, dataSource, isDashboardHome])
 
   React.useEffect(() => {
     const intervalId = window.setInterval(() => {

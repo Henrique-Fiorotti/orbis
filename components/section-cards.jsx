@@ -7,6 +7,7 @@ import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
 import { useAlertas } from "@/components/context/alertas-context"
+import { useDashboardBootstrap } from "@/components/context/dashboard-bootstrap-context"
 import { useDashboardCharts } from "@/components/context/dashboard-charts-context"
 import { useMaquinas } from "@/components/context/maquinas-context"
 import { useSensores } from "@/components/context/sensores-context"
@@ -79,6 +80,7 @@ function handleCardKeyDown(event, onClick) {
 
 export function SectionCards() {
   const router = useRouter()
+  const dashboardBootstrap = useDashboardBootstrap()
   const { status: maquinasStatus } = useMaquinas()
   const { status: sensoresStatus } = useSensores()
   const { status: tecnicosStatus } = useTecnicos()
@@ -89,6 +91,19 @@ export function SectionCards() {
   const [mensagem, setMensagem] = useState("Carregando indicadores do dashboard...")
 
   useEffect(() => {
+    if (dashboardBootstrap.status === "loading") {
+      setStatus("loading")
+      setMensagem("Carregando indicadores do dashboard...")
+      return
+    }
+
+    if (dashboardBootstrap.status === "success") {
+      setResumo(normalizeResumo(dashboardBootstrap.snapshot.resumo))
+      setStatus("success")
+      setMensagem("")
+      return
+    }
+
     const session = getAuthSession()
 
     if (!session?.accessToken) {
@@ -132,7 +147,7 @@ export function SectionCards() {
     return () => {
       isActive = false
     }
-  }, [])
+  }, [dashboardBootstrap.status, dashboardBootstrap.snapshot.resumo])
 
   const loading =
     status === "loading" ||
@@ -142,10 +157,8 @@ export function SectionCards() {
     alertasStatus === "loading" ||
     tecnicosStatus === "loading"
   const maquinasOk = resumo.maquinasFuncionando
-  const totalAlertasAtivos = alertas.filter((alerta) => alerta.status === "ATIVO").length
+  const totalAlertasAtivos = Math.max(resumo.alertasAtivos, alertas.filter((alerta) => alerta.status === "ATIVO").length)
   const totalAlertasEmAndamento = alertas.filter((alerta) => alerta.status === "EM_ANDAMENTO").length
-  const totalAlertasResolvidos = alertas.filter((alerta) => alerta.status === "RESOLVIDO").length
-  const totalAlertasCancelados = alertas.filter((alerta) => alerta.status === "CANCELADO").length
 
   if (loading) {
     return <DashboardMetricCardsSkeleton />
@@ -225,10 +238,7 @@ export function SectionCards() {
               {loading || totalAlertasEmAndamento > 0 ? <TrendingDownIcon className="size-4" /> : <TrendingUpIcon className="size-4" />}
             </div>
             <div className="text-muted-foreground">
-              {loading ? "Resumo dos alertas em sincronização" : `${totalAlertasResolvidos} alertas resolvidos no total`}
-            </div>
-            <div className="text-muted-foreground">
-              {loading ? "Conferindo alertas cancelados" : `${totalAlertasCancelados} alertas cancelados no total`}
+              {loading ? "Resumo dos alertas em sincronização" : `${resumo.alertasAtendidosHoje} alertas atendidos hoje`}
             </div>
           </CardFooter>
         </Card>

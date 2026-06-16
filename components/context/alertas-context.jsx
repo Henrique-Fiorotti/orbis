@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 
+import { useDashboardBootstrap, useIsDashboardHome } from "@/components/context/dashboard-bootstrap-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import {
   extractCollection,
@@ -108,10 +110,14 @@ async function fetchOpenMaintenanceForAlert(accessToken, alertaId) {
  * @param {WithChildrenProps} props
  */
 export function AlertasProvider({ children }) {
+  const pathname = usePathname()
+  const isDashboardHome = useIsDashboardHome(pathname)
+  const dashboardBootstrap = useDashboardBootstrap()
   const [alertas, setAlertas] = React.useState([])
   const [status, setStatus] = React.useState("loading")
   const [mensagem, setMensagem] = React.useState("Carregando alertas...")
   const [salvando, setSalvando] = React.useState(false)
+  const [dataSource, setDataSource] = React.useState("idle")
 
   const carregarAlertas = React.useCallback(async ({ silent = false } = {}) => {
     const session = getAuthSession()
@@ -133,6 +139,7 @@ export function AlertasProvider({ children }) {
       setAlertas(normalizeAlertaCollection(payload))
       setStatus("success")
       setMensagem("")
+      setDataSource("full")
     } catch (error) {
       if (getHttpErrorStatus(error) === 401) {
         clearAuthSession()
@@ -146,8 +153,26 @@ export function AlertasProvider({ children }) {
   }, [])
 
   React.useEffect(() => {
+    if (isDashboardHome && dashboardBootstrap.status === "loading") {
+      setStatus("loading")
+      setMensagem("Carregando alertas...")
+      return
+    }
+
+    if (isDashboardHome && dashboardBootstrap.status === "success") {
+      setAlertas(dashboardBootstrap.snapshot.alertas)
+      setStatus("success")
+      setMensagem("")
+      setDataSource("bootstrap")
+      return
+    }
+
+    if (!isDashboardHome && dataSource === "full") {
+      return
+    }
+
     carregarAlertas().catch(() => {})
-  }, [carregarAlertas])
+  }, [carregarAlertas, dashboardBootstrap.status, dashboardBootstrap.snapshot.alertas, dataSource, isDashboardHome])
 
   React.useEffect(() => {
     let reloadTimer = null

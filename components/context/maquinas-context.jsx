@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 
+import { useDashboardBootstrap, useIsDashboardHome } from "@/components/context/dashboard-bootstrap-context"
 import { clearAuthSession, getAuthSession } from "@/lib/auth-session"
 import { getDashboardPermissions } from "@/lib/dashboard-permissions"
 import {
@@ -23,10 +25,14 @@ const MaquinasContext = React.createContext(null)
  * @param {WithChildrenProps} props
  */
 export function MaquinasProvider({ children }) {
+  const pathname = usePathname()
+  const isDashboardHome = useIsDashboardHome(pathname)
+  const dashboardBootstrap = useDashboardBootstrap()
   const [maquinas, setMaquinas] = React.useState([])
   const [status, setStatus] = React.useState("loading")
   const [mensagem, setMensagem] = React.useState("Carregando máquinas...")
   const [salvando, setSalvando] = React.useState(false)
+  const [dataSource, setDataSource] = React.useState("idle")
 
   const carregarMaquinas = React.useCallback(async ({ silent = false } = {}) => {
     const session = getAuthSession()
@@ -48,6 +54,7 @@ export function MaquinasProvider({ children }) {
       setMaquinas(normalizeMaquinaCollection(payload))
       setStatus("success")
       setMensagem("")
+      setDataSource("full")
     } catch (error) {
       if (getHttpErrorStatus(error) === 401) {
         clearAuthSession()
@@ -61,8 +68,26 @@ export function MaquinasProvider({ children }) {
   }, [])
 
   React.useEffect(() => {
+    if (isDashboardHome && dashboardBootstrap.status === "loading") {
+      setStatus("loading")
+      setMensagem("Carregando máquinas...")
+      return
+    }
+
+    if (isDashboardHome && dashboardBootstrap.status === "success") {
+      setMaquinas(dashboardBootstrap.snapshot.maquinas)
+      setStatus("success")
+      setMensagem("")
+      setDataSource("bootstrap")
+      return
+    }
+
+    if (!isDashboardHome && dataSource === "full") {
+      return
+    }
+
     carregarMaquinas().catch(() => {})
-  }, [carregarMaquinas])
+  }, [carregarMaquinas, dashboardBootstrap.status, dashboardBootstrap.snapshot.maquinas, dataSource, isDashboardHome])
 
   /**
    * @param {string} endpoint
