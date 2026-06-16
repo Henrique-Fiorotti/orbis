@@ -78,19 +78,19 @@ export function DashboardIntroductionModal() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="grid max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-none! overflow-y-auto rounded-2xl border-0 bg-[#111316] p-0 text-white shadow-2xl ring-0 sm:w-[min(1120px,calc(100vw-2rem))] md:grid-cols-[0.92fr_1.08fr] md:overflow-hidden"
+        className="grid max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-none! overflow-y-auto rounded-2xl border border-black/[0.08] bg-white p-0 text-zinc-950 shadow-2xl ring-0 sm:w-[min(1120px,calc(100vw-2rem))] md:grid-cols-[0.92fr_1.08fr] md:overflow-hidden dark:border-white/[0.08] dark:bg-[#111316] dark:text-white"
       >
         <div className="flex min-h-[340px] flex-col justify-center gap-8 px-6 py-8 sm:px-10 md:min-h-[612px] md:px-12">
           <div className="space-y-3">
-            <DialogTitle className="text-3xl font-semibold leading-tight tracking-normal text-white sm:text-4xl">
+            <DialogTitle className="text-3xl font-semibold leading-tight tracking-normal text-zinc-950 sm:text-4xl dark:text-white">
               Bem-vindo ao Orbis
             </DialogTitle>
-            <DialogDescription className="max-w-md text-sm leading-relaxed text-slate-300 sm:text-base">
+            <DialogDescription className="max-w-md text-sm leading-relaxed text-zinc-600 sm:text-base dark:text-slate-300">
               Comece a acompanhar máquinas, sensores e alertas em tempo real no seu dashboard.
             </DialogDescription>
           </div>
 
-          <p className="max-w-md text-xs leading-relaxed text-slate-400 sm:text-sm">
+          <p className="max-w-md text-xs leading-relaxed text-zinc-500 sm:text-sm dark:text-slate-400">
             Depois disso, você pode rever a introdução quando quiser pela seção Ajuda na sidebar.
           </p>
 
@@ -105,7 +105,7 @@ export function DashboardIntroductionModal() {
             <Button
               type="button"
               variant="outline"
-              className="h-11 w-full cursor-pointer rounded-lg border-slate-700 bg-transparent px-6 text-sm font-semibold text-slate-200 hover:bg-slate-800 hover:text-white sm:w-fit"
+              className="h-11 w-full cursor-pointer rounded-lg border-zinc-200 bg-transparent px-6 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950 sm:w-fit dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
               onClick={handleContinue}
             >
               Ir direto para o dashboard
@@ -113,7 +113,7 @@ export function DashboardIntroductionModal() {
           </div>
         </div>
 
-        <div className="relative min-h-[260px] overflow-hidden bg-black md:min-h-[612px]">
+        <div className="relative min-h-[260px] overflow-hidden bg-zinc-100 md:min-h-[612px] dark:bg-black">
           <img
             className="h-full min-h-[260px] w-full object-cover md:min-h-[612px] object-left"
             src={INTRODUCTION_VIDEO_SRC}
@@ -121,7 +121,7 @@ export function DashboardIntroductionModal() {
           />
           <button
             type="button"
-            className="absolute right-4 top-4 inline-flex size-10 cursor-pointer items-center justify-center rounded-xl bg-slate-900/85 text-slate-300 transition hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            className="absolute right-4 top-4 inline-flex size-10 cursor-pointer items-center justify-center rounded-xl bg-white/90 text-zinc-600 shadow-sm transition hover:bg-white hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5E17EB]/40 dark:bg-slate-900/85 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:ring-white/60"
             onClick={handleContinue}
             aria-label="Fechar introdução"
           >
