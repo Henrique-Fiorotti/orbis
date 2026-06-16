@@ -1,6 +1,18 @@
 import { clearAuthSession, getAuthSession, saveAuthSession } from "@/lib/auth-session"
 
-export const API_URL = process.env.API_URL || "https://server.orbis-3td.com.br"
+const DEFAULT_API_URL = "https://server.orbis-3td.com.br"
+
+function normalizeApiUrl(value) {
+  return typeof value === "string" && value.trim()
+    ? value.trim().replace(/\/+$/, "")
+    : ""
+}
+
+export const API_URL = normalizeApiUrl(
+  process.env.NEXT_PUBLIC_API_URL ||
+    process.env.API_URL ||
+    DEFAULT_API_URL
+)
 
 function isFormDataBody(value) {
   return typeof FormData !== "undefined" && value instanceof FormData
