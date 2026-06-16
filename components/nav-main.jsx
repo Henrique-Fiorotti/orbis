@@ -117,7 +117,7 @@ export function NavMain({ items, pathname }) {
                 <SidebarMenuButton
                   type="button"
                   tooltip="Adicionar"
-                  className="min-w-0 cursor-pointer justify-start bg-primary text-primary-foreground transition-colors duration-200 ease-out hover:bg-primary/90 hover:text-primary-foreground active:translate-y-0 active:scale-95 active:bg-primary/90 active:text-primary-foreground group-data-[collapsible=icon]:justify-center"
+                  className="min-w-0 cursor-pointer justify-start bg-primary text-primary-foreground transition-colors duration-200 ease-out active:translate-y-0 active:scale-95 active:bg-primary/90 active:text-primary-foreground group-data-[collapsible=icon]:justify-center"
                   onClick={openCreateDialog}
                 >
                   <CirclePlusIcon className="shrink-0" />
