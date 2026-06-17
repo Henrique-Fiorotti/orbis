@@ -16,6 +16,7 @@ import {
 } from "../lib/maquinas-table.js"
 import {
   getIntegrityTrendDataFromHistories,
+  getIntegrityTrendDataFromSnapshot,
   normalizeHistoricoIntegridadeCollection,
 } from "../lib/orbis-dashboard.js"
 import {
@@ -276,6 +277,20 @@ test("historico de integridade aceita payload envelopado e aliases do backend", 
   assert.equal(serie.at(-1).timestamp, Date.parse("2026-06-09T13:00:00.000Z"))
   assert.equal(serie.at(-1).integridade, 81)
   assert.equal(serie.at(-1).maquinas, 2)
+})
+
+test("snapshot de integridade preenche janela estimada para o grafico", () => {
+  const serie = getIntegrityTrendDataFromSnapshot([
+    { id: 10, nome: "Motor A", integridade: 80 },
+    { id: 11, nome: "Motor B", integridade: 60 },
+  ], "2026-06-17", 7)
+
+  assert.equal(serie.length, 7)
+  assert.equal(serie[0].date, "2026-06-11")
+  assert.equal(serie.at(-1).date, "2026-06-17")
+  assert.equal(serie.every((item) => item.integridade === 70), true)
+  assert.equal(serie.every((item) => item.maquinas === 2), true)
+  assert.equal(serie.every((item) => item.estimado === true), true)
 })
 
 test("normalizeManutencaoCollection preserva preventiva agendada criada por predicao", () => {

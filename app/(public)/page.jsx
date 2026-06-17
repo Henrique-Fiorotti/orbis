@@ -1,25 +1,17 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SearchIcon } from "lucide-react";
-import { gsap } from "gsap";
 
 import AnimatedHeroKeyword from "@/components/landing/animated-hero-keyword";
-import HeroDashboard from "@/components/hero-dashboard";
 import HeroMorphVisual from "@/components/landing/hero-morph-visual";
 import { getValidAuthSession, isAuthSessionRemembered } from "@/lib/auth-session";
 import { useLandingLanguage } from "@/components/landing/language-provider";
 import AnimatedQuote from "@/components/landing/animated-quote";
-import LandingParallaxDoodles from "@/components/landing/parallax-doodles";
 import RevealOnScroll from "@/components/landing/reveal-on-scroll";
 import ScrollViewportButton from "@/components/landing/scroll-viewport-button";
-import Pricing from "@/components/pricing";
-import SobreInformativo from "@/components/sobre-informativo";
-import SAQ from "@/components/saq";
-import SlideOpacity from "@/components/carousel-10";
-import CreativeTeamSection from "@/components/creative-team-section";
 
 import styles from "./page.module.css";
 
@@ -29,71 +21,47 @@ const HERO_KEYWORD_VARIANTS = {
   es: ["seguras", "automáticas", "precisas", "rápidas", "inteligentes"],
 };
 
-const useIsomorphicLayoutEffect =
-  typeof window !== "undefined" ? React.useLayoutEffect : React.useEffect;
+const HeroDashboard = dynamic(() => import("@/components/hero-dashboard"), {
+  loading: () => null,
+});
+const LandingParallaxDoodles = dynamic(() => import("@/components/landing/parallax-doodles"), {
+  loading: () => null,
+});
+const Pricing = dynamic(() => import("@/components/pricing"), {
+  loading: () => null,
+});
+const SobreInformativo = dynamic(() => import("@/components/sobre-informativo"), {
+  loading: () => null,
+});
+const SAQ = dynamic(() => import("@/components/saq"), {
+  loading: () => null,
+});
+const SlideOpacity = dynamic(() => import("@/components/carousel-10"), {
+  loading: () => null,
+});
+const CreativeTeamSection = dynamic(() => import("@/components/creative-team-section"), {
+  loading: () => null,
+});
 
 function HeroSecondaryCta({ href, className, children }) {
-  const linkRef = React.useRef(null);
-  const textRef = React.useRef(null);
-  const iconLayerRef = React.useRef(null);
-  const iconRef = React.useRef(null);
-  const timelineRef = React.useRef(null);
-
-  useIsomorphicLayoutEffect(() => {
-    const link = linkRef.current;
-    const text = textRef.current;
-    const iconLayer = iconLayerRef.current;
-    const icon = iconRef.current;
-
-    if (!link || !text || !iconLayer || !icon) {
-      return undefined;
-    }
-
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (reducedMotion) {
-      return undefined;
-    }
-
-    const context = gsap.context(() => {
-      gsap.set(text, { y: 0, autoAlpha: 1 });
-      gsap.set(iconLayer, { yPercent: 115, autoAlpha: 1 });
-      gsap.set(icon, { scale: 0.9, rotation: -10, autoAlpha: 0 });
-
-      timelineRef.current = gsap.timeline({
-        paused: true,
-        defaults: { duration: 0.34, ease: "power3.inOut", overwrite: "auto" },
-      })
-        .to(text, { y: -48 }, 0)
-        .to(iconLayer, { yPercent: 0 }, 0.02)
-        .to(icon, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.22, ease: "power2.out" }, 0.14);
-    }, link);
-
-    return () => {
-      timelineRef.current?.kill();
-      timelineRef.current = null;
-      context.revert();
-    };
-  }, [children]);
-
-  const playSplit = () => timelineRef.current?.play();
-  const reverseSplit = () => timelineRef.current?.reverse();
-
   return (
-    <Link
-      ref={linkRef}
-      href={href}
-      className={className}
-      onMouseEnter={playSplit}
-      onMouseLeave={reverseSplit}
-      onFocus={playSplit}
-      onBlur={reverseSplit}
-    >
-      <span ref={textRef} className={styles.heroSplitText}>
-        {children}
-      </span>
-      <span ref={iconLayerRef} className={styles.heroSplitIconLayer} aria-hidden="true">
-        <SearchIcon ref={iconRef} size={18} strokeWidth={2.25} className={styles.heroSplitIcon} />
+    <Link href={href} className={className}>
+      <span className={styles.heroSplitText}>{children}</span>
+      <span className={styles.heroSplitIconLayer} aria-hidden="true">
+        <svg
+          className={styles.heroSplitIcon}
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.25"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
       </span>
     </Link>
   );
@@ -158,6 +126,8 @@ export default function HomePage() {
   const { home } = copy;
   const router = useRouter();
   const heroSectionRef = React.useRef(null);
+  const heroPointerFrameRef = React.useRef(0);
+  const latestHeroPointerRef = React.useRef(null);
   const heroKeywordVariants = HERO_KEYWORD_VARIANTS[locale] ?? HERO_KEYWORD_VARIANTS.pt;
   const [heroKeywordIndex, setHeroKeywordIndex] = React.useState(0);
   const heroDynamicKeyword =
@@ -184,23 +154,50 @@ export default function HomePage() {
     setHeroKeywordIndex(0);
   }, [locale]);
 
-  function handleHeroPointerMove(event) {
-    const section = heroSectionRef.current;
+  React.useEffect(() => {
+    return () => {
+      if (heroPointerFrameRef.current) {
+        cancelAnimationFrame(heroPointerFrameRef.current);
+      }
+    };
+  }, []);
 
-    if (!section) {
+  function handleHeroPointerMove(event) {
+    latestHeroPointerRef.current = {
+      clientX: event.clientX,
+      clientY: event.clientY,
+    };
+
+    if (heroPointerFrameRef.current) {
       return;
     }
 
-    const rect = section.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width - 0.5;
-    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    heroPointerFrameRef.current = requestAnimationFrame(() => {
+      heroPointerFrameRef.current = 0;
+      const section = heroSectionRef.current;
+      const pointer = latestHeroPointerRef.current;
 
-    section.style.setProperty("--hero-sparkle-shift-x", `${x * 7}px`);
-    section.style.setProperty("--hero-sparkle-shift-y", `${y * 6}px`);
+      if (!section || !pointer) {
+        return;
+      }
+
+      const rect = section.getBoundingClientRect();
+      const x = (pointer.clientX - rect.left) / rect.width - 0.5;
+      const y = (pointer.clientY - rect.top) / rect.height - 0.5;
+
+      section.style.setProperty("--hero-sparkle-shift-x", `${x * 7}px`);
+      section.style.setProperty("--hero-sparkle-shift-y", `${y * 6}px`);
+    });
   }
 
   function resetHeroPointer() {
     const section = heroSectionRef.current;
+    latestHeroPointerRef.current = null;
+
+    if (heroPointerFrameRef.current) {
+      cancelAnimationFrame(heroPointerFrameRef.current);
+      heroPointerFrameRef.current = 0;
+    }
 
     if (!section) {
       return;
@@ -367,7 +364,7 @@ export default function HomePage() {
       </section>
 
       {/* SrOrbis */}
-      <section id="sobre" className={styles.srOrbisSection}>
+      <section id="sobre" className={`${styles.srOrbisSection} ${styles.deferRenderSection}`}>
         <RevealOnScroll>
           <SobreInformativo />
         </RevealOnScroll>
@@ -375,7 +372,7 @@ export default function HomePage() {
 
       {/* Carrossel  */}
 
-      <section className={styles.benefitsSection}>
+      <section className={`${styles.benefitsSection} ${styles.deferRenderSection}`}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <p
             style={{
@@ -483,13 +480,13 @@ export default function HomePage() {
       </div>
 
       {/* SAQ */}
-      <section id="contact" className={styles.gridBackgroundSection}>
+      <section id="contact" className={`${styles.gridBackgroundSection} ${styles.deferRenderSection}`}>
         <RevealOnScroll>
           <SAQ />
         </RevealOnScroll>
       </section>
 
-      <section className={styles.gridBackgroundSection}>
+      <section className={`${styles.gridBackgroundSection} ${styles.deferRenderSection}`}>
         <RevealOnScroll>
           <CreativeTeamSection />
         </RevealOnScroll>

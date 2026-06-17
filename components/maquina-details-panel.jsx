@@ -1725,9 +1725,10 @@ function DetailsAccordionSection({ title, icon: Icon, meta, open, onToggle, chil
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border border-border/70 bg-card/35 transition-colors",
-        open && "border-[#5E17EB]/45 bg-[#5E17EB]/5"
+        "group overflow-hidden rounded-lg border border-border/70 bg-card/35 transition-colors hover:border-[#5E17EB]/45",
+        open && "border-[#5E17EB]/45"
       )}
+      data-state={open ? "open" : "closed"}
     >
       <button
         type="button"
@@ -1737,7 +1738,7 @@ function DetailsAccordionSection({ title, icon: Icon, meta, open, onToggle, chil
         onClick={onToggle}
       >
         <span className="flex min-w-0 items-center gap-2">
-          <Icon className="size-4 shrink-0 text-[#5E17EB]" />
+          <Icon className="size-4 shrink-0 text-foreground transition-colors group-hover:text-[#5E17EB] group-data-[state=open]:text-[#5E17EB]" />
           <span className="truncate text-sm font-semibold">{title}</span>
         </span>
         <span className="flex shrink-0 items-center gap-2">
@@ -1755,6 +1756,9 @@ function DetailsAccordionSection({ title, icon: Icon, meta, open, onToggle, chil
   )
 }
 
+const accordionHeaderBadgeClass =
+  "border-border/70 bg-background/80 px-2 text-xs text-muted-foreground transition-colors group-hover:border-[#5E17EB]/35 group-hover:text-[#A780FF] group-data-[state=open]:border-[#5E17EB]/35 group-data-[state=open]:text-[#A780FF]"
+
 function MachineDetailItem({ label, value, children }) {
   return (
     <div className="flex min-w-0 flex-col gap-1 rounded-lg border bg-background px-3 py-3">
@@ -1766,9 +1770,9 @@ function MachineDetailItem({ label, value, children }) {
   )
 }
 
-function MachineDetailSection({ title, icon: Icon, children }) {
+function MachineDetailSection({ title, icon: Icon, children, className = "" }) {
   return (
-    <section className="grid gap-3">
+    <section className={cn("grid gap-3", className)}>
       <div className="flex items-center gap-2 text-sm font-semibold text-[#3B2867] dark:text-white">
         <Icon className="size-4" />
         {title}
@@ -1882,7 +1886,7 @@ export function MaquinaUploadImagePreview({ src, alt = "Imagem da máquina", cla
   )
 }
 
-function MaquinaSummaryCard({ maquina, statusExibicao, integridadeExibicao, totalSensores }) {
+function MaquinaSummaryCard({ maquina, statusExibicao, integridadeExibicao, totalSensores, pinned = false }) {
   const roundedIntegridade = Math.round(Number(integridadeExibicao))
   const integridadeLabel = Number.isFinite(roundedIntegridade)
     ? `${roundedIntegridade}%`
@@ -1896,15 +1900,38 @@ function MaquinaSummaryCard({ maquina, statusExibicao, integridadeExibicao, tota
         : "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300"
 
   return (
-    <div className="rounded-xl border bg-linear-to-br from-primary/10 via-card to-card p-2 md:p-4 shadow-sm dark:border-gray-700! dark:bg-[#0F172A]">
-      <div className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[7rem_minmax(0,1fr)_auto]">
-        <MaquinaImagePreview maquina={maquina} className="!size-24 !aspect-square shrink-0 !rounded-xl !border-2 !border-border/80 shadow-sm sm:!size-28" />
-        <div className="min-w-0">
+    <div
+      data-machine-summary-card
+      className={cn(
+        "overflow-hidden border bg-linear-to-br from-primary/10 via-card to-card shadow-sm transition-[border-radius,margin,padding,box-shadow] duration-300 dark:border-gray-700! dark:bg-[#0F172A]",
+        pinned
+          ? "rounded-xl p-2 md:p-4"
+          : "rounded-none border-x-0 border-t-1 p-0"
+      )}
+    >
+      <div
+        className={cn(
+          "grid transition-[grid-template-columns] duration-300",
+          pinned
+            ? "grid-cols-[6rem_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+            : "h-[7.25rem] grid-cols-[7.25rem_minmax(0,1fr)] items-stretch gap-0 sm:h-32 sm:grid-cols-[8rem_minmax(0,1fr)_auto]"
+        )}
+      >
+        <MaquinaImagePreview
+          maquina={maquina}
+          className={cn(
+            "!aspect-square shrink-0 !border-2 !border-border/80 shadow-sm transition-[width,height,border-radius] duration-300",
+            pinned
+              ? "!size-24 !rounded-xl sm:!size-28"
+              : "!size-[7.25rem] !rounded-none !border-y-0 !border-l-0 sm:!size-32"
+          )}
+        />
+        <div className={cn("min-w-0", pinned ? "" : "overflow-hidden px-4 py-3 md:px-5 md:py-4")}>
           <div className="flex min-w-0 flex-col gap-1">
-            <h2 className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">{maquina.nome}</h2>
-            <p className="line-clamp-2 text-sm text-muted-foreground">{maquina.setor} - {maquina.tipo}</p>
+            <h2 className={cn("text-xl font-semibold leading-tight text-foreground", pinned ? "line-clamp-2" : "line-clamp-1")}>{maquina.nome}</h2>
+            <p className={cn("text-sm text-muted-foreground", pinned ? "line-clamp-2" : "line-clamp-1")}>{maquina.setor} - {maquina.tipo}</p>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className={cn("flex flex-wrap gap-2", pinned ? "mt-4" : "mt-3")}>
             <CriticidadeBadge value={maquina.criticidade} />
             <Badge variant="outline" className="hidden md:flex px-3 text-muted-foreground">
               {totalSensores} {totalSensores === 1 ? "sensor" : "sensores"}
@@ -2137,7 +2164,7 @@ function PreventiveMaintenanceSection({
       open={open}
       onToggle={onToggle}
       meta={
-        <Badge variant="outline" className="border-border/70 bg-background/80 px-2 text-xs text-muted-foreground">
+        <Badge variant="outline" className={accordionHeaderBadgeClass}>
           {agendadas > 0 ? `${agendadas} agendada(s)` : emAndamento > 0 ? `${emAndamento} em andamento` : `${preventivas.length} registro(s)`}
         </Badge>
       }
@@ -2242,6 +2269,8 @@ export function MaquinaDetailsPanel({
   onCompletePreventiveMaintenance,
   className = "",
 }) {
+  const [summaryPinned, setSummaryPinned] = React.useState(false)
+  const summarySentinelRef = React.useRef(null)
   const sensoresDaMaquina = React.useMemo(
     () => getMachineSensors(maquina, sensores),
     [maquina, sensores]
@@ -2262,7 +2291,7 @@ export function MaquinaDetailsPanel({
     [maquina, manutencoes]
   )
   const [openSections, setOpenSections] = React.useState({
-    preventivas: true,
+    preventivas: false,
     predicao: false,
     detalhesTecnicos: false,
     sensores: false,
@@ -2282,12 +2311,54 @@ export function MaquinaDetailsPanel({
 
   React.useEffect(() => {
     setOpenSections({
-      preventivas: true,
+      preventivas: false,
       predicao: false,
       detalhesTecnicos: false,
       sensores: false,
     })
     setRegressionSheetOpen(false)
+    setSummaryPinned(false)
+  }, [maquina?.id])
+
+  React.useEffect(() => {
+    const sentinel = summarySentinelRef.current
+
+    if (!sentinel) {
+      return undefined
+    }
+
+    let scrollContainer = sentinel.parentElement
+
+    while (scrollContainer && scrollContainer !== document.body) {
+      const styles = window.getComputedStyle(scrollContainer)
+
+      if (/(auto|scroll)/.test(styles.overflowY) && scrollContainer.scrollHeight > scrollContainer.clientHeight) {
+        break
+      }
+
+      scrollContainer = scrollContainer.parentElement
+    }
+
+    if (!scrollContainer || scrollContainer === document.body) {
+      scrollContainer = window
+    }
+
+    function updatePinnedState() {
+      const scrollTop = scrollContainer === window
+        ? window.scrollY
+        : scrollContainer.scrollTop
+
+      setSummaryPinned(scrollTop > 8)
+    }
+
+    updatePinnedState()
+    scrollContainer.addEventListener("scroll", updatePinnedState, { passive: true })
+    window.addEventListener("resize", updatePinnedState)
+
+    return () => {
+      scrollContainer.removeEventListener("scroll", updatePinnedState)
+      window.removeEventListener("resize", updatePinnedState)
+    }
   }, [maquina?.id])
 
   React.useEffect(() => {
@@ -2392,19 +2463,29 @@ export function MaquinaDetailsPanel({
   }
 
   return (
-    <div className={cn("flex flex-col gap-5 text-sm", className)}>
+    <div className={cn("flex flex-col text-sm", className)}>
       {sensorError ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+        <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
           {sensorError}
         </div>
       ) : null}
 
-      <MaquinaSummaryCard
-        maquina={maquina}
-        statusExibicao={statusExibicao}
-        integridadeExibicao={integridadeExibicao}
-        totalSensores={totalSensores}
-      />
+      <div
+        ref={summarySentinelRef}
+        data-machine-summary-sticky
+        className={cn(
+          "sticky top-0 z-20 bg-background/95 transition-[margin,padding] duration-300",
+          summaryPinned ? "mx-0 mb-0 px-0 pt-2 backdrop-blur" : "-mx-4 mb-5 px-0 pt-0"
+        )}
+      >
+        <MaquinaSummaryCard
+          maquina={maquina}
+          statusExibicao={statusExibicao}
+          integridadeExibicao={integridadeExibicao}
+          totalSensores={totalSensores}
+          pinned={summaryPinned}
+        />
+      </div>
 
       <MachineDetailSection title="Resumo operacional" icon={GaugeIcon}>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -2439,28 +2520,28 @@ export function MaquinaDetailsPanel({
         </div>
       </MachineDetailSection>
 
-      <PreventiveMaintenanceSection
-        manutencoes={manutencoes}
-        status={manutencoesStatus}
-        mensagem={manutencoesMensagem}
-        canManage={canManagePreventiveMaintenances}
-        saving={preventiveSaving}
-        actionId={preventiveActionId}
-        onCreate={onCreatePreventiveMaintenance}
-        onStart={onStartPreventiveMaintenance}
-        onComplete={onCompletePreventiveMaintenance}
-        open={openSections.preventivas}
-        onToggle={() => toggleSection("preventivas")}
-      />
+      <div className="mt-5 flex flex-col gap-3">
+        <PreventiveMaintenanceSection
+          manutencoes={manutencoes}
+          status={manutencoesStatus}
+          mensagem={manutencoesMensagem}
+          canManage={canManagePreventiveMaintenances}
+          saving={preventiveSaving}
+          actionId={preventiveActionId}
+          onCreate={onCreatePreventiveMaintenance}
+          onStart={onStartPreventiveMaintenance}
+          onComplete={onCompletePreventiveMaintenance}
+          open={openSections.preventivas}
+          onToggle={() => toggleSection("preventivas")}
+        />
 
-      <div className="flex flex-col gap-2">
         <DetailsAccordionSection
           title="Predições da máquina"
           icon={ActivityIcon}
           open={openSections.predicao}
           onToggle={() => toggleSection("predicao")}
           meta={
-            <Badge variant="outline" className="border-[#5E17EB]/35 bg-background/80 px-2 text-xs text-[#7c3aed] dark:text-[#A780FF]">
+            <Badge variant="outline" className={accordionHeaderBadgeClass}>
               {predictionSummary.badge}
             </Badge>
           }
@@ -2490,7 +2571,7 @@ export function MaquinaDetailsPanel({
                 open={openSections.detalhesTecnicos}
                 onToggle={() => toggleSection("detalhesTecnicos")}
                 meta={
-                  <Badge variant="outline" className="border-border/70 bg-background/80 px-2 text-xs text-muted-foreground">
+                  <Badge variant="outline" className={accordionHeaderBadgeClass}>
                     Predição
                   </Badge>
                 }
@@ -2510,7 +2591,7 @@ export function MaquinaDetailsPanel({
           open={openSections.sensores}
           onToggle={() => toggleSection("sensores")}
           meta={
-            <Badge variant="outline" className="border-border/70 bg-background/80 px-2 text-xs text-muted-foreground">
+            <Badge variant="outline" className={accordionHeaderBadgeClass}>
               {sensoresDaMaquina.length} {sensoresDaMaquina.length === 1 ? "sensor" : "sensores"}
             </Badge>
           }

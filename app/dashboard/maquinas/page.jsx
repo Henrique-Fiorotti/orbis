@@ -981,7 +981,7 @@ export default function MaquinasPage() {
                   <SheetTitle>Detalhes da máquina</SheetTitle>
                   <SheetDescription>Veja o resumo operacional e execute ações rápidas.</SheetDescription>
                 </SheetHeader>
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
                   <MaquinaDetailsPanel
                     maquina={maquinaDetalhada}
                     sensores={sensores}

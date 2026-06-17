@@ -2,7 +2,8 @@
 
 import * as React from "react"
 
-const STORAGE_KEY = "theme"
+const STORAGE_KEY = "orbis-theme"
+const LEGACY_STORAGE_KEYS = ["theme"]
 const DARK_QUERY = "(prefers-color-scheme: dark)"
 const THEMES = ["light", "dark", "system"]
 
@@ -29,7 +30,21 @@ function getStoredTheme(defaultTheme) {
 
   try {
     const storedTheme = window.localStorage.getItem(STORAGE_KEY)
-    return THEMES.includes(storedTheme) ? storedTheme : defaultTheme
+
+    if (THEMES.includes(storedTheme)) {
+      return storedTheme
+    }
+
+    for (const legacyKey of LEGACY_STORAGE_KEYS) {
+      const legacyTheme = window.localStorage.getItem(legacyKey)
+
+      if (THEMES.includes(legacyTheme)) {
+        window.localStorage.setItem(STORAGE_KEY, legacyTheme)
+        return legacyTheme
+      }
+    }
+
+    return defaultTheme
   } catch {
     return defaultTheme
   }

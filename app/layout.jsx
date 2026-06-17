@@ -20,7 +20,8 @@ const openSans = Open_Sans({
 
 const themeInitScript = `
 (() => {
-  const storageKey = "theme";
+  const storageKey = "orbis-theme";
+  const legacyStorageKeys = ["theme"];
   const themes = ["light", "dark", "system"];
   const root = document.documentElement;
 
@@ -28,9 +29,27 @@ const themeInitScript = `
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
 
-  try {
+  function getStoredTheme() {
     const storedTheme = window.localStorage.getItem(storageKey);
-    const theme = themes.includes(storedTheme) ? storedTheme : "system";
+
+    if (themes.includes(storedTheme)) {
+      return storedTheme;
+    }
+
+    for (const legacyKey of legacyStorageKeys) {
+      const legacyTheme = window.localStorage.getItem(legacyKey);
+
+      if (themes.includes(legacyTheme)) {
+        window.localStorage.setItem(storageKey, legacyTheme);
+        return legacyTheme;
+      }
+    }
+
+    return "system";
+  }
+
+  try {
+    const theme = getStoredTheme();
     const resolvedTheme = theme === "system" ? getSystemTheme() : theme;
 
     root.classList.remove("light", "dark");
