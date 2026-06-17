@@ -2332,7 +2332,7 @@ export function MaquinaDetailsPanel({
     while (scrollContainer && scrollContainer !== document.body) {
       const styles = window.getComputedStyle(scrollContainer)
 
-      if (/(auto|scroll)/.test(styles.overflowY) && scrollContainer.scrollHeight > scrollContainer.clientHeight) {
+      if (/(auto|scroll)/.test(styles.overflowY)) {
         break
       }
 
