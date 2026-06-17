@@ -13,11 +13,19 @@ function readProjectFile(path) {
 test("landing page renders parallax doodles around dashboard and process sections", () => {
   const page = readProjectFile("app/(public)/page.jsx");
 
-  assert.match(page, /import LandingParallaxDoodles from "@\/components\/landing\/parallax-doodles"/);
+  assert.match(page, /const LandingParallaxDoodles = dynamic\(\(\) => import\("@\/components\/landing\/parallax-doodles"\)/);
+  assert.doesNotMatch(page, /import LandingParallaxDoodles from "@\/components\/landing\/parallax-doodles"/);
   assert.match(page, /styles\.parallaxDoodleSection/);
   assert.match(page, /<LandingParallaxDoodles variant="dashboard" \/>/);
   assert.match(page, /<LandingParallaxDoodles variant="process" \/>/);
   assert.match(page, /<LandingParallaxDoodles variant="pricing" \/>/);
+});
+
+test("public landing layout does not block first paint with the home loader", () => {
+  const layout = readProjectFile("app/(public)/layout.jsx");
+
+  assert.doesNotMatch(layout, /HomeLoader/);
+  assert.doesNotMatch(layout, /components\/Loader\/HomeLoader/);
 });
 
 test("landing parallax doodles use GSAP quick transforms with cleanup and reduced motion", () => {

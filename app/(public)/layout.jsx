@@ -1,7 +1,6 @@
 import Header from '@/components/Header'
 import { Poppins, Open_Sans } from 'next/font/google'
 import Footer from '@/components/shadcn-space/blocks/footer-01/footer'
-import HomeLoader from "@/components/Loader/HomeLoader"
 import { LandingLanguageProvider } from '@/components/landing/language-provider'
 import SmoothScroll from '@/components/SmootScroll'
 
@@ -23,7 +22,6 @@ export default function RootLayout({ children }) {
     <div className={`${poppins.variable} ${openSans.variable} landing-scrollbar-hidden`}>
       <LandingLanguageProvider>
         <Header />
-        <HomeLoader />
         <SmoothScroll>
           <main>{children}</main>
         </SmoothScroll>

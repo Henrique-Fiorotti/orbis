@@ -212,6 +212,70 @@ function ChartMessage({ message, tone = "muted" }) {
   )
 }
 
+function getLatestFiniteValue(data, key) {
+  for (let index = data.length - 1; index >= 0; index -= 1) {
+    const value = Number(data[index]?.[key])
+
+    if (Number.isFinite(value)) {
+      return value
+    }
+  }
+
+  return null
+}
+
+function formatPercentValue(value) {
+  return Number.isFinite(Number(value))
+    ? `${Number(value).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%`
+    : "--"
+}
+
+function ChartLineLegend({
+  selectedMachine,
+  hasSelectedMachineData,
+  maquinasCount,
+  latestGeneralValue,
+  latestMachineValue,
+}) {
+  const generalDetail = maquinasCount > 0
+    ? `Frota monitorada (${maquinasCount} ${maquinasCount === 1 ? "maquina" : "maquinas"})`
+    : "Frota monitorada"
+
+  return (
+    <div className="mt-4 flex flex-col gap-3 rounded-lg border border-black/10 bg-slate-950/2 px-4 py-3 text-xs shadow-inner dark:bg-slate-950/45">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="relative h-3 w-8 shrink-0" aria-hidden="true">
+          <span className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 rounded-full bg-[#38bdf8]" />
+          <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background bg-[#38bdf8]" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-medium text-foreground">Frota monitorada - Integridade geral</span>
+          <span className="block truncate text-muted-foreground">{generalDetail}</span>
+        </span>
+        <span className="shrink-0 rounded-md bg-background/30 px-2 py-1 font-mono font-semibold text-foreground tabular-nums">
+          {formatPercentValue(latestGeneralValue)}
+        </span>
+      </div>
+
+      {selectedMachine && hasSelectedMachineData ? (
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="relative h-3 w-8 shrink-0" aria-hidden="true">
+            <span className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 rounded-full bg-[#a78bfa]" />
+            <span className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background bg-[#a78bfa]" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium text-foreground">{selectedMachine.nome} - Maquina selecionada</span>
+            <span className="block truncate text-muted-foreground">Ultimo ponto da serie</span>
+          </span>
+          <span className="shrink-0 rounded-md bg-background/30 px-2 py-1 font-mono font-semibold text-foreground tabular-nums">
+            {formatPercentValue(latestMachineValue)}
+          </span>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile()
   const { status, mensagem, integrityTrendData, machineIntegrityOptions, errors, notices } = useDashboardCharts()
@@ -284,6 +348,9 @@ export function ChartAreaInteractive() {
 
   const hasVisibleData = filteredData.some((item) => Number.isFinite(Number(item.integridade)))
   const hasSelectedMachineData = filteredData.some((item) => Number.isFinite(Number(item.maquinaIntegridade)))
+  const maquinasCount = filteredData.reduce((total, item) => Math.max(total, Number(item.maquinas) || 0), 0)
+  const latestGeneralValue = getLatestFiniteValue(filteredData, "integridade")
+  const latestMachineValue = getLatestFiniteValue(filteredData, "maquinaIntegridade")
   const loading = status === "loading" && integrityTrendData.length === 0
   const chartError = errors.integrityTrend || (status === "error" && integrityTrendData.length === 0 ? mensagem : "")
 
@@ -438,7 +505,13 @@ export function ChartAreaInteractive() {
                 ) : null}
               </LineChart>
             </ChartContainer>
-
+            <ChartLineLegend
+              selectedMachine={selectedMachine}
+              hasSelectedMachineData={hasSelectedMachineData}
+              maquinasCount={maquinasCount}
+              latestGeneralValue={latestGeneralValue}
+              latestMachineValue={latestMachineValue}
+            />
           </>
         )}
       </CardContent>

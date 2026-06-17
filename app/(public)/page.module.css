@@ -316,6 +316,11 @@
   z-index: 1;
 }
 
+.deferRenderSection {
+  content-visibility: auto;
+  contain-intrinsic-size: 720px;
+}
+
 .parallaxDoodleSection {
   overflow: visible;
 }
@@ -383,14 +388,22 @@
   transition: border-color 0.2s ease, color 0.2s ease;
 }
 
-.secondaryCta:hover {
+.secondaryCta:hover,
+.secondaryCta:focus-visible {
   border-color: #7c3aed;
   color: #7c3aed;
+}
+
+.secondaryCta:focus-visible {
+  outline: 2px solid rgba(124, 58, 237, 0.32);
+  outline-offset: 3px;
 }
 
 .heroSplitText {
   display: block;
   line-height: 1;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
@@ -400,12 +413,35 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transform: translate3d(0, 115%, 0);
+  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
 .heroSplitIcon {
   flex-shrink: 0;
+  opacity: 0;
+  transform: scale(0.9) rotate(-10deg);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
   will-change: transform, opacity;
+}
+
+.secondaryCta:hover .heroSplitText,
+.secondaryCta:focus-visible .heroSplitText {
+  transform: translate3d(0, -48px, 0);
+}
+
+.secondaryCta:hover .heroSplitIconLayer,
+.secondaryCta:focus-visible .heroSplitIconLayer {
+  transform: translate3d(0, 0, 0);
+}
+
+.secondaryCta:hover .heroSplitIcon,
+.secondaryCta:focus-visible .heroSplitIcon {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
 }
 
 .registerLink {
@@ -924,5 +960,27 @@
   .heroImage,
   .heroVisual :global(.hero-morph-shell) {
     animation: none;
+  }
+
+  .heroSplitText,
+  .heroSplitIconLayer,
+  .heroSplitIcon {
+    transition: none;
+  }
+
+  .secondaryCta:hover .heroSplitText,
+  .secondaryCta:focus-visible .heroSplitText {
+    transform: translate3d(0, 0, 0);
+  }
+
+  .secondaryCta:hover .heroSplitIconLayer,
+  .secondaryCta:focus-visible .heroSplitIconLayer {
+    transform: translate3d(0, 115%, 0);
+  }
+
+  .secondaryCta:hover .heroSplitIcon,
+  .secondaryCta:focus-visible .heroSplitIcon {
+    opacity: 0;
+    transform: scale(0.9) rotate(-10deg);
   }
 }
