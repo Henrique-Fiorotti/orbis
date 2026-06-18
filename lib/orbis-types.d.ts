@@ -493,6 +493,8 @@ export interface DashboardChartsContextValue {
   mensagem: string;
   maquinas: Maquina[];
   sensores: Sensor[];
+  integrityPeriod: "1d" | "3d" | "7d";
+  setIntegrityPeriod: (period: "1d" | "3d" | "7d") => void;
   integrityTrendData: IntegridadeTrendChartDatum[];
   machineIntegrityOptions: MachineIntegridadeTrendOption[];
   errors: {

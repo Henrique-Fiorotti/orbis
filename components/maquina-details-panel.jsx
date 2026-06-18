@@ -54,9 +54,9 @@ import { cn, tempoRelativo } from "@/lib/utils"
 const PREDICAO_LIMIAR_MANUTENCAO = 70
 const PREDICAO_LIMIAR_FALHA = 30
 const DEFAULT_REGRESSION_PERIOD = "1d"
-const REGRESSION_HISTORY_LIMIT = 10080
 const REGRESSION_PERIOD_OPTIONS = [
   { value: "1d", label: "1 dia", hours: 24 },
+  { value: "3d", label: "3 dias", hours: 72 },
   { value: "7d", label: "7 dias", hours: 168 },
 ]
 
@@ -201,6 +201,10 @@ function formatPredictionRange(start, end) {
     return `A partir de ${formatPredictionDate(start)}`
   }
 
+  if (startDate.getTime() === endDate.getTime()) {
+    return formatPredictionDate(start)
+  }
+
   return `${formatPredictionDate(start)} - ${formatPredictionDate(end)}`
 }
 
@@ -248,6 +252,10 @@ function formatMaintenanceWindow(start, end) {
   }
 
   if (startDate && endDate) {
+    if (startDate.getTime() === endDate.getTime()) {
+      return formatMaintenanceDate(start)
+    }
+
     return `${formatMaintenanceDate(start)} - ${formatMaintenanceDate(end)}`
   }
 
@@ -258,7 +266,7 @@ function getFailurePredictionMetric(maquina) {
   const dataFalha = maquina?.dataFalha
 
   return {
-    value: dataFalha ? formatPredictionDate(dataFalha) : "Sem previsão de falha",
+    value: dataFalha ? formatPredictionDate(dataFalha) : "Sem previsão",
     sub: dataFalha ? formatDaysUntil(dataFalha) || "Data de cruzamento 30%" : "Falha 30% não projetada",
   }
 }
@@ -352,6 +360,20 @@ function formatDecimal(value, digits = 2) {
   return parsed.toFixed(digits).replace(".", ",")
 }
 
+function formatIntegrityPercentValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return "--"
+  }
+
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return "--"
+  }
+
+  return `${parsed.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%`
+}
+
 function formatR2Score(value) {
   const parsed = Number(value)
 
@@ -431,6 +453,28 @@ function getRegressionChartCoverageHours(data) {
   const hours = (lastTimestamp - firstTimestamp) / (1000 * 60 * 60)
 
   return Number.isFinite(hours) ? Math.max(0, hours) : null
+}
+
+function getLatestFiniteChartValue(data, key, { realOnly = false } = {}) {
+  const points = Array.isArray(data) ? data : []
+
+  for (let index = points.length - 1; index >= 0; index -= 1) {
+    if (realOnly && points[index]?.projected) {
+      continue
+    }
+
+    if (points[index]?.[key] === null || points[index]?.[key] === undefined || points[index]?.[key] === "") {
+      continue
+    }
+
+    const value = Number(points[index]?.[key])
+
+    if (Number.isFinite(value)) {
+      return value
+    }
+  }
+
+  return null
 }
 
 function formatRiskFactor(value) {
@@ -562,7 +606,6 @@ function mergeHistoricoIntegridade(current, incoming) {
 
   return Array.from(pointsByKey.values())
     .sort((a, b) => Date.parse(a.criadoEm) - Date.parse(b.criadoEm))
-    .slice(-REGRESSION_HISTORY_LIMIT)
 }
 
 function getRealtimeMaquinaId(payload) {
@@ -580,12 +623,9 @@ function getRealtimeMaquinaId(payload) {
     null
 }
 
-async function fetchMachinePredictions(maquinaId, accessToken, signal) {
+async function fetchMachinePredictions(maquinaId, accessToken, signal, historicoPeriod = DEFAULT_REGRESSION_PERIOD) {
   const historicoParams = new URLSearchParams({
-    limite: String(REGRESSION_HISTORY_LIMIT),
-    periodo: "7d",
-    periodoDias: "7",
-    janelaHoras: "168",
+    periodo: getRegressionPeriodOption(historicoPeriod).value,
   })
   const [alertasResult, riscoResult, historicoResult] = await Promise.allSettled([
     requestDashboardJson(`/maquinas/${maquinaId}/predicao-alertas`, accessToken, "a predição de alertas", { signal }),
@@ -719,6 +759,126 @@ function getPredictionSummary({ maquina, statusExibicao, integridadeExibicao }) 
     title: "Sem previsão crítica",
     description: "A curva atual não indica queda suficiente para projetar falha dentro da janela monitorada.",
   }
+}
+
+function PredictionPrimaryMetric({ label, value, sub }) {
+  return (
+    <div className="min-w-0 rounded-lg border border-border/80 bg-background/90 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      <span className="block text-[11px] font-semibold uppercase tracking-normal text-muted-foreground">{label}</span>
+      <span className="mt-1.5 block break-words text-lg font-semibold leading-tight">{value}</span>
+      {sub ? <span className="mt-1.5 block text-sm leading-snug text-muted-foreground">{sub}</span> : null}
+    </div>
+  )
+}
+
+function RegressionLegendSwatch({ color, dashed = false, vertical = false, dot = false }) {
+  if (vertical) {
+    return (
+      <span className="relative h-5 w-8 shrink-0" aria-hidden="true">
+        <span
+          className="absolute left-1/2 top-0 h-full w-0 -translate-x-1/2 border-l-2"
+          style={{ borderColor: color, borderStyle: dashed ? "dashed" : "solid" }}
+        />
+      </span>
+    )
+  }
+
+  return (
+    <span className="relative h-3 w-8 shrink-0" aria-hidden="true">
+      <span
+        className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 rounded-full"
+        style={{ backgroundColor: dashed ? "transparent" : color, borderTop: dashed ? `2px dashed ${color}` : undefined }}
+      />
+      {dot ? (
+        <span
+          className="absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background"
+          style={{ backgroundColor: color }}
+        />
+      ) : null}
+    </span>
+  )
+}
+
+function RegressionLegendItem({ color, dashed, vertical, dot, label, detail, value }) {
+  const labelLines = Array.isArray(label) ? label : [label]
+
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <RegressionLegendSwatch color={color} dashed={dashed} vertical={vertical} dot={dot} />
+      <span className="min-w-0 flex-1">
+        <span className="block font-medium leading-snug text-foreground">
+          {labelLines.map((line) => (
+            <span key={line} className="block truncate">{line}</span>
+          ))}
+        </span>
+        {detail ? <span className="block truncate text-muted-foreground">{detail}</span> : null}
+      </span>
+      {value ? (
+        <span className="max-w-24 shrink-0 truncate rounded-md bg-background/30 px-2 py-1 text-right font-mono font-semibold text-foreground tabular-nums">
+          {value}
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
+function RegressionChartLegend({ latestIntegrity, latestRegression, maintenancePrediction, failurePrediction }) {
+  return (
+    <div className="mt-4 grid grid-cols-1 gap-3 rounded-lg border border-black/10 bg-slate-950/2 px-4 py-3 text-xs shadow-inner dark:bg-slate-950/45 sm:grid-cols-2">
+      <RegressionLegendItem
+        color="var(--primary)"
+        dot
+        label="Integridade real"
+        detail="Pontos retornados pelo historico"
+        value={formatIntegrityPercentValue(latestIntegrity)}
+      />
+      <RegressionLegendItem
+        color="var(--chart-3)"
+        dashed
+        label="Regressão linear"
+        detail="Tendência usada na previsão"
+        value={formatIntegrityPercentValue(latestRegression)}
+      />
+      <RegressionLegendItem
+        color="#94a3b8"
+        dashed
+        vertical
+        label="Atual"
+        detail="Linha do tempo atual"
+        value="Agora"
+      />
+      <RegressionLegendItem
+        color="#f59e0b"
+        dashed
+        vertical
+        label={["Manutenção", "Previsão"]}
+        detail="Cruzamento com 70%"
+        value={maintenancePrediction?.value}
+      />
+      <RegressionLegendItem
+        color="#f59e0b"
+        dashed
+        label="Limiar de manutenção"
+        detail="Referência horizontal"
+        value="70%"
+      />
+      <RegressionLegendItem
+        color="#ef4444"
+        dashed
+        vertical
+        label="Falha prevista"
+        detail="Cruzamento com 30%"
+        value={failurePrediction?.value}
+      />
+      <RegressionLegendItem
+        color="#ef4444"
+        dashed
+        label="Limiar crítico"
+        detail="Referência horizontal"
+        value="30%"
+      />
+    </div>
+  )
 }
 
 function PredictionMetric({ label, value, sub }) {
@@ -1304,6 +1464,16 @@ function getRegressionValue(modelo, hoursSinceBase) {
   return Number.isFinite(value) ? Number(value.toFixed(2)) : null
 }
 
+function clampRegressionChartValue(value) {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return null
+  }
+
+  return Number(Math.max(0, Math.min(100, parsed)).toFixed(2))
+}
+
 function getChartDate(value) {
   if (typeof value === "number") {
     const date = new Date(value)
@@ -1373,10 +1543,54 @@ function getRegressionModelBaseTime(modelo, fallbackBaseTime) {
   return fallbackBaseTime
 }
 
-function filterHistoricoByRegressionPeriod(historico, period) {
+function getRegressionThresholdDate(modelo, historico, threshold) {
+  if (!modelo) {
+    return null
+  }
+
+  const slope = Number(modelo.slope)
+  const intercept = Number(modelo.intercept)
+
+  if (!Number.isFinite(slope) || !Number.isFinite(intercept) || slope >= 0) {
+    return null
+  }
+
+  const points = normalizeRegressionHistoricoPoints(historico)
+  const fallbackBaseTime = points[0]?.timestamp ?? parseDateValue(modelo.ultimoPontoEm)?.getTime()
+  const modelBaseTime = getRegressionModelBaseTime(modelo, fallbackBaseTime)
+  const hoursUntilThreshold = (threshold - intercept) / slope
+
+  if (!Number.isFinite(modelBaseTime) || !Number.isFinite(hoursUntilThreshold)) {
+    return null
+  }
+
+  const thresholdTimestamp = modelBaseTime + (hoursUntilThreshold * 60 * 60 * 1000)
+  const thresholdDate = new Date(thresholdTimestamp)
+
+  return Number.isFinite(thresholdDate.getTime()) ? thresholdDate.toISOString() : null
+}
+
+function getRegressionMaintenanceMetric(modelo, historico) {
+  const regressionMaintenanceDate = getRegressionThresholdDate(modelo, historico, PREDICAO_LIMIAR_MANUTENCAO)
+
+  if (!regressionMaintenanceDate) {
+    return {
+      date: null,
+      value: "Sem previsão",
+      sub: modelo ? "A regressão linear não cruza 70%." : "Sem regressão linear calculada.",
+    }
+  }
+
+  return {
+    date: regressionMaintenanceDate,
+    value: formatPredictionDate(regressionMaintenanceDate),
+    sub: formatDaysUntil(regressionMaintenanceDate) || "Cruzamento da regressão linear em 70%",
+  }
+}
+
+function normalizeRegressionHistoricoPoints(historico) {
   const points = Array.isArray(historico) ? historico : []
-  const periodOption = getRegressionPeriodOption(period)
-  const parsedPoints = points
+  return points
     .map((point, index) => {
       const timestamp = Date.parse(point?.criadoEm)
       const integridade = getNumericValue(point?.integridade)
@@ -1389,15 +1603,6 @@ function filterHistoricoByRegressionPeriod(historico, period) {
     })
     .filter(Boolean)
     .sort((a, b) => a.timestamp - b.timestamp)
-
-  const latestTimestamp = parsedPoints.at(-1)?.timestamp
-
-  if (!Number.isFinite(latestTimestamp)) {
-    return []
-  }
-
-  const cutoff = latestTimestamp - (periodOption.hours * 60 * 60 * 1000)
-  return parsedPoints.filter((point) => point.timestamp >= cutoff)
 }
 
 function buildRegressionChartData(historico, modelo, predictionDates = {}, period = DEFAULT_REGRESSION_PERIOD) {
@@ -1408,7 +1613,7 @@ function buildRegressionChartData(historico, modelo, predictionDates = {}, perio
     return []
   }
 
-  const periodPoints = filterHistoricoByRegressionPeriod(points, period)
+  const periodPoints = normalizeRegressionHistoricoPoints(points)
 
   if (periodPoints.length === 0) {
     return []
@@ -1429,7 +1634,7 @@ function buildRegressionChartData(historico, modelo, predictionDates = {}, perio
         id: point.id ?? index,
         timestamp: point.timestamp,
         integridade: point.integridade,
-        regressao: getRegressionValue(modelo, hours),
+        regressao: null,
         projected: false,
       }
     })
@@ -1461,9 +1666,20 @@ function buildRegressionChartData(historico, modelo, predictionDates = {}, perio
       id: `previsao-${timestamp}`,
       timestamp,
       integridade: null,
-      regressao: getRegressionValue(modelo, hours),
+      regressao: null,
       projected: true,
     })
+  }
+
+  if (modelo && data.length > 0) {
+    const regressionIndexes = Array.from(new Set([0, data.length - 1]))
+
+    for (const index of regressionIndexes) {
+      const point = data[index]
+      const hours = (point.timestamp - modelBaseTime) / (1000 * 60 * 60)
+
+      point.regressao = clampRegressionChartValue(getRegressionValue(modelo, hours))
+    }
   }
 
   return data
@@ -1549,6 +1765,7 @@ function PredictionRegressionChart({ data, loading, errors, hasRegression, perio
   const showPointDots = data.length <= 160
   const maintenanceStartDate = parseDateValue(dataInicioManutencao)
   const failureDate = parseDateValue(dataFalha)
+  const nowTimestamp = React.useMemo(() => Date.now(), [data])
 
   if (loading && data.length === 0) {
     return <RegressionChartMessage message="Carregando histórico da máquina..." />
@@ -1570,7 +1787,10 @@ function PredictionRegressionChart({ data, loading, errors, hasRegression, perio
         <XAxis
           dataKey="timestamp"
           type="number"
-          domain={["dataMin", "dataMax"]}
+          domain={[
+            (dataMin) => Math.min(Number(dataMin), nowTimestamp),
+            (dataMax) => Math.max(Number(dataMax), nowTimestamp),
+          ]}
           tickLine={false}
           axisLine={false}
           tickMargin={8}
@@ -1580,6 +1800,8 @@ function PredictionRegressionChart({ data, loading, errors, hasRegression, perio
         <YAxis
           width={36}
           domain={[0, 100]}
+          allowDataOverflow
+          ticks={[0, 30, 70, 100]}
           tickLine={false}
           axisLine={false}
           tickFormatter={(value) => `${value}%`}
@@ -1596,12 +1818,16 @@ function PredictionRegressionChart({ data, loading, errors, hasRegression, perio
           strokeDasharray="4 4"
           label={{ value: "30%", position: "insideBottomRight", fill: "#dc2626", fontSize: 11 }}
         />
+        <ReferenceLine
+          x={nowTimestamp}
+          stroke="#94a3b8"
+          strokeDasharray="3 3"
+        />
         {maintenanceStartDate ? (
           <ReferenceLine
             x={maintenanceStartDate.getTime()}
             stroke="#f59e0b"
             strokeDasharray="3 3"
-            label={{ value: "Manutenção 70%", position: "insideTop", fill: "#d97706", fontSize: 11 }}
           />
         ) : null}
         {failureDate ? (
@@ -1633,7 +1859,7 @@ function PredictionRegressionChart({ data, loading, errors, hasRegression, perio
         {hasRegression ? (
           <Line
             dataKey="regressao"
-            type="monotone"
+            type="linear"
             stroke="var(--color-regressao)"
             strokeWidth={2}
             strokeDasharray="6 5"
@@ -1654,20 +1880,26 @@ function PredictionRegressionSheet({
   historico,
   loading,
   errors,
+  regressionPeriod,
+  onRegressionPeriodChange,
 }) {
-  const [regressionPeriod, setRegressionPeriod] = React.useState(DEFAULT_REGRESSION_PERIOD)
+  const [technicalDetailsOpen, setTechnicalDetailsOpen] = React.useState(false)
   const modelo = React.useMemo(() => getPredictionModel(predicaoAlertas), [predicaoAlertas])
+  const maintenancePrediction = React.useMemo(
+    () => getRegressionMaintenanceMetric(modelo, historico),
+    [historico, modelo]
+  )
   const chartData = React.useMemo(
     () => buildRegressionChartData(
       historico,
       modelo,
       {
-        dataInicioManutencao: maquina?.dataInicioManutencao,
+        dataInicioManutencao: maintenancePrediction.date,
         dataFalha: maquina?.dataFalha,
       },
       regressionPeriod
     ),
-    [historico, maquina?.dataInicioManutencao, maquina?.dataFalha, modelo, regressionPeriod]
+    [historico, maintenancePrediction.date, maquina?.dataFalha, modelo, regressionPeriod]
   )
   const chartPointCount = React.useMemo(
     () => chartData.filter((point) => !point.projected).length,
@@ -1675,6 +1907,14 @@ function PredictionRegressionSheet({
   )
   const chartCoverageHours = React.useMemo(
     () => getRegressionChartCoverageHours(chartData),
+    [chartData]
+  )
+  const latestIntegrity = React.useMemo(
+    () => getLatestFiniteChartValue(chartData, "integridade", { realOnly: true }),
+    [chartData]
+  )
+  const latestRegression = React.useMemo(
+    () => getLatestFiniteChartValue(chartData, "regressao"),
     [chartData]
   )
   const notice = getRegressionNotice({
@@ -1685,7 +1925,6 @@ function PredictionRegressionSheet({
     predicaoAlertas,
   })
   const failurePrediction = getFailurePredictionMetric(maquina)
-  const maintenanceStart = getMaintenanceStartMetric(maquina)
   const maintenanceWindow = getMaintenanceWindowMetric(maquina)
   const noticeClasses = {
     stable: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/25 dark:text-emerald-300",
@@ -1694,7 +1933,7 @@ function PredictionRegressionSheet({
   }
 
   React.useEffect(() => {
-    setRegressionPeriod(DEFAULT_REGRESSION_PERIOD)
+    setTechnicalDetailsOpen(false)
   }, [maquina?.id])
 
   return (
@@ -1719,7 +1958,7 @@ function PredictionRegressionSheet({
                 value={regressionPeriod}
                 onValueChange={(value) => {
                   if (value) {
-                    setRegressionPeriod(value)
+                    onRegressionPeriodChange?.(value)
                   }
                 }}
                 variant="outline"
@@ -1739,54 +1978,79 @@ function PredictionRegressionSheet({
               errors={errors}
               hasRegression={Boolean(modelo)}
               period={regressionPeriod}
-              dataInicioManutencao={maquina?.dataInicioManutencao}
+              dataInicioManutencao={maintenancePrediction.date}
               dataFalha={maquina?.dataFalha}
+            />
+            {chartData.length > 0 ? (
+              <RegressionChartLegend
+                latestIntegrity={latestIntegrity}
+                latestRegression={latestRegression}
+                maintenancePrediction={maintenancePrediction}
+                failurePrediction={failurePrediction}
+              />
+            ) : null}
+          </div>
+
+          <div className="mt-4">
+            <PredictionPrimaryMetric
+              label="Manutenção prevista"
+              value={maintenancePrediction.value}
+              sub={maintenancePrediction.sub}
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <PredictionMetric
-              label="Confianca do ajuste"
-              value={modelo ? formatR2Score(modelo.r2) : "N/A"}
-              sub="R2: quanto a linha explica os dados."
-            />
-            <PredictionMetric
-              label="Angulo da tendencia"
-              value={modelo ? formatSlopeAngle(modelo.slope) : "N/A"}
-              sub={modelo ? getSlopeAngleDescription(modelo.slope) : "Sem tendencia calculada."}
-            />
-            <PredictionMetric
-              label="Dados exibidos"
-              value={formatRegressionPointCount(chartPointCount)}
-              sub={`Periodo selecionado: ${getRegressionPeriodOption(regressionPeriod).label}.`}
-            />
-            <PredictionMetric
-              label="Cobertura temporal"
-              value={formatCoveredHours(chartCoverageHours)}
-              sub="Janela dos pontos exibidos."
-            />
-            <PredictionMetric
-              label="Ultimo ponto"
-              value={modelo?.ultimoPontoEm ? formatPredictionDate(modelo.ultimoPontoEm) : "N/A"}
-              sub="Base mais recente do modelo."
-            />
-            <PredictionMetric
-              label="Manutenção prevista"
-              value={maintenanceStart.value}
-              sub={maintenanceStart.sub}
-            />
-            <PredictionMetric
-              label="Falha prevista"
-              value={failurePrediction.value}
-              sub={failurePrediction.sub}
-            />
-            <div className="sm:col-span-2">
-              <PredictionMetric
-                label="Janela ideal"
-                value={maintenanceWindow.value}
-                sub={maintenanceWindow.sub}
-              />
-            </div>
+          <div className="mt-4">
+            <DetailsAccordionSection
+              title="Detalhes técnicos"
+              icon={GaugeIcon}
+              open={technicalDetailsOpen}
+              onToggle={() => setTechnicalDetailsOpen((open) => !open)}
+              meta={
+                <Badge variant="outline" className={accordionHeaderBadgeClass}>
+                  Opcional
+                </Badge>
+              }
+            >
+              <div className="grid grid-cols-1 gap-2 border-t border-border/60 p-3 pt-3 sm:grid-cols-2">
+                <PredictionMetric
+                  label="Confianca do ajuste"
+                  value={modelo ? formatR2Score(modelo.r2) : "N/A"}
+                  sub="R2: quanto a linha explica os dados."
+                />
+                <PredictionMetric
+                  label="Angulo da tendencia"
+                  value={modelo ? formatSlopeAngle(modelo.slope) : "N/A"}
+                  sub={modelo ? getSlopeAngleDescription(modelo.slope) : "Sem tendencia calculada."}
+                />
+                <PredictionMetric
+                  label="Dados exibidos"
+                  value={formatRegressionPointCount(chartPointCount)}
+                  sub={`Periodo selecionado: ${getRegressionPeriodOption(regressionPeriod).label}.`}
+                />
+                <PredictionMetric
+                  label="Cobertura temporal"
+                  value={formatCoveredHours(chartCoverageHours)}
+                  sub="Janela dos pontos exibidos."
+                />
+                <PredictionMetric
+                  label="Ultimo ponto"
+                  value={modelo?.ultimoPontoEm ? formatPredictionDate(modelo.ultimoPontoEm) : "N/A"}
+                  sub="Base mais recente do modelo."
+                />
+                <PredictionMetric
+                  label="Falha prevista"
+                  value={failurePrediction.value}
+                  sub={failurePrediction.sub}
+                />
+                <div className="sm:col-span-2">
+                  <PredictionMetric
+                    label="Janela ideal"
+                    value={maintenanceWindow.value}
+                    sub={maintenanceWindow.sub}
+                  />
+                </div>
+              </div>
+            </DetailsAccordionSection>
           </div>
 
           {errors?.alertas || errors?.risco ? (
@@ -2258,7 +2522,7 @@ function PreventiveMaintenanceCard({ manutencao, canManage, pending, onStart, on
           </Button>
         ) : null}
       </div>
-      {windowLabel || predictionFailure ? (
+      {windowLabel || predictionMaintenance ? (
         <div className="mt-3 grid gap-2 rounded-md border border-border/70 bg-muted/20 p-2 text-xs text-muted-foreground">
           {windowLabel ? <span>Janela sugerida: {windowLabel}</span> : null}
           {predictionMaintenance ? <span>Manutenção prevista: {predictionMaintenance}</span> : null}
@@ -2469,6 +2733,7 @@ export function MaquinaDetailsPanel({
     sensores: false,
   })
   const [regressionSheetOpen, setRegressionSheetOpen] = React.useState(false)
+  const [regressionPeriod, setRegressionPeriod] = React.useState(DEFAULT_REGRESSION_PERIOD)
   const [predictionInsights, setPredictionInsights] = React.useState({
     status: "idle",
     alertas: null,
@@ -2491,6 +2756,7 @@ export function MaquinaDetailsPanel({
       sensores: false,
     })
     setRegressionSheetOpen(false)
+    setRegressionPeriod(DEFAULT_REGRESSION_PERIOD)
     setSummaryPinned(false)
   }, [maquina?.id])
 
@@ -2585,7 +2851,7 @@ export function MaquinaDetailsPanel({
       },
     })
 
-    fetchMachinePredictions(maquinaId, session.accessToken, controller.signal)
+    fetchMachinePredictions(maquinaId, session.accessToken, controller.signal, regressionPeriod)
       .then(({ alertas, risco, historico, errors, unauthorized }) => {
         if (ignore) {
           return
@@ -2629,7 +2895,7 @@ export function MaquinaDetailsPanel({
       ignore = true
       controller.abort()
     }
-  }, [maquina?.id])
+  }, [maquina?.id, regressionPeriod])
 
   React.useEffect(() => {
     const maquinaId = maquina?.id
@@ -2933,6 +3199,8 @@ export function MaquinaDetailsPanel({
         historico={predictionInsights.historico}
         loading={predictionInsights.status === "loading"}
         errors={predictionInsights.errors}
+        regressionPeriod={regressionPeriod}
+        onRegressionPeriodChange={setRegressionPeriod}
       />
     </div>
   )
