@@ -22,7 +22,27 @@ import {
 /** @typedef {import("@/lib/orbis-types").WithChildrenProps} WithChildrenProps */
 /** @typedef {import("@/lib/orbis-types").DashboardChartsContextValue} DashboardChartsContextValue */
 
-/** @type {DashboardChartsContextValue} */
+const DEFAULT_INTEGRITY_PERIOD = "1d"
+
+const INTEGRITY_PERIOD_CONFIG = {
+  "1d": { days: 1 },
+  "3d": { days: 3 },
+  "7d": { days: 7 },
+}
+
+function getIntegrityPeriodConfig(period) {
+  return INTEGRITY_PERIOD_CONFIG[period] ?? INTEGRITY_PERIOD_CONFIG[DEFAULT_INTEGRITY_PERIOD]
+}
+
+function buildHistoricoIntegridadePath(maquinaId, period) {
+  const params = new URLSearchParams({
+    periodo: period,
+  })
+
+  return `/maquinas/${maquinaId}/historico-integridade?${params.toString()}`
+}
+
+/** @type {Omit<DashboardChartsContextValue, "integrityPeriod" | "setIntegrityPeriod">} */
 const INITIAL_STATE = {
   status: "loading",
   mensagem: "Carregando dados do dashboard...",
@@ -48,6 +68,7 @@ const DashboardChartsContext = React.createContext(null)
  */
 export function DashboardChartsProvider({ children }) {
   const [state, setState] = React.useState(INITIAL_STATE)
+  const [integrityPeriod, setIntegrityPeriod] = React.useState(DEFAULT_INTEGRITY_PERIOD)
   const dashboardBootstrap = useDashboardBootstrap()
   const sensoresContext = useSensores()
 
@@ -66,7 +87,11 @@ export function DashboardChartsProvider({ children }) {
       const maquinas = bootstrapSnapshot.maquinas
       const sensores = bootstrapSnapshot.sensores
       const referenceDate = bootstrapSnapshot.generatedAt || new Date()
-      const integrityTrendData = getIntegrityTrendDataFromSnapshot(maquinas, referenceDate)
+      const integrityTrendData = getIntegrityTrendDataFromSnapshot(
+        maquinas,
+        referenceDate,
+        getIntegrityPeriodConfig(integrityPeriod).days
+      )
       const integrityReferenceDate = integrityTrendData[integrityTrendData.length - 1]?.date ?? referenceDate
       const machineIntegrityOptions = getMachineIntegrityTrendOptions([], maquinas, integrityReferenceDate)
 
@@ -157,7 +182,7 @@ export function DashboardChartsProvider({ children }) {
         ? await Promise.allSettled(
             maquinas.map((maquina) =>
               requestDashboardJson(
-                `/maquinas/${maquina.id}/historico-integridade?limite=720`,
+                buildHistoricoIntegridadePath(maquina.id, integrityPeriod),
                 session.accessToken,
                 `o histórico de integridade da máquina ${maquina.nome}`
               )
@@ -201,7 +226,7 @@ export function DashboardChartsProvider({ children }) {
 
       const integrityTrendData = machineHistories.some((entry) => entry.historico.length > 0)
         ? getIntegrityTrendDataFromHistories(machineHistories, maquinas)
-        : getIntegrityTrendDataFromSnapshot(maquinas)
+        : getIntegrityTrendDataFromSnapshot(maquinas, undefined, getIntegrityPeriodConfig(integrityPeriod).days)
       const integrityReferenceDate = integrityTrendData[integrityTrendData.length - 1]?.date
       const machineIntegrityOptions = getMachineIntegrityTrendOptions(machineHistories, maquinas, integrityReferenceDate)
 
@@ -270,7 +295,7 @@ export function DashboardChartsProvider({ children }) {
     return () => {
       isActive = false
     }
-  }, [dashboardBootstrap.status, dashboardBootstrap.snapshot])
+  }, [dashboardBootstrap.status, dashboardBootstrap.snapshot, integrityPeriod])
 
   const value = React.useMemo(() => {
     const sensoresErro =
@@ -282,13 +307,15 @@ export function DashboardChartsProvider({ children }) {
 
     return {
       ...state,
+      integrityPeriod,
+      setIntegrityPeriod,
       sensores: sensoresSincronizados,
       errors: {
         ...state.errors,
         sensores: sensoresErro,
       },
     }
-  }, [state, sensoresContext.sensores, sensoresContext.status, sensoresContext.mensagem])
+  }, [state, integrityPeriod, sensoresContext.sensores, sensoresContext.status, sensoresContext.mensagem])
 
   return (
     <DashboardChartsContext.Provider value={value}>

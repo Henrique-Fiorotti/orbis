@@ -40,107 +40,22 @@ const chartConfig = {
   },
 }
 
-const RANGE_OPTIONS = [
-  { value: "30d", label: "Últimos 30 dias" },
-  { value: "15d", label: "Últimos 15 dias" },
+const INTEGRITY_PERIOD_OPTIONS = [
+  { value: "1d", label: "Hoje" },
+  { value: "3d", label: "Últimos 3 dias" },
   { value: "7d", label: "Últimos 7 dias" },
 ]
 
-function getRangeDays(timeRange) {
-  if (timeRange === "30d") {
-    return 30
+function getPeriodRangeDays(timeRange) {
+  if (timeRange === "3d") {
+    return 3
   }
 
-  if (timeRange === "15d") {
-    return 15
-  }
-
-  return 7
+  return timeRange === "7d" ? 7 : 1
 }
 
-function getRangeLabel(timeRange) {
-  return RANGE_OPTIONS.find((option) => option.value === timeRange)?.label ?? "Últimos 7 dias"
-}
-
-function getMaxVisiblePoints(timeRange) {
-  if (timeRange === "30d") {
-    return 54
-  }
-
-  if (timeRange === "15d") {
-    return 48
-  }
-
-  return 42
-}
-
-function average(values) {
-  const validValues = values.filter((value) => Number.isFinite(value))
-
-  if (validValues.length === 0) {
-    return null
-  }
-
-  return validValues.reduce((total, value) => total + value, 0) / validValues.length
-}
-
-function compactChartData(data, timeRange) {
-  const maxPoints = getMaxVisiblePoints(timeRange)
-
-  if (data.length <= maxPoints) {
-    return data
-  }
-
-  const firstTimestamp = data[0]?.timestamp
-  const lastTimestamp = data.at(-1)?.timestamp
-
-  if (!Number.isFinite(firstTimestamp) || !Number.isFinite(lastTimestamp) || lastTimestamp <= firstTimestamp) {
-    return data.slice(-maxPoints)
-  }
-
-  const bucketSize = Math.max(1, (lastTimestamp - firstTimestamp) / (maxPoints - 1))
-  const buckets = new Map()
-
-  for (const point of data) {
-    const bucketIndex = Math.min(maxPoints - 1, Math.floor((point.timestamp - firstTimestamp) / bucketSize))
-    const bucket = buckets.get(bucketIndex) ?? {
-      timestamps: [],
-      integridades: [],
-      maquinaIntegridades: [],
-      maquinas: 0,
-      estimado: false,
-    }
-
-    bucket.timestamps.push(point.timestamp)
-
-    if (Number.isFinite(Number(point.integridade))) {
-      bucket.integridades.push(Number(point.integridade))
-    }
-
-    if (Number.isFinite(Number(point.maquinaIntegridade))) {
-      bucket.maquinaIntegridades.push(Number(point.maquinaIntegridade))
-    }
-
-    bucket.maquinas = Math.max(bucket.maquinas, Number(point.maquinas) || 0)
-    bucket.estimado = bucket.estimado || Boolean(point.estimado)
-    buckets.set(bucketIndex, bucket)
-  }
-
-  return Array.from(buckets.entries())
-    .sort(([a], [b]) => a - b)
-    .map(([index, bucket]) => {
-      const timestamp = Math.round(average(bucket.timestamps) ?? firstTimestamp + index * bucketSize)
-
-      return {
-        date: new Date(timestamp).toISOString().slice(0, 10),
-        timestamp,
-        integridade: average(bucket.integridades),
-        maquinaIntegridade: average(bucket.maquinaIntegridades),
-        maquinas: bucket.maquinas,
-        estimado: bucket.estimado,
-        compactado: bucket.timestamps.length > 1,
-      }
-    })
+function getPeriodRangeLabel(timeRange) {
+  return INTEGRITY_PERIOD_OPTIONS.find((option) => option.value === timeRange)?.label ?? "Hoje"
 }
 
 function parseChartDate(value) {
@@ -173,12 +88,19 @@ function formatChartDate(value) {
   })
 }
 
-function formatChartTick(value) {
+function formatChartTick(value, timeRange = "7d") {
   const timestamp = Number(value)
   const date = Number.isFinite(timestamp) ? new Date(timestamp) : parseChartDate(value)
 
   if (!Number.isFinite(date.getTime())) {
     return ""
+  }
+
+  if (timeRange === "1d") {
+    return date.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
   }
 
   return date.toLocaleDateString("pt-BR", {
@@ -278,15 +200,28 @@ function ChartLineLegend({
 
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile()
-  const { status, mensagem, integrityTrendData, machineIntegrityOptions, errors, notices } = useDashboardCharts()
-  const [timeRange, setTimeRange] = React.useState("7d")
+  const {
+    status,
+    mensagem,
+    integrityTrendData,
+    machineIntegrityOptions,
+    errors,
+    notices,
+    integrityPeriod,
+    setIntegrityPeriod,
+  } = useDashboardCharts()
+  const [timeRange, setTimeRange] = React.useState(integrityPeriod ?? "1d")
   const [selectedMachineId, setSelectedMachineId] = React.useState("")
 
   React.useEffect(() => {
     if (isMobile) {
-      setTimeRange("7d")
+      setTimeRange("1d")
     }
   }, [isMobile])
+
+  React.useEffect(() => {
+    setIntegrityPeriod(timeRange)
+  }, [setIntegrityPeriod, timeRange])
 
   React.useEffect(() => {
     setSelectedMachineId((currentId) => {
@@ -321,9 +256,7 @@ export function ChartAreaInteractive() {
     }
 
     const referenceTimestamp = Math.max(...allTimestamps)
-    const startDate = new Date(referenceTimestamp)
-    startDate.setUTCDate(startDate.getUTCDate() - getRangeDays(timeRange) + 1)
-    const startTimestamp = startDate.getTime()
+    const startTimestamp = referenceTimestamp - (getPeriodRangeDays(timeRange) * 24 * 60 * 60 * 1000)
     const generalDataByTimestamp = new Map(integrityTrendData.map((item) => [getChartTimestamp(item), item]))
 
     const data = Array.from(new Set(allTimestamps))
@@ -343,7 +276,7 @@ export function ChartAreaInteractive() {
         }
       })
 
-    return compactChartData(data, timeRange)
+    return data
   }, [integrityTrendData, selectedMachine, timeRange])
 
   const hasVisibleData = filteredData.some((item) => Number.isFinite(Number(item.integridade)))
@@ -363,7 +296,7 @@ export function ChartAreaInteractive() {
       <CardHeader>
         <CardTitle>Gráfico de integridade</CardTitle>
         <CardDescription>
-          {loading ? "Carregando série temporal..." : selectedMachine ? `${getRangeLabel(timeRange)} - ${selectedMachine.nome}` : getRangeLabel(timeRange)}
+          {loading ? "Carregando série temporal..." : selectedMachine ? `${getPeriodRangeLabel(timeRange)} - ${selectedMachine.nome}` : getPeriodRangeLabel(timeRange)}
         </CardDescription>
         <CardAction className="flex flex-wrap items-center justify-end gap-2 rounded-none!">
           {machineIntegrityOptions.length > 0 ? (
@@ -395,7 +328,7 @@ export function ChartAreaInteractive() {
             variant="outline"
             className="hidden *:data-[slot=toggle-group-item]:px-4! @[940px]/card:flex"
           >
-            {RANGE_OPTIONS.map((option) => (
+            {INTEGRITY_PERIOD_OPTIONS.map((option) => (
               <ToggleGroupItem key={option.value} value={option.value}>{option.label}</ToggleGroupItem>
             ))}
           </ToggleGroup>
@@ -415,7 +348,7 @@ export function ChartAreaInteractive() {
               <SelectValue placeholder="Filtrar" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              {RANGE_OPTIONS.map((option) => (
+              {INTEGRITY_PERIOD_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value} className="rounded-lg">{option.label}</SelectItem>
               ))}
             </SelectContent>
@@ -442,7 +375,7 @@ export function ChartAreaInteractive() {
                   axisLine={false}
                   tickMargin={8}
                   minTickGap={32}
-                  tickFormatter={formatChartTick}
+                  tickFormatter={(value) => formatChartTick(value, timeRange)}
                 />
                 <YAxis
                   width={34}
