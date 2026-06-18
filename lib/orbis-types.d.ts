@@ -47,7 +47,9 @@ export interface Maquina {
   status: StatusMaquina;
   ultimaLeituraEm: string;
   sensores: number;
+  dataInicioManutencao: string | null;
   previsaoManutencao: string | null;
+  dataFalha: string | null;
   janelaManuInicio: string | null;
   janelaManuFim: string | null;
   imagem: string | null;

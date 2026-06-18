@@ -35,7 +35,11 @@ import {
   getMaquinaStatusExibicao,
 } from "@/lib/maquinas-table"
 import { getAuthSession } from "@/lib/auth-session"
-import { extractCollection, getHttpErrorStatus, requestDashboardJson } from "@/lib/dashboard-api"
+import { extractCollection, getHttpErrorStatus, normalizeMaquinaCollection, requestDashboardJson } from "@/lib/dashboard-api"
+import {
+  REALTIME_MACHINE_DASHBOARD_UPDATE_EVENT,
+  REALTIME_MACHINE_INTEGRITY_HISTORY_UPDATE_EVENT,
+} from "@/lib/realtime-events.mjs"
 import {
   PREDICTIVE_MAINTENANCE_REQUIRED_CONFIRMATIONS,
   formatCoveredHours,
@@ -49,7 +53,6 @@ import { cn, tempoRelativo } from "@/lib/utils"
 
 const PREDICAO_LIMIAR_MANUTENCAO = 70
 const PREDICAO_LIMIAR_FALHA = 30
-const PREDICAO_ANTECEDENCIA_FIM_JANELA_DIAS = 2
 const DEFAULT_REGRESSION_PERIOD = "1d"
 const REGRESSION_HISTORY_LIMIT = 10080
 const REGRESSION_PERIOD_OPTIONS = [
@@ -249,6 +252,55 @@ function formatMaintenanceWindow(start, end) {
   }
 
   return startDate ? `A partir de ${formatMaintenanceDate(start)}` : `Ate ${formatMaintenanceDate(end)}`
+}
+
+function getFailurePredictionMetric(maquina) {
+  const dataFalha = maquina?.dataFalha
+
+  return {
+    value: dataFalha ? formatPredictionDate(dataFalha) : "Sem previsão de falha",
+    sub: dataFalha ? formatDaysUntil(dataFalha) || "Data de cruzamento 30%" : "Falha 30% não projetada",
+  }
+}
+
+function getMaintenanceStartMetric(maquina) {
+  const dataInicioManutencao = maquina?.dataInicioManutencao ?? maquina?.previsaoManutencao
+  const sourceLabel = maquina?.dataInicioManutencao ? "Cruzamento 70%" : "Previsão de manutenção"
+
+  return {
+    value: dataInicioManutencao ? formatPredictionDate(dataInicioManutencao) : "Sem previsão",
+    sub: dataInicioManutencao ? formatDaysUntil(dataInicioManutencao) || sourceLabel : "Cruzamento 70% não projetado",
+  }
+}
+
+function getMaintenanceWindowMetric(maquina) {
+  const start = maquina?.janelaManuInicio
+  const end = maquina?.janelaManuFim
+  const startDate = parseDateValue(start)
+  const endDate = parseDateValue(end)
+
+  if (!startDate && !endDate) {
+    return {
+      value: "Sem janela calculada",
+      sub: "Aguardando janela ideal de manutenção",
+    }
+  }
+
+  if (startDate && endDate && startDate.getTime() === endDate.getTime()) {
+    const isImmediate = startDate.getTime() <= Date.now()
+
+    return {
+      value: isImmediate ? "Manutenção imediata" : formatPredictionDate(start),
+      sub: isImmediate
+        ? `Janela pontual desde ${formatPredictionDate(start)}`
+        : "Janela pontual de manutenção",
+    }
+  }
+
+  return {
+    value: formatPredictionRange(start, end),
+    sub: "Janela ideal de manutenção",
+  }
 }
 
 function formatScheduleDeviation(value) {
@@ -467,6 +519,67 @@ function normalizeHistoricoIntegridadeCollection(payload) {
     .sort((a, b) => Date.parse(a.criadoEm) - Date.parse(b.criadoEm))
 }
 
+function normalizeRealtimeHistoricoIntegridade(payload) {
+  const source = payload?.historicoIntegridade ?? payload?.historico_integridade ?? payload?.historico ?? payload
+  const collection = normalizeHistoricoIntegridadeCollection(source)
+
+  if (collection.length > 0 || !source || Array.isArray(source) || typeof source !== "object") {
+    return collection
+  }
+
+  return normalizeHistoricoIntegridadeCollection([source])
+}
+
+function getHistoricoIntegridadePointKey(point, index) {
+  if (point?.id !== undefined && point.id !== null && point.id !== "") {
+    return `id:${point.id}`
+  }
+
+  if (point?.criadoEm) {
+    return `criadoEm:${point.criadoEm}`
+  }
+
+  return `index:${index}`
+}
+
+function mergeHistoricoIntegridade(current, incoming) {
+  if (!Array.isArray(incoming) || incoming.length === 0) {
+    return Array.isArray(current) ? current : []
+  }
+
+  const pointsByKey = new Map()
+  const appendPoint = (point, index) => {
+    pointsByKey.set(getHistoricoIntegridadePointKey(point, index), point)
+  }
+
+  for (const [index, point] of (Array.isArray(current) ? current : []).entries()) {
+    appendPoint(point, index)
+  }
+
+  for (const [index, point] of incoming.entries()) {
+    appendPoint(point, index)
+  }
+
+  return Array.from(pointsByKey.values())
+    .sort((a, b) => Date.parse(a.criadoEm) - Date.parse(b.criadoEm))
+    .slice(-REGRESSION_HISTORY_LIMIT)
+}
+
+function getRealtimeMaquinaId(payload) {
+  if (!payload || typeof payload !== "object") {
+    return null
+  }
+
+  return payload.maquinaId ??
+    payload.maquina_id ??
+    payload.idMaquina ??
+    payload.maquina?.id ??
+    payload.historicoIntegridade?.maquinaId ??
+    payload.historico_integridade?.maquinaId ??
+    payload.historico?.maquinaId ??
+    null
+}
+
 async function fetchMachinePredictions(maquinaId, accessToken, signal) {
   const historicoParams = new URLSearchParams({
     limite: String(REGRESSION_HISTORY_LIMIT),
@@ -546,7 +659,7 @@ function getAverageSensorHealthScore(sensores) {
 function getPredictionSummary({ maquina, statusExibicao, integridadeExibicao }) {
   const hasSensors = statusExibicao !== "SEM_SENSOR"
   const integridade = Number(integridadeExibicao)
-  const falhaPrevista = parseDateValue(maquina.previsaoManutencao)
+  const falhaPrevista = parseDateValue(maquina.dataFalha)
   const janelaInicio = parseDateValue(maquina.janelaManuInicio)
   const janelaFim = parseDateValue(maquina.janelaManuFim)
   const now = Date.now()
@@ -691,6 +804,8 @@ function PredicaoResumoCard({ maquina, summary, predicaoAlertas, predicaoRisco, 
   const nextAlert = getNextAlertSummary(predicaoAlertas)
   const highestRisk = getHighestRiskSummary(predicaoRisco)
   const operationalStatus = getPredictionOperationalStatus(predicaoAlertas)
+  const failurePrediction = getFailurePredictionMetric(maquina)
+  const maintenanceStart = getMaintenanceStartMetric(maquina)
 
   return (
     <div className="rounded-lg border border-[#5E17EB]/25 bg-[#5E17EB]/5 p-3 dark:border-[#5E17EB]/45 dark:bg-[#5E17EB]/10">
@@ -717,8 +832,13 @@ function PredicaoResumoCard({ maquina, summary, predicaoAlertas, predicaoRisco, 
         />
         <PredictionMetric
           label="Falha prevista"
-          value={formatPredictionDate(maquina.previsaoManutencao)}
-          sub={formatDaysUntil(maquina.previsaoManutencao) || "Sem data confiavel"}
+          value={failurePrediction.value}
+          sub={failurePrediction.sub}
+        />
+        <PredictionMetric
+          label="Manutenção prevista"
+          value={maintenanceStart.value}
+          sub={maintenanceStart.sub}
         />
         <PredictionMetric label="Proximo alerta" value={nextAlert.value} sub={nextAlert.sub} />
         <PredictionMetric label="Maior risco 72h" value={highestRisk.value} sub={highestRisk.sub} />
@@ -748,7 +868,9 @@ function PredicaoManutencaoCard({
     : Number.isFinite(integridade)
       ? integridade
       : null
-  const falhaSub = formatDaysUntil(maquina.previsaoManutencao)
+  const failurePrediction = getFailurePredictionMetric(maquina)
+  const maintenanceStart = getMaintenanceStartMetric(maquina)
+  const maintenanceWindow = getMaintenanceWindowMetric(maquina)
   const limiarSub = Number.isFinite(healthScore)
     ? healthScore < PREDICAO_LIMIAR_MANUTENCAO
       ? "Abaixo do ponto de manutenção"
@@ -795,13 +917,18 @@ function PredicaoManutencaoCard({
       <div className="mt-3 grid grid-cols-2 gap-2">
         <PredictionMetric
           label="Falha prevista"
-          value={formatPredictionDate(maquina.previsaoManutencao)}
-          sub={falhaSub}
+          value={failurePrediction.value}
+          sub={failurePrediction.sub}
+        />
+        <PredictionMetric
+          label="Manutenção prevista"
+          value={maintenanceStart.value}
+          sub={maintenanceStart.sub}
         />
         <PredictionMetric
           label="Janela ideal"
-          value={formatPredictionRange(maquina.janelaManuInicio, maquina.janelaManuFim)}
-          sub={maquina.janelaManuFim ? `${PREDICAO_ANTECEDENCIA_FIM_JANELA_DIAS} dias antes da falha` : "Sem janela calculada"}
+          value={maintenanceWindow.value}
+          sub={maintenanceWindow.sub}
         />
         <PredictionMetric
           label="Saúde dos sensores"
@@ -1273,7 +1400,7 @@ function filterHistoricoByRegressionPeriod(historico, period) {
   return parsedPoints.filter((point) => point.timestamp >= cutoff)
 }
 
-function buildRegressionChartData(historico, modelo, previsaoManutencao, period = DEFAULT_REGRESSION_PERIOD) {
+function buildRegressionChartData(historico, modelo, predictionDates = {}, period = DEFAULT_REGRESSION_PERIOD) {
   const points = Array.isArray(historico) ? historico : []
   const periodOption = getRegressionPeriodOption(period)
 
@@ -1308,25 +1435,31 @@ function buildRegressionChartData(historico, modelo, previsaoManutencao, period 
     })
     .filter(Boolean)
 
-  const forecastDate = parseDateValue(previsaoManutencao)
   const lastTimestamp = data[data.length - 1]?.timestamp
   const forecastLimit = Number.isFinite(lastTimestamp)
     ? lastTimestamp + (periodOption.hours * 60 * 60 * 1000)
     : null
+  const forecastTimestamps = [
+    parseDateValue(predictionDates.dataInicioManutencao)?.getTime(),
+    parseDateValue(predictionDates.dataFalha)?.getTime(),
+  ]
+    .filter((timestamp) =>
+      modelo &&
+      Number.isFinite(timestamp) &&
+      Number.isFinite(lastTimestamp) &&
+      Number.isFinite(forecastLimit) &&
+      timestamp > lastTimestamp &&
+      timestamp <= forecastLimit
+    )
+    .filter((timestamp, index, timestamps) => timestamps.indexOf(timestamp) === index)
+    .sort((a, b) => a - b)
 
-  if (
-    modelo &&
-    forecastDate &&
-    Number.isFinite(lastTimestamp) &&
-    Number.isFinite(forecastLimit) &&
-    forecastDate.getTime() > lastTimestamp &&
-    forecastDate.getTime() <= forecastLimit
-  ) {
-    const hours = (forecastDate.getTime() - modelBaseTime) / (1000 * 60 * 60)
+  for (const timestamp of forecastTimestamps) {
+    const hours = (timestamp - modelBaseTime) / (1000 * 60 * 60)
 
     data.push({
-      id: "previsao-falha",
-      timestamp: forecastDate.getTime(),
+      id: `previsao-${timestamp}`,
+      timestamp,
       integridade: null,
       regressao: getRegressionValue(modelo, hours),
       projected: true,
@@ -1412,8 +1545,10 @@ function RegressionChartMessage({ message, tone = "muted" }) {
   )
 }
 
-function PredictionRegressionChart({ data, loading, errors, hasRegression, period }) {
+function PredictionRegressionChart({ data, loading, errors, hasRegression, period, dataInicioManutencao, dataFalha }) {
   const showPointDots = data.length <= 160
+  const maintenanceStartDate = parseDateValue(dataInicioManutencao)
+  const failureDate = parseDateValue(dataFalha)
 
   if (loading && data.length === 0) {
     return <RegressionChartMessage message="Carregando histórico da máquina..." />
@@ -1453,14 +1588,30 @@ function PredictionRegressionChart({ data, loading, errors, hasRegression, perio
           y={PREDICAO_LIMIAR_MANUTENCAO}
           stroke="#f59e0b"
           strokeDasharray="4 4"
-          label={{ value: "Manutenção 70%", position: "insideTopRight", fill: "#d97706", fontSize: 11 }}
+          label={{ value: "70%", position: "insideTopRight", fill: "#d97706", fontSize: 11 }}
         />
         <ReferenceLine
           y={PREDICAO_LIMIAR_FALHA}
           stroke="#ef4444"
           strokeDasharray="4 4"
-          label={{ value: "Falha 30%", position: "insideBottomRight", fill: "#dc2626", fontSize: 11 }}
+          label={{ value: "30%", position: "insideBottomRight", fill: "#dc2626", fontSize: 11 }}
         />
+        {maintenanceStartDate ? (
+          <ReferenceLine
+            x={maintenanceStartDate.getTime()}
+            stroke="#f59e0b"
+            strokeDasharray="3 3"
+            label={{ value: "Manutenção 70%", position: "insideTop", fill: "#d97706", fontSize: 11 }}
+          />
+        ) : null}
+        {failureDate ? (
+          <ReferenceLine
+            x={failureDate.getTime()}
+            stroke="#ef4444"
+            strokeDasharray="3 3"
+            label={{ value: "Falha 30%", position: "insideBottom", fill: "#dc2626", fontSize: 11 }}
+          />
+        ) : null}
         <ChartTooltip
           cursor={false}
           content={
@@ -1507,8 +1658,16 @@ function PredictionRegressionSheet({
   const [regressionPeriod, setRegressionPeriod] = React.useState(DEFAULT_REGRESSION_PERIOD)
   const modelo = React.useMemo(() => getPredictionModel(predicaoAlertas), [predicaoAlertas])
   const chartData = React.useMemo(
-    () => buildRegressionChartData(historico, modelo, maquina?.previsaoManutencao, regressionPeriod),
-    [historico, maquina?.previsaoManutencao, modelo, regressionPeriod]
+    () => buildRegressionChartData(
+      historico,
+      modelo,
+      {
+        dataInicioManutencao: maquina?.dataInicioManutencao,
+        dataFalha: maquina?.dataFalha,
+      },
+      regressionPeriod
+    ),
+    [historico, maquina?.dataInicioManutencao, maquina?.dataFalha, modelo, regressionPeriod]
   )
   const chartPointCount = React.useMemo(
     () => chartData.filter((point) => !point.projected).length,
@@ -1525,6 +1684,9 @@ function PredictionRegressionSheet({
     modelo,
     predicaoAlertas,
   })
+  const failurePrediction = getFailurePredictionMetric(maquina)
+  const maintenanceStart = getMaintenanceStartMetric(maquina)
+  const maintenanceWindow = getMaintenanceWindowMetric(maquina)
   const noticeClasses = {
     stable: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/25 dark:text-emerald-300",
     warning: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-300",
@@ -1577,6 +1739,8 @@ function PredictionRegressionSheet({
               errors={errors}
               hasRegression={Boolean(modelo)}
               period={regressionPeriod}
+              dataInicioManutencao={maquina?.dataInicioManutencao}
+              dataFalha={maquina?.dataFalha}
             />
           </div>
 
@@ -1607,15 +1771,20 @@ function PredictionRegressionSheet({
               sub="Base mais recente do modelo."
             />
             <PredictionMetric
+              label="Manutenção prevista"
+              value={maintenanceStart.value}
+              sub={maintenanceStart.sub}
+            />
+            <PredictionMetric
               label="Falha prevista"
-              value={formatPredictionDate(maquina?.previsaoManutencao)}
-              sub={formatDaysUntil(maquina?.previsaoManutencao) || "Sem data confiável"}
+              value={failurePrediction.value}
+              sub={failurePrediction.sub}
             />
             <div className="sm:col-span-2">
               <PredictionMetric
                 label="Janela ideal"
-                value={formatPredictionRange(maquina?.janelaManuInicio, maquina?.janelaManuFim)}
-                sub={maquina?.janelaManuFim ? `${PREDICAO_ANTECEDENCIA_FIM_JANELA_DIAS} dias antes da falha` : "Sem janela calculada"}
+                value={maintenanceWindow.value}
+                sub={maintenanceWindow.sub}
               />
             </div>
           </div>
@@ -2041,7 +2210,7 @@ function PreventiveMaintenanceCard({ manutencao, canManage, pending, onStart, on
   const canComplete = canManage && manutencao.status === "EM_ANDAMENTO"
   const scheduledLabel = manutencao.dataAgendada ? formatMaintenanceDate(manutencao.dataAgendada) : ""
   const windowLabel = formatMaintenanceWindow(manutencao.janelaAgendadaInicio, manutencao.janelaAgendadaFim)
-  const predictionFailure = manutencao.metadataPredicao?.previsaoManutencao
+  const predictionMaintenance = manutencao.metadataPredicao?.previsaoManutencao
     ? formatMaintenanceDate(manutencao.metadataPredicao.previsaoManutencao)
     : ""
   const complianceLabel = MAINTENANCE_COMPLIANCE_LABEL[manutencao.cumprimentoAgendamento] ?? manutencao.cumprimentoAgendamento
@@ -2092,7 +2261,7 @@ function PreventiveMaintenanceCard({ manutencao, canManage, pending, onStart, on
       {windowLabel || predictionFailure ? (
         <div className="mt-3 grid gap-2 rounded-md border border-border/70 bg-muted/20 p-2 text-xs text-muted-foreground">
           {windowLabel ? <span>Janela sugerida: {windowLabel}</span> : null}
-          {predictionFailure ? <span>Falha prevista: {predictionFailure}</span> : null}
+          {predictionMaintenance ? <span>Manutenção prevista: {predictionMaintenance}</span> : null}
         </div>
       ) : null}
       {manutencao.observacao ? (
@@ -2270,25 +2439,28 @@ export function MaquinaDetailsPanel({
   className = "",
 }) {
   const [summaryPinned, setSummaryPinned] = React.useState(false)
+  const [maquinaAtualizada, setMaquinaAtualizada] = React.useState(null)
   const summarySentinelRef = React.useRef(null)
+  const realtimeHistoricoRef = React.useRef([])
+  const maquinaExibida = maquinaAtualizada ?? maquina
   const sensoresDaMaquina = React.useMemo(
-    () => getMachineSensors(maquina, sensores),
-    [maquina, sensores]
+    () => getMachineSensors(maquinaExibida, sensores),
+    [maquinaExibida, sensores]
   )
-  const totalSensores = sensoresDaMaquina.length > 0 ? sensoresDaMaquina.length : maquina.sensores
+  const totalSensores = sensoresDaMaquina.length > 0 ? sensoresDaMaquina.length : maquinaExibida.sensores
   const maquinaComTotalSensores = React.useMemo(
-    () => ({ ...maquina, sensores: totalSensores }),
-    [maquina, totalSensores]
+    () => ({ ...maquinaExibida, sensores: totalSensores }),
+    [maquinaExibida, totalSensores]
   )
   const statusExibicao = getMaquinaStatusExibicao(maquinaComTotalSensores)
   const integridadeExibicao = getMaquinaIntegridadeExibicao(maquinaComTotalSensores)
   const predictionSummary = React.useMemo(
-    () => getPredictionSummary({ maquina, statusExibicao, integridadeExibicao }),
-    [maquina, statusExibicao, integridadeExibicao]
+    () => getPredictionSummary({ maquina: maquinaExibida, statusExibicao, integridadeExibicao }),
+    [maquinaExibida, statusExibicao, integridadeExibicao]
   )
   const manutencaoPreditiva = React.useMemo(
-    () => getPredictiveMaintenanceFromSources(maquina, manutencoes),
-    [maquina, manutencoes]
+    () => getPredictiveMaintenanceFromSources(maquinaExibida, manutencoes),
+    [maquinaExibida, manutencoes]
   )
   const [openSections, setOpenSections] = React.useState({
     preventivas: false,
@@ -2310,6 +2482,8 @@ export function MaquinaDetailsPanel({
   })
 
   React.useEffect(() => {
+    setMaquinaAtualizada(null)
+    realtimeHistoricoRef.current = []
     setOpenSections({
       preventivas: false,
       predicao: false,
@@ -2417,11 +2591,13 @@ export function MaquinaDetailsPanel({
           return
         }
 
+        const historicoAtualizado = mergeHistoricoIntegridade(historico, realtimeHistoricoRef.current)
+
         setPredictionInsights({
-          status: alertas || risco || historico.length > 0 ? "success" : "error",
+          status: alertas || risco || historicoAtualizado.length > 0 ? "success" : "error",
           alertas,
           risco,
-          historico,
+          historico: historicoAtualizado,
           errors: unauthorized
             ? {
                 alertas: "Sua sessão expirou. Faça login novamente.",
@@ -2455,6 +2631,118 @@ export function MaquinaDetailsPanel({
     }
   }, [maquina?.id])
 
+  React.useEffect(() => {
+    const maquinaId = maquina?.id
+
+    if (!maquinaId) {
+      return undefined
+    }
+
+    function applyMachinePayload(payload) {
+      const eventMaquinaId = getRealtimeMaquinaId(payload)
+
+      if (eventMaquinaId === null || String(eventMaquinaId) !== String(maquinaId)) {
+        return
+      }
+
+      if (payload?.maquina && typeof payload.maquina === "object") {
+        setMaquinaAtualizada((current) => {
+          const fallback = current ?? maquina
+          const raw = payload.maquina
+          const maquinaPayload = {
+            ...raw,
+            id: raw.id ?? raw.maquinaId ?? eventMaquinaId ?? fallback.id,
+            nome: raw.nome ?? raw.nomeMaquina ?? raw.name ?? fallback.nome,
+            setor: raw.setor ?? raw.area ?? raw.linha ?? raw.localizacao ?? fallback.setor,
+            tipo: raw.tipo ?? raw.tipoMaquina ?? raw.categoria ?? raw.modelo ?? fallback.tipo,
+            criticidade: raw.criticidade ?? raw.nivelCriticidade ?? raw.prioridade ?? fallback.criticidade,
+            integridade: raw.integridade ?? raw.saude ?? raw.healthScore ?? raw.integridadeMedia ?? fallback.integridade,
+            scoreEstabilidade:
+              raw.scoreEstabilidade ?? raw.estabilidade ?? raw.stabilityScore ?? raw.score ?? fallback.scoreEstabilidade,
+            status: raw.status ?? raw.estado ?? raw.situacao ?? fallback.status,
+            ultimaLeituraEm:
+              raw.ultimaLeituraEm ?? raw.ultimaAtualizacao ?? raw.updatedAt ?? raw.dataUltimaLeitura ?? fallback.ultimaLeituraEm,
+            sensores: raw.sensores ?? raw.totalSensores ?? raw.quantidadeSensores ?? raw.sensoresOnline ?? fallback.sensores,
+            dataInicioManutencao:
+              raw.dataInicioManutencao ??
+              raw.data_inicio_manutencao ??
+              raw.maintenanceStartDate ??
+              fallback.dataInicioManutencao,
+            previsaoManutencao:
+              raw.previsaoManutencao ??
+              raw.previsao_manutencao ??
+              raw.predictedMaintenanceAt ??
+              fallback.previsaoManutencao,
+            dataFalha:
+              raw.dataFalha ??
+              raw.data_falha ??
+              raw.previsaoFalha ??
+              raw.dataFalhaPrevista ??
+              raw.predictedFailureAt ??
+              fallback.dataFalha,
+            janelaManuInicio:
+              raw.janelaManuInicio ?? raw.janelaManutencaoInicio ?? raw.maintenanceWindowStart ?? fallback.janelaManuInicio,
+            janelaManuFim:
+              raw.janelaManuFim ?? raw.janelaManutencaoFim ?? raw.maintenanceWindowEnd ?? fallback.janelaManuFim,
+            imagem: raw.imagem ?? raw.imagemUrl ?? raw.foto ?? raw.fotoUrl ?? fallback.imagem,
+            caminhoImagem: raw.caminhoImagem ?? raw.imagePath ?? raw.caminhoFoto ?? fallback.caminhoImagem,
+            estadoPredicaoManutencao:
+              raw.estadoPredicaoManutencao ??
+              raw.estado_predicao_manutencao ??
+              raw.predictionMaintenanceState ??
+              raw.predictiveMaintenanceState ??
+              fallback.estadoPredicaoManutencao,
+            manutencaoPreditiva:
+              raw.manutencaoPreditiva ??
+              raw.preventivaPreditiva ??
+              raw.predictiveMaintenance ??
+              raw.predictedMaintenance ??
+              fallback.manutencaoPreditiva,
+          }
+          const [maquinaNormalizada] = normalizeMaquinaCollection([maquinaPayload])
+
+          return maquinaNormalizada ? { ...fallback, ...maquinaNormalizada } : current
+        })
+      }
+
+      const historico = normalizeRealtimeHistoricoIntegridade(payload)
+
+      if (historico.length === 0) {
+        return
+      }
+
+      realtimeHistoricoRef.current = mergeHistoricoIntegridade(realtimeHistoricoRef.current, historico)
+
+      setPredictionInsights((current) => ({
+        ...current,
+        status: current.alertas || current.risco || current.historico.length > 0 || historico.length > 0
+          ? "success"
+          : current.status,
+        historico: mergeHistoricoIntegridade(current.historico, historico),
+        errors: {
+          ...current.errors,
+          historico: "",
+        },
+      }))
+    }
+
+    function handleMachineDashboardUpdate(event) {
+      applyMachinePayload(event.detail)
+    }
+
+    function handleMachineIntegrityHistoryUpdate(event) {
+      applyMachinePayload(event.detail)
+    }
+
+    window.addEventListener(REALTIME_MACHINE_DASHBOARD_UPDATE_EVENT, handleMachineDashboardUpdate)
+    window.addEventListener(REALTIME_MACHINE_INTEGRITY_HISTORY_UPDATE_EVENT, handleMachineIntegrityHistoryUpdate)
+
+    return () => {
+      window.removeEventListener(REALTIME_MACHINE_DASHBOARD_UPDATE_EVENT, handleMachineDashboardUpdate)
+      window.removeEventListener(REALTIME_MACHINE_INTEGRITY_HISTORY_UPDATE_EVENT, handleMachineIntegrityHistoryUpdate)
+    }
+  }, [maquina?.id, maquina])
+
   function toggleSection(section) {
     setOpenSections((currentSections) => ({
       ...currentSections,
@@ -2479,7 +2767,7 @@ export function MaquinaDetailsPanel({
         )}
       >
         <MaquinaSummaryCard
-          maquina={maquina}
+          maquina={maquinaExibida}
           statusExibicao={statusExibicao}
           integridadeExibicao={integridadeExibicao}
           totalSensores={totalSensores}
@@ -2490,7 +2778,7 @@ export function MaquinaDetailsPanel({
       <MachineDetailSection title="Resumo operacional" icon={GaugeIcon}>
         <div className="grid gap-3 sm:grid-cols-2">
           <MachineDetailItem label="Importância">
-            <CriticidadeBadge value={maquina.criticidade} />
+            <CriticidadeBadge value={maquinaExibida.criticidade} />
           </MachineDetailItem>
           <MachineDetailItem label="Status">
             <StatusBadge value={statusExibicao} />
@@ -2500,7 +2788,7 @@ export function MaquinaDetailsPanel({
           </MachineDetailItem>
           <MachineDetailItem label="Estabilidade">
             <span className="flex items-center gap-1.5">
-              <span>{formatMetric(maquina.scoreEstabilidade, "%", 0)}</span>
+              <span>{formatMetric(maquinaExibida.scoreEstabilidade, "%", 0)}</span>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -2555,11 +2843,11 @@ export function MaquinaDetailsPanel({
                 errors={predictionInsights.errors}
               />
               <PredicaoAgendamentoSeguroCard
-                maquina={maquina}
+                maquina={maquinaExibida}
                 manutencaoPreditiva={manutencaoPreditiva}
               />
               <PredicaoResumoCard
-                maquina={maquina}
+                maquina={maquinaExibida}
                 summary={predictionSummary}
                 predicaoAlertas={predictionInsights.alertas}
                 predicaoRisco={predictionInsights.risco}
@@ -2640,7 +2928,7 @@ export function MaquinaDetailsPanel({
       <PredictionRegressionSheet
         open={regressionSheetOpen}
         onOpenChange={setRegressionSheetOpen}
-        maquina={maquina}
+        maquina={maquinaExibida}
         predicaoAlertas={predictionInsights.alertas}
         historico={predictionInsights.historico}
         loading={predictionInsights.status === "loading"}
