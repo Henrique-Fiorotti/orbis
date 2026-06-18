@@ -462,12 +462,6 @@ export default function HomePage() {
             >
               {home.process.titleLine2}
             </h2>
-            <img
-              className={styles.processAutomationImage}
-              src="/automation.svg"
-              alt=""
-              aria-hidden="true"
-            />
           </div>
           <div className={styles.stepsList}>
             {home.steps.map((step) => (

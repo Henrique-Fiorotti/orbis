@@ -627,12 +627,6 @@
   min-width: 0;
 }
 
-.processAutomationImage {
-  display: block;
-  width: min(100%, 360px);
-  margin-top: 28px;
-}
-
 .stepsList {
   flex: 1 1 320px;
   display: flex;
@@ -880,11 +874,6 @@
 
   .processInner {
     gap: 32px;
-  }
-
-  .processAutomationImage {
-    width: min(100%, 300px);
-    margin-top: 22px;
   }
 
   .stepsList {
