@@ -45,7 +45,7 @@ test("landing parallax doodles use the mapped project SVG assets", () => {
   const component = readProjectFile("components/landing/parallax-doodles.jsx");
 
   assert.match(component, /src:\s*"\/dashboardcustom\.svg"/);
-  assert.match(component, /src:\s*"\/footprint\.svg"/);
+  assert.match(component, /src:\s*"\/automation\.svg"/);
   assert.match(component, /src:\s*"\/credit_card\.svg"/);
   assert.doesNotMatch(component, /orb-ia\.svg/);
   assert.match(component, /<img/);
@@ -69,7 +69,7 @@ test("landing parallax keeps every doodle in the same calm scroll rhythm", () =>
   const component = readProjectFile("components/landing/parallax-doodles.jsx");
 
   assert.match(component, /src:\s*"\/dashboardcustom\.svg"[\s\S]*?speed:\s*0\.16[\s\S]*?startOffset:\s*\d+/);
-  assert.match(component, /src:\s*"\/footprint\.svg"[\s\S]*?speed:\s*0\.18[\s\S]*?startOffset:\s*\d+/);
+  assert.match(component, /src:\s*"\/automation\.svg"[\s\S]*?speed:\s*0\.18[\s\S]*?startOffset:\s*\d+/);
   assert.match(component, /src:\s*"\/credit_card\.svg"[\s\S]*?speed:\s*0\.14[\s\S]*?startOffset:\s*\d+/);
   assert.match(component, /node\.dataset\.startOffset/);
 });

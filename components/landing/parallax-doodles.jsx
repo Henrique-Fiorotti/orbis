@@ -24,10 +24,10 @@ const DOODLES = {
       className: styles.processFootprint,
       drift: 18,
       rotate: 12,
-      src: "/footprint.svg",
+      src: "/automation.svg",
       speed: 0.18,
       startOffset: 200,
-      type: "footprint",
+      type: "automation",
     },
   ],
   pricing: [
