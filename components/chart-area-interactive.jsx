@@ -421,7 +421,7 @@ export function ChartAreaInteractive() {
                   type="monotone"
                   stroke="var(--color-integridade)"
                   strokeWidth={2}
-                  dot={{ r: 3, strokeWidth: 2 }}
+                  dot={false}
                   activeDot={{ r: 5 }}
                   connectNulls
                 />
@@ -431,7 +431,7 @@ export function ChartAreaInteractive() {
                     type="monotone"
                     stroke="var(--color-maquinaIntegridade)"
                     strokeWidth={2}
-                    dot={{ r: 3, strokeWidth: 2 }}
+                    dot={false}
                     activeDot={{ r: 5 }}
                     connectNulls
                   />
