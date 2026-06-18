@@ -1,5 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 
 import { groupAlertasByMaquina } from "../lib/alertas-grouping.js"
 import { parseAlertApiRecord } from "../lib/alert-contract.mjs"
@@ -17,6 +18,7 @@ import {
 import {
   getIntegrityTrendDataFromHistories,
   getIntegrityTrendDataFromSnapshot,
+  getMachineIntegrityTrendOptions,
   normalizeHistoricoIntegridadeCollection,
 } from "../lib/orbis-dashboard.js"
 import {
@@ -27,6 +29,12 @@ import {
   getPredictiveMaintenanceStatus,
   normalizePredictiveMaintenanceState,
 } from "../lib/prediction-contract.mjs"
+import {
+  MACHINE_DASHBOARD_SOCKET_EVENTS,
+  MACHINE_INTEGRITY_HISTORY_SOCKET_EVENTS,
+  getMachineUpdateEventKey,
+  getMachineUpdateTargetKey,
+} from "../lib/realtime-events.mjs"
 import {
   parseSensorApiRecord,
   parseSensorReadingApiRecord,
@@ -106,6 +114,9 @@ test("parseMachineApiRecord preserva aliases de maquina e limpa blocos preditivo
     nomeMaquina: "Esteira 01",
     healthScore: "82",
     sensores: [{ id: 1 }, { id: 2 }],
+    dataInicioManutencao: "2026-06-19T10:00:00.000Z",
+    previsaoManutencao: "2026-06-19T10:00:00.000Z",
+    dataFalha: "2026-06-21T10:00:00.000Z",
     estado_predicao_manutencao: {
       validasConsecutivas: "2",
       ultimoEstadoPredicao: "PREVISAO_VALIDA",
@@ -117,6 +128,9 @@ test("parseMachineApiRecord preserva aliases de maquina e limpa blocos preditivo
   assert.equal(parsed.nomeMaquina, "Esteira 01")
   assert.equal(parsed.healthScore, "82")
   assert.deepEqual(parsed.sensores, [{ id: 1 }, { id: 2 }])
+  assert.equal(parsed.dataInicioManutencao, "2026-06-19T10:00:00.000Z")
+  assert.equal(parsed.previsaoManutencao, "2026-06-19T10:00:00.000Z")
+  assert.equal(parsed.dataFalha, "2026-06-21T10:00:00.000Z")
   assert.deepEqual(parsed.estado_predicao_manutencao, {
     validasConsecutivas: "2",
     ultimoEstadoPredicao: "PREVISAO_VALIDA",
@@ -124,6 +138,19 @@ test("parseMachineApiRecord preserva aliases de maquina e limpa blocos preditivo
   assert.equal(parsed.predictedMaintenance, null)
   assert.equal(parseMachineApiRecord(null), null)
   assert.equal(parseMachineApiRecord([]), null)
+})
+
+test("normalizador de maquina mantem manutencao prevista separada da falha prevista", () => {
+  const source = readFileSync(new URL("../lib/dashboard-api.js", import.meta.url), "utf8")
+  const previsaoBlock = source.match(/previsaoManutencao:\s*normalizeString\(([\s\S]*?)\n\s*\)\s*\|\| null,/)
+  const dataFalhaBlock = source.match(/dataFalha:\s*normalizeString\(([\s\S]*?)\n\s*\)\s*\|\| null,/)
+
+  assert.match(previsaoBlock?.[1] ?? "", /raw\.previsaoManutencao/)
+  assert.match(previsaoBlock?.[1] ?? "", /raw\.previsao_manutencao/)
+  assert.doesNotMatch(previsaoBlock?.[1] ?? "", /dataFalha|previsaoFalha|predictedFailureAt/)
+  assert.match(dataFalhaBlock?.[1] ?? "", /raw\.dataFalha/)
+  assert.match(dataFalhaBlock?.[1] ?? "", /raw\.dataFalhaPrevista/)
+  assert.match(dataFalhaBlock?.[1] ?? "", /raw\.predictedFailureAt/)
 })
 
 test("parseSensorApiRecord preserva aliases de sensor e rejeita payload invalido", () => {
@@ -279,6 +306,61 @@ test("historico de integridade aceita payload envelopado e aliases do backend", 
   assert.equal(serie.at(-1).maquinas, 2)
 })
 
+test("eventos realtime de maquina geram chaves estaveis para deduplicacao", () => {
+  assert.deepEqual(MACHINE_DASHBOARD_SOCKET_EVENTS, ["dashboard-maquina-atualizado", "dashboardMaquinaAtualizado"])
+  assert.deepEqual(MACHINE_INTEGRITY_HISTORY_SOCKET_EVENTS, ["historico-integridade-atualizado", "historicoIntegridadeAtualizado"])
+
+  const dashboardPayload = {
+    maquinaId: 10,
+    maquina: {
+      id: 10,
+      ultimaLeituraEm: "2026-06-18T10:00:00.000Z",
+    },
+    historicoIntegridade: {
+      id: 55,
+      integridade: 82,
+      criadoEm: "2026-06-18T10:00:00.000Z",
+    },
+    leitura: {
+      id: 77,
+    },
+  }
+  const dashboardAliasPayload = {
+    maquina_id: 10,
+    maquina: {
+      id: 10,
+      dataUltimaLeitura: "2026-06-18T10:00:00.000Z",
+    },
+    historico_integridade: {
+      id: 55,
+      integridade_media: 82,
+      registrado_em: "2026-06-18T10:00:00.000Z",
+    },
+    leitura: {
+      leituraId: 77,
+    },
+  }
+
+  assert.equal(
+    getMachineUpdateEventKey(dashboardPayload, "dashboard"),
+    getMachineUpdateEventKey(dashboardAliasPayload, "dashboard")
+  )
+  assert.equal(getMachineUpdateTargetKey(dashboardPayload), "maquina:10")
+
+  const historicoPayload = {
+    maquinaId: 10,
+    historico: [
+      { id: 54, integridade: 84, criadoEm: "2026-06-18T09:00:00.000Z" },
+      { id: 55, integridade: 82, criadoEm: "2026-06-18T10:00:00.000Z" },
+    ],
+  }
+
+  assert.equal(
+    getMachineUpdateEventKey(historicoPayload, "historico"),
+    "historico|10|||55|2026-06-18T10:00:00.000Z|82"
+  )
+})
+
 test("snapshot de integridade preenche janela estimada para o grafico", () => {
   const serie = getIntegrityTrendDataFromSnapshot([
     { id: 10, nome: "Motor A", integridade: 80 },
@@ -291,6 +373,26 @@ test("snapshot de integridade preenche janela estimada para o grafico", () => {
   assert.equal(serie.every((item) => item.integridade === 70), true)
   assert.equal(serie.every((item) => item.maquinas === 2), true)
   assert.equal(serie.every((item) => item.estimado === true), true)
+})
+
+test("opcoes de integridade da maquina preservam oscilacoes do historico", () => {
+  const maquina = { id: 10, nome: "Lavadora", setor: "Lavanderia", criticidade: "ALTA", integridade: 81 }
+  const historico = normalizeHistoricoIntegridadeCollection({
+    historico: [
+      { id: 1, maquinaId: 10, integridade: 84, criadoEm: "2026-06-17T08:00:00.000Z" },
+      { id: 2, maquinaId: 10, integridade: 77, criadoEm: "2026-06-17T12:00:00.000Z" },
+      { id: 3, maquinaId: 10, integridade: 81, criadoEm: "2026-06-17T18:00:00.000Z" },
+    ],
+  }, maquina)
+
+  const [option] = getMachineIntegrityTrendOptions([{ maquina, historico }], [maquina])
+
+  assert.deepEqual(option.data.map((point) => point.integridade), [84, 77, 81])
+  assert.deepEqual(option.data.map((point) => point.timestamp), [
+    Date.parse("2026-06-17T08:00:00.000Z"),
+    Date.parse("2026-06-17T12:00:00.000Z"),
+    Date.parse("2026-06-17T18:00:00.000Z"),
+  ])
 })
 
 test("normalizeManutencaoCollection preserva preventiva agendada criada por predicao", () => {

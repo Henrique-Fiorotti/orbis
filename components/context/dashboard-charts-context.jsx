@@ -57,10 +57,15 @@ export function DashboardChartsProvider({ children }) {
       return
     }
 
+    const bootstrapSnapshot =
+      dashboardBootstrap.status === "success"
+        ? dashboardBootstrap.snapshot
+        : null
+
     if (dashboardBootstrap.status === "success") {
-      const maquinas = dashboardBootstrap.snapshot.maquinas
-      const sensores = dashboardBootstrap.snapshot.sensores
-      const referenceDate = dashboardBootstrap.snapshot.generatedAt || new Date()
+      const maquinas = bootstrapSnapshot.maquinas
+      const sensores = bootstrapSnapshot.sensores
+      const referenceDate = bootstrapSnapshot.generatedAt || new Date()
       const integrityTrendData = getIntegrityTrendDataFromSnapshot(maquinas, referenceDate)
       const integrityReferenceDate = integrityTrendData[integrityTrendData.length - 1]?.date ?? referenceDate
       const machineIntegrityOptions = getMachineIntegrityTrendOptions([], maquinas, integrityReferenceDate)
@@ -83,7 +88,6 @@ export function DashboardChartsProvider({ children }) {
             : "",
         },
       })
-      return
     }
 
     const session = getAuthSession()
@@ -100,9 +104,16 @@ export function DashboardChartsProvider({ children }) {
     let isActive = true
 
     async function carregarGraficos() {
-      setState(INITIAL_STATE)
+      if (!bootstrapSnapshot) {
+        setState(INITIAL_STATE)
+      }
 
-      const [maquinasResult, sensoresResult] = await Promise.allSettled([
+      const [maquinasResult, sensoresResult] = bootstrapSnapshot
+        ? [
+            { status: "fulfilled", value: bootstrapSnapshot.maquinas },
+            { status: "fulfilled", value: bootstrapSnapshot.sensores },
+          ]
+        : await Promise.allSettled([
         fetchDashboardJson("/maquinas", session.accessToken, "as máquinas do dashboard"),
         fetchDashboardJson("/sensores", session.accessToken, "os sensores do dashboard"),
       ])
@@ -131,11 +142,15 @@ export function DashboardChartsProvider({ children }) {
 
       const maquinas =
         maquinasResult.status === "fulfilled"
-          ? normalizeMaquinaCollection(maquinasResult.value)
+          ? bootstrapSnapshot
+            ? maquinasResult.value
+            : normalizeMaquinaCollection(maquinasResult.value)
           : []
       const sensores =
         sensoresResult.status === "fulfilled"
-          ? normalizeSensorCollection(sensoresResult.value)
+          ? bootstrapSnapshot
+            ? sensoresResult.value
+            : normalizeSensorCollection(sensoresResult.value)
           : []
 
       const historicoResults = maquinas.length > 0
